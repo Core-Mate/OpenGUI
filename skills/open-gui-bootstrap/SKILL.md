@@ -1,19 +1,53 @@
 ---
 name: open-gui-bootstrap
-description: Automate OpenGUI setup, environment preparation, service startup, Android client build, and first-run guidance. Use when Codex needs to install, bootstrap, debug, or run OpenGUI for a user while minimizing manual steps. This skill should handle everything it can in the terminal and only ask the user to do physical-world actions such as connecting a phone, granting Android permissions, or providing API keys.
+description: Launch and bootstrap OpenGUI from a plain-language user request. Use when Claude or Codex should install, configure, debug, and run OpenGUI while minimizing manual setup. The user should only need to describe the goal and complete physical phone-side actions or provide secrets when required.
 ---
 
 # OpenGUI Bootstrap
 
-Automate as much of OpenGUI setup as possible.
+Launch OpenGUI from a plain-language request.
+
+The user should be able to say things like:
+
+- "Help me run OpenGUI on my phone"
+- "Use Claude to bootstrap OpenGUI for me"
+- "Set up OpenGUI with GPT and Gemini as my model endpoints"
+- "Get OpenGUI running and tell me only what I must tap on the phone"
+
+Do not require the user to know the setup order, environment variable names, or terminal commands unless there is a real blocker.
 
 ## Core Rules
 
-- Perform environment detection, dependency installation, file generation, service startup, and build commands directly.
+- Treat Codex or Claude as the installer and operator.
+- Default to doing the work directly instead of explaining how to do it.
 - Do not ask the user to run terminal commands that Codex can run.
 - Ask the user only for actions that require physical access, OS dialogs, secrets, or Android device interaction.
 - Before claiming setup is complete, verify each major step.
 - If the checkout does not contain runnable OpenGUI code, stop and say so clearly.
+- Translate vague user requests into the concrete setup plan yourself.
+- Prefer sensible defaults over exposing internal config detail.
+
+## Input Contract
+
+Assume the user may provide only a plain-language goal.
+
+Examples of sufficient user input:
+
+- "Run OpenGUI on this machine"
+- "Use Claude to get OpenGUI running"
+- "I want to use GPT for planning and Gemini for vision"
+- "Bootstrap the project and tell me only what to do on the phone"
+
+Do not require the user to pre-specify:
+
+- exact env var names
+- bootstrap order
+- backend start commands
+- Gradle commands
+- `adb` commands
+- model routing internals
+
+If details are missing, infer the most practical defaults and continue.
 
 ## Required Physical-World Hand-offs
 
@@ -52,7 +86,20 @@ If the checkout is runnable, confirm these paths exist:
 
 If the checkout is not runnable, stop early instead of pretending setup can continue.
 
-### 2. Detect local tools and install what can be installed safely
+### 2. Interpret the user's intent
+
+Convert the user's plain-language request into a concrete setup target.
+
+Examples:
+
+- "Help me run OpenGUI" -> bootstrap backend, build client, detect device, explain only phone-side steps
+- "Use Claude to run this" -> prefer Claude-compatible endpoint as the primary planning model
+- "Use GPT and Gemini" -> use GPT-compatible endpoint for text/planning and Gemini-compatible endpoint for vision when the project supports split model roles
+- "Use my own models" -> ask only for the provider endpoints or keys that are actually missing
+
+Do not ask the user to restate their goal in a structured form unless the request is genuinely ambiguous.
+
+### 3. Detect local tools and install what can be installed safely
 
 Check for:
 
@@ -66,7 +113,7 @@ Install or remediate only when it is safe and already available through the user
 
 Do not install Android Studio automatically.
 
-### 3. Bootstrap the backend automatically
+### 4. Bootstrap the backend automatically
 
 Do all of the following yourself when the files exist:
 
@@ -80,7 +127,31 @@ Do all of the following yourself when the files exist:
 
 Never tell the user to manually copy `.env.example` if the project already has a bootstrap script that can do it.
 
-### 4. Build the Android client automatically
+### 5. Handle model provider selection for the user
+
+OpenGUI should feel provider-flexible by default.
+
+When the user mentions a model family, translate that into the closest supported endpoint configuration instead of asking them to understand internal config names.
+
+Supported intent examples include:
+
+- Claude
+- GPT
+- Gemini
+- Kimi
+- MiniMax
+- other OpenAI-compatible or custom-compatible endpoints
+
+Rules:
+
+- Prefer the user's existing model stack when they mention one.
+- If the project separates planning and vision roles, choose the most sensible split automatically.
+- If the project only exposes generic endpoint fields, map the user's provider choice into those generic fields yourself.
+- Ask only for the minimum secret or endpoint information that is still missing.
+- If multiple providers are available, choose the one explicitly requested by the user first.
+- If no provider is specified, use the repository defaults or the most conservative working default.
+
+### 6. Build the Android client automatically
 
 Do all of the following yourself when the files exist:
 
@@ -91,7 +162,7 @@ Do all of the following yourself when the files exist:
 
 If no device is connected, build the APK anyway and tell the user the exact next physical step: connect a device or start an emulator.
 
-### 5. Minimize device-side user work
+### 7. Minimize device-side user work
 
 When a device is present, Codex should handle terminal-side device setup, including when possible:
 
@@ -107,7 +178,7 @@ Ask the user only to do device-side steps such as:
 - allow overlay permission
 - exempt the app from battery restrictions
 
-### 6. Verify first run
+### 8. Verify first run
 
 After backend and APK are ready, verify the first runnable path.
 
@@ -121,11 +192,31 @@ At minimum, confirm:
 
 If the project supports a simple API-auth or task-creation flow, automate the terminal/API part and leave only phone-side permissions to the user.
 
+## Communication Style
+
+When responding during setup:
+
+- keep updates short and operational
+- say what Codex is doing now
+- say what is blocked, if anything
+- when blocked, ask for the smallest next thing only
+
+Good:
+
+- "I generated the env file and started the backend. The only thing I need from you now is the Claude API key."
+- "The APK is built. Connect the phone by USB and tap Allow on the debugging dialog. I will install it after that."
+
+Bad:
+
+- "Please follow these seven setup sections manually."
+- "Set `FOO_BAR_BAZ` and then maybe run Gradle if needed."
+
 ## Output Contract
 
 At the end, provide a short status block with:
 
 - what Codex completed automatically
+- what model providers were configured or selected
 - what is still blocked
 - the exact next user action, if any
 - the exact command Codex will run next after the user completes that action
