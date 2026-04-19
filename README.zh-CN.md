@@ -16,6 +16,10 @@
 
 </div>
 
+<p align="center">
+  <img src="./docs/assets/opengui-banner.svg" alt="OpenGUI banner" width="100%">
+</p>
+
 OpenGUI 是一套面向真实移动工作流的 Android operator system，不只是一个跑在电脑侧的手机 Agent demo。
 
 它把 Android 原生执行客户端、后端任务编排、远程任务下发放进同一个系统里，让移动任务可以被触发、执行、复核，并以结构化结果返回给外部系统。
