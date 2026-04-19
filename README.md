@@ -71,7 +71,7 @@ OpenGUI is a better fit if you need to:
 ## Typical Use Cases
 
 - Search Weibo for AI news and summarize the top results
-- Open Xiaohongshu and collect posts for a topic
+- Open X and collect recent posts for a topic
 - Execute repetitive mobile workflows on Android devices
 - Trigger Android tasks remotely from Feishu or Telegram
 - Prototype internal AI operators without building per-app adapters
