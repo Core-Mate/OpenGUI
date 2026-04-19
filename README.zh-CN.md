@@ -18,7 +18,7 @@
 
 ## 先用 Bootstrap Skill，然后直接说目标
 
-OpenGUI 的推荐启动方式是 **自然语言 bootstrap**，不是手动一步步配环境。
+OpenGUI 的推荐启动方式是 **自然语言 bootstrap**。
 
 如果你在使用 **Claude 或 Codex**，优先从 [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md) 开始。模型应该先读这个 skill，再自己把你的目标翻译成可执行的 setup 和启动流程。
 
@@ -93,19 +93,19 @@ flowchart LR
 - **Supervisor**：持有任务状态，决定下一步，协调重试，并让长时工作流持续推进。
 - **Executor**：在 Android 侧驱动作，依据真实设备状态向前执行任务。
 - **Reviewer**：检查结果，识别漂移或失败，并把任务送回去重试、恢复或继续执行。
-- **Model Router**：把模型提供方当作系统内部被路由的组件，而不是把某一个模型当成整个产品本身。
-- **Android 客户端**：给系统提供常驻设备侧执行器，而不是只依赖电脑侧控制循环。
+- **Model Router**：把模型提供方当作系统内部被路由的组件。
+- **Android 客户端**：给系统提供常驻设备侧执行器，让执行始终贴近真实设备状态。
 
 ## 为什么 OpenGUI 不一样
 
-OpenGUI **不是单一模型驱动的 Agent**。它是一套 **多角色移动 Operator System**，目标是长时、可恢复、可重复运行的工作流。
+OpenGUI 采用的是一套 **多角色移动 Operator System**，目标是长时、可恢复、可重复运行的工作流。
 
 真正重要的是系统形态：
 
-- `Supervisor / Executor / Reviewer` 让系统具备内部角色分工，而不是把所有事情都压给一个模型循环。
-- 模型 API 是被路由进系统里的组件，所以架构不会被锁死在某一个厂商或某一种模型角色上。
-- Android 执行发生在设备侧常驻客户端中，而不只是电脑侧桥接控制。
-- 远程任务入口和结构化结果，让它更像一个 operator platform，而不是本地 demo。
+- `Supervisor / Executor / Reviewer` 让系统具备内部角色分工。
+- 模型 API 作为系统里的组件被路由进不同角色，因此架构可以支持不同厂商和不同模型角色。
+- Android 执行发生在设备侧常驻客户端中，并由后端围绕它做编排。
+- 远程任务入口和结构化结果，让它具备清晰的 operator platform 形态。
 
 | 维度 | 典型手机 Agent 产品 | OpenGUI |
 |---|---|---|
@@ -117,18 +117,18 @@ OpenGUI **不是单一模型驱动的 Agent**。它是一套 **多角色移动 O
 
 ## 为长时任务而设计
 
-OpenGUI 支持持续运行数小时的任务，而不只是短时演示型手机 Agent。
+OpenGUI 支持持续运行数小时的任务，包括 `12 小时任务` 这类长时移动工作流。
 
-`12 小时任务` 的难点不在于时间长，而在于环境会变、UI 会漂移、任务需要恢复，系统还必须保持一致性。
+长时任务真正难的是系统一致性，因为环境会变、UI 会漂移、任务需要恢复。
 
 OpenGUI 的定位就是处理这类任务：
 
-- **Supervisor** 保持任务状态和 continuation logic，不让任务在长时间跨度里失控。
-- **Executor** 持续在设备侧推进工作，而不是依赖一个短命的本地控制回路。
+- **Supervisor** 保持任务状态和 continuation logic，在长时间跨度里维持整体一致性。
+- **Executor** 持续在设备侧推进工作，执行链路保持稳定。
 - **Reviewer** 检查结果，并在 UI 或环境变化时触发重试、恢复或继续执行。
-- **模型路由** 让系统为不同角色选对 provider，而不是假设一个模型应该包办一切。
+- **模型路由** 让系统为不同角色选对 provider，在质量和稳定性上做更合理的分配。
 
-这才是它的竞争力：OpenGUI 面向的是可重复、可恢复、可运行数小时的移动操作，而不是短时间的手机 Agent 演示。
+这才是它的竞争力：OpenGUI 面向的是可重复、可恢复、可运行数小时的移动操作，适合真正的长时工作流。
 
 ## OpenGUI 是什么
 
@@ -149,13 +149,13 @@ OpenGUI 是一套面向真实 Android 设备的 AI Operator Stack。
 
 ## 手动安装
 
-如果你更希望走手动安装路径，直接看安装文档，不要走主 README 里的叙事路径：
+如果你更希望走手动安装路径，直接看安装文档：
 
 - [docs/get-started.md](./docs/get-started.md)
 
 ## 当前范围与限制
 
-OpenGUI 现在已经可用，但更准确的定位是：一个仍在持续演进的开源移动 operator framework，而不是已经完全产品化的终端产品。
+OpenGUI 现在已经可用，但更准确的定位是：一个仍在持续演进的开源移动 operator framework，同时也在逐步向更成熟的终端产品体验靠近。
 
 目前需要注意的边界包括：
 
