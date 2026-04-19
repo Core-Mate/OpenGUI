@@ -2,7 +2,7 @@
 
 # OpenGUI
 
-**面向真实 Android 设备自主控制的 AI Agent 系统**
+**面向真实 Android 设备自主控制的 Operator Stack**
 
 <p>
   <img src="https://img.shields.io/badge/license-Apache%202.0-blue" alt="License">
@@ -16,17 +16,28 @@
 
 </div>
 
-OpenGUI 不是一个只在电脑侧跑起来的手机 Agent demo，而是一套面向真实移动工作流的 Android operator system：Android 原生执行客户端、任务编排后端，以及远程任务下发通道共同组成完整闭环。
+OpenGUI 是一套面向真实移动工作流的 Android operator system，不只是一个跑在电脑侧的手机 Agent demo。
 
-你只需要给它一个自然语言任务，OpenGUI 就会让设备保持在线、观察屏幕、规划步骤、在设备上执行动作，并返回结构化结果。
+它把 Android 原生执行客户端、任务编排后端、远程任务下发通道放进同一个系统里，让移动任务可以被触发、执行、复核，并以结构化结果返回给外部系统。
 
-与主要依赖 ADB 脚本或本地调试循环的手机 Agent 框架不同，OpenGUI 从一开始就是按“服务化系统”来设计的，更强调远程执行、任务流转、结果回传和可重复运行。
+如果把电脑侧 ADB loop 看作第一阶段，那么 OpenGUI 想解决的是下一层问题：设备持续在线、服务端任务生命周期、远程操作入口，以及更接近真实业务流程的运行方式。
 
 它最初来自内部移动自动化场景，现在正在逐步开放出来，供更多开发者、研究者和团队使用。
 
-## OpenGUI 的亮点在哪
+## 为什么它看起来不一样
 
-OpenGUI 的价值不只是“能看懂屏幕”，而是把执行系统补完整了：设备侧控制、服务端任务管理、远程任务下发，以及结构化结果返回。
+OpenGUI 的关键不只是“能看懂屏幕”，而是执行系统被补完整了。
+
+它更像一套真实 operator system，而不是单纯的 phone-agent experiment：
+
+- **设备侧 Android 原生执行器**
+- **服务端任务编排层**
+- **飞书 / Telegram / API 远程任务入口**
+- **结构化结果回传能力**
+
+这几部分一起决定了它更适合真实工作流，而不只是本地实验。
+
+## OpenGUI 和典型手机 Agent 框架的区别
 
 | 维度 | 典型手机 Agent 框架 | OpenGUI |
 |---|---|---|
@@ -47,30 +58,15 @@ OpenGUI 的价值不只是“能看懂屏幕”，而是把执行系统补完整
 | **远程任务下发** | 支持通过飞书、Telegram 或 REST API 触发任务 |
 | **面向真实场景** | 不只是 Demo，而是为内部流程和移动操作场景设计 |
 
-## Why OpenGUI
+## 这意味着什么
 
-大多数移动自动化系统通常依赖：
+如果你要的是下面这些能力，OpenGUI 会更匹配：
 
-- 针对单个 App 的选择器
-- 容易失效的脚本
-- 本地一次性执行循环
-- 每个应用都要单独维护的适配逻辑
-
-OpenGUI 采用了不同的方法：
-
-- **运行 Android 原生客户端**，而不是把所有控制都放在宿主机侧
-- **规划再执行**，而不是只回放脚本
-- **由后端管理任务**，而不是把每次执行都视作孤立的本地会话
-- **失败可复核、可重试**，而不是在 UI 变化后直接中断
-- **支持远程下发任务**，而不是必须守在设备旁边
-
-这让 OpenGUI 非常适合：
-
-- 内部移动流程自动化
-- Android 端 AI Operator
-- App 数据采集与总结
-- 跨 App 操作任务
-- 基于真实设备的移动 GUI Agent 研究
+- 让 Android 设备持续在线并可远程操作
+- 从聊天工具或后端系统触发移动任务
+- 返回结构化结果，而不只是动作轨迹
+- 在真实设备执行上构建内部 AI Operator
+- 从一次性本地调试，走向可重复运行的工作流
 
 ## 典型使用场景
 
@@ -282,6 +278,7 @@ OpenGUI 现在已经可用，但这里不把它包装成一个已经完全产品
 
 ## Documentation
 
+- [PUBLIC_RELEASE_PLAN.md](./PUBLIC_RELEASE_PLAN.md)
 - [docs/get-started.md](./docs/get-started.md)
 - [CONTRIBUTING.md](./CONTRIBUTING.md)
 - [SECURITY.md](./SECURITY.md)
