@@ -7,7 +7,7 @@ description: Launch and bootstrap OpenGUI from a plain-language user request. Us
 
 Launch OpenGUI from a plain-language request.
 
-OpenGUI should be treated as a **multi-role mobile operator system**, not as a single-model loop.
+OpenGUI should be treated as a **multi-role mobile operator system**.
 
 The bootstrap path exists so Claude or Codex can bring up that system with minimal user intervention, including long-running mobile workflows that may need supervision, execution, review, retry, and continuation over many hours.
 
@@ -55,7 +55,7 @@ Use prompts like these as the intended interaction model:
 ## Core Rules
 
 - Treat Codex or Claude as the installer and operator.
-- Treat OpenGUI as a Supervisor / Executor / Reviewer system, not as a single-model-driven demo.
+- Treat OpenGUI as a Supervisor / Executor / Reviewer system.
 - Default to doing the work directly instead of explaining how to do it.
 - Do not ask the user to run terminal commands that Codex can run.
 - Ask the user only for actions that require physical access, OS dialogs, secrets, or Android device interaction.
@@ -63,7 +63,7 @@ Use prompts like these as the intended interaction model:
 - If the checkout does not contain runnable OpenGUI code, stop and say so clearly.
 - Translate vague user requests into the concrete setup plan yourself.
 - Prefer sensible defaults over exposing internal config detail.
-- Optimize for recoverable, long-running mobile workflows rather than short demo-only setup choices.
+- Optimize for recoverable, long-running mobile workflows instead of short demo-only setup choices.
 
 ## Input Contract
 
@@ -124,7 +124,7 @@ If the checkout is runnable, confirm these paths exist:
 - `client/gradlew`
 - Android app module under `client/`
 
-If the checkout is not runnable, stop early instead of pretending setup can continue.
+If the checkout is not runnable, stop early and explain the reason clearly.
 
 ### 2. Interpret the user's intent
 
@@ -189,7 +189,7 @@ Rules:
 - Ask only for the minimum secret or endpoint information that is still missing.
 - If multiple providers are available, choose the one explicitly requested by the user first.
 - If no provider is specified, use the repository defaults or the most conservative working default.
-- Treat providers as routed components inside the system, not as the product's primary identity.
+- Treat providers as routed components inside the system.
 
 ### 6. Build the Android client automatically
 
@@ -252,7 +252,7 @@ When responding during setup:
 - say what Codex is doing now
 - say what is blocked, if anything
 - when blocked, ask for the smallest next thing only
-- frame the system as a long-running operator stack when relevant, not as a short demo
+- frame the system as a long-running operator stack when relevant
 
 Good:
 
