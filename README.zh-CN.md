@@ -14,55 +14,6 @@
   <a href="./docs/get-started.md"><img src="https://img.shields.io/badge/MANUAL_SETUP-DOCS-4b4b4b?style=for-the-badge" alt="Manual setup docs"></a>
 </p>
 
-> 在用 Claude 或 Codex？先从 [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md) 开始，用自然语言直接描述目标，然后让模型处理 setup，除非它真的需要你去做手机侧动作或提供密钥。
-
-## 先用 Bootstrap Skill，然后直接说目标
-
-OpenGUI 的推荐启动方式是 **自然语言 bootstrap**。
-
-如果你在使用 **Claude 或 Codex**，优先从 [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md) 开始。模型应该先读这个 skill，再自己把你的目标翻译成可执行的 setup 和启动流程。
-
-它应该替你处理：
-
-- checkout 可运行性判断
-- 后端 bootstrap
-- Android 客户端构建
-- 模型路由和 provider 选择
-- 在可能情况下处理 `adb` 检查和端口反向代理
-- 如果当前 checkout 只有 docs 或不完整，提前停止并说明原因
-
-你只应该在这些事情上被打断：
-
-- 连接手机或启动模拟器
-- 在设备上允许 USB 调试
-- 开启 AccessibilityService
-- 授予悬浮窗或电池权限
-- 提供 API Key 或其他密钥
-
-### 直接运行
-
-```text
-先读 ./skills/open-gui-bootstrap/SKILL.md，然后帮我把 OpenGUI 跑起来，只在必须时告诉我手机上要做什么。
-```
-
-### 使用 Claude
-
-```text
-先读 ./skills/open-gui-bootstrap/SKILL.md，然后用 Claude 帮我 bootstrap OpenGUI。
-```
-
-### 使用 GPT + Gemini
-
-```text
-先读 ./skills/open-gui-bootstrap/SKILL.md，然后帮我用 GPT 做监督和规划，用 Gemini 做视觉和复核，把 OpenGUI 配好。
-```
-
-### 使用我自己的 API
-
-```text
-先读 ./skills/open-gui-bootstrap/SKILL.md，然后用我现有的模型 API 把 OpenGUI 跑起来。
-```
-
 ## 系统结构
 
 ```mermaid
@@ -146,6 +97,55 @@ OpenGUI 采用的是一套 **多角色移动 Operator System**，目标是长时
 - 从飞书或 Telegram 远程触发手机任务
 - 在不构建单 App 适配器的前提下，原型化内部 AI Operator
 - 运行需要监督、复核和恢复机制的长时移动工作流
+
+> 在用 Claude 或 Codex？先从 [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md) 开始，用自然语言直接描述目标，然后让模型处理 setup，除非它真的需要你去做手机侧动作或提供密钥。
+
+## 先用 Bootstrap Skill，然后直接说目标
+
+OpenGUI 的推荐启动方式是 **自然语言 bootstrap**。
+
+如果你在使用 **Claude 或 Codex**，优先从 [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md) 开始。模型应该先读这个 skill，再自己把你的目标翻译成可执行的 setup 和启动流程。
+
+它应该替你处理：
+
+- checkout 可运行性判断
+- 后端 bootstrap
+- Android 客户端构建
+- 模型路由和 provider 选择
+- 在可能情况下处理 `adb` 检查和端口反向代理
+- 如果当前 checkout 只有 docs 或不完整，提前停止并说明原因
+
+你只应该在这些事情上被打断：
+
+- 连接手机或启动模拟器
+- 在设备上允许 USB 调试
+- 开启 AccessibilityService
+- 授予悬浮窗或电池权限
+- 提供 API Key 或其他密钥
+
+### 直接运行
+
+```text
+先读 ./skills/open-gui-bootstrap/SKILL.md，然后帮我把 OpenGUI 跑起来，只在必须时告诉我手机上要做什么。
+```
+
+### 使用 Claude
+
+```text
+先读 ./skills/open-gui-bootstrap/SKILL.md，然后用 Claude 帮我 bootstrap OpenGUI。
+```
+
+### 使用 GPT + Gemini
+
+```text
+先读 ./skills/open-gui-bootstrap/SKILL.md，然后帮我用 GPT 做监督和规划，用 Gemini 做视觉和复核，把 OpenGUI 配好。
+```
+
+### 使用我自己的 API
+
+```text
+先读 ./skills/open-gui-bootstrap/SKILL.md，然后用我现有的模型 API 把 OpenGUI 跑起来。
+```
 
 ## 手动安装
 
