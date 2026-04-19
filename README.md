@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="./skills/open-gui-bootstrap/SKILL.md"><img src="https://img.shields.io/badge/START-WITH_CLAUDE_OR_CODEX-ffb000?style=for-the-badge" alt="Start with Claude or Codex"></a>
+  <a href="./skills/open-gui-bootstrap/SKILL.md"><img src="https://img.shields.io/badge/TELL_CLAUDE_OR_CODEX-TO_RUN_IT-ffb000?style=for-the-badge" alt="Tell Claude or Codex to run it"></a>
   <img src="https://img.shields.io/badge/MODELS-BRING_YOUR_OWN_API-2f9e44?style=for-the-badge" alt="Bring your own model API">
   <a href="./docs/get-started.md"><img src="https://img.shields.io/badge/DOCS-GETTING_STARTED-4b4b4b?style=for-the-badge" alt="Docs"></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/LICENSE-Apache%202.0-5b8def?style=for-the-badge" alt="License"></a>
@@ -15,6 +15,15 @@
 </p>
 
 > Using Claude or Codex? Tell it: **"Help me run OpenGUI and only ask me for phone-side actions."**
+
+## Quick Prompts
+
+```text
+Help me run OpenGUI and only ask me for phone-side actions.
+Use Claude to bootstrap OpenGUI for me.
+Set up OpenGUI with GPT and Gemini.
+Use my existing model APIs and get OpenGUI working.
+```
 
 OpenGUI is an Android-native operator stack for running AI tasks on real mobile devices.
 
