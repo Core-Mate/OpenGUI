@@ -14,39 +14,6 @@
   <a href="./docs/get-started.md"><img src="https://img.shields.io/badge/MANUAL_SETUP-DOCS-4b4b4b?style=for-the-badge" alt="Manual setup docs"></a>
 </p>
 
-## The System
-
-```mermaid
-flowchart LR
-    U["User"] --> A["Claude or Codex"]
-    A --> BS["Bootstrap Skill"]
-    BS --> SP
-
-    RD["Remote Dispatch\nFeishu / Telegram / REST API"] --> SP["Supervisor"]
-    SP --> EX["Executor"]
-    SP --> RV["Reviewer"]
-    EX --> RV
-    RV --> SP
-
-    EX --> AC["Android Client"]
-    AC --> DE["Device Execution\nAccessibilityService + screenshots + actions"]
-
-    SP --> MR["Model Router"]
-    MR --> MA["Model APIs\nClaude / GPT / Gemini / Kimi / MiniMax / compatible"]
-    RV --> MR
-    EX --> MR
-
-    SP --> SR["Structured Results"]
-```
-
-### Core Roles
-
-- **Supervisor**: owns task state, decides next steps, coordinates retries, and keeps long-running workflows moving.
-- **Executor**: drives actions on the Android side and advances the task against real device state.
-- **Reviewer**: checks outcomes, detects drift or failure, and sends the task back for retry or continuation.
-- **Model Router**: treats model providers as routed components inside the system.
-- **Android Client**: gives the system a persistent device-side executor and keeps execution close to the device state.
-
 ## What OpenGUI Is
 
 OpenGUI is an Android-native operator stack for running AI tasks on real mobile devices.
@@ -152,6 +119,39 @@ Read ./skills/open-gui-bootstrap/SKILL.md and use my existing model APIs to get 
 If you prefer the manual path, use the setup guide:
 
 - [docs/get-started.md](./docs/get-started.md)
+
+## The System
+
+```mermaid
+flowchart LR
+    U["User"] --> A["Claude or Codex"]
+    A --> BS["Bootstrap Skill"]
+    BS --> SP
+
+    RD["Remote Dispatch\nFeishu / Telegram / REST API"] --> SP["Supervisor"]
+    SP --> EX["Executor"]
+    SP --> RV["Reviewer"]
+    EX --> RV
+    RV --> SP
+
+    EX --> AC["Android Client"]
+    AC --> DE["Device Execution\nAccessibilityService + screenshots + actions"]
+
+    SP --> MR["Model Router"]
+    MR --> MA["Model APIs\nClaude / GPT / Gemini / Kimi / MiniMax / compatible"]
+    RV --> MR
+    EX --> MR
+
+    SP --> SR["Structured Results"]
+```
+
+### Core Roles
+
+- **Supervisor**: owns task state, decides next steps, coordinates retries, and keeps long-running workflows moving.
+- **Executor**: drives actions on the Android side and advances the task against real device state.
+- **Reviewer**: checks outcomes, detects drift or failure, and sends the task back for retry or continuation.
+- **Model Router**: treats model providers as routed components inside the system.
+- **Android Client**: gives the system a persistent device-side executor and keeps execution close to the device state.
 
 ## Current Scope and Limitations
 
