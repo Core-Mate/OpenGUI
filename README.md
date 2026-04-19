@@ -16,6 +16,10 @@
 
 </div>
 
+<p align="center">
+  <img src="./docs/assets/opengui-banner.svg" alt="OpenGUI banner" width="100%">
+</p>
+
 OpenGUI is an Android operator system for real mobile workflows, not just a phone-agent demo driven from a laptop.
 
 It brings together an Android-native execution client, backend task orchestration, and remote task dispatch so mobile tasks can be triggered, executed, reviewed, and returned as structured results.
