@@ -10,8 +10,9 @@
   <img src="https://img.shields.io/badge/android-API%2024%2B-green" alt="Android">
   <img src="https://img.shields.io/badge/kotlin-2.0-purple" alt="Kotlin">
   <img src="https://img.shields.io/badge/langgraph-powered-orange" alt="LangGraph">
-  <a href="./README.zh-CN.md"><img src="https://img.shields.io/badge/README-%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-red" alt="Chinese README"></a>
 </p>
+
+<p><strong>Language:</strong> <a href="./README.md">English</a> | <a href="./README.zh-CN.md">简体中文</a></p>
 
 </div>
 
