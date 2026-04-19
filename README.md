@@ -14,6 +14,8 @@
   <img src="https://img.shields.io/badge/REMOTE-DISPATCH-7a5cff?style=for-the-badge" alt="Remote Dispatch">
 </p>
 
+> Using Claude or Codex? Tell it: **"Help me run OpenGUI and only ask me for phone-side actions."**
+
 OpenGUI is an Android-native operator stack for running AI tasks on real mobile devices.
 
 You can start it with **Claude or Codex** and let AI handle most of the terminal-side setup, bootstrapping, dependency checks, client build, and `adb` wiring.
