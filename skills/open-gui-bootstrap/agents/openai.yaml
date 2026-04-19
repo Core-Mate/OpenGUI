@@ -1,0 +1,4 @@
+interface:
+  display_name: "OpenGUI Bootstrap"
+  short_description: "Set up and launch OpenGUI fast."
+  default_prompt: "Use this skill to set up OpenGUI, install dependencies, prepare env files, start services, build the Android client, and ask the user only for physical phone connection, permissions, and API keys when required."
