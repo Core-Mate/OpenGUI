@@ -96,6 +96,29 @@ flowchart LR
 - **Model Router**: treats model providers as routed components inside the system.
 - **Android Client**: gives the system a persistent device-side executor and keeps execution close to the device state.
 
+## What OpenGUI Is
+
+OpenGUI is an Android-native operator stack for running AI tasks on real mobile devices.
+
+It brings together an Android-native execution client, backend orchestration, and remote task dispatch so mobile tasks can be triggered, executed, reviewed, and returned as structured results.
+
+Originally built for internal mobile automation, OpenGUI is now being opened up for broader developer, research, and team use.
+
+## Built for 12-hour tasks
+
+OpenGUI is designed for tasks that may run for hours, including 12-hour tasks and other long-running mobile workflows.
+
+What matters in a 12-hour task is system coherence while the environment changes.
+
+OpenGUI is positioned for that kind of workload:
+
+- **Supervisor** keeps task state and continuation logic intact over time.
+- **Executor** keeps work moving on the device through a persistent execution path.
+- **Reviewer** checks outcomes and can trigger retry, recovery, or continuation when the UI or environment changes.
+- **Model routing** lets the system use the right provider for each role, with different providers assigned where that helps quality or stability.
+
+This is the competitive point: OpenGUI is meant for repeatable mobile operations that can stay alive well beyond the short-session behavior of many comparable systems.
+
 ## Why OpenGUI Is Different
 
 OpenGUI uses a **multi-role mobile operator system** built for long-running, recoverable, repeatable workflows.
@@ -114,29 +137,6 @@ What matters here is the system shape:
 | **Task duration** | Best suited for short interactive runs | Built for recoverable workflows, including 12-hour tasks |
 | **Control path** | Often laptop-side phone control | Android-native client plus backend orchestration |
 | **Operational shape** | Local demo or debugging tool | Remote-dispatch operator platform with structured results |
-
-## Built for 12-hour tasks
-
-OpenGUI is designed for tasks that may run for hours, including 12-hour tasks and other long-running mobile workflows.
-
-What matters in a 12-hour task is system coherence while the environment changes.
-
-OpenGUI is positioned for that kind of workload:
-
-- **Supervisor** keeps task state and continuation logic intact over time.
-- **Executor** keeps work moving on the device through a persistent execution path.
-- **Reviewer** checks outcomes and can trigger retry, recovery, or continuation when the UI or environment changes.
-- **Model routing** lets the system use the right provider for each role, with different providers assigned where that helps quality or stability.
-
-This is the competitive point: OpenGUI is meant for repeatable mobile operations that can stay alive well beyond the short-session behavior of many comparable systems.
-
-## What OpenGUI Is
-
-OpenGUI is an Android-native operator stack for running AI tasks on real mobile devices.
-
-It brings together an Android-native execution client, backend orchestration, and remote task dispatch so mobile tasks can be triggered, executed, reviewed, and returned as structured results.
-
-Originally built for internal mobile automation, OpenGUI is now being opened up for broader developer, research, and team use.
 
 ## Typical Use Cases
 
