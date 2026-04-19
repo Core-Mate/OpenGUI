@@ -7,20 +7,71 @@
 </p>
 
 <p align="center">
+  <a href="./skills/open-gui-bootstrap/SKILL.md"><img src="https://img.shields.io/badge/START-WITH_CLAUDE_OR_CODEX-ffb000?style=for-the-badge" alt="Start with Claude or Codex"></a>
+  <img src="https://img.shields.io/badge/MODELS-BRING_YOUR_OWN_API-2f9e44?style=for-the-badge" alt="Bring your own model API">
   <a href="./docs/get-started.md"><img src="https://img.shields.io/badge/DOCS-GETTING_STARTED-4b4b4b?style=for-the-badge" alt="Docs"></a>
-  <a href="./skills/open-gui-bootstrap/SKILL.md"><img src="https://img.shields.io/badge/SKILL-BOOTSTRAP-ffb000?style=for-the-badge" alt="Bootstrap Skill"></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/LICENSE-Apache%202.0-5b8def?style=for-the-badge" alt="License"></a>
-  <img src="https://img.shields.io/badge/ANDROID-NATIVE-6fbf4b?style=for-the-badge" alt="Android Native">
   <img src="https://img.shields.io/badge/REMOTE-DISPATCH-7a5cff?style=for-the-badge" alt="Remote Dispatch">
 </p>
 
 OpenGUI 是一套面向真实 Android 设备的 AI Operator Stack。
 
-它把设备侧执行、后端编排和远程任务下发整合进同一个系统，让任务可以被触发、执行、复核，并以结构化结果返回。
+你可以直接用 **Claude 或 Codex** 来启动它，让 AI 处理大部分终端侧准备工作，包括 bootstrap、依赖检查、客户端构建和 `adb` 连线。
+
+你也可以接入自己已有的模型 API。OpenGUI 不是绑定单一模型厂商的系统，而是面向 **Claude、GPT、Gemini、Kimi、MiniMax** 等主流模型，以及其他兼容的文本或视觉接口来设计的。
 
 它面向的是可重复运行的移动工作流，而不只是一次性的手机 Agent Demo。
 
 它最初来自内部移动自动化场景，现在正在逐步开放出来，供更多开发者、研究者和团队使用。
+
+## 直接用 Claude 或 Codex 启动
+
+默认推荐的首跑路径，不应该是手工配置一大堆环境。
+
+如果你在使用 **Claude 或 Codex**，优先从仓库内置 bootstrap skill 开始：[`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md)
+
+目标很简单：尽可能把 setup 工作交给 AI。
+
+这个 skill 设计出来就是为了让 AI 处理：
+
+- checkout 可运行性判断
+- 依赖安装和校验
+- 后端 bootstrap
+- 环境文件生成
+- Android 客户端构建
+- 在可能情况下处理 `adb` 检查和端口反向代理
+
+用户只需要处理物理世界相关步骤：
+
+- 连接手机或启动模拟器
+- 在设备上点选 USB 调试授权
+- 开启 AccessibilityService
+- 授予悬浮窗和电池权限
+- 在需要时提供模型 API Key
+
+如果当前 checkout 只是公开文档快照，skill 会直接说明无法启动，而不会假装项目已经能跑起来。
+
+## 自带你的模型 API
+
+OpenGUI 不绑定单一模型供应商。
+
+你可以接入团队已经在使用的模型 API，用于规划、推理和视觉理解，包括：
+
+- Claude
+- GPT
+- Gemini
+- Kimi
+- MiniMax
+- 其他 OpenAI-compatible 或自定义兼容接口
+
+这点对真实部署很重要，因为团队通常需要按这些维度自由选型：
+
+- 成本
+- 延迟
+- 可用性
+- 区域
+- 任务效果
+- 内部合规要求
 
 ## 为什么它看起来不一样
 
@@ -54,7 +105,7 @@ OpenGUI 的关键不只是“能看懂屏幕”，而是执行系统被补完整
 | **多步任务规划** | 把目标拆成子任务，执行、复核、重试 |
 | **后端任务编排** | 在服务端管理任务状态、执行流程和结果回传 |
 | **远程任务下发** | 支持通过飞书、Telegram 或 REST API 触发任务 |
-| **面向真实工作流** | 不只是 Demo，而是为内部流程和移动操作场景设计 |
+| **模型自由接入** | 不强绑单一厂商，支持接入你自己的模型 API |
 
 ## 这意味着什么
 
@@ -64,6 +115,7 @@ OpenGUI 的关键不只是“能看懂屏幕”，而是执行系统被补完整
 - 从聊天工具或后端系统触发移动任务
 - 返回结构化结果，而不只是动作轨迹
 - 在真实设备执行上构建内部 AI Operator
+- 自己决定使用哪家的模型 API，而不是被固定供应商绑定
 - 从一次性本地调试，走向可重复运行的工作流
 
 ## 典型使用场景
@@ -73,29 +125,6 @@ OpenGUI 的关键不只是“能看懂屏幕”，而是执行系统被补完整
 - 在 Android 设备上执行重复性的移动工作流
 - 从飞书或 Telegram 远程触发手机任务
 - 在不构建单 App 适配器的前提下，原型化内部 AI Operator
-
-## AI 辅助启动
-
-如果你在用 Codex，优先从仓库内置 skill 开始：[`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md)
-
-这个 skill 的目标是把终端侧工作尽量交给 AI：
-
-- 判断当前 checkout 是否真的可运行
-- 安装或校验依赖
-- 启动后端 bootstrap
-- 生成环境文件
-- 构建 Android 客户端
-- 在可能的情况下处理 `adb` 检查和端口反向代理
-
-用户只需要参与物理世界相关步骤：
-
-- 连接手机或启动模拟器
-- 在设备上点选 USB 调试授权
-- 开启 AccessibilityService
-- 授予悬浮窗和电池权限
-- 在需要时提供 API Key
-
-如果当前 checkout 只是公开文档快照，skill 会直接说明无法启动，而不会假装项目已经能跑起来。
 
 ## Quick Install
 
@@ -112,8 +141,7 @@ OpenGUI 的关键不只是“能看懂屏幕”，而是执行系统被补完整
 - Docker
 - Android Studio
 - 建议安装 `adb`
-- Claude 兼容 API Key
-- 一个视觉模型 API Key
+- 你想使用的模型 API Key
 
 ### 1. 克隆仓库
 
@@ -145,13 +173,7 @@ cd server
 - 你需要先填写 API Key
 - 然后再次执行 `./start.sh`
 
-至少需要配置：
-
-```env
-CLAUDE_API_KEY=your_claude_api_key
-VLM_API_KEY=your_vlm_api_key
-VLM_BASE_URL=your_vlm_compatible_endpoint
-```
+至少需要配置你打算用于规划和视觉理解的模型接口。
 
 服务端启动后可访问：
 
@@ -204,7 +226,7 @@ OpenGUI 至少需要以下权限才能稳定工作：
 
 对于第一次评估，优先使用下面这些入口：
 
-- 先用 bootstrap skill，让 AI 处理环境检查和终端侧启动
+- 先用 bootstrap skill，让 Claude 或 Codex 处理环境检查和终端侧启动
 - 在后端和设备连通后，通过 `http://localhost:7777/docs` 的 Swagger 直接调试
 - 如果已经接好飞书、Telegram 或你自己的系统，也可以直接从这些入口触发任务
 
