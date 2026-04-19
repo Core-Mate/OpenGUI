@@ -16,23 +16,35 @@
 
 </div>
 
-OpenGUI is an AI agent system for operating real Android devices from natural-language instructions.
+OpenGUI is a full-stack Android operator system: an Android-native execution client, a task orchestration backend, and remote dispatch channels for real mobile workflows.
 
-Give it a task in plain language. It observes the screen, plans the next step, executes actions on-device, and returns structured results.
+Give it a task in plain language. OpenGUI keeps a device online, observes the screen, plans the next step, executes actions on-device, and returns structured results.
 
-Instead of depending on brittle selectors, handwritten scripts, or per-app adapters, OpenGUI uses screen understanding and step-by-step execution so it can continue adapting when the UI changes.
+Unlike phone-agent frameworks that mainly run from a developer laptop over ADB, OpenGUI is designed as a service-oriented system for long-running internal automation, remote operation, and repeatable task execution.
 
 Originally built for internal mobile automation workflows, OpenGUI is now being opened up for broader developer, research, and team use.
+
+## Why OpenGUI Stands Out
+
+The value of OpenGUI is not only screen understanding. It is the system around execution: device-side control, backend task management, remote dispatch, and structured result return.
+
+| Category | Typical phone-agent framework | OpenGUI |
+|---|---|---|
+| **Control path** | Usually driven from a computer-side ADB loop | Android-native client executes through AccessibilityService |
+| **System shape** | Agent loop plus model call | Backend + Android client + task lifecycle |
+| **Task entry** | Usually local CLI or script driven | Feishu, Telegram, and REST API dispatch |
+| **Execution style** | Best for local experimentation and debugging | Built for remote operation and repeatable internal workflows |
+| **Output** | Step-by-step execution result | Structured task result that can be returned to external systems |
 
 ## At a Glance
 
 | Area | What OpenGUI does |
 |---|---|
+| **Android-native execution** | Runs a resident Android client instead of depending only on a computer-side bridge |
 | **Vision-first execution** | Understands app state from screenshots instead of hardcoded selectors |
 | **Multi-step task planning** | Breaks goals into sub-tasks, executes, reviews, and retries |
-| **Real Android control** | Uses AccessibilityService to tap, swipe, type, and observe the screen |
+| **Backend task orchestration** | Manages task state, execution flow, and result return on the server side |
 | **Remote task dispatch** | Trigger tasks from Feishu, Telegram, or REST API |
-| **Open architecture** | Both the backend and Android client live in this repository |
 | **Built for real workflows** | Designed for internal processes and operational mobile tasks, not just demos |
 
 ## Why OpenGUI
@@ -41,12 +53,14 @@ Most mobile automation systems still rely on:
 
 - app-specific selectors
 - fragile scripts
+- local, one-off execution loops
 - manual adapter maintenance for each target app
 
 OpenGUI takes a different approach:
 
-- **See the screen** instead of depending on brittle selectors
+- **Run an Android-native client** instead of controlling everything only from a host machine
 - **Plan and act** instead of replaying scripts
+- **Manage tasks on the backend** instead of treating every run as an isolated local session
 - **Review and retry** instead of failing on the first UI change
 - **Operate remotely** instead of requiring someone to sit next to the device
 
