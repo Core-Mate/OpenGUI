@@ -14,6 +14,8 @@
   <img src="https://img.shields.io/badge/REMOTE-DISPATCH-7a5cff?style=for-the-badge" alt="Remote Dispatch">
 </p>
 
+> 在用 Claude 或 Codex？直接对它说：**“帮我把 OpenGUI 跑起来，只在必须时告诉我手机上要做什么。”**
+
 OpenGUI 是一套面向真实 Android 设备的 AI Operator Stack。
 
 你可以直接用 **Claude 或 Codex** 来启动它，让 AI 处理大部分终端侧准备工作，包括 bootstrap、依赖检查、客户端构建和 `adb` 连线。
