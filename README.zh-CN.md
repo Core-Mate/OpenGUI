@@ -1,20 +1,6 @@
-<div align="center">
-
-# OpenGUI
-
-**面向真实 Android 设备自主控制的 Operator Stack**
-
-<p>
-  <img src="https://img.shields.io/badge/license-Apache%202.0-blue" alt="License">
-  <img src="https://img.shields.io/badge/node-%E2%89%A5%2022-brightgreen" alt="Node.js">
-  <img src="https://img.shields.io/badge/android-API%2024%2B-green" alt="Android">
-  <img src="https://img.shields.io/badge/kotlin-2.0-purple" alt="Kotlin">
-  <img src="https://img.shields.io/badge/langgraph-powered-orange" alt="LangGraph">
+<p align="center">
+  <strong>语言切换：</strong><a href="./README.md">English</a> | <a href="./README.zh-CN.md">简体中文</a>
 </p>
-
-<p><strong>语言切换：</strong><a href="./README.md">English</a> | <a href="./README.zh-CN.md">简体中文</a></p>
-
-</div>
 
 <p align="center">
   <img src="./docs/assets/opengui-banner.svg" alt="OpenGUI banner" width="100%">
