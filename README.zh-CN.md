@@ -14,39 +14,6 @@
   <a href="./docs/get-started.md"><img src="https://img.shields.io/badge/MANUAL_SETUP-DOCS-4b4b4b?style=for-the-badge" alt="Manual setup docs"></a>
 </p>
 
-## 系统结构
-
-```mermaid
-flowchart LR
-    U["用户"] --> A["Claude 或 Codex"]
-    A --> BS["Bootstrap Skill"]
-    BS --> SP
-
-    RD["远程任务入口\nFeishu / Telegram / REST API"] --> SP["Supervisor"]
-    SP --> EX["Executor"]
-    SP --> RV["Reviewer"]
-    EX --> RV
-    RV --> SP
-
-    EX --> AC["Android 客户端"]
-    AC --> DE["设备侧执行\nAccessibilityService + 截图 + 动作"]
-
-    SP --> MR["Model Router"]
-    MR --> MA["模型 API\nClaude / GPT / Gemini / Kimi / MiniMax / compatible"]
-    RV --> MR
-    EX --> MR
-
-    SP --> SR["结构化结果"]
-```
-
-### 核心角色
-
-- **Supervisor**：持有任务状态，决定下一步，协调重试，并让长时工作流持续推进。
-- **Executor**：在 Android 侧驱动作，依据真实设备状态向前执行任务。
-- **Reviewer**：检查结果，识别漂移或失败，并把任务送回去重试、恢复或继续执行。
-- **Model Router**：把模型提供方当作系统内部被路由的组件。
-- **Android 客户端**：给系统提供常驻设备侧执行器，让执行始终贴近真实设备状态。
-
 ## OpenGUI 是什么
 
 OpenGUI 是一套面向真实 Android 设备的 AI Operator Stack。
@@ -152,6 +119,39 @@ OpenGUI 的推荐启动方式是 **自然语言 bootstrap**。
 如果你更希望走手动安装路径，直接看安装文档：
 
 - [docs/get-started.md](./docs/get-started.md)
+
+## 系统结构
+
+```mermaid
+flowchart LR
+    U["用户"] --> A["Claude 或 Codex"]
+    A --> BS["Bootstrap Skill"]
+    BS --> SP
+
+    RD["远程任务入口\nFeishu / Telegram / REST API"] --> SP["Supervisor"]
+    SP --> EX["Executor"]
+    SP --> RV["Reviewer"]
+    EX --> RV
+    RV --> SP
+
+    EX --> AC["Android 客户端"]
+    AC --> DE["设备侧执行\nAccessibilityService + 截图 + 动作"]
+
+    SP --> MR["Model Router"]
+    MR --> MA["模型 API\nClaude / GPT / Gemini / Kimi / MiniMax / compatible"]
+    RV --> MR
+    EX --> MR
+
+    SP --> SR["结构化结果"]
+```
+
+### 核心角色
+
+- **Supervisor**：持有任务状态，决定下一步，协调重试，并让长时工作流持续推进。
+- **Executor**：在 Android 侧驱动作，依据真实设备状态向前执行任务。
+- **Reviewer**：检查结果，识别漂移或失败，并把任务送回去重试、恢复或继续执行。
+- **Model Router**：把模型提供方当作系统内部被路由的组件。
+- **Android 客户端**：给系统提供常驻设备侧执行器，让执行始终贴近真实设备状态。
 
 ## 当前范围与限制
 
