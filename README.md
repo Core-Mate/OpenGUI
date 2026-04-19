@@ -28,11 +28,11 @@
   <img src="https://img.shields.io/badge/REMOTE-DISPATCH-7a5cff?style=for-the-badge" alt="Remote Dispatch">
 </p>
 
-OpenGUI is an Android operator system for real mobile workflows, not just a phone-agent demo driven from a laptop.
+OpenGUI is an Android-native operator stack for running AI tasks on real mobile devices.
 
-It brings together an Android-native execution client, backend task orchestration, and remote task dispatch so mobile tasks can be triggered, executed, reviewed, and returned as structured results.
+It combines on-device execution, backend orchestration, and remote dispatch so tasks can be triggered, executed, reviewed, and returned as structured results.
 
-If a laptop-side ADB loop is the first layer of mobile agents, OpenGUI is aimed at the next layer: persistent device availability, task lifecycle management, remote entry points, and a system shape that fits real operational workflows.
+Built for repeatable mobile workflows, not just one-off phone-agent demos.
 
 Originally built for internal mobile automation, OpenGUI is now being opened up for broader developer, research, and team use.
 
