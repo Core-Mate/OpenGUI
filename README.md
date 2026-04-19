@@ -76,6 +76,29 @@ OpenGUI is a strong fit if you want to:
 - Trigger Android tasks remotely from Feishu or Telegram
 - Prototype internal AI operators without building per-app adapters
 
+## AI-Assisted Setup
+
+If you are using Codex, start with the bundled skill: [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md)
+
+The skill is designed to do the terminal work for the user:
+
+- inspect whether the checkout is runnable
+- install or verify prerequisites
+- bootstrap the backend
+- generate env files
+- build the Android client
+- handle `adb` checks and port reverse when possible
+
+The user should only be pulled in for physical-world steps:
+
+- connect the phone or emulator
+- approve USB debugging
+- enable Accessibility Service
+- grant overlay or battery permissions
+- provide API keys when needed
+
+If the checkout is only a public docs snapshot, the skill will say so directly instead of pretending the project can already be launched.
+
 ## Quick Install
 
 ### Requirements
@@ -272,6 +295,7 @@ If you are adopting OpenGUI internally, expect some engineering work around depl
 
 ## Documentation
 
+- [skills/open-gui-bootstrap/SKILL.md](./skills/open-gui-bootstrap/SKILL.md)
 - [PUBLIC_RELEASE_PLAN.md](./PUBLIC_RELEASE_PLAN.md)
 - [docs/get-started.md](./docs/get-started.md)
 - [CONTRIBUTING.md](./CONTRIBUTING.md)
