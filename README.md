@@ -14,55 +14,6 @@
   <a href="./docs/get-started.md"><img src="https://img.shields.io/badge/MANUAL_SETUP-DOCS-4b4b4b?style=for-the-badge" alt="Manual setup docs"></a>
 </p>
 
-> Using Claude or Codex? Start with [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md), describe the goal in plain language, and let the model handle setup unless it needs phone-side actions or secrets.
-
-## Start with the Bootstrap Skill
-
-OpenGUI is meant to be started as a **plain-language bootstrap flow**.
-
-If you are using **Claude or Codex**, begin with [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md). The model should read the skill, interpret your goal, and handle most of the setup work directly.
-
-That includes:
-
-- checkout validation
-- backend bootstrap
-- Android client build
-- model routing and provider selection
-- `adb` checks and port reverse when possible
-- stopping early if the checkout is docs-only or incomplete
-
-You should only be interrupted for:
-
-- connecting a phone or booting an emulator
-- approving USB debugging on-device
-- enabling AccessibilityService
-- granting overlay or battery permissions
-- providing API keys or secrets
-
-### Run it
-
-```text
-Read ./skills/open-gui-bootstrap/SKILL.md and help me run OpenGUI. Only ask me for phone-side actions.
-```
-
-### Use Claude
-
-```text
-Read ./skills/open-gui-bootstrap/SKILL.md and use Claude to bootstrap OpenGUI for me.
-```
-
-### Use GPT + Gemini
-
-```text
-Read ./skills/open-gui-bootstrap/SKILL.md and set up OpenGUI with GPT for supervision and Gemini for vision and review.
-```
-
-### Use my own APIs
-
-```text
-Read ./skills/open-gui-bootstrap/SKILL.md and use my existing model APIs to get OpenGUI working.
-```
-
 ## The System
 
 ```mermaid
@@ -146,6 +97,55 @@ What matters here is the system shape:
 - Trigger Android tasks remotely from Feishu or Telegram
 - Prototype internal AI operators without building per-app adapters
 - Run long-lived mobile workflows that need supervision, review, and recovery over many hours
+
+> Using Claude or Codex? Start with [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md), describe the goal in plain language, and let the model handle setup unless it needs phone-side actions or secrets.
+
+## Start with the Bootstrap Skill
+
+OpenGUI is meant to be started as a **plain-language bootstrap flow**.
+
+If you are using **Claude or Codex**, begin with [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md). The model should read the skill, interpret your goal, and handle most of the setup work directly.
+
+That includes:
+
+- checkout validation
+- backend bootstrap
+- Android client build
+- model routing and provider selection
+- `adb` checks and port reverse when possible
+- stopping early if the checkout is docs-only or incomplete
+
+You should only be interrupted for:
+
+- connecting a phone or booting an emulator
+- approving USB debugging on-device
+- enabling AccessibilityService
+- granting overlay or battery permissions
+- providing API keys or secrets
+
+### Run it
+
+```text
+Read ./skills/open-gui-bootstrap/SKILL.md and help me run OpenGUI. Only ask me for phone-side actions.
+```
+
+### Use Claude
+
+```text
+Read ./skills/open-gui-bootstrap/SKILL.md and use Claude to bootstrap OpenGUI for me.
+```
+
+### Use GPT + Gemini
+
+```text
+Read ./skills/open-gui-bootstrap/SKILL.md and set up OpenGUI with GPT for supervision and Gemini for vision and review.
+```
+
+### Use my own APIs
+
+```text
+Read ./skills/open-gui-bootstrap/SKILL.md and use my existing model APIs to get OpenGUI working.
+```
 
 ## Manual Setup
 
