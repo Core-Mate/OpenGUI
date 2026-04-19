@@ -7,20 +7,71 @@
 </p>
 
 <p align="center">
+  <a href="./skills/open-gui-bootstrap/SKILL.md"><img src="https://img.shields.io/badge/START-WITH_CLAUDE_OR_CODEX-ffb000?style=for-the-badge" alt="Start with Claude or Codex"></a>
+  <img src="https://img.shields.io/badge/MODELS-BRING_YOUR_OWN_API-2f9e44?style=for-the-badge" alt="Bring your own model API">
   <a href="./docs/get-started.md"><img src="https://img.shields.io/badge/DOCS-GETTING_STARTED-4b4b4b?style=for-the-badge" alt="Docs"></a>
-  <a href="./skills/open-gui-bootstrap/SKILL.md"><img src="https://img.shields.io/badge/SKILL-BOOTSTRAP-ffb000?style=for-the-badge" alt="Bootstrap Skill"></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/LICENSE-Apache%202.0-5b8def?style=for-the-badge" alt="License"></a>
-  <img src="https://img.shields.io/badge/ANDROID-NATIVE-6fbf4b?style=for-the-badge" alt="Android Native">
   <img src="https://img.shields.io/badge/REMOTE-DISPATCH-7a5cff?style=for-the-badge" alt="Remote Dispatch">
 </p>
 
 OpenGUI is an Android-native operator stack for running AI tasks on real mobile devices.
 
-It combines on-device execution, backend orchestration, and remote dispatch so tasks can be triggered, executed, reviewed, and returned as structured results.
+You can start it with **Claude or Codex** and let AI handle most of the terminal-side setup, bootstrapping, dependency checks, client build, and `adb` wiring.
+
+You can also bring your own model APIs. OpenGUI is designed to work with the models you already use, including **Claude, GPT, Gemini, Kimi, MiniMax**, and other compatible text or vision endpoints.
 
 Built for repeatable mobile workflows, not just one-off phone-agent demos.
 
 Originally built for internal mobile automation, OpenGUI is now being opened up for broader developer, research, and team use.
+
+## Start With Claude or Codex
+
+The intended first-run path is not manual setup.
+
+If you are using **Claude or Codex**, start with the built-in bootstrap skill first: [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md)
+
+The goal is simple: let AI do as much setup work as possible.
+
+The skill is designed to let AI handle:
+
+- checkout validation
+- dependency installation and verification
+- backend bootstrap
+- environment file generation
+- Android client build
+- `adb` checks and port reverse when possible
+
+The user should only need to do physical-world steps:
+
+- connect a phone or boot an emulator
+- accept USB debugging authorization on-device
+- enable AccessibilityService
+- grant overlay and battery permissions
+- provide model API keys when needed
+
+If the current checkout is only a public docs snapshot, the skill stops early and says so directly instead of pretending the project can already be launched.
+
+## Bring Your Own Model APIs
+
+OpenGUI is not tied to a single model vendor.
+
+You can plug in the APIs you already use for planning, reasoning, and vision, including:
+
+- Claude
+- GPT
+- Gemini
+- Kimi
+- MiniMax
+- other OpenAI-compatible or custom-compatible endpoints
+
+This matters for real deployments because teams usually want to choose models based on:
+
+- cost
+- latency
+- availability
+- region
+- task quality
+- internal compliance constraints
 
 ## Why It Feels Different
 
@@ -54,7 +105,7 @@ That combination makes it better suited for repeatable workflows, not just local
 | **Multi-step task planning** | Breaks goals into sub-tasks, executes, reviews, and retries |
 | **Backend orchestration** | Tracks task state, execution flow, and result handoff on the server |
 | **Remote task dispatch** | Accepts tasks from Feishu, Telegram, or REST API |
-| **Built for real workflows** | Designed for internal processes and operational mobile tasks, not just demos |
+| **Bring your own models** | Works with your preferred model APIs instead of forcing one provider |
 
 ## What This Means In Practice
 
@@ -64,6 +115,7 @@ OpenGUI is a better fit if you need to:
 - trigger mobile tasks from chat tools or backend systems
 - return structured results instead of only action traces
 - build internal AI operators on top of real device execution
+- choose your own model APIs instead of rebuilding around a fixed vendor stack
 - move from one-off local debugging to repeatable workflow execution
 
 ## Typical Use Cases
@@ -73,29 +125,6 @@ OpenGUI is a better fit if you need to:
 - Execute repetitive mobile workflows on Android devices
 - Trigger Android tasks remotely from Feishu or Telegram
 - Prototype internal AI operators without building per-app adapters
-
-## AI-Assisted Setup
-
-If you are using Codex, start with the built-in skill first: [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md)
-
-This skill is meant to push as much terminal-side setup as possible onto AI:
-
-- determine whether the current checkout is actually runnable
-- install or validate dependencies
-- bootstrap the backend
-- generate environment files
-- build the Android client
-- handle `adb` checks and port reverse when possible
-
-The user should only need to handle physical-world steps:
-
-- connect a phone or boot an emulator
-- accept USB debugging authorization on-device
-- enable AccessibilityService
-- grant overlay and battery permissions
-- provide API keys when needed
-
-If the current checkout is only a public docs snapshot, the skill stops early and says so directly instead of pretending the project can already be launched.
 
 ## Quick Install
 
@@ -110,8 +139,7 @@ The public repository may expose docs, skill assets, and release-planning materi
 - Docker
 - Android Studio
 - `adb` recommended
-- Claude-compatible API key
-- Vision model API key
+- model API keys for the providers you want to use
 
 ### 1. Clone the repository
 
@@ -143,13 +171,7 @@ Important first-run behavior:
 - fill in your API keys
 - run `./start.sh` again
 
-At minimum, configure:
-
-```env
-CLAUDE_API_KEY=your_claude_api_key
-VLM_API_KEY=your_vlm_api_key
-VLM_BASE_URL=your_vlm_compatible_endpoint
-```
+At minimum, configure the model endpoints you want to use for planning and vision.
 
 Once the backend is running:
 
@@ -202,7 +224,7 @@ The default public onboarding path is intentionally lighter than the internal de
 
 For first-run evaluation, prefer one of these entry points:
 
-- use the bootstrap skill to let AI handle setup and environment checks
+- use the bootstrap skill to let Claude or Codex handle setup and environment checks
 - use Swagger at `http://localhost:7777/docs` once backend and device are connected
 - trigger a task from Feishu, Telegram, or your own API client when those integrations are configured
 
