@@ -1,11 +1,15 @@
 ---
 name: open-gui-bootstrap
-description: Launch and bootstrap OpenGUI from a plain-language user request. Use when Claude or Codex should install, configure, debug, and run OpenGUI while minimizing manual setup. The user should only need to describe the goal and complete physical phone-side actions or provide secrets when required.
+description: Launch and bootstrap OpenGUI from a plain-language user request. Use when Claude or Codex should install, configure, debug, and run a multi-role mobile operator system while minimizing manual setup. The user should only need to describe the goal and complete physical phone-side actions or provide secrets when required.
 ---
 
 # OpenGUI Bootstrap
 
 Launch OpenGUI from a plain-language request.
+
+OpenGUI should be treated as a **multi-role mobile operator system**, not as a single-model loop.
+
+The bootstrap path exists so Claude or Codex can bring up that system with minimal user intervention, including long-running mobile workflows that may need supervision, execution, review, retry, and continuation over many hours.
 
 The user should be able to say things like:
 
@@ -13,6 +17,8 @@ The user should be able to say things like:
 - "Use Claude to bootstrap OpenGUI for me"
 - "Set up OpenGUI with GPT and Gemini as my model endpoints"
 - "Get OpenGUI running and tell me only what I must tap on the phone"
+- "Bootstrap OpenGUI for a long-running mobile workflow"
+- "Help me set up OpenGUI for a 12-hour task"
 
 Do not require the user to know the setup order, environment variable names, or terminal commands unless there is a real blocker.
 
@@ -27,6 +33,7 @@ Typical trigger forms include:
 - "Use Claude to start OpenGUI"
 - "Use Codex to get OpenGUI running"
 - "Set up OpenGUI with my model APIs"
+- "Help me run a long OpenGUI workflow"
 - "Only tell me the phone-side steps"
 
 The user should not need to mention internal file paths, env names, or setup phases.
@@ -38,15 +45,17 @@ Use prompts like these as the intended interaction model:
 - "Help me run OpenGUI on this machine."
 - "Use Claude to bootstrap OpenGUI for me."
 - "Use Codex to get OpenGUI running and only tell me what I need to do on the phone."
-- "Set up OpenGUI with GPT for planning and Gemini for vision."
+- "Set up OpenGUI with GPT for supervision and Gemini for vision and review."
 - "Bootstrap OpenGUI with Kimi."
 - "Run OpenGUI with MiniMax and tell me the minimum inputs you still need from me."
 - "Use my existing model APIs and get OpenGUI working."
 - "Get OpenGUI running on Android and keep the setup as automated as possible."
+- "Help me bring up OpenGUI for a 12-hour task."
 
 ## Core Rules
 
 - Treat Codex or Claude as the installer and operator.
+- Treat OpenGUI as a Supervisor / Executor / Reviewer system, not as a single-model-driven demo.
 - Default to doing the work directly instead of explaining how to do it.
 - Do not ask the user to run terminal commands that Codex can run.
 - Ask the user only for actions that require physical access, OS dialogs, secrets, or Android device interaction.
@@ -54,6 +63,7 @@ Use prompts like these as the intended interaction model:
 - If the checkout does not contain runnable OpenGUI code, stop and say so clearly.
 - Translate vague user requests into the concrete setup plan yourself.
 - Prefer sensible defaults over exposing internal config detail.
+- Optimize for recoverable, long-running mobile workflows rather than short demo-only setup choices.
 
 ## Input Contract
 
@@ -63,8 +73,9 @@ Examples of sufficient user input:
 
 - "Run OpenGUI on this machine"
 - "Use Claude to get OpenGUI running"
-- "I want to use GPT for planning and Gemini for vision"
+- "I want to use GPT for supervision and Gemini for vision"
 - "Bootstrap the project and tell me only what to do on the phone"
+- "Set this up for a long-running mobile workflow"
 
 Do not require the user to pre-specify:
 
@@ -74,6 +85,7 @@ Do not require the user to pre-specify:
 - Gradle commands
 - `adb` commands
 - model routing internals
+- which internal role uses which provider
 
 If details are missing, infer the most practical defaults and continue.
 
@@ -121,9 +133,10 @@ Convert the user's plain-language request into a concrete setup target.
 Examples:
 
 - "Help me run OpenGUI" -> bootstrap backend, build client, detect device, explain only phone-side steps
-- "Use Claude to run this" -> prefer Claude-compatible endpoint as the primary planning model
-- "Use GPT and Gemini" -> use GPT-compatible endpoint for text/planning and Gemini-compatible endpoint for vision when the project supports split model roles
+- "Use Claude to run this" -> prefer Claude-compatible endpoint for supervision and planning unless the project indicates otherwise
+- "Use GPT and Gemini" -> use GPT-compatible endpoint for supervision/planning and Gemini-compatible endpoint for vision/review when the project supports split model roles
 - "Use my own models" -> ask only for the provider endpoints or keys that are actually missing
+- "Set this up for a 12-hour task" -> favor the most stable provider routing and verify the system is ready for a long-running recoverable workflow
 
 Do not ask the user to restate their goal in a structured form unless the request is genuinely ambiguous.
 
@@ -155,11 +168,9 @@ Do all of the following yourself when the files exist:
 
 Never tell the user to manually copy `.env.example` if the project already has a bootstrap script that can do it.
 
-### 5. Handle model provider selection for the user
+### 5. Route model providers for the system
 
-OpenGUI should feel provider-flexible by default.
-
-When the user mentions a model family, translate that into the closest supported endpoint configuration instead of asking them to understand internal config names.
+OpenGUI should feel provider-flexible, but the important behavior is routing providers into system roles rather than exposing provider mechanics to the user.
 
 Supported intent examples include:
 
@@ -173,11 +184,12 @@ Supported intent examples include:
 Rules:
 
 - Prefer the user's existing model stack when they mention one.
-- If the project separates planning and vision roles, choose the most sensible split automatically.
+- If the project separates supervision, planning, vision, or review roles, choose the most sensible split automatically.
 - If the project only exposes generic endpoint fields, map the user's provider choice into those generic fields yourself.
 - Ask only for the minimum secret or endpoint information that is still missing.
 - If multiple providers are available, choose the one explicitly requested by the user first.
 - If no provider is specified, use the repository defaults or the most conservative working default.
+- Treat providers as routed components inside the system, not as the product's primary identity.
 
 ### 6. Build the Android client automatically
 
@@ -220,6 +232,18 @@ At minimum, confirm:
 
 If the project supports a simple API-auth or task-creation flow, automate the terminal/API part and leave only phone-side permissions to the user.
 
+### 9. Check long-running workflow readiness
+
+If the user is trying to run a long workflow, verify the setup is appropriate for a recoverable multi-hour task.
+
+At minimum, check:
+
+- backend is stable enough to stay up for the intended run
+- device connectivity state is known
+- required permissions are in place
+- the provider routing is sensible for supervision, execution support, and review
+- the user understands the exact remaining phone-side dependency, if any
+
 ## Communication Style
 
 When responding during setup:
@@ -228,6 +252,7 @@ When responding during setup:
 - say what Codex is doing now
 - say what is blocked, if anything
 - when blocked, ask for the smallest next thing only
+- frame the system as a long-running operator stack when relevant, not as a short demo
 
 Good:
 
@@ -245,6 +270,7 @@ At the end, provide a short status block with:
 
 - what Codex completed automatically
 - what model providers were configured or selected
+- whether the setup is ready for a normal run or a long-running workflow
 - what is still blocked
 - the exact next user action, if any
 - the exact command Codex will run next after the user completes that action
