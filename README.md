@@ -2,7 +2,7 @@
 
 # OpenGUI
 
-**Android-Native Operator Stack for Real Device Automation**
+**AI Agent for Autonomous Android Device Control**
 
 <p>
   <img src="https://img.shields.io/badge/license-Apache%202.0-blue" alt="License">
@@ -10,63 +10,52 @@
   <img src="https://img.shields.io/badge/android-API%2024%2B-green" alt="Android">
   <img src="https://img.shields.io/badge/kotlin-2.0-purple" alt="Kotlin">
   <img src="https://img.shields.io/badge/langgraph-powered-orange" alt="LangGraph">
+  <a href="./README.zh-CN.md"><img src="https://img.shields.io/badge/README-%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-red" alt="Chinese README"></a>
 </p>
-
-<p><strong>Language:</strong> <a href="./README.md">English</a> | <a href="./README.zh-CN.md">简体中文</a></p>
 
 </div>
 
-OpenGUI is a full-stack Android operator system for teams that need more than a local phone-agent demo.
+OpenGUI is an AI agent system for operating real Android devices from natural-language instructions.
 
-It combines an Android-native execution client, a backend task orchestration layer, and remote dispatch channels so mobile tasks can be triggered, executed, reviewed, and returned as structured results.
+Give it a task in plain language. It observes the screen, plans the next step, executes actions on-device, and returns structured results.
 
-If your baseline is a laptop-side ADB loop, OpenGUI is the next layer up: persistent device-side execution, server-managed task lifecycle, and integrations that let mobile automation plug into real workflows.
+Instead of depending on brittle selectors, handwritten scripts, or per-app adapters, OpenGUI uses screen understanding and step-by-step execution so it can continue adapting when the UI changes.
 
 Originally built for internal mobile automation workflows, OpenGUI is now being opened up for broader developer, research, and team use.
-
-## Why It Feels Different
-
-What makes OpenGUI interesting is not only that it can understand screens.
-
-It is that the execution system is split the way real operator systems usually need to be split:
-
-- **Android-native executor** on the device
-- **Task orchestration backend** on the server
-- **Remote dispatch layer** through Feishu, Telegram, and API
-- **Structured result return** for external systems and repeatable workflows
-
-This is the gap between a phone-agent experiment and a mobile operator stack.
-
-## OpenGUI vs Typical Phone-Agent Frameworks
-
-| Category | Typical phone-agent framework | OpenGUI |
-|---|---|---|
-| **Control path** | Usually driven from a computer-side ADB loop | Android-native client executes through AccessibilityService |
-| **System shape** | Agent loop plus model call | Backend + Android client + task lifecycle |
-| **Task entry** | Usually local CLI or script driven | Feishu, Telegram, and REST API dispatch |
-| **Execution style** | Best for local experimentation and debugging | Built for remote operation and repeatable internal workflows |
-| **Output** | Step-by-step execution result | Structured task result that can be returned to external systems |
 
 ## At a Glance
 
 | Area | What OpenGUI does |
 |---|---|
-| **Android-native execution** | Runs a resident Android client instead of depending only on a computer-side bridge |
 | **Vision-first execution** | Understands app state from screenshots instead of hardcoded selectors |
 | **Multi-step task planning** | Breaks goals into sub-tasks, executes, reviews, and retries |
-| **Backend task orchestration** | Manages task state, execution flow, and result return on the server side |
+| **Real Android control** | Uses AccessibilityService to tap, swipe, type, and observe the screen |
 | **Remote task dispatch** | Trigger tasks from Feishu, Telegram, or REST API |
+| **Open architecture** | Both the backend and Android client live in this repository |
 | **Built for real workflows** | Designed for internal processes and operational mobile tasks, not just demos |
 
-## What This Means In Practice
+## Why OpenGUI
 
-OpenGUI is a strong fit if you want to:
+Most mobile automation systems still rely on:
 
-- keep Android devices online and remotely operable
-- run mobile workflows from chat tools or backend systems
-- return structured outcomes instead of only action traces
-- build internal AI operators on top of real device execution
-- move beyond one-off laptop-side debugging loops
+- app-specific selectors
+- fragile scripts
+- manual adapter maintenance for each target app
+
+OpenGUI takes a different approach:
+
+- **See the screen** instead of depending on brittle selectors
+- **Plan and act** instead of replaying scripts
+- **Review and retry** instead of failing on the first UI change
+- **Operate remotely** instead of requiring someone to sit next to the device
+
+This makes OpenGUI a strong fit for:
+
+- internal mobile workflow automation
+- Android-based AI operators
+- app-side data collection and summarization
+- cross-app operational tasks
+- mobile GUI agent research on real devices
 
 ## Typical Use Cases
 
@@ -75,29 +64,6 @@ OpenGUI is a strong fit if you want to:
 - Execute repetitive mobile workflows on Android devices
 - Trigger Android tasks remotely from Feishu or Telegram
 - Prototype internal AI operators without building per-app adapters
-
-## AI-Assisted Setup
-
-If you are using Codex, start with the bundled skill: [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md)
-
-The skill is designed to do the terminal work for the user:
-
-- inspect whether the checkout is runnable
-- install or verify prerequisites
-- bootstrap the backend
-- generate env files
-- build the Android client
-- handle `adb` checks and port reverse when possible
-
-The user should only be pulled in for physical-world steps:
-
-- connect the phone or emulator
-- approve USB debugging
-- enable Accessibility Service
-- grant overlay or battery permissions
-- provide API keys when needed
-
-If the checkout is only a public docs snapshot, the skill will say so directly instead of pretending the project can already be launched.
 
 ## Quick Install
 
@@ -295,8 +261,6 @@ If you are adopting OpenGUI internally, expect some engineering work around depl
 
 ## Documentation
 
-- [skills/open-gui-bootstrap/SKILL.md](./skills/open-gui-bootstrap/SKILL.md)
-- [PUBLIC_RELEASE_PLAN.md](./PUBLIC_RELEASE_PLAN.md)
 - [docs/get-started.md](./docs/get-started.md)
 - [CONTRIBUTING.md](./CONTRIBUTING.md)
 - [SECURITY.md](./SECURITY.md)
