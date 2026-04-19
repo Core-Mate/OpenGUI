@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="./skills/open-gui-bootstrap/SKILL.md"><img src="https://img.shields.io/badge/START-WITH_CLAUDE_OR_CODEX-ffb000?style=for-the-badge" alt="Start with Claude or Codex"></a>
+  <a href="./skills/open-gui-bootstrap/SKILL.md"><img src="https://img.shields.io/badge/TELL_CLAUDE_OR_CODEX-TO_RUN_IT-ffb000?style=for-the-badge" alt="Tell Claude or Codex to run it"></a>
   <img src="https://img.shields.io/badge/MODELS-BRING_YOUR_OWN_API-2f9e44?style=for-the-badge" alt="Bring your own model API">
   <a href="./docs/get-started.md"><img src="https://img.shields.io/badge/DOCS-GETTING_STARTED-4b4b4b?style=for-the-badge" alt="Docs"></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/LICENSE-Apache%202.0-5b8def?style=for-the-badge" alt="License"></a>
@@ -15,6 +15,15 @@
 </p>
 
 > 在用 Claude 或 Codex？直接对它说：**“帮我把 OpenGUI 跑起来，只在必须时告诉我手机上要做什么。”**
+
+## Quick Prompts
+
+```text
+帮我把 OpenGUI 跑起来，只在必须时告诉我手机上要做什么。
+用 Claude 帮我 bootstrap OpenGUI。
+帮我用 GPT 和 Gemini 配好 OpenGUI。
+用我现有的模型 API 把 OpenGUI 跑起来。
+```
 
 OpenGUI 是一套面向真实 Android 设备的 AI Operator Stack。
 
