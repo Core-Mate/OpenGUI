@@ -2,7 +2,7 @@
 
 # OpenGUI
 
-**AI Agent for Autonomous Android Device Control**
+**Android-Native Operator Stack for Real Device Automation**
 
 <p>
   <img src="https://img.shields.io/badge/license-Apache%202.0-blue" alt="License">
@@ -16,17 +16,28 @@
 
 </div>
 
-OpenGUI is a full-stack Android operator system: an Android-native execution client, a task orchestration backend, and remote dispatch channels for real mobile workflows.
+OpenGUI is a full-stack Android operator system for teams that need more than a local phone-agent demo.
 
-Give it a task in plain language. OpenGUI keeps a device online, observes the screen, plans the next step, executes actions on-device, and returns structured results.
+It combines an Android-native execution client, a backend task orchestration layer, and remote dispatch channels so mobile tasks can be triggered, executed, reviewed, and returned as structured results.
 
-Unlike phone-agent frameworks that mainly run from a developer laptop over ADB, OpenGUI is designed as a service-oriented system for long-running internal automation, remote operation, and repeatable task execution.
+If your baseline is a laptop-side ADB loop, OpenGUI is the next layer up: persistent device-side execution, server-managed task lifecycle, and integrations that let mobile automation plug into real workflows.
 
 Originally built for internal mobile automation workflows, OpenGUI is now being opened up for broader developer, research, and team use.
 
-## Why OpenGUI Stands Out
+## Why It Feels Different
 
-The value of OpenGUI is not only screen understanding. It is the system around execution: device-side control, backend task management, remote dispatch, and structured result return.
+What makes OpenGUI interesting is not only that it can understand screens.
+
+It is that the execution system is split the way real operator systems usually need to be split:
+
+- **Android-native executor** on the device
+- **Task orchestration backend** on the server
+- **Remote dispatch layer** through Feishu, Telegram, and API
+- **Structured result return** for external systems and repeatable workflows
+
+This is the gap between a phone-agent experiment and a mobile operator stack.
+
+## OpenGUI vs Typical Phone-Agent Frameworks
 
 | Category | Typical phone-agent framework | OpenGUI |
 |---|---|---|
@@ -47,30 +58,15 @@ The value of OpenGUI is not only screen understanding. It is the system around e
 | **Remote task dispatch** | Trigger tasks from Feishu, Telegram, or REST API |
 | **Built for real workflows** | Designed for internal processes and operational mobile tasks, not just demos |
 
-## Why OpenGUI
+## What This Means In Practice
 
-Most mobile automation systems still rely on:
+OpenGUI is a strong fit if you want to:
 
-- app-specific selectors
-- fragile scripts
-- local, one-off execution loops
-- manual adapter maintenance for each target app
-
-OpenGUI takes a different approach:
-
-- **Run an Android-native client** instead of controlling everything only from a host machine
-- **Plan and act** instead of replaying scripts
-- **Manage tasks on the backend** instead of treating every run as an isolated local session
-- **Review and retry** instead of failing on the first UI change
-- **Operate remotely** instead of requiring someone to sit next to the device
-
-This makes OpenGUI a strong fit for:
-
-- internal mobile workflow automation
-- Android-based AI operators
-- app-side data collection and summarization
-- cross-app operational tasks
-- mobile GUI agent research on real devices
+- keep Android devices online and remotely operable
+- run mobile workflows from chat tools or backend systems
+- return structured outcomes instead of only action traces
+- build internal AI operators on top of real device execution
+- move beyond one-off laptop-side debugging loops
 
 ## Typical Use Cases
 
@@ -276,6 +272,7 @@ If you are adopting OpenGUI internally, expect some engineering work around depl
 
 ## Documentation
 
+- [PUBLIC_RELEASE_PLAN.md](./PUBLIC_RELEASE_PLAN.md)
 - [docs/get-started.md](./docs/get-started.md)
 - [CONTRIBUTING.md](./CONTRIBUTING.md)
 - [SECURITY.md](./SECURITY.md)
