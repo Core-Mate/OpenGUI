@@ -7,71 +7,37 @@
 </p>
 
 <p align="center">
-  <a href="./skills/open-gui-bootstrap/SKILL.md"><img src="https://img.shields.io/badge/LOAD_BOOTSTRAP_SKILL-FIRST-ffb000?style=for-the-badge" alt="Load bootstrap skill first"></a>
-  <img src="https://img.shields.io/badge/MODELS-BRING_YOUR_OWN_API-2f9e44?style=for-the-badge" alt="Bring your own model API">
+  <a href="./skills/open-gui-bootstrap/SKILL.md"><img src="https://img.shields.io/badge/BOOTSTRAP-WITH_CLAUDE_OR_CODEX-ffb000?style=for-the-badge" alt="Bootstrap with Claude or Codex"></a>
+  <img src="https://img.shields.io/badge/SYSTEM-MULTI_ROLE_OPERATOR-1f6feb?style=for-the-badge" alt="Multi-role operator system"></a>
+  <img src="https://img.shields.io/badge/TASKS-UP_TO_12_HOURS-cf222e?style=for-the-badge" alt="Tasks up to 12 hours">
+  <img src="https://img.shields.io/badge/MODELS-ROUTED_NOT_FIXED-2f9e44?style=for-the-badge" alt="Models routed, not fixed">
   <a href="./docs/get-started.md"><img src="https://img.shields.io/badge/MANUAL_SETUP-DOCS-4b4b4b?style=for-the-badge" alt="Manual setup docs"></a>
-  <a href="./LICENSE"><img src="https://img.shields.io/badge/LICENSE-Apache%202.0-5b8def?style=for-the-badge" alt="License"></a>
-  <img src="https://img.shields.io/badge/REMOTE-DISPATCH-7a5cff?style=for-the-badge" alt="Remote Dispatch">
 </p>
 
-> 在用 Claude 或 Codex？先从 [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md) 开始，再直接用自然语言告诉它你要做什么。
+> 在用 Claude 或 Codex？先从 [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md) 开始，用自然语言直接描述目标，然后让模型处理 setup，除非它真的需要你去做手机侧动作或提供密钥。
 
-## 1. 先用 Bootstrap Skill
+## 先用 Bootstrap Skill，然后直接说目标
 
-如果你在使用 **Claude 或 Codex**，不要先从手动配置环境开始。
+OpenGUI 的推荐启动方式是 **自然语言 bootstrap**，不是手动一步步配环境。
 
-优先从仓库内置的 bootstrap skill 开始：[`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md)
+如果你在使用 **Claude 或 Codex**，优先从 [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md) 开始。模型应该先读这个 skill，再自己把你的目标翻译成可执行的 setup 和启动流程。
 
-目标很简单：在让你动手之前，先让 AI 尽可能多地把 setup 工作做掉。
-
-这个 skill 设计出来就是为了让 AI 处理：
+它应该替你处理：
 
 - checkout 可运行性判断
-- 依赖安装和校验
 - 后端 bootstrap
-- 环境文件生成
-- 模型提供方选择
 - Android 客户端构建
+- 模型路由和 provider 选择
 - 在可能情况下处理 `adb` 检查和端口反向代理
+- 如果当前 checkout 只有 docs 或不完整，提前停止并说明原因
 
-你只需要处理物理世界相关步骤：
+你只应该在这些事情上被打断：
 
 - 连接手机或启动模拟器
-- 在设备上点选 USB 调试授权
+- 在设备上允许 USB 调试
 - 开启 AccessibilityService
-- 授予悬浮窗和电池权限
-- 在需要时提供模型 API Key
-
-如果当前 checkout 只是公开文档快照，skill 会直接说明无法启动，而不会假装项目已经能跑起来。
-
-## 2. 先看清系统结构
-
-```mermaid
-flowchart LR
-    U["用户"] --> A["Claude 或 Codex"]
-    A --> S["Bootstrap Skill\nskills/open-gui-bootstrap/"]
-    S --> B["后端\nserver/"]
-    B --> C["Android 客户端\nclient/"]
-    C --> D["设备侧执行\nAccessibilityService + 截图 + 动作"]
-    D --> B
-    B --> R["结构化结果"]
-    B --> X["远程任务入口\nFeishu / Telegram / REST API"]
-    B --> M["模型 API\nClaude / GPT / Gemini / Kimi / MiniMax / compatible"]
-```
-
-### 项目结构
-
-```text
-open-gui/
-├── skills/open-gui-bootstrap/   # Claude/Codex 的 bootstrap 路径
-├── server/                      # 后端编排、任务生命周期、API
-├── client/                      # 设备侧 Android 原生执行器
-└── docs/                        # 手动安装和补充文档
-```
-
-公开仓库可能会先放出 docs 和 skill 资产，再逐步公开完整可运行代码树。bootstrap skill 是推荐的第一步，因为它可以先判断你当前 checkout 到底能不能跑。
-
-## 3. 再直接描述你的目标
+- 授予悬浮窗或电池权限
+- 提供 API Key 或其他密钥
 
 ### 直接运行
 
@@ -88,7 +54,7 @@ open-gui/
 ### 使用 GPT + Gemini
 
 ```text
-先读 ./skills/open-gui-bootstrap/SKILL.md，然后帮我用 GPT 做规划、Gemini 做视觉，把 OpenGUI 配好。
+先读 ./skills/open-gui-bootstrap/SKILL.md，然后帮我用 GPT 做监督和规划，用 Gemini 做视觉和复核，把 OpenGUI 配好。
 ```
 
 ### 使用我自己的 API
@@ -97,73 +63,80 @@ open-gui/
 先读 ./skills/open-gui-bootstrap/SKILL.md，然后用我现有的模型 API 把 OpenGUI 跑起来。
 ```
 
+## 系统结构
+
+```mermaid
+flowchart LR
+    U["用户"] --> A["Claude 或 Codex"]
+    A --> BS["Bootstrap Skill"]
+    BS --> SP
+
+    RD["远程任务入口\nFeishu / Telegram / REST API"] --> SP["Supervisor"]
+    SP --> EX["Executor"]
+    SP --> RV["Reviewer"]
+    EX --> RV
+    RV --> SP
+
+    EX --> AC["Android 客户端"]
+    AC --> DE["设备侧执行\nAccessibilityService + 截图 + 动作"]
+
+    SP --> MR["Model Router"]
+    MR --> MA["模型 API\nClaude / GPT / Gemini / Kimi / MiniMax / compatible"]
+    RV --> MR
+    EX --> MR
+
+    SP --> SR["结构化结果"]
+```
+
+### 核心角色
+
+- **Supervisor**：持有任务状态，决定下一步，协调重试，并让长时工作流持续推进。
+- **Executor**：在 Android 侧驱动作，依据真实设备状态向前执行任务。
+- **Reviewer**：检查结果，识别漂移或失败，并把任务送回去重试、恢复或继续执行。
+- **Model Router**：把模型提供方当作系统内部被路由的组件，而不是把某一个模型当成整个产品本身。
+- **Android 客户端**：给系统提供常驻设备侧执行器，而不是只依赖电脑侧控制循环。
+
+## 为什么 OpenGUI 不一样
+
+OpenGUI **不是单一模型驱动的 Agent**。它是一套 **多角色移动 Operator System**，目标是长时、可恢复、可重复运行的工作流。
+
+真正重要的是系统形态：
+
+- `Supervisor / Executor / Reviewer` 让系统具备内部角色分工，而不是把所有事情都压给一个模型循环。
+- 模型 API 是被路由进系统里的组件，所以架构不会被锁死在某一个厂商或某一种模型角色上。
+- Android 执行发生在设备侧常驻客户端中，而不只是电脑侧桥接控制。
+- 远程任务入口和结构化结果，让它更像一个 operator platform，而不是本地 demo。
+
+| 维度 | 典型手机 Agent 产品 | OpenGUI |
+|---|---|---|
+| **系统设计** | 单一 Agent loop 围绕一个主要模型运行 | 多角色系统，由 Supervisor、Executor、Reviewer 组成 |
+| **模型策略** | 一个主模型承担大部分决策 | 模型按监督、执行支持、复核等角色被路由进入系统 |
+| **任务时长** | 更适合短时交互运行 | 面向可恢复工作流，支持 `12 小时任务` |
+| **控制路径** | 常见是电脑侧手机控制 | Android 原生客户端加后端编排 |
+| **运行形态** | 本地 demo 或调试工具 | 带远程下发和结构化结果的 operator platform |
+
+## 为长时任务而设计
+
+OpenGUI 支持持续运行数小时的任务，而不只是短时演示型手机 Agent。
+
+`12 小时任务` 的难点不在于时间长，而在于环境会变、UI 会漂移、任务需要恢复，系统还必须保持一致性。
+
+OpenGUI 的定位就是处理这类任务：
+
+- **Supervisor** 保持任务状态和 continuation logic，不让任务在长时间跨度里失控。
+- **Executor** 持续在设备侧推进工作，而不是依赖一个短命的本地控制回路。
+- **Reviewer** 检查结果，并在 UI 或环境变化时触发重试、恢复或继续执行。
+- **模型路由** 让系统为不同角色选对 provider，而不是假设一个模型应该包办一切。
+
+这才是它的竞争力：OpenGUI 面向的是可重复、可恢复、可运行数小时的移动操作，而不是短时间的手机 Agent 演示。
+
 ## OpenGUI 是什么
 
 OpenGUI 是一套面向真实 Android 设备的 AI Operator Stack。
 
-它把 Android 原生执行端、后端任务编排和远程任务下发整合进同一个系统，让移动任务可以被触发、执行、复核，并最终以结构化结果返回。
-
-你可以直接用 **Claude 或 Codex** 来启动它，让 AI 处理大部分终端侧准备工作，包括 bootstrap、依赖检查、客户端构建和 `adb` 连线。
-
-它面向的是可重复运行的移动工作流，而不只是一次性的手机 Agent Demo。
+它把 Android 原生执行端、后端编排和远程任务下发整合进同一个系统，让移动任务可以被触发、执行、复核，并最终以结构化结果返回。
 
 它最初来自内部移动自动化场景，现在正在逐步开放出来，供更多开发者、研究者和团队使用。
-
-## 自带你的模型 API
-
-OpenGUI 不绑定单一模型供应商。
-
-你可以接入团队已经在使用的模型 API，用于规划、推理和视觉理解，包括：
-
-- Claude
-- GPT
-- Gemini
-- Kimi
-- MiniMax
-- 其他 OpenAI-compatible 或自定义兼容接口
-
-这点对真实部署很重要，因为团队通常需要按这些维度自由选型：
-
-- 成本
-- 延迟
-- 可用性
-- 区域
-- 任务效果
-- 内部合规要求
-
-## 为什么它看起来不一样
-
-OpenGUI 的关键不只是“能看懂屏幕”，而是执行系统被补完整了。
-
-它更像一套真实 operator stack，而不是单独的 phone-agent experiment：
-
-- **设备侧 Android 原生执行器**
-- **后端任务编排和生命周期管理**
-- **飞书、Telegram、API 远程任务入口**
-- **结构化结果回传给外部系统**
-
-这几个部分放在一起，决定了它更适合可重复的工作流，而不只是本地实验。
-
-## OpenGUI 和典型手机 Agent 框架的区别
-
-| 维度 | 典型手机 Agent 框架 | OpenGUI |
-|---|---|---|
-| **控制链路** | 通常由电脑侧 ADB 调试循环驱动 | Android 原生客户端通过 AccessibilityService 执行动作 |
-| **系统形态** | Agent loop 加模型调用 | 后端加 Android 客户端加任务生命周期 |
-| **任务入口** | 多为本地 CLI 或脚本触发 | 支持飞书、Telegram、REST API 下发 |
-| **执行方式** | 更适合本地实验和调试 | 更适合远程操作和可重复的内部工作流 |
-| **输出结果** | 多为执行过程结果 | 可返回给外部系统的结构化任务结果 |
-
-## 一眼看懂 OpenGUI
-
-| 方向 | OpenGUI 提供什么 |
-|---|---|
-| **Android 原生执行** | 不是只依赖电脑侧桥接，而是运行常驻 Android 客户端 |
-| **视觉优先执行** | 基于截图理解界面状态，而不是依赖写死的选择器 |
-| **多步任务规划** | 把目标拆成子任务，执行、复核、重试 |
-| **后端任务编排** | 在服务端管理任务状态、执行流程和结果回传 |
-| **远程任务下发** | 支持通过飞书、Telegram 或 REST API 触发任务 |
-| **模型自由接入** | 不强绑单一厂商，支持接入你自己的模型 API |
 
 ## 典型使用场景
 
@@ -172,10 +145,11 @@ OpenGUI 的关键不只是“能看懂屏幕”，而是执行系统被补完整
 - 在 Android 设备上执行重复性的移动工作流
 - 从飞书或 Telegram 远程触发手机任务
 - 在不构建单 App 适配器的前提下，原型化内部 AI Operator
+- 运行需要监督、复核和恢复机制的长时移动工作流
 
 ## 手动安装
 
-如果你更希望走手动安装路径，不要看主 README 里的长步骤，直接看安装文档：
+如果你更希望走手动安装路径，直接看安装文档，不要走主 README 里的叙事路径：
 
 - [docs/get-started.md](./docs/get-started.md)
 
