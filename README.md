@@ -20,6 +20,14 @@
   <img src="./docs/assets/opengui-banner.svg" alt="OpenGUI banner" width="100%">
 </p>
 
+<p align="center">
+  <a href="./docs/get-started.md"><img src="https://img.shields.io/badge/DOCS-GETTING_STARTED-4b4b4b?style=for-the-badge" alt="Docs"></a>
+  <a href="./skills/open-gui-bootstrap/SKILL.md"><img src="https://img.shields.io/badge/SKILL-BOOTSTRAP-ffb000?style=for-the-badge" alt="Bootstrap Skill"></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/LICENSE-Apache%202.0-5b8def?style=for-the-badge" alt="License"></a>
+  <img src="https://img.shields.io/badge/ANDROID-NATIVE-6fbf4b?style=for-the-badge" alt="Android Native">
+  <img src="https://img.shields.io/badge/REMOTE-DISPATCH-7a5cff?style=for-the-badge" alt="Remote Dispatch">
+</p>
+
 OpenGUI is an Android operator system for real mobile workflows, not just a phone-agent demo driven from a laptop.
 
 It brings together an Android-native execution client, backend task orchestration, and remote task dispatch so mobile tasks can be triggered, executed, reviewed, and returned as structured results.
