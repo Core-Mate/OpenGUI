@@ -76,6 +76,29 @@ OpenGUI 的关键不只是“能看懂屏幕”，而是执行系统被补完整
 - 从飞书或 Telegram 远程触发手机任务
 - 在不构建单 App 适配器的前提下，原型化内部 AI Operator
 
+## AI 辅助启动
+
+如果你在用 Codex，优先从仓库内置 skill 开始：[`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md)
+
+这个 skill 的目标是把终端侧工作尽量交给 AI：
+
+- 判断当前 checkout 是否真的可运行
+- 安装或校验依赖
+- 启动后端 bootstrap
+- 生成 env 文件
+- 构建 Android 客户端
+- 在可能的情况下处理 `adb` 检查和端口反向代理
+
+用户只需要参与物理世界相关步骤：
+
+- 连接手机或启动模拟器
+- 在设备上点选 USB 调试授权
+- 开启 AccessibilityService
+- 授予悬浮窗和电池权限
+- 在需要时提供 API Key
+
+如果当前 checkout 只是公开文档快照，skill 会直接说明无法启动，而不会假装项目已经能跑起来。
+
 ## Quick Install
 
 ### 前置依赖
@@ -278,6 +301,7 @@ OpenGUI 现在已经可用，但这里不把它包装成一个已经完全产品
 
 ## Documentation
 
+- [skills/open-gui-bootstrap/SKILL.md](./skills/open-gui-bootstrap/SKILL.md)
 - [PUBLIC_RELEASE_PLAN.md](./PUBLIC_RELEASE_PLAN.md)
 - [docs/get-started.md](./docs/get-started.md)
 - [CONTRIBUTING.md](./CONTRIBUTING.md)
