@@ -18,9 +18,9 @@
 
 OpenGUI 是一套面向真实移动工作流的 Android operator system，不只是一个跑在电脑侧的手机 Agent demo。
 
-它把 Android 原生执行客户端、任务编排后端、远程任务下发通道放进同一个系统里，让移动任务可以被触发、执行、复核，并以结构化结果返回给外部系统。
+它把 Android 原生执行客户端、后端任务编排、远程任务下发放进同一个系统里，让移动任务可以被触发、执行、复核，并以结构化结果返回给外部系统。
 
-如果把电脑侧 ADB loop 看作第一阶段，那么 OpenGUI 想解决的是下一层问题：设备持续在线、服务端任务生命周期、远程操作入口，以及更接近真实业务流程的运行方式。
+如果把电脑侧 ADB loop 看作移动 Agent 的第一层，那么 OpenGUI 想解决的是下一层问题：设备持续在线、任务生命周期管理、远程操作入口，以及更接近真实业务流程的系统形态。
 
 它最初来自内部移动自动化场景，现在正在逐步开放出来，供更多开发者、研究者和团队使用。
 
@@ -28,21 +28,21 @@ OpenGUI 是一套面向真实移动工作流的 Android operator system，不只
 
 OpenGUI 的关键不只是“能看懂屏幕”，而是执行系统被补完整了。
 
-它更像一套真实 operator system，而不是单纯的 phone-agent experiment：
+它更像一套真实 operator stack，而不是单独的 phone-agent experiment：
 
 - **设备侧 Android 原生执行器**
-- **服务端任务编排层**
-- **飞书 / Telegram / API 远程任务入口**
-- **结构化结果回传能力**
+- **后端任务编排和生命周期管理**
+- **飞书、Telegram、API 远程任务入口**
+- **结构化结果回传给外部系统**
 
-这几部分一起决定了它更适合真实工作流，而不只是本地实验。
+这几个部分放在一起，决定了它更适合可重复的工作流，而不只是本地实验。
 
 ## OpenGUI 和典型手机 Agent 框架的区别
 
 | 维度 | 典型手机 Agent 框架 | OpenGUI |
 |---|---|---|
 | **控制链路** | 通常由电脑侧 ADB 调试循环驱动 | Android 原生客户端通过 AccessibilityService 执行动作 |
-| **系统形态** | Agent loop 加模型调用 | 后端 + Android 客户端 + 任务生命周期 |
+| **系统形态** | Agent loop 加模型调用 | 后端加 Android 客户端加任务生命周期 |
 | **任务入口** | 多为本地 CLI 或脚本触发 | 支持飞书、Telegram、REST API 下发 |
 | **执行方式** | 更适合本地实验和调试 | 更适合远程操作和可重复的内部工作流 |
 | **输出结果** | 多为执行过程结果 | 可返回给外部系统的结构化任务结果 |
@@ -56,7 +56,7 @@ OpenGUI 的关键不只是“能看懂屏幕”，而是执行系统被补完整
 | **多步任务规划** | 把目标拆成子任务，执行、复核、重试 |
 | **后端任务编排** | 在服务端管理任务状态、执行流程和结果回传 |
 | **远程任务下发** | 支持通过飞书、Telegram 或 REST API 触发任务 |
-| **面向真实场景** | 不只是 Demo，而是为内部流程和移动操作场景设计 |
+| **面向真实工作流** | 不只是 Demo，而是为内部流程和移动操作场景设计 |
 
 ## 这意味着什么
 
@@ -85,7 +85,7 @@ OpenGUI 的关键不只是“能看懂屏幕”，而是执行系统被补完整
 - 判断当前 checkout 是否真的可运行
 - 安装或校验依赖
 - 启动后端 bootstrap
-- 生成 env 文件
+- 生成环境文件
 - 构建 Android 客户端
 - 在可能的情况下处理 `adb` 检查和端口反向代理
 
@@ -100,6 +100,10 @@ OpenGUI 的关键不只是“能看懂屏幕”，而是执行系统被补完整
 如果当前 checkout 只是公开文档快照，skill 会直接说明无法启动，而不会假装项目已经能跑起来。
 
 ## Quick Install
+
+### 开始之前
+
+公开仓库可能会先放出文档、skill 资产和 release planning 材料，再逐步放出完整可运行代码树。如果你想让 AI 自动判断当前 checkout 到底能不能跑，先用 bootstrap skill。
 
 ### 前置依赖
 
@@ -127,7 +131,7 @@ cd server
 ./start.sh
 ```
 
-`start.sh` 是推荐的本地启动方式。它会自动完成：
+`start.sh` 是推荐的本地启动方式。它预期会自动完成：
 
 - 检查 Node.js、pnpm、Docker
 - 启动 PostgreSQL 和 Redis
@@ -192,57 +196,21 @@ OpenGUI 至少需要以下权限才能稳定工作：
 
 - 无障碍服务
 - 悬浮窗权限
-- 电池优化豁免 / 后台无限制
+- 电池优化豁免或后台无限制
 
-否则客户端无法稳定执行任务，后台连接也容易被系统杀掉。
+否则任务执行和后台稳定性都会受影响。
 
-## Getting Started
+## 首次运行
 
-### 获取开发环境 Token
+默认公开 onboarding 路径应当比内部部署路径更轻。
 
-在开发模式下，后端会把 OTP 打印到服务端控制台。
+对于第一次评估，优先使用下面这些入口：
 
-先请求 OTP：
+- 先用 bootstrap skill，让 AI 处理环境检查和终端侧启动
+- 在后端和设备连通后，通过 `http://localhost:7777/docs` 的 Swagger 直接调试
+- 如果已经接好飞书、Telegram 或你自己的系统，也可以直接从这些入口触发任务
 
-```bash
-curl -X POST http://localhost:7777/api/user-auth/send-otp \
-  -H "Content-Type: application/json" \
-  -d '{"phoneNumber":"13800138000"}'
-```
-
-再校验 OTP：
-
-```bash
-curl -X POST http://localhost:7777/api/user-auth/verify-otp \
-  -H "Content-Type: application/json" \
-  -d '{"phoneNumber":"13800138000","code":"123456"}'
-```
-
-导出返回的 Token：
-
-```bash
-export OPENGUI_TOKEN="paste_the_token_here"
-```
-
-### 创建第一个任务
-
-```bash
-curl -X POST http://localhost:7777/api/tasks \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $OPENGUI_TOKEN" \
-  -d '{
-    "taskName": "Open Xiaohongshu and search for studio apartments in Shanghai",
-    "taskDescription": "Launch Xiaohongshu, search for studio apartments in Shanghai, and summarize the top results.",
-    "relatedPlatforms": ["XIAOHONGSHU"],
-    "category": "CUSTOM"
-  }'
-```
-
-你也可以直接打开：
-
-- `http://localhost:7777/docs`
-
-通过 Swagger 查看和调试接口。
+手机号登录和 OTP 鉴权属于部署层配置，不应该作为公开评估时的默认首跑路径。
 
 ## CLI / Runtime Quick Reference
 
@@ -264,7 +232,7 @@ OpenGUI 主要由两部分组成：
 - `server/`：大脑
 - `client/`：双手
 
-后端负责规划任务、管理执行状态和向设备派发任务。  
+后端负责规划任务、管理执行状态和向设备派发任务。
 Android 客户端负责保持待命连接、截图，并通过无障碍服务执行动作。
 
 <p align="center">
@@ -285,14 +253,12 @@ Android 客户端负责保持待命连接、截图，并通过无障碍服务执
 
 ## 当前范围与限制
 
-OpenGUI 现在已经可用，但这里不把它包装成一个已经完全产品化的终端产品。
-
-更准确的定位是：一个正在持续演进的开源移动 Agent 框架。
+OpenGUI 现在已经可用，但更准确的定位是：一个仍在持续演进的开源移动 operator framework，而不是已经完全产品化的终端产品。
 
 目前需要注意的边界包括：
 
 - 当前活跃客户端目标是 Android
-- 后端有一部分模块在开源版本中仍然是 stub
+- 后端有一部分模块在公开版本中仍然是 stub
 - 生产级部署、可观测性和多设备编排还在演进中
 - 实际稳定性依赖于 App UI 复杂度、模型质量和设备权限状态
 - 某些文档和功能面还保留着从内部系统迁移为开源版本的痕迹
@@ -319,7 +285,7 @@ OpenGUI 现在已经可用，但这里不把它包装成一个已经完全产品
 - 贡献文档、集成和修复
 - 推荐给正在做移动 AI Agent 的团队
 
-对于一个从内部系统逐步开放出来的项目来说，真实使用反馈尤其重要，因为它会直接影响接下来哪些能力最值得优先做成 public-grade。
+对于一个从内部基础设施逐步走向公开框架的项目来说，真实使用反馈尤其重要，因为它会直接影响接下来哪些能力最值得优先做成 public-grade。
 
 ## License
 
