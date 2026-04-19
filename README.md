@@ -18,7 +18,7 @@
 
 ## Start with the Bootstrap Skill
 
-OpenGUI is meant to be started as a **plain-language bootstrap flow**, not as a manual setup exercise.
+OpenGUI is meant to be started as a **plain-language bootstrap flow**.
 
 If you are using **Claude or Codex**, begin with [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md). The model should read the skill, interpret your goal, and handle most of the setup work directly.
 
@@ -93,19 +93,19 @@ flowchart LR
 - **Supervisor**: owns task state, decides next steps, coordinates retries, and keeps long-running workflows moving.
 - **Executor**: drives actions on the Android side and advances the task against real device state.
 - **Reviewer**: checks outcomes, detects drift or failure, and sends the task back for retry or continuation.
-- **Model Router**: treats model providers as routed components inside the system, not as the product itself.
-- **Android Client**: gives the system a persistent device-side executor instead of relying only on a laptop-side control loop.
+- **Model Router**: treats model providers as routed components inside the system.
+- **Android Client**: gives the system a persistent device-side executor and keeps execution close to the device state.
 
 ## Why OpenGUI Is Different
 
-OpenGUI is **not a single-model-driven agent**. It is a **multi-role mobile operator system** built for long-running, recoverable, repeatable workflows.
+OpenGUI uses a **multi-role mobile operator system** built for long-running, recoverable, repeatable workflows.
 
 What matters here is the system shape:
 
-- `Supervisor / Executor / Reviewer` gives the system internal role separation instead of one undifferentiated model loop.
-- model APIs are routed into the system as components, so the architecture is not locked to one vendor or one model role.
-- Android execution happens through a persistent client on the device, not only through a laptop-side bridge.
-- remote dispatch and structured results make it usable as an operator platform, not just a local demo.
+- `Supervisor / Executor / Reviewer` gives the system internal role separation.
+- model APIs are routed into the system as components, so the architecture can support different vendors and model roles.
+- Android execution happens through a persistent client on the device, with backend coordination around it.
+- remote dispatch and structured results make it usable as an operator platform with clear system boundaries.
 
 | Dimension | Typical phone-agent product | OpenGUI |
 |---|---|---|
@@ -117,16 +117,16 @@ What matters here is the system shape:
 
 ## Built for 12-hour tasks
 
-OpenGUI is designed for tasks that may run for hours, not just short phone-agent demos.
+OpenGUI is designed for tasks that may run for hours, including 12-hour tasks and other long-running mobile workflows.
 
-A 12-hour task is not interesting because it is long. It is interesting because the system must stay coherent while the world changes.
+What matters in a 12-hour task is system coherence while the environment changes.
 
 OpenGUI is positioned for that kind of workload:
 
 - **Supervisor** keeps task state and continuation logic intact over time.
-- **Executor** keeps pushing work forward on the device instead of depending on a short-lived local control loop.
+- **Executor** keeps work moving on the device through a persistent execution path.
 - **Reviewer** checks outcomes and can trigger retry, recovery, or continuation when the UI or environment changes.
-- **Model routing** lets the system use the right provider for the role instead of pretending one model should do everything.
+- **Model routing** lets the system use the right provider for each role, with different providers assigned where that helps quality or stability.
 
 This is the competitive point: OpenGUI is meant for repeatable mobile operations that can stay alive well beyond the short-session behavior of many comparable systems.
 
@@ -149,13 +149,13 @@ Originally built for internal mobile automation, OpenGUI is now being opened up 
 
 ## Manual Setup
 
-If you prefer the manual path, use the setup guide instead of the main README:
+If you prefer the manual path, use the setup guide:
 
 - [docs/get-started.md](./docs/get-started.md)
 
 ## Current Scope and Limitations
 
-OpenGUI is useful today, but it should be evaluated as an evolving open-source mobile operator framework, not as a fully polished end-user product.
+OpenGUI is useful today, but it should be evaluated as an evolving open-source mobile operator framework. It is still maturing toward a more polished end-user product.
 
 Current constraints:
 
