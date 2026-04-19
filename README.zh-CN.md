@@ -16,12 +16,29 @@
 
 > 在用 Claude 或 Codex？直接对它说：**“帮我把 OpenGUI 跑起来，只在必须时告诉我手机上要做什么。”**
 
-## Quick Prompts
+## 快速启动提示词
+
+### 直接运行
 
 ```text
 帮我把 OpenGUI 跑起来，只在必须时告诉我手机上要做什么。
+```
+
+### 使用 Claude
+
+```text
 用 Claude 帮我 bootstrap OpenGUI。
-帮我用 GPT 和 Gemini 配好 OpenGUI。
+```
+
+### 使用 GPT + Gemini
+
+```text
+帮我用 GPT 做规划、Gemini 做视觉，把 OpenGUI 配好。
+```
+
+### 使用我自己的 API
+
+```text
 用我现有的模型 API 把 OpenGUI 跑起来。
 ```
 
