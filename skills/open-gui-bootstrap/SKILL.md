@@ -16,6 +16,34 @@ The user should be able to say things like:
 
 Do not require the user to know the setup order, environment variable names, or terminal commands unless there is a real blocker.
 
+## Trigger Guidance
+
+If the user mentions OpenGUI setup in plain language, treat that as enough to start.
+
+Typical trigger forms include:
+
+- "Run OpenGUI"
+- "Bootstrap OpenGUI"
+- "Use Claude to start OpenGUI"
+- "Use Codex to get OpenGUI running"
+- "Set up OpenGUI with my model APIs"
+- "Only tell me the phone-side steps"
+
+The user should not need to mention internal file paths, env names, or setup phases.
+
+## Example Prompts
+
+Use prompts like these as the intended interaction model:
+
+- "Help me run OpenGUI on this machine."
+- "Use Claude to bootstrap OpenGUI for me."
+- "Use Codex to get OpenGUI running and only tell me what I need to do on the phone."
+- "Set up OpenGUI with GPT for planning and Gemini for vision."
+- "Bootstrap OpenGUI with Kimi."
+- "Run OpenGUI with MiniMax and tell me the minimum inputs you still need from me."
+- "Use my existing model APIs and get OpenGUI working."
+- "Get OpenGUI running on Android and keep the setup as automated as possible."
+
 ## Core Rules
 
 - Treat Codex or Claude as the installer and operator.
