@@ -16,12 +16,29 @@
 
 > Using Claude or Codex? Tell it: **"Help me run OpenGUI and only ask me for phone-side actions."**
 
-## Quick Prompts
+## Quick Start Prompts
+
+### Run it
 
 ```text
 Help me run OpenGUI and only ask me for phone-side actions.
+```
+
+### Use Claude
+
+```text
 Use Claude to bootstrap OpenGUI for me.
-Set up OpenGUI with GPT and Gemini.
+```
+
+### Use GPT + Gemini
+
+```text
+Set up OpenGUI with GPT for planning and Gemini for vision.
+```
+
+### Use my own APIs
+
+```text
 Use my existing model APIs and get OpenGUI working.
 ```
 
