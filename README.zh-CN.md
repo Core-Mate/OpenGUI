@@ -28,11 +28,11 @@
   <img src="https://img.shields.io/badge/REMOTE-DISPATCH-7a5cff?style=for-the-badge" alt="Remote Dispatch">
 </p>
 
-OpenGUI 是一套面向真实移动工作流的 Android operator system，不只是一个跑在电脑侧的手机 Agent demo。
+OpenGUI 是一套面向真实 Android 设备的 AI Operator Stack。
 
-它把 Android 原生执行客户端、后端任务编排、远程任务下发放进同一个系统里，让移动任务可以被触发、执行、复核，并以结构化结果返回给外部系统。
+它把设备侧执行、后端编排和远程任务下发整合进同一个系统，让任务可以被触发、执行、复核，并以结构化结果返回。
 
-如果把电脑侧 ADB loop 看作移动 Agent 的第一层，那么 OpenGUI 想解决的是下一层问题：设备持续在线、任务生命周期管理、远程操作入口，以及更接近真实业务流程的系统形态。
+它面向的是可重复运行的移动工作流，而不只是一次性的手机 Agent Demo。
 
 它最初来自内部移动自动化场景，现在正在逐步开放出来，供更多开发者、研究者和团队使用。
 
