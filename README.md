@@ -30,6 +30,13 @@ The intended first-run path is not manual setup.
 
 If you are using **Claude or Codex**, start with the built-in bootstrap skill first: [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md)
 
+You should be able to use it with a plain-language request such as:
+
+- "Help me run OpenGUI on this machine"
+- "Use Claude to bootstrap OpenGUI for me"
+- "Set up OpenGUI with GPT and Gemini"
+- "Get OpenGUI running and only tell me what I must do on the phone"
+
 The goal is simple: let AI do as much setup work as possible.
 
 The skill is designed to let AI handle:
@@ -38,6 +45,7 @@ The skill is designed to let AI handle:
 - dependency installation and verification
 - backend bootstrap
 - environment file generation
+- model provider selection
 - Android client build
 - `adb` checks and port reverse when possible
 
