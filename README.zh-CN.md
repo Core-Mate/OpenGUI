@@ -30,6 +30,13 @@ OpenGUI 是一套面向真实 Android 设备的 AI Operator Stack。
 
 如果你在使用 **Claude 或 Codex**，优先从仓库内置 bootstrap skill 开始：[`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md)
 
+你应该可以直接用口头描述来触发它，例如：
+
+- “帮我把 OpenGUI 跑起来”
+- “用 Claude 帮我 bootstrap OpenGUI”
+- “帮我用 GPT 和 Gemini 配好 OpenGUI”
+- “把 OpenGUI 跑起来，只告诉我手机上必须点什么”
+
 目标很简单：尽可能把 setup 工作交给 AI。
 
 这个 skill 设计出来就是为了让 AI 处理：
@@ -38,6 +45,7 @@ OpenGUI 是一套面向真实 Android 设备的 AI Operator Stack。
 - 依赖安装和校验
 - 后端 bootstrap
 - 环境文件生成
+- 模型提供方选择
 - Android 客户端构建
 - 在可能情况下处理 `adb` 检查和端口反向代理
 
