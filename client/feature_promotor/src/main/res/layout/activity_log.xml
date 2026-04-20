@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:background="#ffffff"
+    android:layout_height="match_parent"
+    android:gravity="center_horizontal"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/tv_desc"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="200dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="当前一共有xx条日志，时间范围 xxx - xxx" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:background="#000000" />
+
+    <TextView
+        android:id="@+id/tv_time_range"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="时间范围"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_desc" />
+
+    <LinearLayout
+        android:id="@+id/time_range_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_time_range">
+
+        <Button
+            android:id="@+id/bt_set_time_range"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="选择日志时间范围" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="or" />
+
+        <Button
+            android:id="@+id/bt_one_hour"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="一小时内" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="or" />
+
+        <Button
+            android:id="@+id/bt_three_hour"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="三小时内" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="or" />
+
+        <Button
+            android:id="@+id/bt_five_hour"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="五小时内" />
+
+        <Button
+            android:id="@+id/accessibility_log"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/red"
+            android:text="无障碍日志专用"/>
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:background="#000000" />
+
+    <Button
+        android:id="@+id/bt_share_file"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="分享文件"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/time_range_container" />
+
+    <Button
+        android:id="@+id/bt_save_file"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="如果分享不成功，可以尝试保存到本地再分享"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/bt_share_file" />
+
+</LinearLayout>

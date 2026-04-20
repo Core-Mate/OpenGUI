@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/menu_douyin_live_streaming"
+        android:title="抖音直播带货" />
+    <item
+        android:id="@+id/menu_xiaohongshu_exploration"
+        android:title="小红书探店" />
+    <item
+        android:id="@+id/menu_wechat_scrm"
+        android:title="企业微信SCRM" />
+    <item
+        android:id="@+id/menu_sms_marketing"
+        android:title="短信营销" />
+    <item
+        android:id="@+id/menu_email_marketing"
+        android:title="邮件营销" />
+    <item
+        android:id="@+id/menu_taobao_live_promotion"
+        android:title="淘宝直播推广" />
+    <item
+        android:id="@+id/menu_pinduoduo_store_operation"
+        android:title="拼多多多店运营" />
+    <item
+        android:id="@+id/menu_xianyu_product_promotion"
+        android:title="闲鱼商品推广" />
+    <item
+        android:id="@+id/menu_custom_task"
+        android:title="自定义任务" />
+</menu>

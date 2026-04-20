@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 已签到：浅绿 #DCFCE7 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#DCFCE7" />
+    <corners android:radius="999dp" />
+</shape>

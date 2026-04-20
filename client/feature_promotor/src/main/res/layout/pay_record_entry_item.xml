@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/entry_item_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:id="@+id/entry_content_row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="20dp"
+        android:paddingTop="16dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="16dp"
+        android:background="?attr/selectableItemBackground">
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tv_app_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/task_detail_primary_text"
+            android:textSize="17sp"
+            android:textStyle="bold"
+            tools:text="Twitter/X" />
+
+        <TextView
+            android:id="@+id/tv_task_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/task_detail_label"
+            android:textSize="15sp"
+            tools:text="推文批量定时发布" />
+
+        <TextView
+            android:id="@+id/tv_time_range"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textColor="@color/task_detail_empty_hint"
+            android:textSize="13sp"
+            tools:text="14:22 - 14:45" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tv_points"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:textColor="@color/task_detail_primary_text"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        tools:text="-0.4积分" />
+    </LinearLayout>
+
+    <View
+        android:id="@+id/divider_bottom"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#F3F4F6"
+        android:visibility="gone" />
+</LinearLayout>

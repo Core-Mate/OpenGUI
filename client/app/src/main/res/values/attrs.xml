@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="SoundWavesView">
+        <attr name="cylinderColor" format="color" />
+        <attr name="cylinderCount" format="integer" />
+        <attr name="cylinderWidth" format="dimension" />
+    </declare-styleable>
+
+    <!-- 自定义验证码-->
+    <declare-styleable name="InputCodeLayout">
+        <!--输入框数量-->
+        <attr name="icl_number" format="integer"/>
+        <!--输入框宽度-->
+        <attr name="icl_width" format="dimension|reference"/>
+        <!--输入框高度-->
+        <attr name="icl_height" format="dimension|reference"/>
+        <!--输入框之间的分割线宽度-->
+        <attr name="icl_divideWidth" format="dimension|reference"/>
+        <!--输入文字颜色-->
+        <attr name="icl_textColor" format="color|reference"/>
+        <!--输入文字大小-->
+        <attr name="icl_textSize" format="dimension|reference"/>
+        <!--有焦点时输入框背景-->
+        <attr name="icl_focusBackground" format="reference"/>
+        <!--无焦点时输入框背景-->
+        <attr name="icl_unFocusBackground" format="reference"/>
+        <!--验证失败时输入框背景-->
+        <attr name="icl_errorBackground" format="reference"/>
+        <!--显示模式-->
+        <attr name="icl_showMode">
+            <enum name="normal" value="0"/><!--正常-->
+            <enum name="password" value="1"/><!--密码-->
+        </attr>
+        <!--输入框显示位置-->
+        <attr name="android:gravity"/>
+    </declare-styleable>
+</resources>

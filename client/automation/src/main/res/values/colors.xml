@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!--  公用颜色  -->
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="transparent">#00000000</color>
+    <color name="text_primary">#141922</color>
+    <color name="text_tertiary">#999FAA</color>
+    <color name="text_regular">#525866</color>
+    <color name="color_primary">#2E58FF</color>
+
+</resources>

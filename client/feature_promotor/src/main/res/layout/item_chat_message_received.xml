@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="8dp"
+    android:layout_marginEnd="8dp"
+    android:background="@drawable/receive_message_bg"
+    android:gravity="start|center_vertical"
+    android:orientation="vertical"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp"
+    android:paddingBottom="8dp">
+
+
+    <LinearLayout
+        android:id="@+id/top_thought_state_wrap"
+        android:layout_width="match_parent"
+        android:layout_height="30dp"
+        android:layout_marginTop="16dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/tv_top_state"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="思考中"
+            android:textColor="#66000000"
+            android:textFontWeight="400"
+            android:textSize="14dp" />
+
+        <ImageView
+            android:id="@+id/img_expand"
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:layout_marginStart="12dp"
+            android:src="@drawable/icon_chat_message_expand" />
+    </LinearLayout>
+
+    <com.coremate.opengui.feature.promotor.ui.views.NonTouchNestedScrollView
+        android:id="@+id/thought_scroll_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="vertical"
+        android:visibility="visible"
+        app:layout_behavior="./BottomAlignedBehavior"
+        app:maxHeight="200dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal">
+
+            <View
+                android:layout_width="1dp"
+                android:layout_height="match_parent"
+                android:layout_marginEnd="14dp"
+                android:background="#33000000" />
+
+            <TextView
+                android:id="@+id/tv_thought_content"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#000000"
+                android:textFontWeight="400"
+                android:textSize="14dp"
+                tools:text="啊啊啊啊  啊啊啊啊  啊啊啊啊  啊啊啊啊  啊啊啊啊  啊啊啊啊  啊啊啊啊  啊啊啊啊  " />
+        </LinearLayout>
+    </com.coremate.opengui.feature.promotor.ui.views.NonTouchNestedScrollView>
+
+    <TextView
+        android:id="@+id/tv_summary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:justificationMode="inter_word"
+        android:textColor="#000000"
+        android:textFontWeight="400"
+        android:textSize="16dp"
+        tools:text="哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈" />
+
+    <!--    任务最终状态-->
+    <LinearLayout
+        android:id="@+id/final_result_wrap"
+        android:layout_width="wrap_content"
+        android:layout_height="44dp"
+        android:layout_marginTop="8dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:visibility="visible">
+
+        <ImageView
+            android:id="@+id/iv_final_result"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/tool_action_completed" />
+
+        <TextView
+            android:id="@+id/tv_final_result"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:text="任务已完成"
+            android:textColor="#000000"
+            android:textFontWeight="500"
+            android:textSize="16dp" />
+
+        <com.coremate.opengui.feature.promotor.ui.views.DotsAnimationView
+            android:id="@+id/iv_final_loading"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:src="@drawable/icon_receive_loading" />
+    </LinearLayout>
+</LinearLayout>

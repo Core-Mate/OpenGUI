@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/white_color_top_corner_24"
+    android:orientation="vertical">
+
+    <!-- 标题 -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="58dp"
+        android:layout_marginHorizontal="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:layout_marginBottom="16dp"
+            android:text="选择推荐任务"
+            android:textColor="#0B1120"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <ImageView
+            android:id="@+id/img_close"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            android:src="@drawable/ic_close"
+            android:tint="@color/grey" />
+    </RelativeLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/grid_line_color" />
+
+    <!--    搜索-->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/cl_search_bg"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/bg_gray_circle">
+
+        <EditText
+            android:id="@+id/et_search_content"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_marginEnd="8dp"
+            android:background="@null"
+            android:hint="搜索任务..."
+            android:maxLines="1"
+            android:imeOptions="actionSearch"
+            android:paddingStart="48dp"
+            android:textColor="#111827"
+            android:textColorHint="#9CA3AF"
+            android:textCursorDrawable="@drawable/main_cursor_bkg"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/img_search_clear"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <ImageView
+            android:id="@+id/img_search_clear"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="12dp"
+            android:padding="4dp"
+            android:src="@drawable/icon_close"
+            android:tint="#9CA3AF"
+            android:visibility="gone"
+            android:contentDescription="清除搜索"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:src="@drawable/icon_search"
+            android:tint="#9CA3AF"
+            app:layout_constraintBottom_toBottomOf="@id/et_search_content"
+            app:layout_constraintStart_toStartOf="@id/et_search_content"
+            app:layout_constraintTop_toTopOf="@id/et_search_content" />
+
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="任务分类"
+        android:textColor="#000000"
+        android:textFontWeight="600"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_task_category_list"
+        android:visibility="gone"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginTop="24dp"
+        android:orientation="horizontal" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_task_list"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginTop="20dp"
+        android:layout_weight="1"
+        android:orientation="horizontal" />
+
+</LinearLayout>

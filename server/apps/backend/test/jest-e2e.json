@@ -1,0 +1,13 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": ".",
+  "testEnvironment": "node",
+  "testRegex": ".e2e-spec.ts$",
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "transformIgnorePatterns": [
+    "node_modules/(?!(uuid|better-auth|@better-fetch|better-call)/)"
+  ],
+  "testTimeout": 30000
+}

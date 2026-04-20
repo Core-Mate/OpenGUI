@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
+        app:cardElevation="5dp"
+        app:cardCornerRadius="24dp"
+        android:layout_marginBottom="20dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/call_user_root_bg"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tv_title"
+                android:layout_marginTop="20dp"
+                android:layout_width="wrap_content"
+                android:layout_marginStart="50dp"
+                android:layout_marginEnd="50dp"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:layout_gravity="center_horizontal"
+                android:textColor="#ffffff"
+                android:textSize="19sp"
+                android:maxLines="1"
+                tools:text="需要您接管需要您接管需要您接管需要" />
+
+            <TextView
+                android:id="@+id/tv_message"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginStart="24dp"
+                android:layout_marginTop="19dp"
+                android:layout_marginEnd="24dp"
+                android:textColor="#ffffff"
+                android:textSize="13sp"
+                tools:text="正在执行xxxxx正在执行xxxxx正在执行xxxxx正在执行xxxxx正在执行xxxxx正在执行xxxxx正在执行xxxxx正在执行xxxxx正在执行xxxxx正在执行xxxxx正在执行xxxxx正在执行xxxxx正在执行xxxxx正在执行xxxxx正在执行xxxxx正在执行xxxxx正在执行xxxxx" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="24dp"
+                android:layout_marginTop="19dp"
+                android:layout_marginEnd="24dp"
+                android:layout_marginBottom="19dp">
+
+                <TextView
+                    android:id="@+id/bt_take_over"
+                    android:layout_width="wrap_content"
+                    android:layout_height="51dp"
+                    android:layout_marginEnd="24dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/call_user_take_over_bg"
+                    android:gravity="center"
+                    android:text="接管"
+                    android:textColor="#1E1E1E" />
+
+                <TextView
+                    android:id="@+id/bt_stop"
+                    android:layout_width="66dp"
+                    android:layout_height="51dp"
+                    android:background="@drawable/call_user_stop_bg"
+                    android:gravity="center"
+                    android:text="停止"
+                    android:textColor="#FF0000" />
+            </LinearLayout>
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

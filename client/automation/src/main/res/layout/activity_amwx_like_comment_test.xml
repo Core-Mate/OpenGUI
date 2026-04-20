@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <!-- 开关：是否进行朋友圈点赞 -->
+    <Switch
+        android:id="@+id/switch_like"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:checked="true"
+        android:text="是否进行朋友圈点赞"
+        android:textSize="16dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- 开关：是否进行朋友圈评论 -->
+    <Switch
+        android:id="@+id/switch_comment"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:checked="true"
+        android:text="是否进行朋友圈评论"
+        android:textSize="16dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/switch_like" />
+
+
+    <!-- 评论字数选择 -->
+    <TextView
+        android:id="@+id/tv_comment_length"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="评论字数选择："
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/switch_comment" />
+
+    <RadioGroup
+        android:id="@+id/rg_comment_length"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_comment_length">
+
+        <RadioButton
+            android:id="@+id/rb_short"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:checked="true"
+            android:text="少字数" />
+
+        <RadioButton
+            android:id="@+id/rb_medium"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="中等字数" />
+
+        <RadioButton
+            android:id="@+id/rb_long"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="多字数" />
+    </RadioGroup>
+
+    <!-- 触达次数标题 -->
+    <TextView
+        android:id="@+id/tv_reach_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="触达次数（最多30次）："
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/rg_comment_length" />
+
+    <TextView
+        android:id="@+id/tv_reach_current"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="10"
+        android:textColor="@android:color/holo_blue_dark"
+        app:layout_constraintBaseline_toBaselineOf="@id/tv_reach_title"
+        app:layout_constraintStart_toEndOf="@id/tv_reach_title" />
+
+
+    <!-- SeekBar 控制触达次数 -->
+    <SeekBar
+        android:id="@+id/seek_reach_count"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:max="30"
+        android:progress="10"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_reach_title" />
+
+    <!-- 开始按钮 -->
+    <Button
+        android:id="@+id/btn_start"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:backgroundTint="#4CAF50"
+        android:text="开始"
+        android:textColor="#FFFFFF"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/seek_reach_count" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

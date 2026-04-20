@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="104dp"
+    tools:background="@color/grey">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/search_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="9dp"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <TextView
+            android:id="@+id/et_search_content"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_marginHorizontal="24dp"
+            android:background="@drawable/bg_gray_circle_border"
+            android:editable="false"
+            android:focusable="true"
+            android:gravity="left|center"
+            android:hint="搜索任务"
+            android:imeOptions="actionSearch"
+            android:inputType="none"
+            android:maxLines="1"
+            android:paddingStart="38dp"
+            android:textColor="#111827"
+            android:textColorHint="#9CA3AF"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_marginStart="10dp"
+            android:src="@drawable/icon_search2"
+            android:tint="#9CA3AF"
+            app:layout_constraintBottom_toBottomOf="@id/et_search_content"
+            app:layout_constraintStart_toStartOf="@id/et_search_content"
+            app:layout_constraintTop_toTopOf="@id/et_search_content" />
+
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

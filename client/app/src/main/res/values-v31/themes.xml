@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:windowBackground">@color/white</item>
+        <item name="android:textCursorDrawable">@drawable/main_cursor_bkg</item>
+        <item name="colorPrimary">#2E58FF</item>
+    </style>
+
+    <style name="Theme.Promotor" parent="Theme.SplashScreen" >
+        <item name="windowSplashScreenBackground">@color/splash_bg_color</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_center</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/splash_bg_color</item>
+    </style>
+
+    <style name="BottomNavTextStyle.Inactive" parent="Widget.AppCompat.TextView">
+        <item name="android:textSize">16sp</item>
+        <item name="android:textStyle">normal</item>
+    </style>
+
+    <style name="BottomNavTextStyle.Active" parent="Widget.AppCompat.TextView">
+        <item name="android:textSize">18sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="AppBottomSheet" parent="Theme.Design.Light.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/AppBottomSheetStyle</item>
+    </style>
+
+    <style name="AppBottomSheetStyle" parent="Widget.Design.BottomSheet.Modal">
+        <item name="android:background">@drawable/protocol_popup_round_bg</item>
+    </style>
+</resources>

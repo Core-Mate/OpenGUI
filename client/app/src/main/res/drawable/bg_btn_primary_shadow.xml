@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Shadow layer 3 - most transparent, largest spread -->
+    <item android:bottom="8dp" android:left="4dp" android:right="4dp" android:top="2dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#0A2E58FF" />
+            <corners android:radius="999dp" />
+        </shape>
+    </item>
+    <!-- Shadow layer 2 - medium transparency -->
+    <item android:bottom="6dp" android:left="2dp" android:right="2dp" android:top="1dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#1A2E58FF" />
+            <corners android:radius="999dp" />
+        </shape>
+    </item>
+    <!-- Shadow layer 1 - closer to button -->
+    <item android:bottom="4dp" android:left="1dp" android:right="1dp" android:top="0dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#332E58FF" />
+            <corners android:radius="999dp" />
+        </shape>
+    </item>
+    <!-- Button itself -->
+    <item android:bottom="4dp" android:left="0dp" android:right="0dp" android:top="0dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#2E58FF" />
+            <corners android:radius="999dp" />
+        </shape>
+    </item>
+</layer-list>

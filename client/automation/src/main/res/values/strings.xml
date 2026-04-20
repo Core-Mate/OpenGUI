@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">automation</string>
+    <string name="auto_accessibility_desc" translatable="false">
+        开启辅助功能权限，享受一下功能，为您节省操作时间和步骤
+    </string>
+</resources>

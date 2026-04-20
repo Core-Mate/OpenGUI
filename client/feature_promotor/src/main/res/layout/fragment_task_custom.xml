@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_gravity="bottom"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:id="@+id/ll_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="bottom"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:id="@+id/ll_root"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/white_color_top_corner_24"
+            android:orientation="vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="24dp">
+
+            <!-- 标题 -->
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="104dp">
+
+                <TextView
+                    android:id="@+id/title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:layout_marginLeft="30dp"
+                    android:layout_marginBottom="12dp"
+                    android:includeFontPadding="false"
+                    android:paddingBottom="1dp"
+                    android:text="自定义任务"
+                    android:textColor="#0B1120"
+                    android:textSize="28sp"
+                    android:textStyle="bold"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toStartOf="parent" />
+
+                <ImageView
+                    android:id="@+id/img_close"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_alignParentBottom="true"
+                    android:layout_centerVertical="true"
+                    android:src="@drawable/ic_close"
+                    app:layout_constraintBottom_toBottomOf="@id/title"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="@id/title" />
+
+
+                <TextView
+                    android:id="@+id/tv_try"
+                    android:layout_width="74dp"
+                    android:layout_height="wrap_content"
+                    android:text="试试手气"
+                    android:textColor="@color/color_primary"
+                    android:textSize="14dp"
+                    android:textStyle="bold"
+                    app:layout_constraintBottom_toBottomOf="@id/title"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="@id/title" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <!-- 标题输入框（单行） -->
+            <EditText
+                android:id="@+id/et_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/bg_gray_corner_24"
+                android:ellipsize="end"
+                android:hint="请输入任务标题"
+                android:inputType="textCapSentences"
+                android:maxLines="1"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="10dp"
+                android:textColor="#111827"
+                android:textSize="16sp" />
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_marginHorizontal="8dp"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="12dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_gray_corner_24">
+
+                <EditText
+                    android:id="@+id/full_input_task"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@null"
+                    android:gravity="top"
+                    android:hint="描述您希望 AI 执行的任务目标..."
+                    android:inputType="textMultiLine"
+                    android:minLines="12"
+                    android:padding="18dp"
+                    android:scrollbars="vertical"
+                    android:textColor="#111827"
+                    android:textSize="18sp" />
+            </FrameLayout>
+
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="12dp"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:paddingHorizontal="12dp"
+                android:paddingBottom="4dp"
+                android:weightSum="2">
+
+                <TextView
+                    android:id="@+id/full_cancel"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_gray_circle"
+                    android:gravity="center"
+                    android:text="取消"
+                    android:textColor="#111827"
+                    android:textSize="16sp" />
+
+                <View
+                    android:layout_width="12dp"
+                    android:layout_height="1dp" />
+
+                <TextView
+                    android:id="@+id/full_confirm"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_main_circle"
+                    android:gravity="center"
+                    android:text="确认创建"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </LinearLayout>
+
+    <FrameLayout
+        android:id="@+id/fl_loading"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignTop="@+id/ll_content"
+        android:layout_alignBottom="@+id/ll_content"
+        android:visibility="invisible">
+
+        <ProgressBar
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center"
+            android:indeterminateTint="@color/color_primary" />
+    </FrameLayout>
+
+</RelativeLayout>

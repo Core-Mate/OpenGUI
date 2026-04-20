@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="ai_role_genders">
+        <item>男</item>
+        <item>女</item>
+        <item>保密</item>
+    </string-array>
+
+    <string-array name="ai_role_styles">
+        <item>自信幽默善解人意</item>
+        <item>专业严谨</item>
+        <item>活泼开朗</item>
+        <item>温柔体贴</item>
+        <item>其他</item>
+    </string-array>
+
+    <string-array name="ai_role_industries">
+        <item>医疗美容</item>
+        <item>教育培训</item>
+        <item>餐饮服务</item>
+        <item>零售电商</item>
+        <item>金融投资</item>
+        <item>其他</item>
+    </string-array>
+</resources>

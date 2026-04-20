@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/transparent"
+    tools:context="com.coremate.opengui.feature.promotor.com.coremate.opengui.feature.promotor.ui.AiRoleSettingsFragment">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/top_bar"
+        android:layout_width="0dp"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@android:color/transparent"
+        android:elevation="4dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:id="@+id/iv_back"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="16dp"
+            android:src="@drawable/ic_arrow_back"
+            android:contentDescription="返回"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+        <TextView
+            android:id="@+id/tv_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="AI角色设置"
+            android:textColor="@android:color/black"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <ScrollView
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="8dp"
+        android:background="@android:color/white"
+        app:layout_constraintTop_toBottomOf="@id/top_bar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView style="@style/FormLabel" android:text="角色名" />
+            <EditText
+                android:id="@+id/et_role_name"
+                style="@style/FormEditText"
+                android:hint="客服1号"
+                android:inputType="textPersonName" />
+
+            <TextView style="@style/FormLabel" android:text="角色性别" />
+            <Spinner
+                android:id="@+id/spinner_gender"
+                style="@style/FormSpinner"
+                android:entries="@array/ai_role_genders" /> <TextView style="@style/FormLabel" android:text="角色风格" />
+            <Spinner
+                android:id="@+id/spinner_style"
+                style="@style/FormSpinner"
+                android:entries="@array/ai_role_styles" /> <TextView
+            style="@style/FormLabel"
+            android:text="手机号 (可以联系到真人客服的手机号)" />
+            <EditText
+                android:id="@+id/et_phone_number"
+                style="@style/FormEditText"
+                android:hint="15874746969"
+                android:inputType="phone" />
+
+            <TextView style="@style/FormLabel" android:text="所属行业" />
+            <Spinner
+                android:id="@+id/spinner_industry"
+                style="@style/FormSpinner"
+                android:entries="@array/ai_role_industries" /> <TextView
+            style="@style/FormLabel"
+            android:text="产品知识库 (销售的产品，常见的用户问答)" />
+            <EditText
+                android:id="@+id/et_knowledge_base"
+                style="@style/FormEditText"
+                android:hint="美丽人生医美知识库"
+                android:inputType="textMultiLine"
+                android:minLines="1"
+                android:maxLines="3"
+                android:scrollbars="vertical"
+                android:focusable="false"
+                android:clickable="true" /> <Button
+            android:id="@+id/btn_save_settings"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:layout_marginBottom="16dp"
+            android:background="@drawable/bg_save_button"
+            android:text="保存设置"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:stateListAnimator="@null"
+            android:elevation="0dp" />
+
+        </LinearLayout>
+    </ScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

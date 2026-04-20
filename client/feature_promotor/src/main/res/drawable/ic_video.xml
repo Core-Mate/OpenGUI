@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- lucide 'video' — outline style (stroke 1.5) -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#9CA3AF"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5" />
+
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#9CA3AF"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M4,6 H14 A2,2 0 0 1 16,8 V16 A2,2 0 0 1 14,18 H4 A2,2 0 0 1 2,16 V8 A2,2 0 0 1 4,6 Z" />
+
+</vector>

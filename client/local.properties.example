@@ -1,0 +1,9 @@
+# Android Client Configuration
+# Copy this file to local.properties (gitignored) and set your server URL
+
+# Server URL for the backend
+# For Android emulator connecting to local server:
+SERVER_URL=http://10.0.2.2:7777
+
+# For physical device connecting to local server (use your machine's IP):
+# SERVER_URL=http://192.168.1.xxx:7777

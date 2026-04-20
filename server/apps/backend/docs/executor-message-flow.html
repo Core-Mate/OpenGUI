@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Executor Subgraph — 消息状态推演</title>
+<style>
+  :root {
+    --a11y: #10b981; --a11y-bg: #ecfdf5; --a11y-border: #6ee7b7;
+    --gui: #6366f1; --gui-bg: #eef2ff; --gui-border: #a5b4fc;
+    --error: #ef4444; --error-bg: #fef2f2;
+    --neutral: #64748b; --neutral-bg: #f8fafc;
+    --switch: #f59e0b; --switch-bg: #fffbeb;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: #f1f5f9; color: #1e293b; line-height: 1.6; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+  h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; }
+  .subtitle { color: var(--neutral); font-size: 0.9rem; margin-bottom: 24px; }
+
+  /* Scenario selector */
+  .scenarios { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+  .scenario-btn {
+    padding: 8px 16px; border: 2px solid #e2e8f0; border-radius: 8px;
+    background: white; cursor: pointer; font-size: 0.85rem; font-weight: 500;
+    transition: all 0.2s;
+  }
+  .scenario-btn:hover { border-color: #94a3b8; }
+  .scenario-btn.active { border-color: var(--gui); background: var(--gui-bg); color: var(--gui); }
+
+  /* Timeline */
+  .timeline { position: relative; }
+  .loop {
+    background: white; border-radius: 12px; padding: 20px;
+    margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    border-left: 4px solid #e2e8f0; transition: all 0.3s;
+  }
+  .loop[data-channel="a11y"] { border-left-color: var(--a11y); }
+  .loop[data-channel="gui"] { border-left-color: var(--gui); }
+  .loop[data-channel="switch"] { border-left-color: var(--switch); }
+
+  .loop-header {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 12px; font-weight: 600; font-size: 0.95rem;
+  }
+  .loop-badge {
+    padding: 2px 10px; border-radius: 99px; font-size: 0.75rem;
+    font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .badge-a11y { background: var(--a11y-bg); color: var(--a11y); border: 1px solid var(--a11y-border); }
+  .badge-gui { background: var(--gui-bg); color: var(--gui); border: 1px solid var(--gui-border); }
+  .badge-switch { background: var(--switch-bg); color: var(--switch); border: 1px solid #fcd34d; }
+
+  /* Node steps */
+  .nodes { display: flex; flex-direction: column; gap: 8px; }
+  .node {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 8px 12px; border-radius: 8px; font-size: 0.85rem;
+    background: var(--neutral-bg);
+  }
+  .node-name {
+    font-weight: 600; min-width: 110px; color: var(--neutral);
+    flex-shrink: 0; font-size: 0.8rem;
+  }
+  .node-detail { flex: 1; }
+  .node-detail code { background: #e2e8f0; padding: 1px 6px; border-radius: 4px; font-size: 0.78rem; }
+
+  /* State boxes */
+  .state-snapshot {
+    margin-top: 12px; padding: 12px; border-radius: 8px;
+    background: #f8fafc; border: 1px solid #e2e8f0; font-size: 0.8rem;
+  }
+  .state-snapshot summary {
+    cursor: pointer; font-weight: 600; color: var(--neutral);
+    font-size: 0.8rem; user-select: none;
+  }
+  .state-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    margin-top: 8px;
+  }
+  .state-col h4 {
+    font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.5px; margin-bottom: 4px; padding-bottom: 4px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .state-col.a11y h4 { color: var(--a11y); }
+  .state-col.gui h4 { color: var(--gui); }
+  .msg { padding: 3px 8px; margin: 2px 0; border-radius: 4px; font-size: 0.75rem; font-family: 'SF Mono', Monaco, monospace; }
+  .msg-sys { background: #fef3c7; color: #92400e; }
+  .msg-human { background: #dbeafe; color: #1e40af; }
+  .msg-ai { background: #dcfce7; color: #166534; }
+  .msg-img { background: #e0e7ff; color: #3730a3; }
+  .msg-err { background: var(--error-bg); color: var(--error); }
+  .msg-placeholder { background: #f1f5f9; color: #94a3b8; font-style: italic; }
+  .msg-frozen { opacity: 0.4; }
+
+  .channel-indicator {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px;
+  }
+  .ci-a11y { background: var(--a11y); }
+  .ci-gui { background: var(--gui); }
+
+  .arrow { text-align: center; color: var(--neutral); font-size: 1.2rem; margin: 4px 0; }
+
+  /* Legend */
+  .legend {
+    display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 20px;
+    padding: 12px 16px; background: white; border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08); font-size: 0.8rem;
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+
+  /* Shared state bar */
+  .shared-state {
+    padding: 8px 12px; background: #fefce8; border: 1px solid #fef08a;
+    border-radius: 6px; font-size: 0.78rem; margin-top: 8px;
+  }
+  .shared-state strong { color: #a16207; }
+
+  @media (max-width: 768px) {
+    .state-grid { grid-template-columns: 1fr; }
+    .scenarios { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Executor Subgraph 消息状态推演</h1>
+  <p class="subtitle">S2 双通道架构：A11y 优先 + GUI 兜底 | 交互式场景模拟器</p>
+
+  <div class="legend">
+    <div class="legend-item"><div class="msg msg-sys" style="margin:0">S</div> SystemMessage</div>
+    <div class="legend-item"><div class="msg msg-human" style="margin:0">H</div> HumanMessage (text)</div>
+    <div class="legend-item"><div class="msg msg-img" style="margin:0">I</div> HumanMessage (image)</div>
+    <div class="legend-item"><div class="msg msg-ai" style="margin:0">AI</div> AIMessage</div>
+    <div class="legend-item"><div class="msg msg-err" style="margin:0">E</div> Error message</div>
+    <div class="legend-item"><div class="msg msg-placeholder" style="margin:0">[removed]</div> Image placeholder</div>
+    <div class="legend-item"><span class="loop-badge badge-a11y">a11y</span> A11y 通道</div>
+    <div class="legend-item"><span class="loop-badge badge-gui">gui</span> GUI 通道</div>
+    <div class="legend-item"><span class="loop-badge badge-switch">switch</span> 通道切换</div>
+  </div>
+
+  <div class="scenarios" id="scenarioButtons"></div>
+  <div class="timeline" id="timeline"></div>
+</div>
+
+<script>
+const SCENARIOS = {
+  "a11y-steady": {
+    name: "A11y 持续成功",
+    desc: "理想情况：A11y 一直有效，messages 冻结",
+    loops: [
+      { ch: "a11y", loop: 0, label: "初始化", nodes: [
+        { name: "entry", detail: "构建双通道 SP，初始化状态" },
+      ], a11y: ["S_a11y"], gui: ["S_gui"], shared: "channel=a11y, failures=0, recentActions=[]" },
+      { ch: "a11y", loop: 1, label: "A11y 成功", nodes: [
+        { name: "sense", detail: "请求 a11y tree → <b>有效</b>(52节点) → failures=0" },
+        { name: "route", detail: "currentChannel=a11y → <code>a11y_model</code>" },
+        { name: "a11y_model", detail: "注入 instruction + action_history + tree → 推理 → <code>click(540,1200)</code>" },
+        { name: "parse_action", detail: "channel=a11y → 绝对像素坐标，不归一化" },
+        { name: "execute", detail: "下发 click → 成功" },
+        { name: "check_loop", detail: "action_type 存在 → 不递增 failures" },
+      ], a11y: ["S_a11y", "H1(tree+history)", "AI1(click)"], gui: ["S_gui"], guiFrozen: true, shared: "channel=a11y, failures=0, recentActions=[click(540,1200)]" },
+      { ch: "a11y", loop: 2, label: "A11y 继续成功", nodes: [
+        { name: "sense", detail: "a11y tree 有效 → failures=0" },
+        { name: "a11y_model", detail: "a11yMessages 追加 H2+AI2" },
+        { name: "execute", detail: "type(苹果17) → 成功" },
+      ], a11y: ["S_a11y", "H1", "AI1", "H2(tree+history)", "AI2(type)"], gui: ["S_gui"], guiFrozen: true, shared: "channel=a11y, failures=0, recentActions=[click, type]" },
+      { ch: "a11y", loop: 3, label: "A11y 继续成功", nodes: [
+        { name: "sense", detail: "a11y tree 有效 → failures=0" },
+        { name: "a11y_model", detail: "a11yMessages 追加 H3+AI3" },
+        { name: "execute", detail: "scroll(down) → 成功" },
+      ], a11y: ["S_a11y", "H1", "AI1", "H2", "AI2", "H3(tree+history)", "AI3(scroll)"], gui: ["S_gui"], guiFrozen: true, shared: "channel=a11y, failures=0, recentActions=[click, type, scroll]" },
+    ]
+  },
+  "a11y-fail-gui": {
+    name: "A11y 失败 → GUI 接管",
+    desc: "A11y 连续失败触发阈值，fallback 到 GUI",
+    loops: [
+      { ch: "a11y", loop: 0, label: "初始化", nodes: [
+        { name: "entry", detail: "构建双通道 SP" },
+      ], a11y: ["S_a11y"], gui: ["S_gui"], shared: "channel=a11y, failures=0" },
+      { ch: "a11y", loop: 1, label: "A11y 失败 (1/2)", nodes: [
+        { name: "sense", detail: "a11y tree <b>无效</b>(0节点) → failures=1, channel=a11y" },
+        { name: "route", detail: "currentChannel=a11y → <code>a11y_model</code>" },
+        { name: "a11y_model", detail: "a11yTreeText 为空 → <b>跳过推理</b> → prediction=\"\"" },
+        { name: "parse_action", detail: "空 prediction → action_type=null" },
+        { name: "route", detail: "!action_type → 跳过 execute → barrier" },
+        { name: "check_loop", detail: "a11y && !action_type → <b>failures=2</b>" },
+      ], a11y: ["S_a11y"], gui: ["S_gui"], guiFrozen: true, shared: "channel=a11y, failures=2, recentActions=[]", warn: "空 tree → 跳过推理，不追加消息" },
+      { ch: "switch", loop: 2, label: "阈值触发 → GUI Fallback", nodes: [
+        { name: "sense", detail: "a11y tree 无效 → resolveChannel: failures=3 ≥ 2 → <b>切换到 GUI</b>" },
+        { name: "sense", detail: "发送 channel_switch 事件 → 请求截图" },
+        { name: "route", detail: "currentChannel=gui → <code>vision_model</code>" },
+        { name: "vision_model", detail: "首次使用 messages: [S_gui, I1] → 推理 → click(搜索)" },
+        { name: "parse_action", detail: "channel=gui → 归一化坐标 ÷1000 × screenSize" },
+        { name: "execute", detail: "click → 成功" },
+      ], a11y: ["S_a11y"], a11yFrozen: true, gui: ["S_gui", "I1(screenshot)", "AI1(click)"], shared: "channel=gui, failures=3, recentActions=[click]" },
+      { ch: "gui", loop: 3, label: "GUI 继续（探测失败）", nodes: [
+        { name: "sense", detail: "并行: screenshot ✓ + a11y探测 ✗ → 保持 gui" },
+        { name: "vision_model", detail: "messages 追加 I2+AI2" },
+        { name: "execute", detail: "type → 成功" },
+      ], a11y: ["S_a11y"], a11yFrozen: true, gui: ["S_gui", "I1", "AI1", "I2(screenshot)", "AI2(type)"], shared: "channel=gui, failures=3, recentActions=[click, type]" },
+    ]
+  },
+  "a11y-gui-recovery": {
+    name: "A11y → GUI → A11y 恢复",
+    desc: "完整的三阶段切换：A11y成功 → 失败切GUI → 探测成功切回A11y",
+    loops: [
+      { ch: "a11y", loop: 0, label: "初始化", nodes: [
+        { name: "entry", detail: "构建双通道 SP" },
+      ], a11y: ["S_a11y"], gui: ["S_gui"], shared: "channel=a11y, failures=0" },
+      { ch: "a11y", loop: 1, label: "A11y 成功", nodes: [
+        { name: "sense", detail: "a11y tree 有效 → failures=0" },
+        { name: "a11y_model", detail: "推理 → open_app(闲鱼)" },
+      ], a11y: ["S_a11y", "H1(tree)", "AI1(open_app)"], gui: ["S_gui"], guiFrozen: true, shared: "channel=a11y, failures=0, recentActions=[open_app]" },
+      { ch: "switch", loop: 2, label: "A11y 失败 → GUI", nodes: [
+        { name: "sense", detail: "a11y 连续失败 → 切换 GUI → 截图" },
+        { name: "vision_model", detail: "VLM 首次推理，<b>通过 recentActions 知道已打开闲鱼</b>" },
+      ], a11y: ["S_a11y", "H1", "AI1"], a11yFrozen: true, gui: ["S_gui", "I1(screenshot)", "AI1(click搜索)"], shared: "channel=gui, failures=3, recentActions=[open_app, click]" },
+      { ch: "gui", loop: 3, label: "GUI 执行（探测成功!）", nodes: [
+        { name: "sense", detail: "并行: screenshot ✓ + a11y探测 <b>✓ 成功!</b>" },
+        { name: "sense", detail: "→ failures=<b>0</b>, 本轮仍用截图(延迟切换)" },
+        { name: "vision_model", detail: "继续用 VLM 处理本轮截图" },
+      ], a11y: ["S_a11y", "H1", "AI1"], a11yFrozen: true, gui: ["S_gui", "I1", "AI1", "I2(screenshot)", "AI2"], shared: "channel=gui, failures=0 ← 重置!, recentActions=[open_app, click, type]", warn: "探测成功但本轮仍走 VLM（延迟切换）" },
+      { ch: "switch", loop: 4, label: "延迟切换 → A11y 恢复", nodes: [
+        { name: "sense", detail: "检测: gui && failures=0 → <b>延迟切换触发!</b> → channel=a11y" },
+        { name: "sense", detail: "请求 a11y tree → 有效 → 继续 a11y" },
+        { name: "route", detail: "currentChannel=a11y → <code>a11y_model</code>" },
+        { name: "a11y_model", detail: "a11yMessages 继续追加，<b>action_history 桥接 GUI 操作</b>" },
+      ], a11y: ["S_a11y", "H1", "AI1", "H2(tree+action_history:open→click→type)", "AI2(scroll)"], gui: ["S_gui", "I1", "AI1", "I2", "AI2"], shared: "channel=a11y, failures=0, recentActions=[open_app, click, type, scroll]", warn: "a11yMessages 保留了之前的历史 + 通过 action_history 桥接 GUI 期间操作" },
+    ]
+  },
+  "call-user": {
+    name: "call_user 中断",
+    desc: "A11y 通道中触发 call_user，用户回复后继续",
+    loops: [
+      { ch: "a11y", loop: 0, label: "初始化", nodes: [
+        { name: "entry", detail: "构建双通道 SP" },
+      ], a11y: ["S_a11y"], gui: ["S_gui"], shared: "channel=a11y, failures=0" },
+      { ch: "a11y", loop: 1, label: "A11y 执行", nodes: [
+        { name: "sense", detail: "a11y tree 有效" },
+        { name: "a11y_model", detail: "推理 → click(购买按钮)" },
+        { name: "execute", detail: "click → 成功" },
+      ], a11y: ["S_a11y", "H1", "AI1(click)"], gui: ["S_gui"], guiFrozen: true, shared: "channel=a11y" },
+      { ch: "a11y", loop: 2, label: "触发 call_user", nodes: [
+        { name: "sense", detail: "a11y tree 有效(支付确认页)" },
+        { name: "a11y_model", detail: "检测到高风险操作 → <code>call_user(需要确认支付¥2999)</code>" },
+        { name: "parse_action", detail: "action_type=call_user → status=call_user" },
+        { name: "execute", detail: "下发 call_user 到客户端" },
+        { name: "call_user", detail: "等待用户响应... 用户确认→ <b>写入 a11yMessages</b>" },
+      ], a11y: ["S_a11y", "H1", "AI1", "H2", "AI2(call_user)", "H_user(用户确认支付)"], gui: ["S_gui"], guiFrozen: true, shared: "channel=a11y, call_user 响应正确写入 a11y 通道" },
+      { ch: "a11y", loop: 3, label: "继续执行", nodes: [
+        { name: "sense", detail: "call_user → sense → a11y tree" },
+        { name: "a11y_model", detail: "看到用户确认消息 → 继续执行支付" },
+      ], a11y: ["S_a11y", "H1", "AI1", "H2", "AI2", "H_user", "H3(tree)", "AI3(click确认支付)"], gui: ["S_gui"], guiFrozen: true, shared: "channel=a11y" },
+    ]
+  },
+  "execute-fail": {
+    name: "执行失败 + 重试",
+    desc: "A11y 通道动作执行失败，错误消息写入正确通道",
+    loops: [
+      { ch: "a11y", loop: 0, label: "初始化", nodes: [
+        { name: "entry", detail: "构建双通道 SP" },
+      ], a11y: ["S_a11y"], gui: ["S_gui"], shared: "channel=a11y" },
+      { ch: "a11y", loop: 1, label: "执行失败", nodes: [
+        { name: "sense", detail: "a11y tree 有效" },
+        { name: "a11y_model", detail: "推理 → click(540, 1200)" },
+        { name: "execute", detail: "click 执行<b>失败</b>: timeout → 错误消息写入 <b>a11yMessages</b>" },
+      ], a11y: ["S_a11y", "H1(tree)", "AI1(click)", "E1(执行click失败:timeout)"], gui: ["S_gui"], guiFrozen: true, shared: "channel=a11y, status=running(允许重试)", warn: "错误消息写入 a11yMessages（已修复），a11y_model 下轮能看到" },
+      { ch: "a11y", loop: 2, label: "重试成功", nodes: [
+        { name: "sense", detail: "a11y tree 有效(页面未变)" },
+        { name: "a11y_model", detail: "<b>看到上轮错误</b> → 换个坐标重试 click(545, 1195)" },
+        { name: "execute", detail: "click → 成功" },
+      ], a11y: ["S_a11y", "H1", "AI1", "E1", "H2(tree+history)", "AI2(click重试)"], gui: ["S_gui"], guiFrozen: true, shared: "channel=a11y" },
+    ]
+  },
+  "gui-fail-a11y": {
+    name: "GUI 执行失败 → A11y 通道",
+    desc: "GUI 通道动作失败，错误消息写入 messages",
+    loops: [
+      { ch: "gui", loop: 1, label: "GUI 执行", nodes: [
+        { name: "sense", detail: "gui 模式 → 截图" },
+        { name: "vision_model", detail: "推理 → scroll(down)" },
+        { name: "execute", detail: "scroll <b>失败</b> → 错误写入 <b>messages</b>" },
+      ], a11y: ["S_a11y", "..."], a11yFrozen: true, gui: ["S_gui", "I1", "AI1(scroll)", "E1(scroll失败)"], shared: "channel=gui" },
+      { ch: "gui", loop: 2, label: "VLM 看到错误重试", nodes: [
+        { name: "sense", detail: "gui + 探测成功 → failures=0(延迟切换)" },
+        { name: "vision_model", detail: "<b>看到 E1 错误</b> + 新截图 → 换方案" },
+      ], a11y: ["S_a11y", "..."], a11yFrozen: true, gui: ["S_gui", "I1", "AI1", "E1", "I2", "AI2(tap替代scroll)"], shared: "channel=gui, failures=0" },
+      { ch: "switch", loop: 3, label: "延迟切换 → A11y", nodes: [
+        { name: "sense", detail: "gui && failures=0 → 切回 a11y" },
+        { name: "a11y_model", detail: "action_history 含之前所有操作(含失败)" },
+      ], a11y: ["S_a11y", "...(之前历史)", "H(tree+history:scroll_fail→tap)"], gui: ["S_gui", "I1", "AI1", "E1", "I2", "AI2"], shared: "channel=a11y" },
+    ]
+  },
+  "long-running": {
+    name: "长时间运行 (窗口裁剪)",
+    desc: "消息超过100条/图片超过5张时的裁剪机制",
+    loops: [
+      { ch: "a11y", loop: "1-50", label: "A11y 前 50 轮", nodes: [
+        { name: "a11y_model", detail: "每轮追加 H(tree) + AI(action) → a11yMessages 增长到 101 条" },
+      ], a11y: ["S_a11y", "H1", "AI1", "...(98条)...", "H50", "AI50"], gui: ["S_gui"], guiFrozen: true, shared: "a11yMessages=101条 > 窗口100" },
+      { ch: "a11y", loop: 51, label: "触发滑动窗口", nodes: [
+        { name: "reducer", detail: "a11yMessages.length=103 > 100 → 裁剪" },
+        { name: "reducer", detail: "保留 [S_a11y] + 最近 99 条 → 丢弃 H1, AI1" },
+      ], a11y: ["S_a11y", "H2", "AI2", "...(96条)...", "H51", "AI51"], gui: ["S_gui"], guiFrozen: true, shared: "a11yMessages 被裁剪到 100 条", warn: "SystemMessage(S_a11y) 始终保留在 [0] 位" },
+      { ch: "gui", loop: "GUI 6+", label: "GUI 图片窗口裁剪", nodes: [
+        { name: "vision_model", detail: "第 6 张截图 → trimImageMessages(5) → 替换最老图片" },
+      ], a11y: [], gui: ["S_gui", "[img removed]", "AI1", "[img removed]", "AI2", "I3", "AI3", "I4", "AI4", "I5", "AI5", "I6", "AI6"], shared: "最老的图片被替换为 [image removed] 占位符，保留消息 ID" },
+    ]
+  },
+};
+
+// Render
+const btnContainer = document.getElementById('scenarioButtons');
+const timeline = document.getElementById('timeline');
+let activeScenario = 'a11y-steady';
+
+function renderButtons() {
+  btnContainer.innerHTML = '';
+  for (const [key, s] of Object.entries(SCENARIOS)) {
+    const btn = document.createElement('button');
+    btn.className = `scenario-btn ${key === activeScenario ? 'active' : ''}`;
+    btn.textContent = s.name;
+    btn.title = s.desc;
+    btn.onclick = () => { activeScenario = key; renderButtons(); renderTimeline(); };
+    btnContainer.appendChild(btn);
+  }
+}
+
+function renderMsg(text, frozen) {
+  const cls = text.startsWith('S_') ? 'msg-sys'
+    : text.startsWith('E') ? 'msg-err'
+    : text.startsWith('AI') ? 'msg-ai'
+    : text.startsWith('I') || text.startsWith('[img') ? 'msg-img'
+    : text.startsWith('[image') ? 'msg-placeholder'
+    : text.startsWith('H_user') ? 'msg-human'
+    : text.startsWith('H') ? 'msg-human'
+    : 'msg-human';
+  const frozenCls = frozen ? ' msg-frozen' : '';
+  return `<div class="msg ${cls}${frozenCls}">${text}</div>`;
+}
+
+function renderTimeline() {
+  const s = SCENARIOS[activeScenario];
+  let html = `<div style="margin-bottom:16px;padding:12px 16px;background:white;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.08)">
+    <strong>${s.name}</strong> — ${s.desc}
+  </div>`;
+
+  for (const loop of s.loops) {
+    const chLabel = loop.ch === 'a11y' ? 'badge-a11y' : loop.ch === 'gui' ? 'badge-gui' : 'badge-switch';
+    const chText = loop.ch === 'switch' ? '切换' : loop.ch.toUpperCase();
+
+    html += `<div class="loop" data-channel="${loop.ch}">`;
+    html += `<div class="loop-header">
+      <span>Loop ${loop.loop}</span>
+      <span class="loop-badge ${chLabel}">${chText}</span>
+      <span style="color:var(--neutral);font-weight:400;font-size:0.85rem">${loop.label}</span>
+    </div>`;
+
+    // Nodes
+    html += '<div class="nodes">';
+    for (const node of loop.nodes) {
+      html += `<div class="node">
+        <span class="node-name">${node.name}</span>
+        <span class="node-detail">${node.detail}</span>
+      </div>`;
+    }
+    html += '</div>';
+
+    // Warning
+    if (loop.warn) {
+      html += `<div style="margin-top:8px;padding:6px 12px;background:#fef3c7;border:1px solid #fde68a;border-radius:6px;font-size:0.78rem;color:#92400e">
+        ⚡ ${loop.warn}
+      </div>`;
+    }
+
+    // State snapshot
+    if (loop.a11y || loop.gui) {
+      html += '<details class="state-snapshot" open>';
+      html += '<summary>消息状态快照</summary>';
+      html += '<div class="state-grid">';
+
+      // A11y column
+      html += '<div class="state-col a11y">';
+      html += `<h4><span class="channel-indicator ci-a11y"></span>a11yMessages${loop.a11yFrozen ? ' (冻结)' : ''}</h4>`;
+      if (loop.a11y) {
+        for (const m of loop.a11y) html += renderMsg(m, loop.a11yFrozen);
+      }
+      html += '</div>';
+
+      // GUI column
+      html += '<div class="state-col gui">';
+      html += `<h4><span class="channel-indicator ci-gui"></span>messages${loop.guiFrozen ? ' (冻结)' : ''}</h4>`;
+      if (loop.gui) {
+        for (const m of loop.gui) html += renderMsg(m, loop.guiFrozen);
+      }
+      html += '</div>';
+
+      html += '</div>'; // state-grid
+
+      // Shared state
+      if (loop.shared) {
+        html += `<div class="shared-state"><strong>共享状态:</strong> ${loop.shared}</div>`;
+      }
+
+      html += '</details>';
+    }
+
+    html += '</div>'; // loop
+
+    // Arrow between loops
+    html += '<div class="arrow">↓</div>';
+  }
+
+  // Remove last arrow
+  html = html.replace(/<div class="arrow">↓<\/div>$/, '');
+
+  timeline.innerHTML = html;
+}
+
+renderButtons();
+renderTimeline();
+</script>
+</body>
+</html>

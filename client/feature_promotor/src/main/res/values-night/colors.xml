@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bottom_nav_item_color_selected">#007BFF</color>
+    <color name="bottom_nav_item_color_unselected">#8A8A8A</color>
+    <color name="task_card_douyin_bg">#FF5722</color>
+    <color name="task_card_xiaohongshu_bg">#FF0000</color>
+    <color name="task_card_wechat_bg">#4CAF50</color>
+    <color name="task_card_kuaishou_bg">#FF9800</color>
+    <color name="task_card_sms_bg">#FFC107</color>
+    <color name="task_card_email_bg">#2196F3</color>
+    <color name="task_card_taobao_bg">#FF5722</color>
+    <color name="task_card_pinduoduo_bg">#E91E63</color>
+    <color name="task_card_xianyu_bg">#FFEB3B</color>
+    <color name="task_card_custom_bg">#9C27B0</color>
+    <color name="add_button_blue">#007BFF</color>
+</resources>

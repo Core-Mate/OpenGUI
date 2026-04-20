@@ -1,0 +1,493 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_aurora_placeholder">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingTop="48dp">
+
+            <!-- 用户信息：Hi / 雅婷 + 签到 / 手机号 + 设置 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginBottom="20dp"
+                android:gravity="start|center_vertical"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="Hi,"
+                        android:textColor="#64748B"
+                        android:textSize="15sp" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/tv_name"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-black"
+                            android:letterSpacing="-0.02"
+                            android:textColor="#0B1120"
+                            android:textSize="26sp"
+                            tools:text="雅婷" />
+                        <!--         签到               -->
+                        <LinearLayout
+                            android:id="@+id/ll_checkin"
+                            android:layout_width="wrap_content"
+                            android:layout_height="28dp"
+                            android:layout_marginStart="8dp"
+                            android:background="@drawable/bg_checkin_button"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="10dp"
+                            android:paddingEnd="10dp">
+
+                            <ImageView
+                                android:id="@+id/account_checkin_icon"
+                                android:layout_width="12dp"
+                                android:layout_height="12dp"
+                                android:contentDescription="@null"
+                                android:src="@drawable/ic_gift" />
+
+                            <TextView
+                                android:id="@+id/account_checkin_text"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="4dp"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="+10"
+                                android:textColor="#FFFFFF"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+                        <LinearLayout
+                            android:id="@+id/ll_has_checkin"
+                            android:layout_marginStart="8dp"
+                            android:visibility="gone"
+                            android:layout_width="wrap_content"
+                            android:layout_height="28dp"
+                            android:paddingStart="10dp"
+                            android:paddingEnd="10dp"
+                            android:background="@drawable/bg_signed_button"
+                            android:gravity="center"
+                            android:orientation="horizontal"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:enabled="false">
+
+                            <ImageView
+                                android:layout_width="12dp"
+                                android:layout_height="12dp"
+                                android:src="@drawable/ic_check"
+                                android:tint="#16A34A"/>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="4dp"
+                                android:text="已签"
+                                android:textSize="11sp"
+                                android:textStyle="bold"
+                                android:textColor="#16A34A"/>
+
+                        </LinearLayout>
+Ï
+
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tv_phone"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="+86 152 2102 7654"
+                        android:textColor="#94A3B8"
+                        android:textSize="13sp" />
+                </LinearLayout>
+
+                <ImageButton
+                    android:id="@+id/account_settings_btn"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/bg_settings_button"
+                    android:contentDescription="设置"
+                    android:padding="10dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_settings" />
+            </LinearLayout>
+
+            <!-- 统计数据卡片 -->
+            <com.lihang.ShadowLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom"
+                android:layout_marginTop="-10dp"
+                app:hl_cornerRadius="20dp"
+                app:hl_shadowColor="#1A000000"
+                app:hl_shadowLimit="16dp"
+                app:hl_shadowOffsetX="0dp"
+                app:hl_shadowOffsetY="0dp"
+                app:hl_shadowSymmetry="true">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:elevation="2dp"
+                    android:orientation="horizontal"
+                    android:paddingTop="20dp"
+                    android:paddingBottom="20dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/account_stat_tasks"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-black"
+                            android:textColor="#0B1120"
+                            android:textSize="28sp"
+                            tools:text="28" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="已完成任务"
+                            android:textColor="#94A3B8"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="1dp"
+                        android:layout_height="match_parent"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginBottom="8dp"
+                        android:background="#F1F5F9" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/account_stat_saved"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-black"
+                            android:textColor="#0B1120"
+                            android:textSize="28sp"
+                            tools:text="4.2h" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="累计节省"
+                            android:textColor="#94A3B8"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="1dp"
+                        android:layout_height="match_parent"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginBottom="8dp"
+                        android:background="#F1F5F9" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/account_stat_rate"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-black"
+                            android:textColor="#0B1120"
+                            android:textSize="28sp"
+                            tools:text="98%" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="成功率"
+                            android:textColor="#94A3B8"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.lihang.ShadowLayout>
+
+            <com.lihang.ShadowLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom"
+                android:layout_marginTop="-10dp"
+                app:hl_cornerRadius="20dp"
+                app:hl_shadowColor="#1A000000"
+                app:hl_shadowLimit="16dp"
+                app:hl_shadowOffsetX="0dp"
+                app:hl_shadowOffsetY="0dp"
+                app:hl_shadowSymmetry="true">
+                <!-- 菜单卡片 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:elevation="2dp"
+                    android:orientation="vertical">
+
+                    <!-- 积分余额行 -->
+                    <LinearLayout
+                        android:id="@+id/account_points_row"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:padding="20dp">
+
+                        <FrameLayout
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:background="@drawable/bg_points_icon_circle">
+
+                            <ImageView
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:layout_gravity="center"
+                                android:contentDescription="@null"
+                                android:src="@drawable/ic_zap"
+                                android:tint="@android:color/white" />
+                        </FrameLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    android:id="@+id/account_points_value"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-black"
+                                    android:textColor="#0B1120"
+                                    android:textSize="20sp"
+                                    tools:text="0" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="6dp"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="积分"
+                                    android:textColor="#64748B"
+                                    android:textSize="14sp" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <ImageView
+                                    android:layout_width="12dp"
+                                    android:layout_height="12dp"
+                                    android:contentDescription="@null"
+                                    android:src="@drawable/ic_clock" />
+
+                                <TextView
+                                    android:id="@+id/account_points_hours"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="4dp"
+                                    android:textColor="#94A3B8"
+                                    android:textSize="12sp"
+                                    tools:text="约可使用 0.0 小时" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="充值"
+                                android:textColor="#2E58FF"
+                                android:textSize="14sp" />
+
+                            <ImageView
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:layout_marginStart="4dp"
+                                android:contentDescription="@null"
+                                android:src="@drawable/ic_arrow_right" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="20dp"
+                        android:layout_marginEnd="20dp"
+                        android:background="#F1F5F9" />
+
+                    <!-- 执行偏好 -->
+                    <include
+                        android:id="@+id/account_menu_preference"
+                        layout="@layout/item_account_menu" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="20dp"
+                        android:layout_marginEnd="20dp"
+                        android:background="#F1F5F9" />
+                    <!-- 知识库 -->
+                    <include
+                        android:id="@+id/account_menu_knowledge"
+                        layout="@layout/item_account_menu" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="20dp"
+                        android:layout_marginEnd="20dp"
+                        android:background="#F1F5F9" />
+                    <!-- 应用白名单（锁定） -->
+                    <include
+                        android:id="@+id/account_menu_whitelist"
+                        layout="@layout/item_account_menu" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="20dp"
+                        android:layout_marginEnd="20dp"
+                        android:background="#F1F5F9" />
+                    <!-- 运行模式（锁定 + 值） -->
+                    <include
+                        android:id="@+id/account_menu_run_mode"
+                        layout="@layout/item_account_menu" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="20dp"
+                        android:layout_marginEnd="20dp"
+                        android:background="#F1F5F9" />
+                    <!-- 消费记录 -->
+                    <include
+                        android:id="@+id/account_menu_consumption"
+                        layout="@layout/item_account_menu" />
+                </LinearLayout>
+            </com.lihang.ShadowLayout>
+
+            <com.lihang.ShadowLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom"
+                android:layout_marginTop="-10dp"
+                app:hl_cornerRadius="20dp"
+                app:hl_shadowColor="#1A000000"
+                app:hl_shadowLimit="16dp"
+                app:hl_shadowOffsetX="0dp"
+                app:hl_shadowOffsetY="0dp"
+                app:hl_shadowSymmetry="true">
+                <!-- 菜单卡片 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:elevation="2dp"
+                    android:orientation="vertical">
+
+                    <!-- 退出登录 -->
+                    <LinearLayout
+                        android:id="@+id/ll_logout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:orientation="horizontal"
+                        android:paddingStart="20dp"
+                        android:paddingTop="20dp"
+                        android:paddingEnd="20dp"
+                        android:paddingBottom="20dp">
+
+                        <ImageView
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_logout"
+                            android:tint="#EF4444" />
+
+                        <TextView
+                            android:id="@+id/account_menu_label"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginLeft="8dp"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="退出登录"
+                            android:textColor="#EF4444"
+                            android:textSize="17sp" />
+
+
+                    </LinearLayout>
+
+
+                </LinearLayout>
+            </com.lihang.ShadowLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="150dp" />
+
+        </LinearLayout>
+    </ScrollView>
+</FrameLayout>

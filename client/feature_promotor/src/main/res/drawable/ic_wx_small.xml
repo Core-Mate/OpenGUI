@@ -1,0 +1,61 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="22dp"
+    android:height="22dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- 左侧大气泡 -->
+    <path
+        android:fillColor="#07C160"
+        android:pathData="M8.5,7
+                          C5.46,7 3,9.24 3,12
+                          c0,1.57 0.87,2.96 2.2,3.86
+                          L4.5,18
+                          l2.34,-1.17
+                          c0.54,0.13 1.1,0.2 1.66,0.2
+                          c0.37,0 0.73,-0.03 1.08,-0.09
+                          c-0.21,-0.56 -0.33,-1.16 -0.33,-1.79
+                          c0,-2.76 2.54,-5 5.67,-5
+                          c0.21,0 0.42,0.01 0.62,0.03
+                          C15.06,8.22 12.01,7 8.5,7
+                          Z" />
+
+    <!-- 右侧小气泡 -->
+    <path
+        android:fillColor="#07C160"
+        android:pathData="M21,15.15
+                          c0,-2.28 -2.13,-4.15 -4.75,-4.15
+                          c-2.63,0 -4.75,1.87 -4.75,4.15
+                          c0,2.29 2.13,4.15 4.75,4.15
+                          c0.46,0 0.9,-0.05 1.33,-0.15
+                          L19.5,20
+                          l-0.54,-1.62
+                          c1.06,-0.74 1.79,-1.88 1.79,-3.23
+                          Z" />
+
+    <!-- 左侧气泡白点 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M7,10.75
+                          a0.75,0.75 0 1,1 0,1.5
+                          a0.75,0.75 0 1,1 0,-1.5" />
+
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M10,10.75
+                          a0.75,0.75 0 1,1 0,1.5
+                          a0.75,0.75 0 1,1 0,-1.5" />
+
+    <!-- 右侧气泡白点 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M14.5,14.25
+                          a0.5,0.5 0 1,1 0,1
+                          a0.5,0.5 0 1,1 0,-1" />
+
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M17,14.25
+                          a0.5,0.5 0 1,1 0,1
+                          a0.5,0.5 0 1,1 0,-1" />
+</vector>

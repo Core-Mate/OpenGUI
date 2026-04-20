@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 第一层：边框背景（渐变） -->
+    <item>
+        <shape xmlns:android="http://schemas.android.com/apk/res/android"
+            android:shape="rectangle">
+            <gradient
+                android:angle="45"
+                android:centerColor="#FF45B2"
+                android:endColor="#7C3FFF"
+                android:startColor="#0573FF"
+                android:type="linear"/>
+
+            <corners android:radius="16dp"/>
+        </shape>
+    </item>
+
+    <!-- 第三层：内容背景（覆盖中间部分） -->
+    <item
+        android:bottom="1.5dp"
+        android:left="1.5dp"
+        android:right="1.5dp"
+        android:top="1.5dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#FFFFFF" /> <!-- 内部背景色 -->
+            <corners android:radius="16dp" /> <!-- 比边框圆角小2dp -->
+        </shape>
+    </item>
+
+</layer-list>

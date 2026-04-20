@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.lihang.ShadowLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/v_sd"
+    app:hl_layoutBackground="@color/transparent"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:hl_cornerRadius="16dp"
+    app:hl_shadowColor="#11000000"
+    app:hl_shadowLimit="8dp"
+    app:hl_shadowOffsetX="0dp"
+    app:hl_shadowOffsetY="0dp"
+    app:hl_shadowSymmetry="true">
+
+    <LinearLayout
+        android:id="@+id/ll_item"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/tv_title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textColor="@color/task_detail_primary_text"
+                android:textSize="17sp"
+                android:textStyle="bold"
+                tools:text="行业" />
+
+            <ImageView
+                android:id="@+id/img_control"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:src="@drawable/icon_add" />
+        </LinearLayout>
+
+        <FrameLayout
+            android:id="@+id/content_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:background="@drawable/bg_execute_preference_content"
+            android:padding="14dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tv_content"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:lineSpacingMultiplier="1.25"
+                android:textColor="@color/execute_preference_content_text"
+                android:textSize="15sp"
+                tools:text="医疗美容机构销售" />
+        </FrameLayout>
+    </LinearLayout>
+</com.lihang.ShadowLayout>
+

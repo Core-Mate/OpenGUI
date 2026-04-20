@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- lucide 'share2' — three circles and two connecting lines (outline, stroke 1.5) -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#9CA3AF"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M18 2a3 3 0 1 0 0 6a3 3 0 1 0 0-6z" />
+
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#9CA3AF"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M6 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6z" />
+
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#9CA3AF"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M18 16a3 3 0 1 0 0 6a3 3 0 1 0 0-6z" />
+
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#9CA3AF"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M8.59 13.51 L15.42 17.49" />
+
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#9CA3AF"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M15.41 6.51 L8.59 10.49" />
+
+</vector>

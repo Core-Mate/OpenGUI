@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!--    <FrameLayout-->
+    <!--        android:id="@+id/top_mask_bg"-->
+    <!--        android:layout_width="match_parent"-->
+    <!--        android:layout_height="100dp"-->
+    <!--        android:background="@drawable/execute_task_window_top_bg"-->
+    <!--        android:clickable="false"-->
+    <!--        app:layout_constraintEnd_toEndOf="parent"-->
+    <!--        app:layout_constraintStart_toStartOf="parent"-->
+    <!--        app:layout_constraintTop_toTopOf="parent" />-->
+
+    <FrameLayout
+        android:id="@+id/bottom_mask_bg"
+        android:layout_width="match_parent"
+        android:layout_height="150dp"
+        android:background="@drawable/execute_task_window_bottom_bg"
+        android:clickable="false"
+        android:paddingTop="50dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <ImageView
+        android:id="@+id/img_accessibility"
+        android:layout_width="10dp"
+        android:layout_height="10dp"
+        android:layout_centerHorizontal="true"
+        android:layout_alignParentBottom="true"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:src="@mipmap/icon_accessibility_enable" />
+
+    <ImageView
+        android:id="@+id/img_floating_window"
+        android:layout_width="10dp"
+        android:layout_height="10dp"
+        app:layout_constraintStart_toEndOf="@id/img_accessibility"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_alignParentBottom="true"
+        android:layout_toEndOf="@id/img_accessibility"
+        android:src="@mipmap/icon_floating_window_enable" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

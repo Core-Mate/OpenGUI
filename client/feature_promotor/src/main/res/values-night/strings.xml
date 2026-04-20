@@ -1,0 +1,3 @@
+<resources>
+    <string name="accessibility_service_description">此服务用于执行自动化点击任务。</string>
+</resources>

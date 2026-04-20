@@ -1,0 +1,23 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 背景 -->
+    <item>
+        <shape>
+            <solid android:color="@color/white" />
+            <corners android:radius="8dp" />
+            <stroke
+                android:width="1dp"
+                android:color="@color/transparent" />
+        </shape>
+    </item>
+
+    <!-- 右侧箭头 -->
+    <item
+        android:gravity="end|center_vertical"
+        android:right="0dp">
+        <bitmap
+            android:gravity="center"
+            android:src="@drawable/ic_down" />
+    </item>
+
+</layer-list>

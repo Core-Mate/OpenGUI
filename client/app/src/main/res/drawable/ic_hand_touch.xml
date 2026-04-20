@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Web: hand/finger touch icon, blue #3B82F6, 24x24 viewBox -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#3B82F6"
+        android:pathData="M13,4.5L13,2C13,1.45 12.55,1 12,1C11.45,1 11,1.45 11,2L11,11.5L8.5,9.5C8.1,9.1 7.5,9 7,9.25C6.3,9.6 6,10.5 6.5,11.25L10.5,17C11,18 12,19 13.5,19L17,19C19.5,19 21,17 21,14.5L21,10C21,9.45 20.55,9 20,9C19.45,9 19,9.45 19,10L19,12L18,12L18,7C18,6.45 17.55,6 17,6C16.45,6 16,6.45 16,7L16,12L15,12L15,5.5C15,4.95 14.55,4.5 14,4.5C13.45,4.5 13,4.95 13,5.5Z" />
+</vector>

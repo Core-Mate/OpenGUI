@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- 外部存储的Documents目录 -->
+    <external-files-path
+        name="documents"
+        path="Documents/" />
+    
+    <!-- 应用的内部文件目录 -->
+    <files-path
+        name="internal_files"
+        path="." />
+</paths>

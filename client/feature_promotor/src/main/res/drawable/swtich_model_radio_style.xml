@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/switch_model_radio_check_with_padding" android:state_checked="true" />
+    <item android:drawable="@drawable/switch_model_radio_normal_with_padding" android:state_checked="false" />
+
+</selector>

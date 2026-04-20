@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="CountryCode">
+        <item>+86</item>
+        <item>+1</item>
+        <item>+81</item>
+        <item>+82</item>
+        <item>+44</item>
+        <item>+33</item>
+        <item>+49</item>
+        <item>+61</item>
+        <item>+65</item>
+    </string-array>
+</resources>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Promotor.Feature" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    </style>
+    <style name="AlertDialog.Promotor.Feature" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
+    </style>
+
+    <style name="AppBottomSheet" parent="Theme.Design.Light.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/AppBottomSheetStyle</item>
+    </style>
+
+    <style name="AppBottomSheetStyle" parent="Widget.Design.BottomSheet.Modal">
+        <item name="android:background">@drawable/time_picker_dialog_bg</item>
+    </style>
+
+    <!-- 执行中 Overlay：透明窗口，与 Web ExecutionOverlay 一致 -->
+    <style name="Theme.PromptExecution.Overlay" parent="Theme.Promotor.Feature">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+    </style>
+</resources>

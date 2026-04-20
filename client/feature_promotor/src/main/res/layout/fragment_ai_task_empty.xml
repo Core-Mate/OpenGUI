@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@android:color/transparent">
+
+    <LinearLayout
+        android:id="@+id/sug_wrap"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/task_card_vertical_spacing"
+        android:layout_marginTop="156dp"
+        android:alpha="1"
+        android:orientation="vertical"
+        android:visibility="visible"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:contentDescription="@null"
+            android:src="@drawable/icon_colorful_text" />
+
+        <TextView
+            android:id="@+id/empty_state_top_area"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginStart="27dp"
+            android:layout_marginTop="52dp"
+            android:layout_marginEnd="27dp"
+            android:gravity="center"
+            android:text="你可以这样命令"
+            android:textColor="#99000000"
+            android:textSize="14sp" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/empty_state_card_recyclerview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:clipToPadding="false"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
+            tools:listitem="@layout/item_empty_state_card" />
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

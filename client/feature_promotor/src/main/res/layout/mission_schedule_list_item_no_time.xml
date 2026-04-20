@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tool="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_marginTop="2dp"
+    android:layout_height="46dp">
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/task_wrap"
+        android:layout_marginTop="2dp"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:layout_marginStart="44dp"
+        app:cardBackgroundColor="#ffffff"
+        app:cardCornerRadius="12dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <LinearLayout
+            android:id="@+id/task_content_wrap"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/img_task_icon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_marginStart="11dp"
+                android:src="@drawable/icon_task_like" />
+
+            <TextView
+                android:id="@+id/tv_task_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_marginStart="12dp"
+                android:textColor="#FFFFFF"
+                android:textFontWeight="500"
+                android:textSize="15dp"
+                tool:text="评论点赞" />
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <TextView
+        android:id="@+id/tv_executing"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="执行中"
+        android:textColor="#F15B3C"
+        android:textFontWeight="500"
+        android:textSize="11dp"
+        app:layout_constraintBottom_toBottomOf="@id/task_wrap"
+        app:layout_constraintTop_toTopOf="@id/task_wrap" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

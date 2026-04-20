@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_gravity="bottom"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:id="@+id/ll_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="bottom"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:id="@+id/ll_root"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/white_color_top_corner_24"
+            android:orientation="vertical"
+            android:paddingBottom="24dp">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="64dp"
+                android:paddingHorizontal="20dp">
+
+                <TextView
+                    android:id="@+id/tv_dialog_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerInParent="true"
+                    android:text="编辑任务描述"
+                    android:textColor="@color/task_detail_primary_text"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <FrameLayout
+                    android:id="@+id/fl_close"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_alignParentRight="true"
+                    android:layout_centerVertical="true">
+
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_close"
+                        android:tint="@color/grey" />
+                </FrameLayout>
+
+            </RelativeLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#F3F4F6" />
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginVertical="12dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_gray_corner_24">
+
+                <EditText
+                    android:id="@+id/full_input_task"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginBottom="50dp"
+                    android:background="@null"
+                    android:gravity="top"
+                    android:hint="描述您希望 AI 执行的任务目标..."
+                    android:inputType="textMultiLine"
+                    android:minLines="12"
+                    android:padding="18dp"
+                    android:scrollbars="vertical"
+                    android:textColor="#111827"
+                    android:textSize="18sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom"
+                    android:layout_marginTop="12dp"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="12dp"
+                    android:paddingBottom="4dp">
+
+                    <FrameLayout
+                        android:id="@+id/fl_trans_bg"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="bottom|right">
+
+                        <ImageView
+                            android:id="@+id/iv_trans"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_margin="17dp"
+                            android:src="@drawable/ic_expend"
+                            android:tint="@color/grey" />
+
+                    </FrameLayout>
+
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1" />
+
+                    <LinearLayout
+                        android:layout_width="180dp"
+                        android:layout_height="44dp"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/full_cancel"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_white_circle"
+                            android:gravity="center"
+                            android:text="取消"
+                            android:textColor="#111827"
+                            android:textSize="16sp" />
+
+                        <View
+                            android:layout_width="12dp"
+                            android:layout_height="1dp" />
+
+                        <TextView
+                            android:id="@+id/full_confirm"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_main_circle"
+                            android:gravity="center"
+                            android:text="保存"
+                            android:textColor="#FFFFFF"
+                            android:textSize="16sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+            </FrameLayout>
+
+        </LinearLayout>
+    </LinearLayout>
+
+</RelativeLayout>

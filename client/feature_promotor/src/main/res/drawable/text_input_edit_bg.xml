@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 第一层：边框背景（渐变） -->
+    <item>
+        <shape
+            android:shape="rectangle">
+            <gradient
+                android:angle="45"
+                android:centerColor="#FF45B2"
+                android:endColor="#7C3FFF"
+                android:startColor="#0573FF"
+                android:type="linear"/>
+            <corners android:radius="16dp"/>
+        </shape>
+    </item>
+
+<!--    <item-->
+<!--        android:bottom="1.5dp"-->
+<!--        android:left="1.5dp"-->
+<!--        android:right="1.5dp"-->
+<!--        android:top="1.5dp">-->
+<!--        <shape android:shape="rectangle">-->
+<!--            <solid android:color="#FFFFFF" /> &lt;!&ndash; 内部背景色 &ndash;&gt;-->
+<!--            <corners android:radius="16dp" /> &lt;!&ndash; 比边框圆角小2dp &ndash;&gt;-->
+<!--        </shape>-->
+<!--    </item>-->
+
+    <item android:bottom="1.5dp" android:left="1.5dp" android:right="1.5dp"  android:top="1.5dp">
+        <shape
+            android:shape="rectangle">
+            <gradient
+                android:angle="90"
+                android:centerColor="#FFFFFF"
+                android:endColor="#FFFFFF"
+                android:startColor="#FFFFFF"
+                android:type="linear"/>
+            <corners android:radius="16dp"/>
+        </shape>
+    </item>
+
+</layer-list>

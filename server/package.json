@@ -1,0 +1,27 @@
+{
+	"name": "opengui",
+	"private": true,
+	"scripts": {
+		"build": "turbo run build",
+		"dev": "turbo run dev",
+		"backend": "cd apps/backend && pnpm run dev",
+		"lint": "turbo run lint",
+		"format-and-lint": "biome check .",
+		"format-and-lint:fix": "biome check --write .",
+		"check-types": "turbo run check-types"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.3.7",
+		"turbo": "^2.6.1",
+		"typescript": "5.9.2"
+	},
+	"packageManager": "pnpm@10.27.0",
+	"engines": {
+		"node": ">=22"
+	},
+	"dependencies": {
+		"@larksuiteoapi/node-sdk": "^1.60.0",
+		"grammy": "^1.41.1",
+		"streamdown": "^2.1.0"
+	}
+}

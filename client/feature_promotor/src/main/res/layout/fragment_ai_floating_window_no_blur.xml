@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/floating_ring_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/transparent"
+    tools:ignore="ContentDescription">
+
+    <LinearLayout
+        android:id="@+id/text_wrap"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="18dp"
+        android:layout_marginEnd="18dp"
+        android:background="@color/transparent"
+        android:orientation="vertical"
+        android:padding="16dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/tv_ai_thought_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:text="思考中..."
+            android:textColor="@android:color/black"
+            android:textSize="13sp" />
+
+        <ScrollView
+            android:id="@+id/scroll_view"
+            android:layout_width="match_parent"
+            android:layout_height="160dp"
+            android:scrollbars="none">
+
+            <me.codeboy.android.aligntextview.AlignTextView
+                android:id="@+id/tv_ai_thought_content"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@android:color/transparent"
+                android:textColor="@android:color/black"
+                android:textSize="13sp"
+                tools:text="嗯，用户让打开小红书并发布三条评论，首先我需要先退出OpenGUI AI APP，回到主屏幕，其次我需要找到小红书APP并打开它，然后打开评论区，发布三条评论。" />
+        </ScrollView>
+    </LinearLayout>
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

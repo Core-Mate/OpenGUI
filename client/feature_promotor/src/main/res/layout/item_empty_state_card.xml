@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/tv_sug_text"
+    android:layout_width="match_parent"
+    android:layout_height="44dp"
+    android:layout_gravity="center_horizontal"
+    android:layout_marginStart="27dp"
+    android:layout_marginTop="8dp"
+    android:layout_marginEnd="27dp"
+    android:background="@drawable/index_sug_bg"
+    android:gravity="center"
+    android:text="打开小红书发布三条评论"
+    android:textColor="#000000"
+    android:textSize="14sp" />

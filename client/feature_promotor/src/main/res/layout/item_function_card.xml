@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/function_card_container"
+    android:layout_width="120dp"
+    android:layout_height="120dp"
+    android:layout_margin="@dimen/function_card_margin"
+    app:cardCornerRadius="@dimen/card_corner_radius"
+    app:cardElevation="@dimen/card_elevation">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="@dimen/function_card_padding">
+
+        <ImageView
+            android:id="@+id/iv_function_icon"
+            android:layout_width="@dimen/function_icon_size"
+            android:layout_height="@dimen/function_icon_size"
+            android:scaleType="fitCenter"
+            tools:src="@drawable/ic_douyin_competitor" />
+
+        <TextView
+            android:id="@+id/tv_function_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:textColor="@android:color/black"
+            android:textSize="@dimen/function_text_size"
+            tools:text="竞品获客" />
+
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

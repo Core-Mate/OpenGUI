@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <!--    E0E0E0-->
+    <com.lihang.ShadowLayout
+        android:id="@+id/sd_top_loc_sel_layout"
+        android:layout_width="150dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:layout_marginHorizontal="8dp"
+        app:hl_cornerRadius="16dp"
+        app:hl_shadowColor="#A0A0A0"
+        app:hl_shadowLimit="8dp"
+        app:hl_shadowOffsetX="0dp"
+        app:hl_shadowOffsetY="0dp"
+        app:hl_shadowSymmetry="true">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:id="@+id/action_pin"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:alpha="0.3"
+                android:gravity="center|left"
+                android:orientation="horizontal"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp">
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:src="@drawable/ic_pin" />
+
+                <TextView
+                    android:id="@+id/action_pin_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginBottom="1.5dp"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="置顶"
+                    android:textColor="#111827"
+                    android:textSize="15sp" />
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginHorizontal="8dp"
+                android:background="#F3F4F6" />
+            <!-- Share -->
+            <LinearLayout
+                android:id="@+id/action_share"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:alpha="0.3"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center|left"
+                android:orientation="horizontal"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp">
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:src="@drawable/ic_share"
+                    android:tint="#6B7280" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginBottom="1.5dp"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="分享"
+                    android:textColor="#111827"
+                    android:textSize="15sp" />
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginHorizontal="8dp"
+                android:background="#F3F4F6" />
+
+            <LinearLayout
+                android:id="@+id/action_delete"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:gravity="center|left"
+                android:orientation="horizontal"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp">
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:src="@drawable/ic_delete2" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginBottom="1.5dp"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="删除"
+                    android:textColor="#EF4444"
+                    android:textSize="15sp" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </com.lihang.ShadowLayout>
+
+
+</LinearLayout>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingBottom="8dp"
+    android:paddingEnd="8dp"
+    android:paddingStart="8dp"
+    android:gravity="start|bottom">
+    <Button
+    android:id="@+id/btn_suggestion"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:minHeight="48dp"
+    android:gravity="center_vertical|start" android:paddingStart="24dp"
+    android:paddingEnd="24dp"
+    android:backgroundTint="@null"
+    app:backgroundTint="@null"
+    android:background="@drawable/suggestion_button_background_light_gray" android:textColor="#333333"
+    android:textSize="16sp"
+    android:text="帮我打开今日头条"
+    android:textAllCaps="false"
+    android:ellipsize="end"
+    android:maxLines="1"
+    android:singleLine="true"/>
+
+</LinearLayout>

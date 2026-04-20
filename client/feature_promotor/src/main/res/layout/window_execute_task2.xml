@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/control_container"
+        android:layout_width="match_parent"
+        android:layout_height="141dp"
+        android:layout_marginStart="10dp"
+        android:layout_marginEnd="10dp"
+        android:background="@drawable/bg_execute_task_window"
+        android:visibility="visible">
+
+        <TextView
+            android:id="@+id/tv_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="20dp"
+            android:textColor="#99FFFFFF"
+            android:textSize="11sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="暂停中" />
+
+        <TextView
+            android:id="@+id/tv_content"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="6dp"
+            android:textColor="#99FFFFFF"
+            android:textFontWeight="600"
+            android:textSize="16sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tv_status"
+            tools:text="正在用 Capcut 剪辑广告视频，准备发布" />
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/card_pause_resume"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="20dp"
+            app:cardBackgroundColor="#848487"
+            app:cardCornerRadius="40dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/card_supplement">
+
+            <TextView
+                android:id="@+id/tv_pause_resume"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginStart="12dp"
+                android:layout_marginTop="7.5dp"
+                android:layout_marginEnd="12dp"
+                android:layout_marginBottom="7.5dp"
+                android:text="人工接管"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp" />
+        </androidx.cardview.widget.CardView>
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/card_supplement"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="20dp"
+            app:cardBackgroundColor="#0000FF"
+            app:cardCornerRadius="40dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <TextView
+                android:id="@+id/tv_supplement"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginStart="12dp"
+                android:layout_marginTop="7.5dp"
+                android:layout_marginEnd="12dp"
+                android:layout_marginBottom="7.5dp"
+                android:text="补充指令"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp" />
+        </androidx.cardview.widget.CardView>
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/card_stop"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="20dp"
+            app:cardBackgroundColor="#33EF7373"
+            app:cardCornerRadius="40dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginStart="12dp"
+                android:layout_marginTop="7.5dp"
+                android:layout_marginEnd="12dp"
+                android:layout_marginBottom="7.5dp"
+                android:text="终止"
+                android:textColor="#FF0000"
+                android:textSize="14sp" />
+        </androidx.cardview.widget.CardView>
+
+        <LinearLayout
+            android:id="@+id/confirm_cancel_container"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent">
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/card_cancel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginBottom="20dp"
+                app:cardBackgroundColor="#33FFFFFF"
+                app:cardCornerRadius="40dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginTop="7.5dp"
+                    android:layout_marginEnd="12dp"
+                    android:layout_marginBottom="7.5dp"
+                    android:text="取消"
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp" />
+            </androidx.cardview.widget.CardView>
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/card_confirm"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginBottom="20dp"
+                app:cardBackgroundColor="#33FFFFFF"
+                app:cardCornerRadius="40dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginTop="7.5dp"
+                    android:layout_marginEnd="12dp"
+                    android:layout_marginBottom="7.5dp"
+                    android:text="确认"
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp" />
+            </androidx.cardview.widget.CardView>
+        </LinearLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/supplement_container"
+        android:layout_width="match_parent"
+        android:visibility="gone"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_execute_task_window">
+
+        <TextView
+            android:id="@+id/tv_supplement_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="20dp"
+            android:text="请补充指令"
+            android:textColor="#99FFFFFF"
+            android:textSize="15sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <EditText
+            android:id="@+id/et_supplement"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="4dp"
+            android:minLines="3"
+            android:gravity="top|start"
+            android:background="@drawable/bg_supplement_input"
+            android:hint="输入补充指令，AI 将记住你的调整"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:paddingTop="14dp"
+            android:paddingBottom="14dp"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp"
+            android:textColorHint="#99FFFFFF"
+            android:inputType="textMultiLine|textCapSentences"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tv_supplement_status" />
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/card_cancel_supplement"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="20dp"
+            app:cardBackgroundColor="#99FFFFFF"
+            app:cardCornerRadius="40dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/et_supplement">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginStart="12dp"
+                android:layout_marginTop="7.5dp"
+                android:layout_marginEnd="12dp"
+                android:layout_marginBottom="7.5dp"
+                android:text="取消"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp" />
+        </androidx.cardview.widget.CardView>
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/card_submit_supplement"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="20dp"
+            app:cardBackgroundColor="#0000FF"
+            app:cardCornerRadius="40dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/et_supplement">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginStart="12dp"
+                android:layout_marginTop="7.5dp"
+                android:layout_marginEnd="12dp"
+                android:layout_marginBottom="7.5dp"
+                android:text="确认补充"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp" />
+        </androidx.cardview.widget.CardView>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</RelativeLayout>

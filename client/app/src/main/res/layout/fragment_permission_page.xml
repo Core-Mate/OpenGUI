@@ -1,0 +1,310 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF"
+    android:orientation="vertical">
+
+    <View
+        android:id="@+id/v_status"
+        android:layout_width="match_parent"
+        android:layout_height="20dp" />
+
+    <!-- Header with Back and Skip -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="20dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="8dp">
+
+        <ImageButton
+            android:id="@+id/button_back"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/icon_back2"
+            android:contentDescription="Back"
+            android:padding="0dp"
+            android:scaleType="center" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/button_skip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:clickable="true"
+            android:focusable="true"
+            android:padding="12dp"
+            android:text="以后再说"
+            android:textColor="#6B7280"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Content Area -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp">
+            <!-- Title -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="32dp"
+                android:text="启用必要权限"
+                android:textAlignment="center"
+                android:textColor="#111827"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+            <!-- Permission Cards Container -->
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="278dp"
+                android:layout_gravity="center">
+                <!-- Background decorative layer 1 -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/card_bg_outer" />
+                <!-- Background decorative layer 2 -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="6dp"
+                    android:background="@drawable/card_bg_middle" />
+
+                <!-- Main Card -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_margin="12dp"
+                    android:background="@drawable/card_bg_main"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <!-- Accessibility Permission Item -->
+                    <LinearLayout
+                        android:id="@+id/permission_accessibility"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
+                        android:background="@drawable/permission_item_bg"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:padding="16dp">
+
+                        <!-- Icon -->
+                        <FrameLayout
+                            android:id="@+id/fl_accessibility"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:layout_marginEnd="12dp"
+                            android:background="@drawable/icon_bg_gray">
+
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:layout_gravity="center"
+                                android:contentDescription="Accessibility"
+                                android:src="@drawable/ic_accessibility" />
+                        </FrameLayout>
+
+                        <!-- Text Content -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="12dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="无障碍权限"
+                                android:textColor="#111827"
+                                android:textSize="15sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="辅助操控手机完成任务"
+                                android:textColor="#9CA3AF"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+
+                        <!-- Checkmark -->
+                        <ImageView
+                            android:id="@+id/check_accessibility"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@drawable/ic_arrow_right"
+                            android:visibility="gone" />
+                    </LinearLayout>
+
+                    <!-- Overlay Permission Item -->
+                    <LinearLayout
+                        android:id="@+id/permission_overlay"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/permission_item_bg"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:padding="16dp">
+
+                        <!-- Icon -->
+                        <FrameLayout
+                            android:id="@+id/fl_overlay"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:layout_marginEnd="12dp"
+                            android:background="@drawable/icon_bg_gray">
+
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:layout_gravity="center"
+                                android:contentDescription="Overlay"
+                                android:src="@drawable/ic_overlay" />
+                        </FrameLayout>
+
+                        <!-- Text Content -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="12dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="悬浮窗权限"
+                                android:textColor="#111827"
+                                android:textSize="15sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="显示任务执行状态"
+                                android:textColor="#9CA3AF"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+
+                        <!-- Arrow -->
+                        <ImageView
+                            android:id="@+id/check_overlay"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:contentDescription="Arrow"
+                            android:src="@drawable/ic_arrow_right"
+                            android:visibility="gone" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginTop="16dp"
+                        android:background="#F3F4F6" />
+
+                    <!-- Progress Indicator -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:gravity="center"
+                        android:orientation="vertical">
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <View
+                                android:id="@+id/indicator_1"
+                                android:layout_width="8dp"
+                                android:layout_height="8dp"
+                                android:layout_marginEnd="8dp"
+                                android:background="@drawable/indicator_dot" />
+
+                            <View
+                                android:id="@+id/indicator_2"
+                                android:layout_width="8dp"
+                                android:layout_height="8dp"
+                                android:layout_marginEnd="8dp"
+                                android:background="@drawable/indicator_dot" />
+
+                            <TextView
+                                android:id="@+id/permission_count"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:text="0/2 已开启"
+                                android:textColor="#9CA3AF"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+            </FrameLayout>
+        </LinearLayout>
+        <!-- Hint Text -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="点击权限项跳转到系统设置开启"
+            android:textAlignment="center"
+            android:textColor="#9CA3AF"
+            android:textSize="13sp" />
+    </LinearLayout>
+
+    <!-- Bottom Button -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="24dp"
+        android:paddingTop="16dp"
+        android:paddingEnd="24dp"
+        android:paddingBottom="24dp">
+
+        <TextView
+            android:id="@+id/button_continue"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:background="@drawable/rounded_button"
+            android:gravity="center"
+            android:stateListAnimator="@null"
+            android:text="去设置中开启"
+            android:textColor="#FFFFFF"
+            android:textSize="17sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+</LinearLayout>

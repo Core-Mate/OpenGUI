@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_gray_corner_24"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- 标题 -->
+    <TextView
+        android:id="@+id/tv_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        android:lineSpacingMultiplier="1.2"
+        android:text="微信公众号 图文定时发布"
+        android:textColor="#111827"
+        android:textSize="17sp"
+        android:textStyle="bold" />
+
+    <!-- 统计数据行 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <!-- 使用次数 -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="20dp"
+            android:gravity="left|center"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:layout_marginRight="6dp"
+                android:src="@drawable/ic_user"
+                android:tint="#9CA3AF" />
+
+            <TextView
+                android:id="@+id/tv_use_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="#9CA3AF"
+                android:textSize="13sp"
+                tools:text="1250 使用" />
+        </LinearLayout>
+
+        <!-- 成功率 -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="20dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:layout_marginRight="6dp"
+                android:src="@drawable/ic_check"
+                android:tint="#9CA3AF" />
+
+            <TextView
+                android:id="@+id/tv_success_rate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:text="98% 成功率"
+                android:textColor="#9CA3AF"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+        <!-- 预计时间 -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="20dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:layout_marginRight="6dp"
+                android:src="@drawable/ic_clock"
+                android:tint="#9CA3AF" />
+
+            <TextView
+                android:id="@+id/estimated_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:text="~3 min"
+                android:textColor="#9CA3AF"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout>

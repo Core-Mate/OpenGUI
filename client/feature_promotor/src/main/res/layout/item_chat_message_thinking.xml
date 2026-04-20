@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="start|center_vertical"
+    android:paddingStart="8dp"
+    android:paddingEnd="8dp"
+    android:paddingTop="4dp"
+    android:paddingBottom="4dp">
+
+    <ImageView
+        android:id="@+id/iv_avatar_thinking"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:src="@drawable/ic_ai_avatar"
+        android:contentDescription="AI Avatar"
+        android:layout_marginEnd="8dp" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tv_thinking_message"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_ai_thinking_message"
+            android:padding="12dp"
+            android:textColor="#666666"
+            android:textSize="14sp"
+            android:textStyle="italic"
+            android:maxWidth="280dp"
+            tools:text="AI正在努力思考中..." />
+
+        <TextView
+            android:id="@+id/tv_timestamp" android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textSize="10sp"
+            android:textColor="#AAAAAA"
+            android:layout_gravity="start"
+            tools:text="10:31 AM" />
+    </LinearLayout>
+</LinearLayout>

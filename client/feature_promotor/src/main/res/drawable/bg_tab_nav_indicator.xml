@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 顶部炫彩指示条：与前端 linear-gradient(90deg, #3B82F6, #8B5CF6 50%, #06B6D4) -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <gradient
+        android:angle="0"
+        android:startColor="#FF3B82F6"
+        android:centerColor="#FF8B5CF6"
+        android:centerX="0.5"
+        android:endColor="#FF06B6D4"
+        android:type="linear" />
+    <corners android:radius="1.5dp" />
+</shape>

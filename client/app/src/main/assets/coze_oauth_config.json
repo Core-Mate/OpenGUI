@@ -1,0 +1,8 @@
+{
+    "client_type": "jwt",
+    "client_id": "YOUR_COZE_CLIENT_ID",
+    "coze_www_base": "https://www.coze.cn",
+    "coze_api_base": "https://api.coze.cn",
+    "private_key": "-----BEGIN PRIVATE KEY-----\nYOUR_PRIVATE_KEY_HERE\n-----END PRIVATE KEY-----",
+    "public_key_id": "YOUR_PUBLIC_KEY_ID"
+}

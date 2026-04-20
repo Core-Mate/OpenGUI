@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 首页整体页面背景：白底 + Aurora 光晕（与 Web HomePage + AuroraBackground 一致） -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 底层：纯白 bg-white -->
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="-90"
+                android:startColor="#FFFFFF"
+                android:centerColor="#FFFFFF"
+                android:endColor="#1AFFFFFF" />
+        </shape>
+    </item>
+    <!-- 左上角蓝紫光晕 rgba(46, 88, 255, 0.12) -->
+    <item
+        android:left="-160dp"
+        android:top="-160dp"
+        android:right="0dp"
+        android:bottom="0dp">
+        <shape android:shape="oval">
+            <gradient
+                android:type="radial"
+                android:gradientRadius="280dp"
+                android:centerX="0.2"
+                android:centerY="0.2"
+                android:startColor="#1F2E58FF"
+                android:endColor="#00FFFFFF" />
+            <size
+                android:width="400dp"
+                android:height="400dp" />
+        </shape>
+    </item>
+    <!-- 右下角青色光晕 rgba(0, 200, 255, 0.08) + blur(120px)：中心极淡，快速过渡到全透明 -->
+    <item
+        android:left="0dp"
+        android:top="0dp"
+        android:right="-160dp"
+        android:bottom="-200dp">
+        <shape android:shape="oval">
+            <gradient
+                android:type="radial"
+                android:gradientRadius="120dp"
+                android:centerX="0.85"
+                android:centerY="0.9"
+                android:startColor="#0D00C8FF"
+                android:centerColor="#0500C8FF"
+                android:endColor="#00FFFFFF" />
+            <size
+                android:width="350dp"
+                android:height="50dp" />
+        </shape>
+    </item>
+</layer-list>

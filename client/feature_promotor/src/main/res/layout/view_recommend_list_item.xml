@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.lihang.ShadowLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/sd_top_loc_sel_layout"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    app:hl_cornerRadius="16dp"
+    app:hl_shadowColor="#10000000"
+    app:hl_shadowLimit="8dp"
+    app:hl_shadowOffsetX="0dp"
+    app:hl_shadowOffsetY="0dp"
+    app:hl_shadowSymmetry="true">
+
+    <LinearLayout
+        android:layout_width="280dp"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_recommended_card"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Top Section with Badge and Title -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="start"
+            android:orientation="vertical">
+
+            <!-- Badge -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:paddingStart="6dp"
+                android:paddingTop="2dp"
+                android:paddingEnd="6dp"
+                android:paddingBottom="2dp">
+
+                <ImageView
+                    android:layout_width="12dp"
+                    android:layout_height="12dp"
+                    android:src="@drawable/ic_zap" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:text="快速完成"
+                    android:textColor="#9CA3AF"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+            <!-- Title -->
+            <TextView
+                android:id="@+id/template_title"
+                android:layout_width="match_parent"
+                android:layout_height="62dp"
+                android:layout_marginTop="12dp"
+                android:ellipsize="end"
+                android:lineHeight="23sp"
+                android:maxLines="2"
+                android:text="用豆包生成的海报发布小红书"
+                android:textColor="#111827"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Bottom Section with Stats -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="30dp"
+            android:gravity="left|center"
+            android:orientation="horizontal">
+
+            <!-- Time -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="16dp"
+                android:gravity="center"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_clock" />
+
+                <TextView
+                    android:id="@+id/template_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:text="~5min"
+                    android:textColor="#6B7280"
+                    android:textSize="13sp" />
+
+            </LinearLayout>
+
+            <!-- Usage Count -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_user" />
+
+                <TextView
+                    android:id="@+id/template_usage"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:text="1.2k"
+                    android:textColor="#6B7280"
+                    android:textSize="13sp" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+
+</com.lihang.ShadowLayout>

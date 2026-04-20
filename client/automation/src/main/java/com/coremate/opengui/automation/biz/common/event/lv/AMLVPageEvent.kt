@@ -1,0 +1,139 @@
+package com.coremate.opengui.automation.biz.common.event.lv
+
+import android.accessibilityservice.AccessibilityService
+import android.view.accessibility.AccessibilityNodeInfo
+import com.google.android.accessibility.selecttospeak.SelectToSpeakService
+import com.coremate.opengui.automation.base.AMCore
+import com.coremate.opengui.automation.base.AMTargetApp
+import com.coremate.opengui.automation.base.task.AMBaseStepHelper
+import com.coremate.opengui.automation.base.utils.AMActionDelay
+import com.coremate.opengui.automation.base.utils.AMEventUtils
+import com.coremate.opengui.automation.base.utils.AMNodeUtils
+import com.coremate.opengui.automation.base.utils.MatchCallback
+import com.coremate.opengui.automation.base.utils.Something
+import com.coremate.opengui.automation.biz.common.event.IAMPageEvent
+import com.coremate.opengui.automation.biz.common.node.lv.IAMWidgetLV
+
+internal object AMLVPageEvent : IAMPageEvent() {
+
+    /**
+     * 获取返回节点
+     * */
+    fun getBackNode(): AccessibilityNodeInfo? {
+        val rootNode = AMCore.instance.amContext?.rootNode() ?: return null
+        var nodeInfo: AccessibilityNodeInfo? = null
+        //返回节点id
+        nodeInfo =
+            AMNodeUtils.getFirstNodeById(rootNode, IAMWidgetLV.globalBack().resourceId)
+        return nodeInfo
+    }
+
+    /**
+     * 是否在剪映首页
+     */
+    fun isInHomePage(helper: AMBaseStepHelper?): Boolean {
+        val rootNode = AMCore.instance.amContext?.rootNode() ?: return false
+        val node = AMNodeUtils.getFirstNodeByIdWithCallback(rootNode, object :
+            MatchCallback<AccessibilityNodeInfo> {
+            override fun isMatch(result: AccessibilityNodeInfo?): Boolean {
+                return true
+            }
+        }, mutableListOf("com.lemon.lv:id/home_page_scroll_container"))
+        if (node != null) {
+            return true
+        } else {
+            val mainNode = AMNodeUtils.getFirstNodeById(rootNode, IAMWidgetLV.homeTabItem().resourceId)
+            return AMEventUtils.clickFirstClickableParentWithSimulate(mainNode, helper)
+        }
+    }
+
+    /**
+     * 回到剪映首页
+     * */
+    fun backHomePage(callBack: IAMTaskCallBack, helper: AMBaseStepHelper? = null) {
+        AMEventUtils.doSomethingUntilSuccess(
+            3,
+            AMActionDelay.MIDDLE,
+            object : Something<Boolean> {
+                override fun judgmentSuccess(result: Boolean): Boolean {
+                    if (callBack.action()) return true
+                    if (result) return true
+                    if (!isInTargetApps(
+                            mutableListOf(
+                                AMTargetApp.LV,
+                                AMTargetApp.SYS_PERMISSION,
+                                AMTargetApp.OPLUS_PERMISSION
+                            )
+                        )
+                    ) return true
+                    val backNode = getBackNode()
+                    if (backNode != null) {
+                        if (AMEventUtils.doClickDown(
+                                backNode,
+                                helper
+                            )
+                        ) return false
+                        if (SelectToSpeakService.service?.performGlobalAction(
+                                AccessibilityService.GLOBAL_ACTION_BACK
+                            ) == true
+                        ) {
+                            return false
+                        }
+                    }
+                    val rootNode = AMCore.instance.amContext?.rootNode() ?: return false
+
+                    val textNode =
+                        AMNodeUtils.getFirstNodeByText(
+                            rootNode,
+                            false,
+                            "退出",
+                            "取消",
+                            "不保留",
+                            "不保存",
+                            "确定"
+                        )
+                    if (textNode != null) {
+                        if (textNode.text == "退出") {
+                            SelectToSpeakService.service?.performGlobalAction(
+                                AccessibilityService.GLOBAL_ACTION_BACK
+                            )
+                            return false
+                        }
+                        AMEventUtils.clickFirstClickableParentWithSimulate(textNode, helper)
+                        return false
+                    }
+                    SelectToSpeakService.service?.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
+                    return false
+                }
+
+                override fun work(timeIndex: Int): Boolean {
+                    val rootNode = AMCore.instance.amContext?.rootNode() ?: return false
+                    val mainNode =
+                        AMNodeUtils.getFirstNodeById(rootNode, IAMWidgetLV.homeTabItem().resourceId)
+                    return mainNode != null
+                }
+            })
+    }
+
+    /**
+     * 返回
+     * */
+    fun simpleBack(helper: AMBaseStepHelper? = null) {
+        if (!isInTargetApps(
+                mutableListOf(
+                    AMTargetApp.LV,
+                    AMTargetApp.SYS_PERMISSION,
+                    AMTargetApp.OPLUS_PERMISSION
+                )
+            )
+        ) return
+        val nodeInfo = AMLVPageEvent.getBackNode()
+        if (nodeInfo == null) {
+            AMEventUtils.sleep(AMActionDelay.MIDDLE)
+            SelectToSpeakService.service?.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
+            return
+        }
+        AMEventUtils.clickFirstClickableParentWithSimulate(nodeInfo, helper)
+    }
+
+}

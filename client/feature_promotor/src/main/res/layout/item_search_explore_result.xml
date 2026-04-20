@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Explore 结果卡片：与 Web 一致 - 标题、usageCount/successRate/estimatedTime、右上角 App 图标 -->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/card_bg_main"
+    android:padding="20dp"
+    android:clickable="true"
+    android:focusable="true">
+
+    <TextView
+        android:id="@+id/tv_title"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="2"
+        android:textColor="#111827"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:lineSpacingExtra="2dp"
+        app:layout_constraintEnd_toStartOf="@id/app_icon_wrapper"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginEnd="16dp"
+        tools:text="任务标题" />
+
+    <!-- Task Stats: 次使用、成功率、预计时间 -->
+    <LinearLayout
+        android:id="@+id/stats_row"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        app:layout_constraintEnd_toStartOf="@id/app_icon_wrapper"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_title"
+        android:layout_marginEnd="16dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginEnd="16dp">
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_marginEnd="6dp"
+                android:src="@drawable/ic_user"
+                android:tint="#9CA3AF" />
+            <TextView
+                android:id="@+id/tv_use_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#9CA3AF"
+                android:textSize="13sp"
+                android:fontFamily="sans-serif-medium"
+                tools:text="1250次使用" />
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginEnd="16dp">
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_marginEnd="6dp"
+                android:src="@drawable/ic_check"
+                android:tint="#9CA3AF" />
+            <TextView
+                android:id="@+id/tv_success_rate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#9CA3AF"
+                android:textSize="13sp"
+                android:fontFamily="sans-serif-medium"
+                tools:text="98% 成功率" />
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_marginEnd="6dp"
+                android:src="@drawable/ic_clock"
+                android:tint="#9CA3AF" />
+            <TextView
+                android:id="@+id/tv_estimated_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#9CA3AF"
+                android:textSize="13sp"
+                android:fontFamily="sans-serif-medium"
+                tools:text="~3 min" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- App Icon - Top Right (Explore)，背景色在代码中按 getAppColor 设置 -->
+    <FrameLayout
+        android:id="@+id/app_icon_wrapper"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+        <TextView
+            android:id="@+id/app_icon"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:textColor="@android:color/white"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            tools:text="小红书" />
+    </FrameLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

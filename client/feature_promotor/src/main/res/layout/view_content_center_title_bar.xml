@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/ll_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/task_detail_page_bg"
+    android:focusable="true"
+    android:orientation="vertical">
+
+    <View
+        android:id="@+id/v_status"
+        android:layout_width="match_parent"
+        android:layout_height="20dp" />
+    <!-- 标题栏：左返回、中间「任务详情」、右更多 -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/title_container"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="@android:color/transparent"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp">
+
+        <ImageView
+            android:id="@+id/img_close"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:padding="4dp"
+            android:contentDescription="@null"
+            android:src="@drawable/icon_back"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/tv_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/task_detail_primary_text"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/img_menu"
+            app:layout_constraintStart_toEndOf="@id/img_close"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="任务详情" />
+
+        <ImageView
+            android:id="@+id/img_menu0"
+            android:visibility="gone"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginRight="12dp"
+            android:src="@drawable/icon_menu"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/img_menu"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <ImageView
+            android:id="@+id/img_menu"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/icon_menu"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</LinearLayout>

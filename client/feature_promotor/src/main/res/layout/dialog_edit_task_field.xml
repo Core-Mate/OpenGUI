@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/white_color_corner_24"
+    android:orientation="vertical"
+    android:paddingBottom="20dp">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:paddingHorizontal="20dp">
+
+        <TextView
+            android:id="@+id/tv_dialog_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:text="编辑任务名称"
+            android:textColor="@color/task_detail_primary_text"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <FrameLayout
+            android:id="@+id/fl_close"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            android:background="@drawable/bg_close_button">
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_close" />
+        </FrameLayout>
+
+    </RelativeLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#F3F4F6" />
+
+
+    <EditText
+        android:id="@+id/et_dialog_input"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginVertical="24dp"
+        android:background="@drawable/bg_gray_circle"
+        android:ellipsize="end"
+        android:hint="请输入标题..."
+        android:inputType="text"
+        android:maxLines="1"
+        android:minHeight="48dp"
+        android:padding="12dp"
+        android:textColor="@color/task_detail_primary_text"
+        android:textSize="15sp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="20dp"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/btn_dialog_cancel"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_dialog_secondary_button"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:text="取消"
+            android:textColor="@color/task_detail_primary_text"
+            android:textSize="17sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/btn_dialog_save"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_main_circle"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:text="保存"
+            android:textColor="@android:color/white"
+            android:textSize="17sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+</LinearLayout>

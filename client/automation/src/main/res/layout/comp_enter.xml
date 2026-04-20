@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/shape_enter_float"
+        android:orientation="vertical"
+        android:paddingVertical="8dp">
+
+        <!--    开始/继续    -->
+        <LinearLayout
+            android:id="@+id/ll_control"
+            android:layout_width="55dp"
+            android:layout_height="55dp"
+            android:background="@color/transparent"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <FrameLayout
+                android:layout_width="24dp"
+                android:layout_height="24dp">
+
+                <ProgressBar
+                    android:id="@+id/iv_loading"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_gravity="center"
+                    android:indeterminateTint="@color/text_regular"
+                    android:indeterminateTintMode="src_atop"
+                    android:visibility="invisible" />
+
+                <ImageView
+                    android:id="@+id/iv_control"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@mipmap/ic_am_pause" />
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/tv_control"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="继续"
+                android:textColor="@color/text_primary"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!--     结束   -->
+        <LinearLayout
+            android:id="@+id/ll_stop"
+            android:layout_width="55dp"
+            android:layout_height="55dp"
+            android:layout_marginTop="10dp"
+            android:background="@color/transparent"
+            android:gravity="center"
+            android:orientation="vertical"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tv_content">
+
+            <FrameLayout
+                android:layout_width="24dp"
+                android:layout_height="24dp">
+                <ProgressBar
+                    android:id="@+id/stop_loading"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_gravity="center"
+                    android:indeterminateTint="@color/text_regular"
+                    android:indeterminateTintMode="src_atop"
+                    android:visibility="invisible" />
+                <ImageView
+                    android:id="@+id/iv_stop"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@mipmap/ic_am_stop" />
+            </FrameLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="结束"
+                android:textColor="@color/text_primary"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+
+
+</FrameLayout>

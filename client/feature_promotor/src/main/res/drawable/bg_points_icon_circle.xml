@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 积分图标圆形背景：渐变 from #2E58FF to #60A5FA -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <gradient
+        android:type="linear"
+        android:angle="135"
+        android:startColor="#2E58FF"
+        android:endColor="#60A5FA" />
+    <size android:width="36dp" android:height="36dp" />
+</shape>

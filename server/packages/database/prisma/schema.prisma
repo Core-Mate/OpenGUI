@@ -1,0 +1,783 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model user_device_log {
+  id           Int           @id @default(autoincrement())
+  user_id      Int
+  log_uri      String?
+  log_start_at DateTime      @db.Timestamptz(3)
+  log_end_at   DateTime      @db.Timestamptz(3)
+  log_status   logtaskstatus @default(init)
+  created_at   DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime      @default(now()) @db.Timestamptz(6)
+  is_deleted   Boolean       @default(false)
+
+  @@index([user_id], map: "user_id_key")
+}
+
+model user_accounts {
+  id                    Int       @id @default(autoincrement())
+  accountId             String
+  providerId            String
+  userId                Int
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime? @db.Timestamptz(6)
+  refreshTokenExpiresAt DateTime? @db.Timestamptz(6)
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime  @db.Timestamptz(6)
+  users                 users     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([userId])
+}
+
+model user_sessions {
+  id             Int      @id @default(autoincrement())
+  expiresAt      DateTime @db.Timestamptz(6)
+  token          String   @unique
+  createdAt      DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime @db.Timestamptz(6)
+  ipAddress      String?
+  userAgent      String?
+  userId         Int
+  impersonatedBy String?
+  users          users    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([userId])
+}
+
+model user_verifications {
+  id         Int      @id @default(autoincrement())
+  identifier String
+  value      String
+  expiresAt  DateTime @db.Timestamptz(6)
+  createdAt  DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt  DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([identifier])
+}
+
+model users {
+  id                  Int             @id @default(autoincrement())
+  name                String
+  email               String          @unique
+  emailVerified       Boolean
+  image               String?
+  createdAt           DateTime        @default(now()) @db.Timestamptz(6)
+  updatedAt           DateTime        @default(now()) @db.Timestamptz(6)
+  username            String?         @unique
+  displayUsername     String?
+  phoneNumber         String?         @unique
+  phoneNumberVerified Boolean?
+  role                String
+  banned              Boolean?
+  banReason           String?
+  banExpires          DateTime?       @db.Timestamptz(6)
+  tenant_id           Int
+  is_deleted          Boolean
+  push_device_token   String?
+  is_active           Boolean
+  region              String          @default("CN") @db.VarChar(10)
+  finish_onboarding   Boolean         @default(false)
+  aff                 String?         @db.VarChar(20)
+  channel_id          Int?
+  user_accounts       user_accounts[]
+  user_sessions       user_sessions[]
+  channel             channel?        @relation(fields: [channel_id], references: [id], onUpdate: NoAction)
+
+  @@index([channel_id])
+}
+
+model tenants {
+  id              Int       @id @default(autoincrement())
+  tenant_id       String    @unique(map: "idx_tenant_id") @db.VarChar(6)
+  tenant_name     String    @db.VarChar(255)
+  register_date   DateTime  @default(now()) @db.Timestamptz(6)
+  active_date     DateTime? @db.Timestamptz(6)
+  expiration_date DateTime? @db.Timestamptz(6)
+  is_active       Boolean   @default(false)
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @default(now()) @db.Timestamptz(6)
+  is_deleted      Boolean   @default(false)
+
+  @@index([tenant_name], map: "idx_tenant_tenant_name")
+}
+
+model task_execution {
+  id                       Int              @id @default(autoincrement())
+  task_id                  Int
+  user_id                  Int
+  schedule_id              Int?
+  device_id                String?          @db.VarChar(255)
+  execution_mode           executionmode    @default(IMMEDIATE)
+  execution_status         executionstatus  @default(INITIAL)
+  status_message           String?
+  execution_result         executionresult?
+  execution_result_summary String?
+  error_message            String?
+  current_step             String?          @db.VarChar(100)
+  scheduled_at             DateTime?        @db.Timestamptz(6)
+  started_at               DateTime?        @db.Timestamptz(6)
+  finished_at              DateTime?        @db.Timestamptz(6)
+  token_usage              Json?
+  created_at               DateTime         @default(now()) @db.Timestamptz(6)
+  updated_at               DateTime         @default(now()) @db.Timestamptz(6)
+  is_deleted               Boolean          @default(false)
+  origin_execution_id      Int?
+}
+
+model user_task {
+  id                Int            @id @default(autoincrement())
+  user_id           Int
+  task_name         String         @db.VarChar(255)
+  task_description  String?
+  category          taskcategory   @default(CUSTOM)
+  is_template       Boolean        @default(false)
+  is_example        Boolean        @default(false)
+  total_executions  Int            @default(0)
+  success_count     Int            @default(0)
+  fail_count        Int            @default(0)
+  created_at        DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime       @default(now()) @db.Timestamptz(6)
+  published_at      DateTime?      @db.Timestamptz(6)
+  is_deleted        Boolean        @default(false)
+  is_pinned         Boolean        @default(false)
+  pinned_at         DateTime?      @db.Timestamptz(6)
+  related_platforms platformtype[]
+
+  @@index([user_id, is_deleted, is_pinned, pinned_at, updated_at])
+}
+
+model system_prompt_config {
+  id             Int       @id @default(autoincrement())
+  agent_name     agentname
+  config_name    String    @db.VarChar(255)
+  description    String?
+  base_url       String?   @db.VarChar(500)
+  api_key        String?   @db.VarChar(500)
+  model_name     String?   @db.VarChar(255)
+  temperature    Float?    @default(0.1)
+  max_tokens     Int?
+  top_p          Float?
+  system_prompt  String
+  extra          Json?
+  is_active      Boolean   @default(false)
+  created_at     DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime  @default(now()) @db.Timestamptz(6)
+  is_deleted     Boolean   @default(false)
+  fallback_model String?   @db.VarChar(255)
+  region         String    @default("CN") @db.VarChar(10)
+
+  @@index([agent_name], map: "idx_system_prompt_config_agent_name")
+}
+
+model checkpoint_blobs {
+  thread_id     String
+  checkpoint_ns String @default("")
+  channel       String
+  version       String
+  type          String
+  blob          Bytes?
+
+  @@id([thread_id, checkpoint_ns, channel, version])
+}
+
+model checkpoint_migrations {
+  v Int @id
+}
+
+model checkpoint_writes {
+  thread_id     String
+  checkpoint_ns String  @default("")
+  checkpoint_id String
+  task_id       String
+  idx           Int
+  channel       String
+  type          String?
+  blob          Bytes
+
+  @@id([thread_id, checkpoint_ns, checkpoint_id, task_id, idx])
+}
+
+model checkpoints {
+  thread_id            String
+  checkpoint_ns        String  @default("")
+  checkpoint_id        String
+  parent_checkpoint_id String?
+  type                 String?
+  checkpoint           Json
+  metadata             Json    @default("{}")
+
+  @@id([thread_id, checkpoint_ns, checkpoint_id])
+}
+
+model knowledge_base {
+  id                  Int      @id @default(autoincrement())
+  tenant_id           Int      @default(0)
+  name                String   @db.VarChar(255)
+  volcano_resource_id String?
+  description         String?
+  is_active           Boolean  @default(false)
+  created_at          DateTime @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime @default(now()) @db.Timestamptz(6)
+  is_deleted          Boolean  @default(false)
+}
+
+model working_memory {
+  id         Int      @id @default(autoincrement())
+  thread_id  String   @unique @db.VarChar(255)
+  content    String
+  template   String?
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+  todos      Json?
+
+  @@index([thread_id], map: "idx_working_memory_thread_id")
+}
+
+model coremate_apks {
+  id          Int       @id @default(autoincrement())
+  apk_type    String    @db.VarChar(50)
+  apk_uri     String    @db.VarChar(500)
+  apk_version BigInt
+  apk_name    String?   @db.VarChar(255)
+  apk_size    BigInt?
+  creator     String    @db.VarChar(255)
+  status      Int?      @default(0)
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@index([status], map: "idx_coremate_apks_status")
+  @@index([apk_type], map: "idx_coremate_apks_type")
+}
+
+model user_profile {
+  id             Int           @id @default(autoincrement())
+  user_id        Int           @unique
+  goals          usergoal[]    @default([])
+  goals_other    String?       @db.VarChar(100)
+  industry       userindustry?
+  industry_other String?       @db.VarChar(100)
+  product_info   String?
+  created_at     DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime      @default(now()) @db.Timestamptz(6)
+  is_deleted     Boolean       @default(false)
+
+  @@index([user_id], map: "idx_user_profile_user_id")
+}
+
+model task_execution_feedback {
+  id            Int      @id @default(autoincrement())
+  execution_id  Int      @unique
+  user_id       Int
+  rating        Int?
+  feedback_text String?
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([user_id])
+  @@index([execution_id])
+}
+
+model user_execution_preference {
+  id                    Int              @id @default(autoincrement())
+  user_id               Int              @unique
+  goals                 usergoal[]       @default([])
+  goals_other           String?          @db.VarChar(100)
+  industry              userindustry?
+  industry_other        String?          @db.VarChar(100)
+  target_audience       targetaudience[] @default([])
+  target_audience_other String?          @db.VarChar(100)
+  product_info          String?
+  service_region        Json?
+  created_at            DateTime         @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime         @default(now()) @db.Timestamptz(6)
+  is_deleted            Boolean          @default(false)
+
+  @@index([user_id], map: "idx_user_execution_preference_user_id")
+}
+
+model skill {
+  id           Int             @id @default(autoincrement())
+  name         String          @db.VarChar(100)
+  display_name String          @db.VarChar(255)
+  description  String?
+  version      String          @default("1.0") @db.VarChar(20)
+  tenant_id    Int             @default(-1)
+  node_types   skillnodetype[]
+  content      String
+  is_active    Boolean         @default(true)
+  region       String          @default("ALL") @db.VarChar(10)
+  created_at   DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime        @default(now()) @db.Timestamptz(6)
+  is_deleted   Boolean         @default(false)
+
+  @@unique([tenant_id, name], map: "idx_skill_name_tenant")
+}
+
+model credit_batch {
+  id            Int               @id @default(autoincrement())
+  user_id       Int
+  batch_type    credit_batch_type
+  total_credits Int
+  remaining     Int
+  ref_type      String?           @db.VarChar(32)
+  ref_id        String?           @db.VarChar(64)
+  created_at    DateTime          @default(now()) @db.Timestamptz(6)
+  expire_at     DateTime          @db.Timestamptz(6)
+
+  @@index([expire_at])
+  @@index([user_id, expire_at])
+  @@index([user_id])
+}
+
+model credit_flow {
+  id            Int              @id @default(autoincrement())
+  user_id       Int
+  change_type   credit_flow_type
+  change_amount Int
+  balance_after Int
+  ref_type      String?          @db.VarChar(32)
+  ref_id        String?          @db.VarChar(64)
+  remark        String?          @db.VarChar(255)
+  created_at    DateTime         @default(now()) @db.Timestamptz(6)
+
+  @@index([change_type])
+  @@index([created_at])
+  @@index([user_id])
+}
+
+model recharge_order {
+  id                Int                   @id @default(autoincrement())
+  order_no          String                @unique @db.VarChar(32)
+  user_id           Int
+  plan_id           Int
+  amount            Decimal               @db.Decimal(10, 2)
+  refunded_amount   Decimal               @default(0) @db.Decimal(10, 2)
+  base_credits      Int
+  bonus_credits     Int                   @default(0)
+  total_credits     Int
+  refunded_credits  Int                   @default(0)
+  status            recharge_order_status @default(PENDING)
+  wx_prepay_id      String?               @db.VarChar(64)
+  wx_transaction_id String?               @db.VarChar(64)
+  created_at        DateTime              @default(now()) @db.Timestamptz(6)
+  paid_at           DateTime?             @db.Timestamptz(6)
+  expire_at         DateTime?             @db.Timestamptz(6)
+  pay_channel       pay_channel_type?     @default(WECHAT)
+  ali_trade_no      String?               @db.VarChar(64)
+  channel_id        Int?
+
+  @@index([created_at])
+  @@index([order_no])
+  @@index([status])
+  @@index([user_id])
+  @@index([pay_channel])
+  @@index([channel_id])
+}
+
+model recharge_plan {
+  id         Int      @id @default(autoincrement())
+  name       String   @db.VarChar(100)
+  amount     Decimal  @db.Decimal(10, 2)
+  credits       Int
+  bonus_credits Int      @default(0)
+  sort_order    Int      @default(0)
+  is_active  Boolean  @default(true)
+  is_deleted Boolean  @default(false)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([is_active])
+  @@index([sort_order])
+}
+
+model system_config {
+  id           Int      @id @default(autoincrement())
+  config_key   String   @unique @db.VarChar(50)
+  config_value String
+  description  String?  @db.VarChar(255)
+  created_at   DateTime @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime @default(now()) @db.Timestamptz(6)
+}
+
+model usage_record {
+  id           Int      @id @default(autoincrement())
+  user_id      Int
+  task_id      String   @db.VarChar(64)
+  task_title   String   @db.VarChar(255)
+  credits_used Int
+  start_time   DateTime @db.Timestamptz(6)
+  end_time     DateTime @db.Timestamptz(6)
+  created_at   DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([created_at])
+  @@index([task_id])
+  @@index([user_id])
+}
+
+model user_balance {
+  id              Int      @id @default(autoincrement())
+  user_id         Int      @unique
+  remaining       Int      @default(0)
+  total_purchased Int      @default(0)
+  total_used      Int      @default(0)
+  free_credits    Int      @default(0)
+  version         Int      @default(0)
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([user_id])
+}
+
+model store {
+  namespace_path String
+  key            String
+  value          Json
+  created_at     DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime? @default(now()) @db.Timestamptz(6)
+  expires_at     DateTime? @db.Timestamptz(6)
+
+  @@id([namespace_path, key])
+  @@index([namespace_path], map: "idx_store_namespace_path")
+  @@index([value], map: "idx_store_value_gin", type: Gin)
+}
+
+model store_migrations {
+  v Int @id
+}
+
+enum executionmode {
+  IMMEDIATE
+  SCHEDULED
+  RECURRING
+}
+
+enum executionresult {
+  SUCCEED
+  FAILED
+  CANCELLED
+  TIMEOUT
+}
+
+enum executionstatus {
+  INITIAL
+  PENDING
+  RUNNING
+  SUSPENDED
+  USER_PAUSED
+  SUMMARIZING
+  FINISHED
+}
+
+enum logtaskstatus {
+  init
+  wait_upload
+  uploaded
+  failed
+}
+
+enum platformtype {
+  XIAOHONGSHU
+  DOUYIN
+  KUAISHOU
+  WECHAT
+  LARK
+  ZOOM
+  LINKEDIN
+  INSTAGRAM
+  TIKTOK
+  X
+  REDDIT
+  PINTEREST
+  GENERAL_APP
+}
+
+enum taskcategory {
+  CONTENT_PUBLISH
+  SOCIAL_INTERACT
+  AUTO_REPLY
+  DATA_COLLECT
+  CUSTOM
+}
+
+enum agentname {
+  executor_vlm      @map("executor-vlm")
+  executor_a11y     @map("executor-a11y")
+  summarizer        @map("summarizer")
+  action_summarizer @map("action-summarizer")
+  plan_supervisor   @map("plan-supervisor")
+  creator_agent     @map("creator-agent")
+}
+
+enum userindustry {
+  EDUCATION
+  REAL_ESTATE
+  INSURANCE
+  MEDICAL_BEAUTY
+  AUTO_SALES
+  DECORATION
+  FOOD
+  OVERSEAS_STUDY
+  OTHER
+}
+
+enum usergoal {
+  SELF_MEDIA_OPERATION
+  EFFICIENT_ACQUISITION
+  CUSTOMER_CARE
+  DORMANT_USER_ACTIVATION
+  DATA_REVIEW
+  OTHER
+}
+
+enum targetaudience {
+  SMALL_BUSINESS
+  HIGH_NET_WORTH
+  MOTHERS
+  YOUNG_WORKERS
+  ELDERLY
+  NEWLYWEDS
+  OTHER
+}
+
+enum skillnodetype {
+  plan_supervisor
+  executor_vlm
+  executor_a11y
+  summarizer
+  creator_agent
+}
+
+enum recharge_order_status {
+  PENDING
+  PAID
+  FAILED
+  CANCELLED
+  PARTIAL_REFUND
+  FULL_REFUND
+}
+
+enum credit_flow_type {
+  RECHARGE
+  CONSUME
+  REFUND
+  GIFT
+  EXPIRE
+  CHECKIN
+}
+
+enum credit_batch_type {
+  RECHARGE
+  GIFT
+  CHECKIN
+}
+
+model creator_agent_debug_log {
+  id            Int      @id @default(autoincrement())
+  user_id       Int
+  system_prompt String
+  description   String
+  result        String
+  config_id     Int?
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+  is_deleted    Boolean  @default(false)
+
+  @@index([user_id])
+  @@index([created_at])
+}
+
+enum pay_channel_type {
+  WECHAT
+  ALIPAY
+}
+
+model user_checkin {
+  id           Int      @id @default(autoincrement())
+  user_id      Int
+  checkin_date String   @db.VarChar(10)
+  credits      Int
+  created_at   DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([user_id, checkin_date])
+  @@index([user_id])
+  @@index([checkin_date])
+}
+
+model app_config {
+  id           Int      @id @default(autoincrement())
+  config_key   String   @unique @db.VarChar(100)
+  config_value Json
+  description  String?  @db.VarChar(500)
+  is_active    Boolean  @default(true)
+  created_at   DateTime @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime @default(now()) @db.Timestamptz(6)
+  is_deleted   Boolean  @default(false)
+
+  @@index([config_key], map: "idx_app_config_key")
+  @@index([is_active], map: "idx_app_config_active")
+}
+
+// ========== 渠道管理 ==========
+
+enum channel_status {
+  ACTIVE
+  INACTIVE
+}
+
+enum invitation_code_status {
+  UNUSED
+  USED
+}
+
+enum admin_op_type {
+  ADD_CREDITS
+  REFUND
+}
+
+model channel {
+  id             Int            @id @default(autoincrement())
+  name           String         @db.VarChar(100)
+  dividend_rate  Decimal        @db.Decimal(5, 4)
+  contact_name   String?        @db.VarChar(50)
+  contact_phone  String?        @db.VarChar(20)
+  status         channel_status @default(ACTIVE)
+  created_at     DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime       @default(now()) @db.Timestamptz(6)
+  is_deleted     Boolean        @default(false)
+
+  invitation_codes invitation_code[]
+  users            users[]
+
+  @@index([status])
+  @@index([is_deleted])
+}
+
+model invitation_code {
+  id              Int                    @id @default(autoincrement())
+  code            String                 @unique @db.VarChar(20)
+  channel_id      Int
+  status          invitation_code_status @default(UNUSED)
+  used_by_user_id Int?
+  used_at         DateTime?              @db.Timestamptz(6)
+  created_at      DateTime               @default(now()) @db.Timestamptz(6)
+
+  channel channel @relation(fields: [channel_id], references: [id], onUpdate: NoAction)
+
+  @@index([channel_id])
+  @@index([status])
+}
+
+model admin_credit_operation {
+  id                Int           @id @default(autoincrement())
+  operator_id       Int
+  operator_name     String        @db.VarChar(100)
+  operation_type    admin_op_type
+  target_user_id    Int
+  target_user_phone String?       @db.VarChar(20)
+  target_user_name  String?       @db.VarChar(100)
+  credits_amount    Int
+  refund_amount     Decimal?      @db.Decimal(10, 2)
+  exchange_rate     Decimal?      @db.Decimal(10, 6)
+  reason            String
+  created_at        DateTime      @default(now()) @db.Timestamptz(6)
+
+  @@index([target_user_id])
+  @@index([operation_type])
+  @@index([created_at])
+}
+
+// ========== IM Channel 通知模块 ==========
+
+enum im_channel_status {
+  CONNECTED
+  DISCONNECTED
+  LOGIN_PENDING
+  ERROR
+}
+
+enum im_message_direction {
+  INBOUND
+  OUTBOUND
+}
+
+model im_channel_account {
+  id                Int               @id @default(autoincrement())
+  channel_id        String            @unique @db.VarChar(50)
+  display_name      String?           @db.VarChar(255)
+  credentials       Json?
+  status            im_channel_status @default(DISCONNECTED)
+  poll_cursor        String?
+  last_connected_at DateTime?         @db.Timestamptz(6)
+  last_message_at   DateTime?         @db.Timestamptz(6)
+  last_error        String?
+  created_at        DateTime          @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime          @default(now()) @db.Timestamptz(6)
+  is_deleted        Boolean           @default(false)
+
+  conversations im_channel_conversation[]
+
+  @@index([status])
+}
+
+model im_channel_conversation {
+  id                       Int       @id @default(autoincrement())
+  channel_account_id       Int
+  platform_user_id         String    @db.VarChar(255)
+  platform_user_name       String?   @db.VarChar(255)
+  user_id                  Int
+  is_active                Boolean   @default(true)
+  last_context_token       String?
+  context_token_stale      Boolean   @default(false)
+  context_token_updated_at DateTime? @db.Timestamptz(6)
+  last_message_at          DateTime? @db.Timestamptz(6)
+  created_at               DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at               DateTime  @default(now()) @db.Timestamptz(6)
+  is_deleted               Boolean   @default(false)
+
+  account  im_channel_account  @relation(fields: [channel_account_id], references: [id], onUpdate: NoAction)
+  messages im_channel_message[]
+
+  @@unique([channel_account_id, platform_user_id])
+  @@index([user_id])
+  @@index([is_active])
+}
+
+model im_channel_message {
+  id              Int                  @id @default(autoincrement())
+  conversation_id Int
+  direction       im_message_direction @default(OUTBOUND)
+  content         String
+  message_type    String               @default("text") @db.VarChar(50)
+  metadata        Json?
+  created_at      DateTime             @default(now()) @db.Timestamptz(6)
+
+  conversation im_channel_conversation @relation(fields: [conversation_id], references: [id], onUpdate: NoAction)
+
+  @@index([conversation_id, created_at])
+}
+
+model executor_behavior_log {
+  id                Int      @id @default(autoincrement())
+  task_execution_id Int
+  user_id           Int
+  scene             String   @db.VarChar(64)
+  app_name          String   @default("") @db.VarChar(128)
+  screen_ctx        String   @default("")
+  llm_output        String   @default("")
+  extra             Json?
+  created_at        DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([task_execution_id])
+  @@index([user_id])
+  @@index([scene])
+  @@index([created_at])
+}

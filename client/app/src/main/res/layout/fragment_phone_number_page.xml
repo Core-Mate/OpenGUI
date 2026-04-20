@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF"
+    android:orientation="vertical">
+
+    <View
+        android:id="@+id/v_status"
+        android:layout_width="match_parent"
+        android:layout_height="20dp" />
+
+    <!-- Header with Back and Skip -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="20dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="8dp">
+
+        <ImageButton
+            android:id="@+id/button_back"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/icon_back2"
+            android:contentDescription="Back"
+            android:padding="0dp"
+            android:scaleType="center" />
+    </LinearLayout>
+    <!-- Content Area -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingTop="64dp">
+
+            <!-- Title -->
+            <TextView
+                android:id="@+id/title_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="欢迎回来"
+                android:textColor="#111827"
+                android:textSize="36sp"
+                android:textStyle="bold" />
+
+            <!-- Subtitle -->
+            <TextView
+                android:id="@+id/subtitle_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="40dp"
+                android:text="登录您的账号"
+                android:textColor="#9CA3AF"
+                android:textSize="15sp" />
+
+            <!-- Phone Input Container -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingBottom="8dp">
+
+                <!-- Country Code Spinner -->
+                <LinearLayout
+                    android:layout_width="71dp"
+                    android:layout_height="match_parent"
+                    android:gravity="left|center"
+                    android:orientation="horizontal">
+
+                    <Spinner
+                        android:id="@+id/spinner_country_code"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_spinner"
+                        android:minWidth="48dp" />
+
+                    <View
+                        android:layout_width="1dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="12dp"
+                        android:background="#E5E7EB" />
+                </LinearLayout>
+
+                <!-- Phone Number Input -->
+                <EditText
+                    android:id="@+id/input_phone"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="@android:color/transparent"
+                    android:hint="手机号"
+                    android:inputType="phone"
+                    android:paddingStart="0dp"
+                    android:paddingTop="8dp"
+                    android:paddingEnd="0dp"
+                    android:paddingBottom="8dp"
+                    android:textColor="#111827"
+                    android:textColorHint="#9CA3AF"
+                    android:textSize="17sp" />
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#E5E7EB" />
+
+            <!-- Invite Code Input - 仅在注册模式显示 -->
+            <LinearLayout
+                android:id="@+id/invite_code_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <EditText
+                    android:id="@+id/input_invite_code"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@null"
+                    android:hint="请输入邀请码"
+                    android:inputType="text"
+                    android:paddingStart="0dp"
+                    android:paddingTop="8dp"
+                    android:paddingEnd="0dp"
+                    android:paddingBottom="12dp"
+                    android:textColor="#111827"
+                    android:textColorHint="#9CA3AF"
+                    android:textSize="17sp" />
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#E5E7EB" />
+
+            <!-- Submit Button -->
+            <TextView
+                android:id="@+id/button_submit"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="32dp"
+                android:background="@drawable/button_submit_bg"
+                android:gravity="center"
+                android:stateListAnimator="@null"
+                android:text="发送验证码"
+                android:textColor="#FFFFFF"
+                android:textSize="17sp"
+                android:textStyle="bold" />
+
+            <!-- Toggle Link -->
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="32dp">
+
+                <Button
+                    android:id="@+id/button_toggle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:background="@android:color/transparent"
+                    android:text="新用户注册"
+                    android:textColor="@color/color_primary"
+                    android:textSize="15sp" />
+            </FrameLayout>
+        </LinearLayout>
+    </ScrollView>
+
+</LinearLayout>

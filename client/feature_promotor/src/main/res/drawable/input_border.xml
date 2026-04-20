@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 背景（可选） -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#FFFFFF" /> <!-- 背景色 -->
+            <corners android:radius="8dp" />
+        </shape>
+    </item>
+
+    <!-- 渐变边框（关键部分） -->
+    <item>
+        <shape android:shape="rectangle">
+            <stroke
+                android:width="2dp"
+                android:color="#00000000" /> <!-- 透明占位，实际用 gradient 覆盖 -->
+            <corners android:radius="8dp" />
+        </shape>
+    </item>
+
+    <!-- 用 gradient 绘制边框 -->
+    <item
+        android:bottom="1dp"
+        android:left="1dp"
+        android:right="1dp"
+        android:top="1dp">
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="0"
+                android:centerColor="#4551FF"
+                android:endColor="#8645FF"
+                android:startColor="#0566FF"
+                android:type="linear"/>
+            <corners android:radius="6dp" />
+        </shape>
+    </item>
+</layer-list>

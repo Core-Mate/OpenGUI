@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 底色 #F5F6F8 -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#F5F6F8" />
+        </shape>
+    </item>
+    <!-- 弥散光效 - 左上角蓝色 (对齐 Web: absolute -top-20 -left-20 w-[400px] h-[400px] rgba(46,88,255,0.18) blur(120px)) -->
+    <item
+        android:top="-60dp"
+        android:left="-60dp"
+        android:right="100dp"
+        android:bottom="400dp">
+        <shape android:shape="oval">
+            <gradient
+                android:type="radial"
+                android:gradientRadius="220dp"
+                android:centerX="0.35"
+                android:centerY="0.35"
+                android:startColor="#302E58FF"
+                android:endColor="#00000000" />
+        </shape>
+    </item>
+    <!-- 右下角青色 (对齐 Web: absolute -bottom-32 -right-16 w-[380px] h-[380px] rgba(0,180,255,0.1)) -->
+    <item
+        android:top="500dp"
+        android:left="100dp"
+        android:right="-40dp"
+        android:bottom="-80dp">
+        <shape android:shape="oval">
+            <gradient
+                android:type="radial"
+                android:gradientRadius="190dp"
+                android:centerX="0.65"
+                android:centerY="0.65"
+                android:startColor="#1A00B4FF"
+                android:endColor="#00000000" />
+        </shape>
+    </item>
+</layer-list>

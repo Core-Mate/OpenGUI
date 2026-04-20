@@ -1,0 +1,420 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_aurora_login">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <View
+            android:id="@+id/v_status"
+            android:layout_width="match_parent"
+            android:layout_height="20dp" />
+
+        <!-- Skip button area (step 7-8 only) -->
+        <LinearLayout
+            android:id="@+id/skip_button_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="end"
+            android:paddingStart="20dp"
+            android:paddingTop="8dp"
+            android:paddingEnd="20dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/btn_skip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="12dp"
+                android:text="以后再说"
+                android:textColor="#6B7280"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Content Area -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <!-- ========= 对话步骤 1-6 ========= -->
+            <LinearLayout
+                android:id="@+id/dialogue_container"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:orientation="vertical">
+
+                <!-- 历史区 -->
+                <LinearLayout
+                    android:id="@+id/history_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="24dp"
+                    android:layout_marginBottom="16dp"
+                    android:orientation="vertical"
+                    android:visibility="gone" />
+
+                <!-- 当前内容 -->
+                <LinearLayout
+                    android:id="@+id/current_content"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/dialogue_subtitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="24dp"
+                        android:layout_marginBottom="8dp"
+                        android:alpha="0.8"
+                        android:textColor="#6B7280"
+                        android:textSize="15sp"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/dialogue_title"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="24dp"
+                        android:layout_marginBottom="20dp"
+                        android:lineSpacingMultiplier="1.2"
+                        android:maxLines="1"
+                        android:singleLine="true"
+                        android:textColor="#111827"
+                        android:textSize="32sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/dialogue_description"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="24dp"
+                        android:lineSpacingExtra="4dp"
+                        android:textColor="#6B7280"
+                        android:textSize="15sp"
+                        android:visibility="gone" />
+
+                    <!-- Step 6: 权限卡片 -->
+
+                    <com.lihang.ShadowLayout
+                        android:id="@+id/card_permission_intro"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="16dp"
+                        android:layout_marginTop="16dp"
+                        android:visibility="gone"
+                        app:hl_cornerRadius="16dp"
+                        app:hl_shadowColor="#10000000"
+                        app:hl_shadowLimit="8dp"
+                        app:hl_shadowOffsetX="0dp"
+                        app:hl_shadowOffsetY="2dp"
+                        app:hl_shadowSymmetry="true">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/card_white_rounded"
+                            android:orientation="vertical"
+                            android:padding="20dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginBottom="12dp"
+                                android:text="无障碍权限"
+                                android:textColor="#111827"
+                                android:textSize="15sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="这项权限让OpenGUI能够:"
+                                android:textColor="#6B7280"
+                                android:textSize="13sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:lineSpacingExtra="4dp"
+                                android:text="· 让AI有眼睛去看\n· 有动手能力替你点屏幕"
+                                android:textColor="#6B7280"
+                                android:textSize="13sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="12dp"
+                                android:text="就像给OpenGUI一双能操作手机的手 ✋"
+                                android:textColor="#9CA3AF"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                    </com.lihang.ShadowLayout>
+
+
+                    <!-- Step 5: AutomationDemo 容器 -->
+                    <FrameLayout
+                        android:id="@+id/automation_demo_container"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="24dp"
+                        android:layout_marginTop="24dp"
+                        android:visibility="gone" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- ========= 权限步骤 7-8 ========= -->
+            <LinearLayout
+                android:id="@+id/permission_container"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:paddingStart="24dp"
+                android:paddingEnd="24dp"
+                android:visibility="gone">
+
+                <!-- 步骤指示器 -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginBottom="24dp"
+                    android:gravity="center"
+                    android:orientation="horizontal">
+
+                    <View
+                        android:id="@+id/perm_dot1"
+                        android:layout_width="24dp"
+                        android:layout_height="6dp"
+                        android:layout_marginEnd="8dp"
+                        android:background="@drawable/dot_rounded_blue" />
+
+                    <View
+                        android:id="@+id/perm_dot2"
+                        android:layout_width="24dp"
+                        android:layout_height="6dp"
+                        android:background="@drawable/dot_rounded_gray" />
+                </LinearLayout>
+
+                <!-- PermissionDemo 容器 -->
+                <FrameLayout
+                    android:id="@+id/permission_demo_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="24dp" />
+
+                <!-- 图标 -->
+                <FrameLayout
+                    android:id="@+id/perm_icon_container"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginBottom="12dp"
+                    android:background="@drawable/bg_gradient_blue_rounded">
+
+                    <ImageView
+                        android:id="@+id/perm_icon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_accessibility_perm" />
+                </FrameLayout>
+
+                <!-- 标题 -->
+                <TextView
+                    android:id="@+id/perm_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:textColor="#111827"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/perm_subtitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:textColor="#6B7280"
+                    android:textSize="14sp" />
+
+                <!-- 安全提示 -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="16dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:layout_marginEnd="4dp"
+                        android:contentDescription="Security"
+                        android:src="@drawable/ic_shield_check" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="仅在执行任务时使用，可随时关闭"
+                        android:textColor="#9CA3AF"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- ========= 行业选择 step 9 ========= -->
+            <ScrollView
+                android:id="@+id/industry_container"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:fillViewport="true"
+                android:overScrollMode="never"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:paddingStart="24dp"
+                    android:paddingTop="24dp"
+                    android:paddingEnd="24dp"
+                    android:paddingBottom="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
+                        android:text="你所在的行业?"
+                        android:textColor="#111827"
+                        android:textSize="26sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="32dp"
+                        android:text="选择后我们会为你推荐相关任务"
+                        android:textColor="#6B7280"
+                        android:textSize="15sp" />
+
+                    <LinearLayout
+                        android:id="@+id/industry_tags_container"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:orientation="vertical" />
+
+                    <TextView
+                        android:id="@+id/industry_selected_count"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:textColor="#9CA3AF"
+                        android:textSize="13sp"
+                        android:visibility="gone" />
+                </LinearLayout>
+            </ScrollView>
+
+            <!-- ========= 完成 step 10 ========= -->
+            <LinearLayout
+                android:id="@+id/complete_container"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:paddingStart="24dp"
+                android:paddingEnd="24dp"
+                android:visibility="gone">
+
+                <ImageView
+                    android:id="@+id/complete_checkmark"
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:layout_marginBottom="24dp"
+                    android:contentDescription="Done"
+                    android:src="@drawable/ic_complete_check" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:text="一切就绪"
+                    android:textColor="#111827"
+                    android:textSize="28sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="开始探索OpenGUI能为你做什么"
+                    android:textColor="#6B7280"
+                    android:textSize="15sp" />
+            </LinearLayout>
+        </FrameLayout>
+
+        <!-- Bottom Button -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="24dp"
+            android:paddingTop="16dp"
+            android:paddingEnd="24dp"
+            android:paddingBottom="24dp">
+
+            <TextView
+                android:id="@+id/btn_next"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:background="@drawable/bg_btn_primary_shadow"
+                android:paddingBottom="4dp"
+                android:gravity="center"
+                android:stateListAnimator="@null"
+                android:text="开始体验"
+                android:textColor="#FFFFFF"
+                android:textSize="17sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Home Indicator -->
+        <View
+            android:layout_width="128dp"
+            android:layout_height="4dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="8dp"
+            android:background="@drawable/home_indicator" />
+    </LinearLayout>
+
+    <!-- Skip Toast -->
+    <TextView
+        android:id="@+id/skip_toast"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal|top"
+        android:layout_marginTop="96dp"
+        android:background="@drawable/toast_bg"
+        android:elevation="8dp"
+        android:paddingStart="20dp"
+        android:paddingTop="12dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="12dp"
+        android:text="需要开启权限才能正常使用"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        android:visibility="gone" />
+</FrameLayout>

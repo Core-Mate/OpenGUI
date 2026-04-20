@@ -1,0 +1,17 @@
+{
+	"compilerOptions": {
+		"target": "ES2022",
+		"module": "NodeNext",
+		"moduleResolution": "NodeNext",
+		"declaration": false,
+		"outDir": "./dist",
+		"rootDir": ".",
+		"strict": false,
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"forceConsistentCasingInFileNames": true,
+		"noEmit": false
+	},
+	"include": ["src/**/*", "generated/**/*"],
+	"exclude": ["node_modules", "dist"]
+}

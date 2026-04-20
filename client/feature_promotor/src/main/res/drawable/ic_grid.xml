@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- lucide 'layout-grid' — four rounded rects (outline, stroke 1.5) -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#9CA3AF"
+        android:strokeWidth="1.5"
+        android:strokeLineJoin="round"
+        android:strokeLineCap="round"
+        android:pathData="M3 3h7v7H3z" />
+
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#9CA3AF"
+        android:strokeWidth="1.5"
+        android:strokeLineJoin="round"
+        android:strokeLineCap="round"
+        android:pathData="M14 3h7v7h-7z" />
+
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#9CA3AF"
+        android:strokeWidth="1.5"
+        android:strokeLineJoin="round"
+        android:strokeLineCap="round"
+        android:pathData="M14 14h7v7h-7z" />
+
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#9CA3AF"
+        android:strokeWidth="1.5"
+        android:strokeLineJoin="round"
+        android:strokeLineCap="round"
+        android:pathData="M3 14h7v7H3z" />
+
+</vector>

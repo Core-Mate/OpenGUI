@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Lucide MessageCircle from Haomai-dist -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:pathData="M2.992 16.342a2 2 0 0 1 0.094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413 -0.998a2 2 0 0 1 1.099 0.092 10 10 0 1 0 -4.777 -4.719"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.5"
+        android:fillColor="@android:color/transparent" />
+</vector>

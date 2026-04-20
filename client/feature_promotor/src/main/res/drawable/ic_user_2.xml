@@ -1,0 +1,51 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="20dp"
+    android:height="20dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="?attr/colorControlNormal">
+
+    <!-- 左侧人物身体 -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="@android:color/black"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M16,21 v-2
+                          a4,4 0 0,0 -4,-4
+                          H6
+                          a4,4 0 0,0 -4,4
+                          v2" />
+
+    <!-- 右侧人物头部轮廓（偏后） -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="@android:color/black"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M16,3.128
+                          a4,4 0 0,1 0,7.744" />
+
+    <!-- 右侧人物身体（偏后） -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="@android:color/black"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M22,21 v-2
+                          a4,4 0 0,0 -3,-3.87" />
+
+    <!-- 主人物头部 -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="@android:color/black"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M9,3
+                          a4,4 0 1,1 0,8
+                          a4,4 0 1,1 0,-8" />
+</vector>

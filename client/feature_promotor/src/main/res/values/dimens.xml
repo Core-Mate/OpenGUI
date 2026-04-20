@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="timeline_hour_height">60dp</dimen>
+    <dimen name="timeline_divider_height">1dp</dimen>
+    <dimen name="timeline_padding_top">20dp</dimen>
+    <dimen name="timeline_padding_bottom">20dp</dimen>
+    <dimen name="timeline_half_hour_line_height">1dp</dimen>
+    <dimen name="task_card_horizontal_margin">8dp</dimen>
+    <dimen name="timeline_text_padding_top">10dp</dimen>
+    <dimen name="timeline_total_height">1440dp</dimen>
+    <dimen name="task_card_vertical_spacing">8dp</dimen>
+
+    <dimen name="category_title_margin_top">16dp</dimen>
+    <dimen name="category_title_margin_start">16dp</dimen>
+    <dimen name="function_card_margin">8dp</dimen>
+    <dimen name="function_card_padding">16dp</dimen>
+    <dimen name="function_icon_size">48dp</dimen>
+    <dimen name="function_text_size">14sp</dimen>
+    <dimen name="card_corner_radius">12dp</dimen>
+    <dimen name="card_elevation">4dp</dimen>
+    <dimen name="click_indicator_size">24dp</dimen>
+
+    <dimen name="chip_stroke">1dp</dimen>
+
+    <dimen name="dialog_edit_description_min_height">160dp</dimen>
+</resources>

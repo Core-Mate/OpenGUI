@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 签到按钮：橙到黄渐变 from #F59E0B to #FBBF24 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <gradient
+        android:type="linear"
+        android:angle="0"
+        android:startColor="#F59E0B"
+        android:endColor="#FBBF24" />
+    <corners android:radius="999dp" />
+</shape>

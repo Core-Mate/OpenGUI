@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 与 Web myTasks 结果卡片一致：白底圆角24、标题、appName • lastRun、右侧播放 -->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/card_bg_main"
+    android:padding="20dp"
+    android:clickable="true"
+    android:focusable="true">
+
+    <TextView
+        android:id="@+id/tv_title"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="2"
+        android:textColor="#111827"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:lineSpacingExtra="2dp"
+        app:layout_constraintEnd_toStartOf="@id/btn_play"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintHorizontal_bias="0"
+        android:layout_marginEnd="16dp"
+        tools:text="任务标题" />
+
+    <TextView
+        android:id="@+id/tv_subtitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:textColor="#9CA3AF"
+        android:textSize="12sp"
+        app:layout_constraintEnd_toStartOf="@id/btn_play"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_title"
+        android:layout_marginEnd="16dp"
+        tools:text="小红书 • 2025-02-10 创建" />
+
+    <FrameLayout
+        android:id="@+id/btn_play"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@drawable/play_round_bg"
+        android:padding="8dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_play"
+            android:contentDescription="运行"
+            app:tint="#111827" />
+    </FrameLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.coremate.opengui.feature.promotor.ui.views.FlowLightLinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/slide_expand_root"
+    android:layout_width="150dp"
+    android:layout_height="36dp"
+    android:layout_gravity="center|top"
+    android:background="@drawable/bg_dynamic_island_playing"
+    android:orientation="horizontal">
+
+    <TextView
+        android:id="@+id/tv_content"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_gravity="center_vertical"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="20dp"
+        android:layout_weight="1"
+        android:ellipsize="marquee"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
+        android:marqueeRepeatLimit="marquee_forever"
+        android:maxLines="1"
+        android:singleLine="true"
+        android:text="任务执行中..."
+        android:textColor="#FFFFFF"
+        android:textSize="12sp" />
+</com.coremate.opengui.feature.promotor.ui.views.FlowLightLinearLayout>

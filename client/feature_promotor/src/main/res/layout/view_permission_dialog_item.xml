@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_marginTop="5dp"
+    android:layout_marginBottom="5dp"
+    android:orientation="horizontal">
+
+    <TextView
+        android:id="@+id/tv_title"
+        android:textColor="#000000"
+        android:textFontWeight="400"
+        android:textSize="18dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        tools:text="开启悬浮窗权限" />
+
+    <View
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:layout_weight="1"></View>
+
+    <TextView
+        android:textFontWeight="400"
+        android:textSize="18dp"
+        android:id="@+id/tv_set_permission"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="去开启" />
+</LinearLayout>

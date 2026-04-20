@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="WaveformView">
+        <attr name="waveColor" format="color"/>
+        <attr name="waveThickness" format="dimension"/>
+        <attr name="waveSpeed2" format="integer"/>
+    </declare-styleable>
+
+    <declare-styleable name="NonTouchNestedScrollView">
+        <attr name="maxHeight" format="dimension"/>
+    </declare-styleable>
+
+    <declare-styleable name="ContentStartTitleBar">
+        <attr name="title" format="string"/>
+        <attr name="searchActionInPage" format="boolean"/>
+    </declare-styleable>
+</resources>

@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Explore 搜索：与 Web SearchPage searchScope=explore 一致 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F5F6F8"
+    android:orientation="vertical">
+
+    <View
+        android:id="@+id/v_status"
+        android:layout_width="match_parent"
+        android:layout_height="20dp" />
+    <!-- Search Header: 与 Web 一致 - 返回 + 圆角输入框(左搜索图标+清除)+ 有内容时显示「搜索」 -->
+    <LinearLayout
+        android:id="@+id/search_container"
+        android:layout_width="match_parent"
+        android:layout_height="76dp"
+        android:layout_marginRight="8dp"
+        android:background="#F5F6F8"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:paddingHorizontal="8dp">
+
+        <ImageView
+            android:id="@+id/tv_cancel"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/icon_back"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@drawable/search_white_bg"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_marginStart="10dp"
+                android:src="@drawable/icon_search2"
+                android:tint="#9CA3AF"
+                app:layout_constraintBottom_toBottomOf="@id/et_search_content"
+                app:layout_constraintStart_toStartOf="@id/et_search_content"
+                app:layout_constraintTop_toTopOf="@id/et_search_content" />
+
+            <EditText
+                android:id="@+id/et_search_content"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_marginEnd="16dp"
+                android:layout_weight="1"
+                android:background="@null"
+                android:hint="搜索任务..."
+                android:imeOptions="actionSearch"
+                android:inputType="text"
+                android:maxLines="1"
+                android:paddingStart="8dp"
+                android:textColor="#111827"
+                android:textColorHint="#9CA3AF"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintLeft_toRightOf="@id/tv_cancel"
+                app:layout_constraintRight_toLeftOf="@+id/tv_search_btn"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <ImageView
+                android:id="@+id/img_search_clear"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:padding="4dp"
+                android:src="@drawable/icon_close"
+                android:tint="#9CA3AF"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tv_search_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:fontFamily="sans-serif-medium"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:text="搜索"
+            android:textColor="#2E58FF"
+            android:textSize="16sp"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+    </LinearLayout>
+
+    <!-- 内容区 -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingHorizontal="16dp">
+
+        <!-- 无关键词时：历史 + 调用App + 热门关键词 (explore) -->
+        <ScrollView
+            android:id="@+id/panel_empty"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="true"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingBottom="32dp">
+
+                <!-- 历史记录 -->
+                <LinearLayout
+                    android:id="@+id/section_history"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    android:layout_marginBottom="24dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
+                        android:text="历史记录"
+                        android:textColor="#111827"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+                    <com.coremate.opengui.feature.promotor.ui.widget.FlowLayout
+                        android:id="@+id/container_history"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+                <!-- 调用App -->
+                <LinearLayout
+                    android:id="@+id/section_common_apps"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginBottom="24dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
+                        android:text="调用App"
+                        android:textColor="#111827"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+                    <LinearLayout
+                        android:id="@+id/container_common_apps"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical" />
+                </LinearLayout>
+
+                <!-- 热门关键词 -->
+                <LinearLayout
+                    android:id="@+id/section_hot_keywords"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
+                        android:text="热门关键词"
+                        android:textColor="#111827"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+                    <com.coremate.opengui.feature.promotor.ui.widget.FlowLayout
+                        android:id="@+id/container_hot_keywords"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+            </LinearLayout>
+        </ScrollView>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_results"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            tools:listitem="@layout/item_search_explore_result" />
+
+        <LinearLayout
+            android:id="@+id/panel_empty_result"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingBottom="80dp"
+            android:visibility="gone">
+
+            <ImageView
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:alpha="0.8"
+                android:src="@drawable/icon_search"
+                android:tint="#E5E7EB" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="未找到相关任务"
+                android:textColor="#6B7280"
+                android:textSize="16sp"
+                android:fontFamily="sans-serif-medium" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="试试其他关键词"
+                android:textColor="#9CA3AF"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/panel_loading"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <ProgressBar
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:indeterminateTint="#2E58FF" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="搜索中..."
+                android:textColor="#9CA3AF"
+                android:textSize="14sp" />
+        </LinearLayout>
+    </FrameLayout>
+</LinearLayout>

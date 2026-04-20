@@ -1,0 +1,27 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="20dp"
+    android:height="20dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="?attr/colorControlNormal">
+
+    <!-- 指针 -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="@android:color/black"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M12,6 L12,12 L16,14" />
+
+    <!-- 外圆 -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="@android:color/black"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M12,2
+                          a10,10 0 1,1 0,20
+                          a10,10 0 1,1 0,-20" />
+</vector>

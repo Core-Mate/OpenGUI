@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_execution_overlay_dim"
+    android:clickable="true"
+    android:focusable="true">
+
+    <!-- 居中卡片 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginHorizontal="32dp"
+        android:background="@drawable/bg_execution_overlay_card"
+        android:clickable="true"
+        android:elevation="16dp"
+        android:focusable="true"
+        android:orientation="vertical"
+        android:paddingStart="24dp"
+        android:paddingTop="24dp"
+        android:paddingEnd="24dp"
+        android:paddingBottom="24dp">
+
+        <!-- 顶部行：左侧圆环 + 右侧阶段信息 -->
+        <LinearLayout
+            android:id="@+id/phase_header"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <!-- 缩小的圆形进度条，仅保留外圈 -->
+            <FrameLayout
+                android:id="@+id/circular_progress_container"
+                android:layout_width="56dp"
+                android:layout_height="56dp">
+
+                <com.coremate.opengui.feature.promotor.ui.execute.CircularProgressView
+                    android:id="@+id/circular_progress"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
+            </FrameLayout>
+
+            <!-- 右侧：标题 + 描述 -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="16dp"
+                android:orientation="vertical">
+
+                <!-- 阶段标题容器（执行中显示） -->
+                <LinearLayout
+                    android:id="@+id/phase_title_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tv_phase_title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/task_detail_primary_text"
+                        android:textSize="17sp"
+                        android:textStyle="bold"
+                        tools:text="生成计划" />
+
+                    <TextView
+                        android:id="@+id/tv_phase_desc"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:textColor="@color/task_detail_empty_hint"
+                        android:textSize="13sp"
+                        tools:text="正在生成执行计划..." />
+                </LinearLayout>
+
+                <!-- 完成时显示「准备就绪」 -->
+                <TextView
+                    android:id="@+id/tv_complete_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="准备就绪"
+                    android:textColor="#10b981"
+                    android:textSize="17sp"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Thinking 流式文本容器 -->
+        <FrameLayout
+            android:id="@+id/thinking_container"
+            android:layout_width="match_parent"
+            android:layout_height="240dp"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/bg_execution_thinking_container"
+            android:padding="16dp">
+
+            <ScrollView
+                android:id="@+id/think_content_scroll_container"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:fillViewport="true"
+                android:scrollbars="none">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/tv_content"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:lineSpacingExtra="2dp"
+                        android:textColor="#6B7280"
+                        android:textSize="13sp" />
+
+                    <!-- 闪烁光标 -->
+                    <View
+                        android:id="@+id/thinking_cursor"
+                        android:layout_width="2dp"
+                        android:layout_height="14dp"
+                        android:layout_gravity="center_vertical"
+                        android:layout_marginStart="2dp"
+                        android:alpha="0.6"
+                        android:background="@color/add_button_blue" />
+                </LinearLayout>
+            </ScrollView>
+        </FrameLayout>
+
+        <TextView
+            android:id="@+id/tv_bottom_jumping"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="12dp"
+            android:text="正在跳转..."
+            android:textColor="#10b981"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/tv_cancel_prompt"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_execution_overlay_stop_btn"
+            android:gravity="center"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
+            android:text="取消"
+            android:textColor="@color/task_detail_label"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
+        <!-- 停止执行按钮 -->
+        <TextView
+            android:id="@+id/cancel_prompt_container"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_execution_overlay_stop_btn"
+            android:gravity="center"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
+            android:text="停止执行"
+            android:textColor="@color/task_detail_label"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <ImageView
+        android:id="@+id/img_loading"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:contentDescription="@null"
+        android:visibility="gone" />
+</FrameLayout>

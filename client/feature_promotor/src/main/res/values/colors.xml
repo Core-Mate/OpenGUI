@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="white">#FFFFFFFF</color>
+    <color name="black">#FF000000</color>
+    <color name="black_1a">#1A000000</color>
+    <color name="grey">#FFA0A0A0</color>
+    <color name="red">#FFFF0000</color>
+    <color name="splash_bg_color">#FF0000FF</color>
+    <color name="grid_line_color">#E0E0E0</color>
+    <color name="grid_line_color_faint">#F0F0F0</color>
+    <color name="highlight_color">#40A0F0FF</color>
+    <color name="highlight_color_dark">#60A0F0FF</color>
+    <color name="remove_button_text_red">#FF0000</color>
+    <color name="bottom_nav_item_color_selected">#007BFF</color>
+    <color name="bottom_nav_item_color_unselected">#8A8A8A</color>
+
+    <color name="add_button_blue">#2E58FF</color>
+    <color name="light_blue">#92dcff</color>
+
+    <color name="task_card_douyin_bg">#FF5722</color>
+    <color name="task_card_xiaohongshu_bg">#FF0000</color>
+    <color name="task_card_wechat_bg">#4CAF50</color>
+    <color name="task_card_kuaishou_bg">#FF9800</color>
+    <color name="task_card_sms_bg">#FFC107</color>
+    <color name="task_card_email_bg">#2196F3</color>
+    <color name="task_card_taobao_bg">#FF5722</color>
+    <color name="task_card_pinduoduo_bg">#E91E63</color>
+    <color name="task_card_xianyu_bg">#FFEB3B</color>
+    <color name="task_card_custom_bg">#9C27B0</color>
+
+    <color name="platform_douyin_card_bg">#F2F2F2</color>
+    <color name="platform_xiaohongshu_card_bg">#F2F2F2</color>
+    <color name="platform_wechat_card_bg">#F2F2F2</color>
+    <color name="platform_kuaishou_card_bg">#F2F2F2</color>
+
+    <!-- 底部 Tab 导航：与前端 TabNavigation 一致 -->
+    <color name="tab_nav_selected">#2E58FF</color>
+    <color name="tab_nav_unselected">#94A3B8</color>
+    <color name="tab_nav_card_bg">#EAFFFFFF</color>
+
+    <color name="icon_douyin_color">#FF2C55</color>
+    <color name="icon_xiaohongshu_color">#FF2A4C</color>
+    <color name="icon_wechat_color">#07C160</color>
+    <color name="icon_kuaishou_color">#FE6A00</color>
+
+    <!-- 任务详情页与 Web 一致 -->
+    <color name="task_detail_page_bg">#F0F1F5</color>
+    <color name="task_detail_label">#6B7280</color>
+    <color name="task_detail_primary_text">#111827</color>
+    <color name="task_detail_edit_blue">#2E58FF</color>
+    <color name="task_detail_empty_hint">#9CA3AF</color>
+
+    <!-- 执行偏好：与 Web ExecutionPreferenceSheet 一致 -->
+    <color name="execute_preference_content_text">#4B5563</color>
+    <color name="execute_preference_content_bg">#F9FAFB</color>
+    <color name="execute_preference_input_bg">#F5F6F8</color>
+    <color name="execute_preference_border_dashed">#D1D5DB</color>
+</resources>
