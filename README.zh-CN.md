@@ -16,7 +16,7 @@
 
 ## OpenGUI 是什么
 
-OpenGUI 是一套面向真实 Android 设备的 AI Operator Stack。
+OpenGUI 让 AI 操作真实的 Android 手机。
 
 它把 Android 原生执行端、后端编排和远程任务下发整合进同一个系统，让移动任务可以被触发、执行、复核，并最终以结构化结果返回。
 
