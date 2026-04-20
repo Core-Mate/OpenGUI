@@ -16,7 +16,7 @@
 
 ## What OpenGUI Is
 
-OpenGUI is an Android-native operator stack for running AI tasks on real mobile devices.
+OpenGUI lets AI operate real Android phones.
 
 It brings together an Android-native execution client, backend orchestration, and remote task dispatch so mobile tasks can be triggered, executed, reviewed, and returned as structured results.
 
