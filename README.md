@@ -14,6 +14,14 @@
   <a href="./docs/get-started.md"><img src="https://img.shields.io/badge/MANUAL_SETUP-DOCS-4b4b4b?style=for-the-badge" alt="Manual setup docs"></a>
 </p>
 
+## Demo
+
+<p align="center">
+  <img src="./docs/assets/opengui-demo.svg" alt="OpenGUI demo preview" width="100%">
+</p>
+
+<p align="center">Preview frames from the April 21 product demo video.</p>
+
 ## What OpenGUI Is
 
 OpenGUI lets AI operate real Android phones.
