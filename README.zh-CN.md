@@ -14,6 +14,14 @@
   <a href="./docs/get-started.md"><img src="https://img.shields.io/badge/MANUAL_SETUP-DOCS-4b4b4b?style=for-the-badge" alt="Manual setup docs"></a>
 </p>
 
+## 演示视频
+
+<p align="center">
+  <img src="./docs/assets/opengui-demo.svg" alt="OpenGUI demo preview" width="100%">
+</p>
+
+<p align="center">上面这块内容来自 4 月 21 日产品演示视频的关键画面。</p>
+
 ## OpenGUI 是什么
 
 OpenGUI 让 AI 操作真实的 Android 手机。
