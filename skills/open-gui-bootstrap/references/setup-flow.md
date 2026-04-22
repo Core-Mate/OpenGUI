@@ -4,7 +4,7 @@ Use this reference when executing the bootstrap workflow.
 
 ## Operating Principle
 
-The user should feel that Claude or Codex is the installer and operator.
+Claude or Codex should behave like the installer and operator.
 
 The user should only need to:
 
@@ -14,51 +14,65 @@ The user should only need to:
 
 The user should not need to learn the setup order, terminal commands, env var names, or model-routing internals.
 
+## Concrete Repository Path
+
+This repository already contains the runnable path:
+
+- `server/start.sh`
+- `client/start.sh`
+- `server/apps/backend/.env.example`
+- `client/gradlew`
+
+Default bootstrap order:
+
+1. inspect checkout
+2. run `server/start.sh`
+3. collect only the missing keys
+4. verify backend docs endpoint
+5. run `client/start.sh`
+6. handle `adb` and device-side permissions
+7. verify first run
+
 ## Decision Tree
 
-### Case 1: Public docs-only checkout
+### Case 1: Full runnable checkout
 
 Symptoms:
 
-- repository contains only `README.md`, `README.zh-CN.md`, and documentation files
-- no `server/` directory
-- no `client/` directory
+- `server/` exists
+- `client/` exists
+- `server/start.sh` exists
+- `client/start.sh` and `client/gradlew` exist
 
 Action:
 
-- stop immediately
-- explain that this checkout cannot run OpenGUI
-- tell the user a full internal or source-complete checkout is required
+- proceed with backend bootstrap
+- use the actual scripts
+- keep user hand-offs limited to phone-side actions and secrets
 
-Suggested response shape:
-
-- "This repository snapshot documents OpenGUI but does not include the runnable backend and Android client. I cannot complete setup from this checkout."
-
-### Case 2: Full runnable checkout
-
-Proceed with:
-
-1. interpret the user's plain-language intent
-2. backend bootstrap
-3. model-provider selection and env generation
-4. backend verification
-5. Android build
-6. `adb` connection work
-7. device-side permission hand-off
-8. first task verification
-
-### Case 3: Partial checkout
+### Case 2: Partial checkout
 
 Symptoms:
 
 - `server/` exists but `client/` does not
-- `client/` exists but no backend bootstrap exists
-- key scripts are missing
+- `client/` exists but `server/` does not
+- required scripts are missing
 
 Action:
 
 - identify the missing path explicitly
 - stop unless the user confirms a nonstandard layout
+
+### Case 3: Docs-only checkout
+
+Symptoms:
+
+- repository contains documentation but no runnable backend or client
+
+Action:
+
+- stop immediately
+- explain that this checkout cannot run OpenGUI
 
 ## Plain-Language Intent Mapping
 
@@ -67,24 +81,22 @@ Map user requests into setup targets without asking them to translate their requ
 Examples:
 
 - "Run OpenGUI for me" -> full bootstrap with conservative defaults
-- "Use Claude" -> prefer Claude-compatible planning endpoint
-- "Use GPT and Gemini" -> use GPT-compatible text endpoint and Gemini-compatible vision endpoint when supported
+- "Use Claude" -> use Claude-style config for planning
+- "Use GPT and Gemini" -> use GPT for planning and Gemini for vision when supported
 - "Use my own API" -> ask only for the missing endpoint or secret
 - "Tell me only what to do on the phone" -> maximize automation and reduce hand-offs to physical-world steps only
 
 ## Tooling Expectations
 
-Minimum practical expectations for an automated run:
+Minimum practical expectations:
 
-- Node.js
+- Node.js 22+
 - pnpm
 - Docker
 - adb
-- Java / Gradle compatibility for Android build
+- Java for Android build
 
 ## Model Provider Handling
-
-OpenGUI should be presented as provider-flexible.
 
 Supported intent examples include:
 
@@ -117,22 +129,17 @@ Bad:
 
 - "Please follow the setup guide manually."
 - "You may need to configure some Android permissions."
-- "Set these six env vars yourself and rerun the script."
+- "Set these env vars yourself and rerun the script."
 
 ## Verification Targets
 
 Prefer these checks when available:
 
-- backend docs endpoint
-- backend API base URL
+- backend docs endpoint at `http://localhost:7777/docs`
+- backend API base URL at `http://localhost:7777/api`
 - device listed in `adb devices`
 - successful `adb reverse`
 - APK path exists after Gradle build
 - `adb install` succeeds or reports a clear device-side blocker
 - selected model endpoint configuration is present
-
-## Principle
-
-The user should feel that Codex is the installer and operator.
-
-The user should only be pulled in when the task crosses into physical-world interaction, device UI permissions, or secrets.
+- app starts into the open-source path without requiring the old OTP-first login flow
