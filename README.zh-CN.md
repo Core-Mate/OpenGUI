@@ -33,26 +33,6 @@ OpenGUI 让 AI 操作真实的 Android 手机。
 - **模型可以按角色分工**：模型路由把规划侧和 VLM 执行侧拆开，便于按角色选择 provider。
 - **整套系统围绕真实移动工作流组织**：graph、设备执行链路和模型分工已经在源码里落地。
 
-## OpenGUI 是什么
-
-这个仓库现在已经包含可运行的主要部分：NestJS 后端、基于 LangGraph 的 agent graph、Android 客户端、待命与执行 WebSocket 通道，以及给 Claude 或 Codex 使用的 bootstrap skill。
-
-后端负责任务编排和远程下发。Android 客户端贴近设备执行，通过 AccessibilityService 完成动作、截图，并保持待命连接，接收远程任务。
-
-## 为长时任务而设计
-
-OpenGUI 面向长时移动工作流，适合持续运行数小时的任务。
-
-从源码结构看，这个定位是明确的：
-
-- **Plan Supervisor** 负责维护任务列表和继续执行状态。
-- **Executor Graph** 围绕当前设备状态运行截图、视觉分析、动作执行和 call-user 循环。
-- **Summarizer** 在任务结束时输出结构化结果。
-- **待命派发链路** 让设备可以通过飞书、Telegram 或 REST 入口接收远程任务。
-- **模型路由** 把规划侧和 VLM 执行侧分开，便于按角色选择 provider。
-
-OpenGUI 的 graph、设备执行链路和模型分工，都是围绕这件事组织起来的。
-
 ## 为什么 OpenGUI 不一样
 
 OpenGUI 采用的是一套分层清晰的移动 operator system。

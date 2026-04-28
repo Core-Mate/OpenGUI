@@ -33,26 +33,6 @@ You can use the same repository in four practical ways:
 - **Models can be assigned by role**: model routing separates planning from VLM execution so teams can choose providers by job.
 - **The system is organized around real mobile workflows**: the graph, device execution path, and model split already exist in the source tree.
 
-## What OpenGUI Is
-
-This repository ships the runnable pieces: a NestJS backend, a LangGraph-based agent graph, an Android client, standby and execution WebSocket paths, and a bootstrap skill for Claude or Codex.
-
-The backend owns task orchestration and remote dispatch. The Android client stays close to the device, executes actions through AccessibilityService, captures screenshots, and keeps a standby connection open for remote task delivery.
-
-## Built for 12-hour tasks
-
-OpenGUI is designed for long-running mobile workflows, including tasks that may stay alive for many hours.
-
-The codebase already reflects that shape:
-
-- **Plan Supervisor** keeps the task list and continuation state moving through the graph.
-- **Executor Graph** runs the screenshot, vision, action, and call-user loop on top of the current device state.
-- **Summarizer** closes the run with a structured result.
-- **Standby dispatch** keeps devices available for remote task delivery through Feishu, Telegram, or REST-triggered flows.
-- **Model routing** separates Claude-style planning from the VLM path used by the executor.
-
-The graph can keep state, recover from UI drift, route different model roles, and continue after user hand-offs.
-
 ## Why OpenGUI Is Different
 
 OpenGUI is built as a mobile operator system with explicit orchestration layers.
