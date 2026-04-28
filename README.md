@@ -20,10 +20,10 @@ OpenGUI lets AI operate real Android phones.
 
 You can use the same repository in four practical ways:
 
-- **Run the shipped Android operator system**: start the backend, connect an Android phone, and execute mobile tasks with the runnable `server/` and `client/` already in this repo.
+- **Operate mainstream Android apps**: let AI handle mobile tasks inside X, Reddit, Hacker News, Telegram, WeChat, Weibo, Xiaohongshu, and other Android apps on a real phone.
+- **Run shipped workflows**: the repository already includes a runnable backend, Android client, standby dispatch path, and a set of built-in task capabilities.
 - **Let Claude or Codex bootstrap it for you**: point the model at [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md), describe the goal in plain language, and let it handle setup, build, install, and local debugging.
-- **Use your own model APIs**: plug Claude, GPT, Gemini, Kimi, MiniMax, or compatible endpoints into the planning and VLM paths the system already separates.
-- **Operate it as a remote mobile worker**: dispatch tasks from Feishu, Telegram, or REST API, keep devices on standby, and get structured results back from the backend.
+- **Operate phones as remote workers**: dispatch tasks through Feishu, Telegram, or REST API, keep devices on standby, and get structured results back from the backend.
 
 ## Highlights
 
@@ -75,61 +75,73 @@ The source code currently exposes these pieces:
 
 ## Typical Use Cases
 
-- Search Weibo for AI news and summarize the top results
 - Open X and collect recent posts for a topic
-- Execute repetitive mobile workflows on Android devices
+- Read and summarize Reddit or Hacker News threads on a live phone
 - Trigger Android tasks remotely from Feishu or Telegram
+- Execute repetitive mobile workflows on Android devices
 - Run long mobile workflows that need state, review, and recovery over many hours
 
-## Start with the Bootstrap Skill
+## How to Use OpenGUI
 
-If you are using Claude or Codex, start with [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md).
+### 1. With Claude or Codex
 
-The skill should handle the concrete install path that exists in this repository:
+Start with [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md).
 
-- run `server/start.sh`
-- generate `server/apps/backend/.env` from `.env.example` on first run
-- ask only for missing keys such as `CLAUDE_API_KEY` and `VLM_API_KEY`
-- start PostgreSQL and Redis in Docker
-- generate Prisma client, push schema, and seed backend data
-- run `client/start.sh`
-- use `adb reverse tcp:7777 tcp:7777`, build the APK, install it, and launch the app when a device is connected
+The intended flow is simple:
 
-The user should only need to step in for phone-side actions and secrets:
+1. point Claude or Codex at the skill
+2. describe the task in plain language
+3. let the model handle backend bootstrap, APK build, install, and local debugging
 
-- connect a phone or boot an emulator
-- approve USB debugging
-- enable AccessibilityService
-- grant overlay or battery permissions
-- provide API keys or bot credentials
+It should only stop for:
 
-### Run it
+- connecting a phone or starting an emulator
+- approving USB debugging
+- enabling AccessibilityService
+- granting overlay or battery permissions
+- providing API keys or bot credentials
+
+Recommended prompts:
+
+#### Run it
 
 ```text
 Read ./skills/open-gui-bootstrap/SKILL.md and help me run OpenGUI. Only ask me for phone-side actions.
 ```
 
-### Use Claude
+#### Use Claude
 
 ```text
 Read ./skills/open-gui-bootstrap/SKILL.md and use Claude to bootstrap OpenGUI for me.
 ```
 
-### Use GPT + Gemini
+#### Use GPT + Gemini
 
 ```text
 Read ./skills/open-gui-bootstrap/SKILL.md and set up OpenGUI with GPT for planning and Gemini for vision.
 ```
 
-### Use my own APIs
+#### Use my own APIs
 
 ```text
 Read ./skills/open-gui-bootstrap/SKILL.md and use my existing model APIs to get OpenGUI working.
 ```
 
-## Manual Setup
+### 2. Manual setup
 
-Use the real setup docs and scripts in this repository:
+Use the repository scripts directly:
+
+```bash
+cd server
+./start.sh
+```
+
+```bash
+cd client
+./start.sh
+```
+
+Reference docs:
 
 - [docs/get-started.md](./docs/get-started.md)
 - [server/start.sh](./server/start.sh)

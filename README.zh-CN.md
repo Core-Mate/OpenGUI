@@ -20,10 +20,10 @@ OpenGUI 让 AI 操作真实的 Android 手机。
 
 同一个仓库里，你可以直接做四类事情：
 
-- **运行现成的 Android operator system**：启动仓库自带的 `server/` 和 `client/`，连上 Android 手机，直接执行移动任务。
+- **操作主流 Android App**：让 AI 在真实手机上执行 X、Reddit、Hacker News、Telegram、微信、微博、小红书等移动任务。
+- **运行现成工作流**：仓库已经包含可直接启动的后端、Android 客户端、待命派发链路，以及部分预置任务能力。
 - **让 Claude 或 Codex 帮你跑起来**：把 [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md) 交给模型，直接用自然语言描述目标，让它处理安装、构建、安装 APK 和本地排障。
-- **接入你自己的模型 API**：把 Claude、GPT、Gemini、Kimi、MiniMax 或兼容端点接到系统已有的规划链路和 VLM 链路里。
-- **把它当成远程移动 worker 使用**：通过飞书、Telegram 或 REST API 下发任务，让设备保持待命，并从后端拿回结构化结果。
+- **把手机当成远程 worker 使用**：通过飞书、Telegram 或 REST API 下发任务，让设备保持待命，并从后端拿回结构化结果。
 
 ## 亮点
 
@@ -75,27 +75,25 @@ OpenGUI 采用的是一套分层清晰的移动 operator system。
 
 ## 典型使用场景
 
-- 搜索微博上的 AI 新闻并汇总前几条结果
 - 打开 X 并采集某个主题的近期内容
-- 在 Android 设备上执行重复性的移动工作流
+- 在真实手机上阅读并总结 Reddit 或 Hacker News 帖子
 - 从飞书或 Telegram 远程触发手机任务
+- 在 Android 设备上执行重复性的移动工作流
 - 运行需要状态管理、复核和恢复机制的长时移动工作流
 
-## 先用 Bootstrap Skill
+## 怎么使用 OpenGUI
 
-如果你在使用 Claude 或 Codex，优先从 [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md) 开始。
+### 1. 用 Claude 或 Codex 帮你跑起来
 
-这个 skill 应该直接走仓库里已经存在的真实安装路径：
+优先从 [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md) 开始。
 
-- 运行 `server/start.sh`
-- 首次从 `server/apps/backend/.env.example` 生成 `.env`
-- 只在缺少 `CLAUDE_API_KEY`、`VLM_API_KEY` 这类关键配置时打断用户
-- 用 Docker 启动 PostgreSQL 和 Redis
-- 生成 Prisma client，推送 schema，并导入初始化数据
-- 运行 `client/start.sh`
-- 在设备已连接时自动执行 `adb reverse tcp:7777 tcp:7777`、构建 APK、安装并拉起 App
+推荐流程很简单：
 
-用户只需要在这些事情上介入：
+1. 把 skill 交给 Claude 或 Codex
+2. 直接用自然语言描述目标
+3. 让模型处理后端 bootstrap、APK 构建、安装和本地排障
+
+模型只应该在这些事情上打断你：
 
 - 连接手机或启动模拟器
 - 允许 USB 调试
@@ -103,33 +101,47 @@ OpenGUI 采用的是一套分层清晰的移动 operator system。
 - 授予悬浮窗或电池权限
 - 提供 API Key 或机器人密钥
 
-### 直接运行
+推荐说法：
+
+#### 直接运行
 
 ```text
 读一下 ./skills/open-gui-bootstrap/SKILL.md，然后帮我把 OpenGUI 跑起来，只在必须时告诉我手机上要做什么。
 ```
 
-### 使用 Claude
+#### 使用 Claude
 
 ```text
 读一下 ./skills/open-gui-bootstrap/SKILL.md，然后用 Claude 帮我 bootstrap OpenGUI。
 ```
 
-### 使用 GPT + Gemini
+#### 使用 GPT + Gemini
 
 ```text
 读一下 ./skills/open-gui-bootstrap/SKILL.md，然后帮我用 GPT 做规划，用 Gemini 做视觉分析，把 OpenGUI 配好。
 ```
 
-### 使用我自己的 API
+#### 使用我自己的 API
 
 ```text
 读一下 ./skills/open-gui-bootstrap/SKILL.md，然后用我现有的模型 API 把 OpenGUI 跑起来。
 ```
 
-## 手动安装
+### 2. 手动安装
 
-这里直接给你真实可用的安装入口：
+直接使用仓库里的脚本：
+
+```bash
+cd server
+./start.sh
+```
+
+```bash
+cd client
+./start.sh
+```
+
+参考文档：
 
 - [docs/get-started.md](./docs/get-started.md)
 - [server/start.sh](./server/start.sh)
