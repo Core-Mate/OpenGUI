@@ -14,9 +14,26 @@
   <a href="./docs/get-started.md"><img src="https://img.shields.io/badge/MANUAL_SETUP-DOCS-4b4b4b?style=for-the-badge" alt="Manual setup docs"></a>
 </p>
 
-## OpenGUI 是什么
+## 你可以用 OpenGUI 做什么
 
 OpenGUI 让 AI 操作真实的 Android 手机。
+
+同一个仓库里，你可以直接做四类事情：
+
+- **运行现成的 Android operator system**：启动仓库自带的 `server/` 和 `client/`，连上 Android 手机，直接执行移动任务。
+- **让 Claude 或 Codex 帮你跑起来**：把 [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md) 交给模型，直接用自然语言描述目标，让它处理安装、构建、安装 APK 和本地排障。
+- **接入你自己的模型 API**：把 Claude、GPT、Gemini、Kimi、MiniMax 或兼容端点接到系统已有的规划链路和 VLM 链路里。
+- **把它当成远程移动 worker 使用**：通过飞书、Telegram 或 REST API 下发任务，让设备保持待命，并从后端拿回结构化结果。
+
+## 亮点
+
+- **多角色编排**：`Plan Supervisor`、`Executor Graph`、`Summarizer` 分别负责规划、设备执行和结果收口。
+- **长时任务支持**：后端 graph 可以维护长时移动工作流的任务状态，适合持续运行数小时的任务。
+- **Android 原生执行**：客户端常驻设备侧，负责截图、AccessibilityService 动作执行，以及待命和执行连接。
+- **按角色路由模型**：规划和 VLM 执行已经拆开，便于按质量和稳定性选择不同 provider。
+- **远程派发内置**：飞书、Telegram、REST API 和待命设备派发已经在后端链路里。
+
+## OpenGUI 是什么
 
 这个仓库现在已经包含可运行的主要部分：NestJS 后端、基于 LangGraph 的 agent graph、Android 客户端、待命与执行 WebSocket 通道，以及给 Claude 或 Codex 使用的 bootstrap skill。
 
@@ -34,7 +51,7 @@ OpenGUI 面向长时移动工作流，适合持续运行数小时的任务。
 - **待命派发链路** 让设备可以通过飞书、Telegram 或 REST 入口接收远程任务。
 - **模型路由** 把规划侧和 VLM 执行侧分开，便于按角色选择 provider。
 
-长任务真正依赖的是系统稳定性。OpenGUI 的 graph、设备执行链路和模型分工，都是围绕这件事组织起来的。
+OpenGUI 的 graph、设备执行链路和模型分工，都是围绕这件事组织起来的。
 
 ## 为什么 OpenGUI 不一样
 

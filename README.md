@@ -14,11 +14,28 @@
   <a href="./docs/get-started.md"><img src="https://img.shields.io/badge/MANUAL_SETUP-DOCS-4b4b4b?style=for-the-badge" alt="Manual setup docs"></a>
 </p>
 
-## What OpenGUI Is
+## What You Can Do with OpenGUI
 
 OpenGUI lets AI operate real Android phones.
 
-This repository now ships the runnable pieces: a NestJS backend, a LangGraph-based agent graph, an Android client, standby and execution WebSocket paths, and a bootstrap skill for Claude or Codex.
+You can use the same repository in four practical ways:
+
+- **Run the shipped Android operator system**: start the backend, connect an Android phone, and execute mobile tasks with the runnable `server/` and `client/` already in this repo.
+- **Let Claude or Codex bootstrap it for you**: point the model at [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md), describe the goal in plain language, and let it handle setup, build, install, and local debugging.
+- **Use your own model APIs**: plug Claude, GPT, Gemini, Kimi, MiniMax, or compatible endpoints into the planning and VLM paths the system already separates.
+- **Operate it as a remote mobile worker**: dispatch tasks from Feishu, Telegram, or REST API, keep devices on standby, and get structured results back from the backend.
+
+## Highlights
+
+- **Multi-role orchestration**: `Plan Supervisor`, `Executor Graph`, and `Summarizer` split planning, device execution, and result closing across dedicated runtime pieces.
+- **Long-running task support**: the backend graph keeps task state alive over long mobile workflows, including runs that may last for many hours.
+- **Android-native execution**: the client stays on the device, captures screenshots, drives AccessibilityService actions, and maintains standby and execution sockets.
+- **Model routing by role**: planning and VLM execution are already separated, so teams can assign different providers where that improves quality or stability.
+- **Remote dispatch built in**: Feishu, Telegram, REST API, and standby device dispatch are part of the backend flow.
+
+## What OpenGUI Is
+
+This repository ships the runnable pieces: a NestJS backend, a LangGraph-based agent graph, an Android client, standby and execution WebSocket paths, and a bootstrap skill for Claude or Codex.
 
 The backend owns task orchestration and remote dispatch. The Android client stays close to the device, executes actions through AccessibilityService, captures screenshots, and keeps a standby connection open for remote task delivery.
 
@@ -34,7 +51,7 @@ The codebase already reflects that shape:
 - **Standby dispatch** keeps devices available for remote task delivery through Feishu, Telegram, or REST-triggered flows.
 - **Model routing** separates Claude-style planning from the VLM path used by the executor.
 
-That system shape is what makes long tasks viable. The graph can keep state, recover from UI drift, route different model roles, and continue after user hand-offs.
+The graph can keep state, recover from UI drift, route different model roles, and continue after user hand-offs.
 
 ## Why OpenGUI Is Different
 
