@@ -27,11 +27,11 @@ You can use the same repository in four practical ways:
 
 ## Highlights
 
-- **Multi-role orchestration**: `Plan Supervisor`, `Executor Graph`, and `Summarizer` split planning, device execution, and result closing across dedicated runtime pieces.
-- **Long-running task support**: the backend graph keeps task state alive over long mobile workflows, including runs that may last for many hours.
-- **Android-native execution**: the client stays on the device, captures screenshots, drives AccessibilityService actions, and maintains standby and execution sockets.
-- **Model routing by role**: planning and VLM execution are already separated, so teams can assign different providers where that improves quality or stability.
-- **Remote dispatch built in**: Feishu, Telegram, REST API, and standby device dispatch are part of the backend flow.
+- **Built for long-running tasks**: OpenGUI is shaped for mobile workflows that may run for hours, with progress, review, and recovery kept inside the system.
+- **The task can keep moving**: `Plan Supervisor` maintains task state and continuation, `Executor Graph` runs screenshot, vision, action, and call-user loops on top of live device state, and `Summarizer` closes the run with a structured result.
+- **Phones can stay on standby**: the standby dispatch path lets devices receive remote work through Feishu, Telegram, or REST entry points.
+- **Models can be assigned by role**: model routing separates planning from VLM execution so teams can choose providers by job.
+- **The system is organized around real mobile workflows**: the graph, device execution path, and model split already exist in the source tree.
 
 ## What OpenGUI Is
 
