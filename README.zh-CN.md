@@ -81,6 +81,20 @@ OpenGUI 采用的是一套分层清晰的移动 operator system。
 - 授予悬浮窗或电池权限
 - 提供 API Key 或机器人密钥
 
+推荐配置：
+
+#### 高配版
+
+如果你优先要效果，可以把规划、监督、复核和视觉分析都放到最新的 Claude Opus 模型族上。
+
+这条路径最省心，整体质量也最高，同时成本最高。
+
+#### 省钱混用版
+
+如果你优先控制成本，建议把 **Planner**、**Supervisor** 这类文本角色放到 **千问 3.6 Plus**，把 **VLM** 这一侧放到 **豆包 Pro**。
+
+在很多任务里，这种混用方式还能保持整体系统结构，同时把模型成本大致降到全量 Opus 方案的 **1/10 到 1/15**，实际比例会受到任务时长、截图数量和 token 结构影响。
+
 推荐说法：
 
 #### 直接运行
@@ -89,16 +103,16 @@ OpenGUI 采用的是一套分层清晰的移动 operator system。
 读一下 ./skills/open-gui-bootstrap/SKILL.md，然后帮我把 OpenGUI 跑起来，只在必须时告诉我手机上要做什么。
 ```
 
-#### 使用 Claude
+#### 全部使用 Claude Opus
 
 ```text
-读一下 ./skills/open-gui-bootstrap/SKILL.md，然后用 Claude 帮我 bootstrap OpenGUI。
+读一下 ./skills/open-gui-bootstrap/SKILL.md，然后用最新的 Claude Opus 模型族来配置 OpenGUI，把规划、监督、复核和视觉分析都放进去。
 ```
 
-#### 使用 GPT + Gemini
+#### 用千问 + 豆包省钱
 
 ```text
-读一下 ./skills/open-gui-bootstrap/SKILL.md，然后帮我用 GPT 做规划，用 Gemini 做视觉分析，把 OpenGUI 配好。
+读一下 ./skills/open-gui-bootstrap/SKILL.md，然后帮我把 OpenGUI 配成：Planner 和 Supervisor 用千问 3.6 Plus，VLM 执行侧用豆包 Pro。
 ```
 
 #### 使用我自己的 API

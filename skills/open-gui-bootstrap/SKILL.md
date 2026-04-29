@@ -19,8 +19,8 @@ The concrete install path already exists:
 The user should be able to say things like:
 
 - "Help me run OpenGUI on my phone"
-- "Use Claude to bootstrap OpenGUI for me"
-- "Set up OpenGUI with GPT and Gemini as my model endpoints"
+- "Use Claude Opus to bootstrap OpenGUI for me"
+- "Set up OpenGUI with Qwen 3.6 Plus for planning and Doubao Pro for VLM"
 - "Get OpenGUI running and tell me only what I must tap on the phone"
 - "Help me set up OpenGUI for a long-running mobile workflow"
 
@@ -43,9 +43,9 @@ Typical trigger forms include:
 ## Example Prompts
 
 - "Help me run OpenGUI on this machine."
-- "Use Claude to bootstrap OpenGUI for me."
+- "Use Claude Opus to bootstrap OpenGUI for me."
 - "Use Codex to get OpenGUI running and only tell me what I need to do on the phone."
-- "Set up OpenGUI with GPT for planning and Gemini for vision."
+- "Set up OpenGUI with Qwen 3.6 Plus for planning and Doubao Pro for VLM."
 - "Use my existing model APIs and get OpenGUI working."
 - "Help me bring up OpenGUI for a long mobile workflow."
 
@@ -90,8 +90,8 @@ Map the user's plain-language request onto a practical setup target.
 Examples:
 
 - "Help me run OpenGUI" -> full bootstrap with conservative defaults
-- "Use Claude" -> prefer Claude for planning and text-side orchestration
-- "Use GPT and Gemini" -> prefer GPT for planning and Gemini for vision when the environment supports that split
+- "Use Claude Opus" -> route planning, supervision, review, and vision to the latest Claude Opus model family when the endpoint supports that setup
+- "Use Qwen and Doubao" -> prefer Qwen 3.6 Plus for Planner and Supervisor, and Doubao Pro for the VLM side
 - "Use my own models" -> ask only for the missing endpoint or secret
 - "Tell me only what to do on the phone" -> maximize automation and keep hand-offs to physical steps only
 
@@ -139,7 +139,9 @@ Supported user intent examples include:
 Rules:
 
 - prefer the provider explicitly named by the user
-- use Claude-style config for planning by default when no override is provided
+- when the user asks for a high-performance setup, route planning, supervision, review, and vision to the latest Claude Opus model family when the endpoint supports it
+- when the user asks for a cost-saving setup, prefer Qwen 3.6 Plus for text-side roles such as Planner and Supervisor, and Doubao Pro for the VLM side
+- tell the user that the mixed Qwen + Doubao setup usually lowers model cost by roughly 10x to 15x compared with an all-Opus setup, depending on task length and screenshot volume
 - use the VLM fields for vision-side execution
 - ask only for the smallest missing endpoint or secret
 

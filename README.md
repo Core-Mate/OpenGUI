@@ -81,6 +81,20 @@ It should only stop for:
 - granting overlay or battery permissions
 - providing API keys or bot credentials
 
+Recommended profiles:
+
+#### High-performance profile
+
+Use the latest Claude Opus model family across planning, supervision, review, and vision when you want the strongest overall quality.
+
+This is the easiest way to get the best execution quality, and it is the most expensive path.
+
+#### Cost-saving mixed profile
+
+Use **Qwen 3.6 Plus** for text-side roles such as Planner and Supervisor, and use **Doubao Pro** for the VLM side.
+
+This usually preserves the overall system shape while lowering model cost by roughly **10x to 15x** compared with an all-Opus setup, depending on task length, screenshot volume, and token mix.
+
 Recommended prompts:
 
 #### Run it
@@ -89,16 +103,16 @@ Recommended prompts:
 Read ./skills/open-gui-bootstrap/SKILL.md and help me run OpenGUI. Only ask me for phone-side actions.
 ```
 
-#### Use Claude
+#### Use Claude Opus everywhere
 
 ```text
-Read ./skills/open-gui-bootstrap/SKILL.md and use Claude to bootstrap OpenGUI for me.
+Read ./skills/open-gui-bootstrap/SKILL.md and bootstrap OpenGUI with the latest Claude Opus model family for planning, supervision, review, and vision.
 ```
 
-#### Use GPT + Gemini
+#### Use Qwen + Doubao to save cost
 
 ```text
-Read ./skills/open-gui-bootstrap/SKILL.md and set up OpenGUI with GPT for planning and Gemini for vision.
+Read ./skills/open-gui-bootstrap/SKILL.md and set up OpenGUI with Qwen 3.6 Plus for Planner and Supervisor, and Doubao Pro for VLM execution.
 ```
 
 #### Use my own APIs
