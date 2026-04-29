@@ -177,7 +177,7 @@ flowchart LR
 
 ## Current Scope and Limitations
 
-OpenGUI is already runnable from this repository, but it is still evolving as an open-source mobile operator framework.
+OpenGUI is already runnable from this repository, but it is still evolving as a source-available mobile operator framework.
 
 Current constraints:
 
@@ -187,7 +187,7 @@ Current constraints:
 - runtime quality still depends on app UI complexity, model quality, and device permission stability
 - there are two Chinese README files in the repo today; `README.zh-CN.md` is the current one
 
-One important open-source behavior is already in the Android app: `SplashActivity` bypasses login and opens `HomeActivity` directly. For local runs, the backend task APIs also default to `userId = 1`, so the old OTP-first path is no longer the primary getting-started flow.
+One important source-available build behavior is already in the Android app: `SplashActivity` bypasses login and opens `HomeActivity` directly. For local runs, the backend task APIs also default to `userId = 1`, so the old OTP-first path is no longer the primary getting-started flow.
 
 ## Documentation
 
@@ -212,6 +212,15 @@ If OpenGUI is useful to you, the most helpful ways to support it are:
 
 ## License
 
-OpenGUI is licensed under the Apache 2.0 License.
+OpenGUI is source-available under the Business Source License 1.1 (BUSL-1.1).
+
+You may copy, modify, distribute, and use the source for non-production purposes. Production use, commercial use, hosted services, and integration into commercial products require a separate commercial license from Core-Mate.
+
+For this version:
+
+- Change Date: 2030-04-29
+- Change License: Apache License, Version 2.0
+
+This is public source, but it is not OSI-approved open source until the Change Date.
 
 See [LICENSE](./LICENSE).

@@ -142,4 +142,4 @@ Prefer these checks when available:
 - APK path exists after Gradle build
 - `adb install` succeeds or reports a clear device-side blocker
 - selected model endpoint configuration is present
-- app starts into the open-source path without requiring the old OTP-first login flow
+- app starts into the source-available path without requiring the old OTP-first login flow

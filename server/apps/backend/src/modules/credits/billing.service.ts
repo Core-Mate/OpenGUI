@@ -8,7 +8,7 @@ export interface BillingResult {
 }
 
 /**
- * Stub BillingService for open-source version.
+ * Stub BillingService for source-available version.
  * Billing is disabled - all operations succeed with no deduction.
  */
 @Injectable()

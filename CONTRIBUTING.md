@@ -47,4 +47,6 @@ cd client
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the Apache 2.0 License.
+By contributing, you agree that your contributions will be licensed under the Business Source License 1.1 (BUSL-1.1), unless a separate written agreement says otherwise.
+
+You also grant Core-Mate the right to use, modify, distribute, sublicense, commercially license, and relicense your contributions as part of OpenGUI. For substantial external contributions, maintainers should request a Contributor License Agreement before accepting the change.

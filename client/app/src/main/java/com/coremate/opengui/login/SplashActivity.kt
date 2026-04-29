@@ -16,9 +16,7 @@ import com.coremate.opengui.feature.promotor.ui.home.HomeActivity
 import com.tencent.mmkv.MMKV
 
 /**
- * 闪屏页
- *
- * Open-source version: authentication is bypassed.
+ * Source-available version: authentication is bypassed.
  * The app navigates directly to HomeActivity.
  * To connect to a real backend, set BETTER_AUTH_SECRET in server/.env and obtain
  * a token via the /api/user-auth/send-otp + /api/user-auth/verify-otp endpoints,
@@ -54,7 +52,7 @@ class SplashActivity : AppCompatActivity() {
         }
 
         mmkv.encode("LastLoginTime", System.currentTimeMillis())
-        // Skip authentication in open-source version - go directly to HomeActivity
+        // Skip authentication in source-available version - go directly to HomeActivity
         startActivity(Intent(this@SplashActivity, HomeActivity::class.java))
         finish()
     }

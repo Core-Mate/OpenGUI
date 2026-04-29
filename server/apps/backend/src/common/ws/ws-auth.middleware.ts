@@ -6,7 +6,7 @@ import { AppLogger } from "../log";
 import type { ExecutionSocket } from "./types";
 
 /**
- * WebSocket 认证中间件（开源精简版 — 无认证）
+ * WebSocket auth middleware (source-available simplified build - no auth).
  *
  * 仅验证 executionId 的有效性和 execution 状态，不校验用户身份。
  *

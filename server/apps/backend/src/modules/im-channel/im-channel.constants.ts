@@ -2,5 +2,5 @@
 
 export const IM_CHANNEL_ADAPTERS = "IM_CHANNEL_ADAPTERS";
 
-/** 默认用户 ID（单用户开源模式） */
+/** Default user ID for single-user source-available mode. */
 export const DEFAULT_USER_ID = 1;

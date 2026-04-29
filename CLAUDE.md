@@ -2,7 +2,7 @@
 
 ## 1. Repository Positioning
 
-This repository is the public open-source release of OpenGUI.
+This repository is the source-available public release of OpenGUI.
 
 - `server/` comes from the original `coremate` backend and is now the public NestJS service
 - `client/` comes from the original `haomai` Android app and is now the public mobile client
@@ -15,7 +15,7 @@ In the maintainer workspace there may also be sibling directories such as `../co
 - Reply to the user in Chinese.
 - Use UTF-8 when creating or editing files.
 - Treat this repository as the source of truth for current behavior. If README/comments conflict with code, trust code first and then fix docs.
-- Keep every change open-source-safe. Never reintroduce private endpoints, production IPs, commercial SDKs, hardcoded credentials, internal dashboards, or company-only workflows.
+- Keep every change public-release-safe. Never reintroduce private endpoints, production IPs, commercial SDKs, hardcoded credentials, internal dashboards, or company-only workflows.
 - Do not edit generated or dependency directories such as `server/node_modules`, `server/.turbo`, `client/build`, `client/.gradle`, or `client/.kotlin`.
 - The root `.gitignore` is intentionally minimal. Be proactive about not committing local env files, generated output, APKs, logs, or cache directories.
 
@@ -237,7 +237,7 @@ If you cannot run device-level verification, say so explicitly instead of preten
 ## 10. Practical Editing Guidance
 
 - Prefer small, public-safe changes over importing large chunks from private source trees
-- If you use sibling `../coremate` or `../haomai_v0.0.1` for reference, diff carefully and port only the open-source-safe subset
+- If you use sibling `../coremate` or `../haomai_v0.0.1` for reference, diff carefully and port only the public-release-safe subset
 - Keep comments and docs consistent with actual file paths and current behavior
 - When behavior changes, update `README`, `README_CN`, or this file if the change affects onboarding or agent guidance
 - Never change protocol/event names on one side only
@@ -248,4 +248,4 @@ If you cannot run device-level verification, say so explicitly instead of preten
 - The repo root is `opengui-release`, not the larger maintainer workspace
 - `CLAUDE.md` is the repository-wide instruction source of truth
 - `AGENTS.md` only points back here; if there is any ambiguity, follow this file
-- The main mission is to keep the public repo buildable, understandable, and safely open-source
+- The main mission is to keep the public repo buildable, understandable, and safe for the source-available public release

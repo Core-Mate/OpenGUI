@@ -2,7 +2,7 @@
 
 This document defines the smallest credible public package for OpenGUI.
 
-The current README positions OpenGUI as a full-stack Android operator system. To make that positioning defensible in an open-source setting, the repository should expose a minimum set of code, interfaces, and examples that prove the system shape.
+The current README positions OpenGUI as a full-stack Android operator system. To make that positioning defensible in a source-available public setting, the repository should expose a minimum set of code, interfaces, and examples that prove the system shape.
 
 ## Goal
 

@@ -197,7 +197,7 @@ export interface ExecutorInternalState {
 	needRefreshImageUrls: boolean;
 
 	// === 通道路由 ===
-	/** 当前活跃通道 (GUI only in open-source release) */
+	/** Current active channel; GUI only in the source-available release. */
 	currentChannel: "gui";
 
 	// === 历史摘要 ===

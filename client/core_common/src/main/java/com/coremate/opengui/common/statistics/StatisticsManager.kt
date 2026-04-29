@@ -3,7 +3,7 @@ package com.coremate.opengui.common.statistics
 import android.content.Context
 
 /**
- * 事件埋点类型
+ * Analytics event types.
  */
 enum class StatisticEvent(val eventName: String) {
     SSE_START_EVENT("sse_start_event"),
@@ -14,7 +14,7 @@ enum class StatisticEvent(val eventName: String) {
 }
 
 /**
- * 自定义异常类型
+ * Custom error types.
  */
 enum class StatisticCustomError(val errType: String) {
     API_ERR("APIException"),
@@ -24,7 +24,7 @@ enum class StatisticCustomError(val errType: String) {
 }
 
 
-/// 统计管理类 (open-source stub - analytics disabled)
+/// Statistics manager (source-available stub - analytics disabled)
 class StatisticsManager {
 
     companion object {
@@ -39,7 +39,7 @@ class StatisticsManager {
     }
 
     fun initSDK(isAutoPageMode: Boolean = true) {
-        // Analytics disabled in open-source version
+        // Analytics disabled in source-available version
     }
 
     fun onPageStart(viewName: String?) {}

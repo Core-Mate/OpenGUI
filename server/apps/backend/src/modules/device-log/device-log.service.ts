@@ -238,7 +238,7 @@ export class DeviceLogService {
 	}
 
 	/**
-	 * 批量重试推送（push disabled in open-source version — marks records as wait_upload）
+	 * Batch retry push notifications (push disabled in source-available version; marks records as wait_upload)
 	 */
 	async batchRetry(dto: BatchRetryDto): Promise<BatchOperationResultDto> {
 		const { ids } = dto;

@@ -57,7 +57,7 @@ Transformer 模型的“短期记忆”完全依赖于**上下文窗口（Contex
 
 **第二部分：主流大模型平台的记忆机制深度解构**
 
-为了在 LangGraph.js 中复刻顶级体验，我们需要深入剖析 ChatGPT、Claude、Gemini 和 Doubao 是如何处理上述流程的。这些平台虽然不开源，但通过 API文档、技术博客及逆向工程分析，我们可以还原其架构蓝图。
+为了在 LangGraph.js 中复刻顶级体验，我们需要深入剖析 ChatGPT、Claude、Gemini 和 Doubao 是如何处理上述流程的。这些平台虽然不公开实现细节，但通过 API文档、技术博客及逆向工程分析，我们可以还原其架构蓝图。
 
 ### **2.1 ChatGPT：基于“Bio Tool”的自适应记忆网络**
 

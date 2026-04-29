@@ -5,7 +5,7 @@ const logger = new Logger("ChannelRouting");
 /**
  * Channel routing — always returns "gui" (screenshot + VLM).
  *
- * A11y tree channel has been removed for the open-source release.
+ * A11y tree channel has been removed for the source-available release.
  */
 
 /**

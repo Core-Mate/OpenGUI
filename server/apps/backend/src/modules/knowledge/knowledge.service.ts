@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 import type { KnowledgeChunk } from "./rag/rag.interface";
 
 /**
- * Stub KnowledgeService for open-source version.
+ * Stub KnowledgeService for source-available version.
  * Knowledge base (RAG) functionality is disabled - returns empty results.
  */
 @Injectable()
