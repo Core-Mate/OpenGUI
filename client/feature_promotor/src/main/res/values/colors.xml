@@ -33,7 +33,7 @@
     <color name="platform_wechat_card_bg">#F2F2F2</color>
     <color name="platform_kuaishou_card_bg">#F2F2F2</color>
 
-    <!-- 底部 Tab 导航：与前端 TabNavigation 一致 -->
+
     <color name="tab_nav_selected">#2E58FF</color>
     <color name="tab_nav_unselected">#94A3B8</color>
     <color name="tab_nav_card_bg">#EAFFFFFF</color>
@@ -43,14 +43,14 @@
     <color name="icon_wechat_color">#07C160</color>
     <color name="icon_kuaishou_color">#FE6A00</color>
 
-    <!-- 任务详情页与 Web 一致 -->
+
     <color name="task_detail_page_bg">#F0F1F5</color>
     <color name="task_detail_label">#6B7280</color>
     <color name="task_detail_primary_text">#111827</color>
     <color name="task_detail_edit_blue">#2E58FF</color>
     <color name="task_detail_empty_hint">#9CA3AF</color>
 
-    <!-- 执行偏好：与 Web ExecutionPreferenceSheet 一致 -->
+
     <color name="execute_preference_content_text">#4B5563</color>
     <color name="execute_preference_content_bg">#F9FAFB</color>
     <color name="execute_preference_input_bg">#F5F6F8</color>

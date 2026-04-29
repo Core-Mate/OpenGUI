@@ -5,7 +5,6 @@ import {
 } from '../enums/task.enums'
 
 /**
- * 任务执行实体
  */
 export interface TaskExecutionEntity {
     id: number
@@ -27,11 +26,10 @@ export interface TaskExecutionEntity {
     createdAt: Date
     updatedAt: Date
     isDeleted: boolean
-    originExecutionId?: number | null // 关联的原始执行 ID（用于继续执行/fork 场景）
+    originExecutionId?: number | null
 }
 
 /**
- * 创建执行记录数据
  */
 export interface CreateExecutionData {
     taskId: number
@@ -42,7 +40,6 @@ export interface CreateExecutionData {
 }
 
 /**
- * 更新执行状态数据
  */
 export interface UpdateExecutionStatusData {
     executionStatus?: ExecutionStatus
@@ -52,7 +49,6 @@ export interface UpdateExecutionStatusData {
 }
 
 /**
- * 完成执行数据
  */
 export interface CompleteExecutionData {
     executionResult: ExecutionResult
@@ -63,7 +59,6 @@ export interface CompleteExecutionData {
 }
 
 /**
- * 从Prisma模型映射到实体的辅助函数
  */
 export function mapPrismaToExecutionEntity(
     prismaExecution: any,

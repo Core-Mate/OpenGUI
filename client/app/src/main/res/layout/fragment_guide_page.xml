@@ -38,7 +38,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:lineSpacingExtra="2sp"
-                android:text="自动调用应用"
+                android:text="Open apps automatically"
                 android:textAlignment="center"
                 android:textColor="#111827"
                 android:textSize="26sp"
@@ -53,7 +53,7 @@
                 android:layout_marginBottom="32dp"
                 android:lineHeight="24sp"
                 android:maxWidth="320dp"
-                android:text="系统自动唤醒应用,实现跨软件的无缝协作与全自动流程。"
+                android:text="OpenGUI can wake apps automatically for seamless cross-app workflows."
                 android:textAlignment="center"
                 android:textColor="#6B7280"
                 android:textSize="16sp" />
@@ -90,7 +90,7 @@
             android:scaleX="1"
             android:scaleY="1"
             android:stateListAnimator="@null"
-            android:text="下一步"
+            android:text="Next"
             android:textColor="#FFFFFF"
             android:textSize="17sp"
             android:textStyle="bold" />

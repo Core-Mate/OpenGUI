@@ -36,19 +36,19 @@ import com.coremate.opengui.accessibility.GestureService
 import com.coremate.opengui.databinding.FragmentLoginPageBinding
 
 /**
- * 登录/引导首页 — 与 Web NewOnboardingFlow 完全对齐。
+ * Login/onboarding landing page aligned with the web NewOnboardingFlow.
  *
- * 10 步: 对话 1-6 → 无障碍 7 → 悬浮窗 8 → 行业选择 9 → 完成 10
+ * 10 steps: dialog 1-6 -> accessibility 7 -> overlay 8 -> industry selection 9 -> completion 10.
  *
- * 关键动画:
- * - TypewriterText: 逐字 + 闪烁光标 (step 1,4,5,6)
- * - Gradient title: 紫色渐变 + 淡入 (step 2,3)
- * - Blue glow: 蓝色呼吸光晕 (step 4 "OpenGUI")
- * - AutomationDemo: 手机模拟自动发帖 (step 5)
- * - PermissionDemo: 无障碍设置动画 / 悬浮窗动画 (step 7,8)
- * - RevealText: 逐行淡入 (描述文字)
- * - History: 0.25/0.4 透明度 + 缩放
- * - Button: 弹簧动画
+ * Key animations:
+ * - TypewriterText: character-by-character typing plus blinking cursor (steps 1, 4, 5, 6)
+ * - Gradient title: purple gradient with fade-in (steps 2, 3)
+ * - Blue glow: pulsing blue glow (step 4 "OpenGUI")
+ * - AutomationDemo: simulated phone autoposting (step 5)
+ * - PermissionDemo: accessibility settings animation and overlay animation (steps 7, 8)
+ * - RevealText: line-by-line fade-in for description text
+ * - History: 0.25/0.4 alpha with scale
+ * - Button: spring animation
  */
 class LoginPageFragment : Fragment() {
 
@@ -61,7 +61,7 @@ class LoginPageFragment : Fragment() {
         onNextPageListener = listener
     }
 
-    // ── 数据定义 ──
+    // Data definitions.
 
     private data class DialogueStep(
         val subtitle: String?,
@@ -84,43 +84,43 @@ class LoginPageFragment : Fragment() {
     private val steps = listOf(
         DialogueStep(
             null,
-            "欢迎来到OpenGUI 👋",
-            "让手机替你工作的旅程\n将从这里开始",
-            "开始体验",
+            "Welcome to OpenGUI",
+            "Your phone automation journey\nstarts here",
+            "Get started",
             false
         ),
-        DialogueStep("你是否每天都在", "重复同样的操作?", null, "是的,太烦了!", true),
-        DialogueStep("想让手机自动完成任务", "却不知从何开始?", null, "告诉我怎么做", true),
+        DialogueStep("Do you repeat", "the same phone actions every day?", null, "Yes, it is annoying", true),
+        DialogueStep("Want your phone to complete tasks automatically", "but not sure where to start?", null, "Show me how", true),
         DialogueStep(
-            "我们为你准备了解决方案:",
+            "We prepared a solution for you:",
             "OpenGUI",
-            "只需选择任务,OpenGUI会像你一样\n操作手机,自动完成重复工作",
-            "OpenGUI能做什么?",
+            "Choose a task, and OpenGUI will operate your phone like you do\nto complete repetitive work automatically.",
+            "What can OpenGUI do?",
             false,
             isHighlight = true
         ),
-        DialogueStep("OpenGUI可以帮你:", "自动执行任务", null, "我想试试!", false, showDemo = true),
+        DialogueStep("OpenGUI can help you:", "automate tasks", null, "I want to try it", false, showDemo = true),
         DialogueStep(
-            "要让OpenGUI替你操作手机",
-            "需要开启一项特殊能力",
+            "To let OpenGUI operate your phone",
+            "A special permission is required",
             null,
-            "我理解了",
+            "Got it",
             false,
             showCard = true
         ),
     )
 
     private val industries = listOf(
-        IndustryOption("cross-border-ecommerce", "跨境电商", "#E8F5E9", "#2E7D32"),
-        IndustryOption("car-dealer", "车商", "#FFF3E0", "#E65100"),
-        IndustryOption("luxury", "奢侈品", "#F3E5F5", "#7B1FA2"),
-        IndustryOption("personal-media", "个人自媒体", "#E3F2FD", "#1565C0"),
-        IndustryOption("real-estate", "房产经纪", "#FFEBEE", "#C62828"),
-        IndustryOption("insurance", "保险经纪", "#E0F7FA", "#00838F"),
-        IndustryOption("wedding", "婚庆服务", "#FCE4EC", "#AD1457"),
-        IndustryOption("headhunting", "猎头咨询", "#FFF8E1", "#FF8F00"),
-        IndustryOption("legal", "法律咨询", "#ECEFF1", "#455A64"),
-        IndustryOption("education", "教育", "#E8EAF6", "#303F9F"),
+        IndustryOption("cross-border-ecommerce", "Cross-border E-commerce", "#E8F5E9", "#2E7D32"),
+        IndustryOption("car-dealer", "Car Dealer", "#FFF3E0", "#E65100"),
+        IndustryOption("luxury", "Luxury", "#F3E5F5", "#7B1FA2"),
+        IndustryOption("personal-media", "Personal Media", "#E3F2FD", "#1565C0"),
+        IndustryOption("real-estate", "Real Estate Agent", "#FFEBEE", "#C62828"),
+        IndustryOption("insurance", "Insurance Broker", "#E0F7FA", "#00838F"),
+        IndustryOption("wedding", "Wedding Service", "#FCE4EC", "#AD1457"),
+        IndustryOption("headhunting", "Headhunting Consulting", "#FFF8E1", "#FF8F00"),
+        IndustryOption("legal", "Legal Consulting", "#ECEFF1", "#455A64"),
+        IndustryOption("education", "Education", "#E8EAF6", "#303F9F"),
     )
     private val industryRows = listOf(
         industries.slice(0..1),
@@ -129,7 +129,7 @@ class LoginPageFragment : Fragment() {
         industries.slice(8..9)
     )
 
-    // ── 状态 ──
+    // State.
 
     private var currentStep = 1
     private val history = mutableListOf<Int>()
@@ -143,7 +143,7 @@ class LoginPageFragment : Fragment() {
     private var permissionDemoView: View? = null
     private var permDemoHandler: Handler? = null
 
-    // ── 生命周期 ──
+    // Lifecycle.
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -187,7 +187,7 @@ class LoginPageFragment : Fragment() {
         handler.postDelayed(r, delay)
     }
 
-    // ── 权限 ──
+    // Permissions.
 
     private fun checkPermissions() {
         accessibilityEnabled = isAccessibilityServiceEnabled(requireContext())
@@ -206,7 +206,7 @@ class LoginPageFragment : Fragment() {
         )?.contains(svc) == true
     }
 
-    // ── 交互 ──
+    // Interaction.
 
     private fun onBottomButtonClick() {
         when {
@@ -247,7 +247,7 @@ class LoginPageFragment : Fragment() {
             onNextPageListener?.invoke(); return
         }
         skipConfirmed = true
-        binding.btnSkip.text = "仍要跳过"
+        binding.btnSkip.text = "Skip Anyway"
         binding.btnSkip.setTextColor(
             ContextCompat.getColor(
                 requireContext(),
@@ -283,23 +283,23 @@ class LoginPageFragment : Fragment() {
     }
 
     // ═══════════════════════════════════════
-    //  对话步骤 1-6
+    // Dialog steps 1-6.
     // ═══════════════════════════════════════
 
     private fun showDialogue(anim: Boolean) {
         showOnly(dialogue = true)
         val step = steps[currentStep - 1]
 
-        // ── 清除上一步的渐变 shader ──
+        // Clear the previous gradient shader.
         binding.dialogueTitle.paint.shader = null
 
         buildHistory(anim)
 
-        // 副标题
+        // Subtitle.
         binding.dialogueSubtitle.visibility = if (step.subtitle != null) View.VISIBLE else View.GONE
         binding.dialogueSubtitle.text = step.subtitle
 
-        // ── 标题 ──
+        // ── Title ──
         when {
             step.isGradient -> showGradientTitle(step.title, anim)
             step.isHighlight -> showGlowTitle(step.title, anim)
@@ -310,7 +310,7 @@ class LoginPageFragment : Fragment() {
             }
         }
 
-        // 描述
+        // Description.
         binding.dialogueDescription.visibility =
             if (step.description != null) View.VISIBLE else View.GONE
         if (step.description != null) {
@@ -318,7 +318,7 @@ class LoginPageFragment : Fragment() {
             else binding.dialogueDescription.text = step.description
         }
 
-        // 权限卡片 (step 6)
+        // Permission card (step 6).
         binding.cardPermissionIntro.visibility = if (step.showCard) View.VISIBLE else View.GONE
         if (step.showCard && anim) {
             binding.cardPermissionIntro.alpha = 0f; binding.cardPermissionIntro.translationY =
@@ -330,7 +330,7 @@ class LoginPageFragment : Fragment() {
         // AutomationDemo (step 5)
         if (step.showDemo) showAutomationDemo(anim) else hideAutomationDemo()
 
-        // 整体淡入
+        // Overall fade-in.
         if (anim) {
             binding.currentContent.alpha = 0f; binding.currentContent.translationY = dp(30f)
             binding.currentContent.animate().alpha(1f).translationY(0f).setDuration(400)
@@ -345,7 +345,7 @@ class LoginPageFragment : Fragment() {
         }
     }
 
-    // ── 历史 ──
+    // History.
     private fun buildHistory(anim: Boolean) {
         val vis = history.takeLast(2)
         if (vis.isEmpty()) {
@@ -388,7 +388,7 @@ class LoginPageFragment : Fragment() {
 
     // ── TypewriterText ──
     private fun startTypewriter(tv: TextView, text: String, delay: Long, speed: Long) {
-        tv.paint.shader = null  // 确保清除渐变
+        tv.paint.shader = null  // Ensure the gradient is cleared.
         tv.text = "";
         var idx = 0
         val r = object : Runnable {
@@ -415,7 +415,7 @@ class LoginPageFragment : Fragment() {
         pendingRunnables.add(r); handler.postDelayed(r, 500)
     }
 
-    // ── 渐变标题 (step 2,3): 紫色 #6366F1→#8B5CF6→#A855F7 ──
+    // Gradient title (steps 2, 3): purple #6366F1 -> #8B5CF6 -> #A855F7.
     private fun showGradientTitle(text: String, anim: Boolean) {
         binding.dialogueTitle.text = text
         binding.dialogueTitle.post {
@@ -441,15 +441,15 @@ class LoginPageFragment : Fragment() {
         }
     }
 
-    // ── 蓝色光晕标题 (step 4 "OpenGUI"): text-glow-blue 呼吸动画 ──
+    // Blue glow title (step 4 "OpenGUI"): text-glow-blue pulse animation.
     private fun showGlowTitle(text: String, anim: Boolean) {
         binding.dialogueTitle.paint.shader = null
         binding.dialogueTitle.setTextColor(0xFF111827.toInt())
-        // 开启软件渲染以支持 setShadowLayer
+        // Enable software rendering for setShadowLayer.
         binding.dialogueTitle.setLayerType(View.LAYER_TYPE_SOFTWARE, null)
         if (anim) {
             startTypewriter(binding.dialogueTitle, text, 300L, 100L)
-            // 延迟到打字完成后启动呼吸光晕
+            // Start the pulse glow after typing completes.
             val totalTime = 300L + text.length * 100L + 200L
             postDelayed(totalTime) { startGlowBreathing() }
         } else {
@@ -458,7 +458,7 @@ class LoginPageFragment : Fragment() {
         }
     }
 
-    /** blue-glow-pulse: 0→50→0 半径呼吸, 蓝色阴影 */
+    /** blue-glow-pulse: 0 -> 50 -> 0 radius pulse with blue shadow. */
     private fun startGlowBreathing() {
         glowAnimator?.cancel()
         glowAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
@@ -476,7 +476,7 @@ class LoginPageFragment : Fragment() {
         }
     }
 
-    // ── RevealText: 逐行淡入 ──
+    // RevealText: line-by-line fade-in.
     private fun revealLines(tv: TextView, text: String, baseDelay: Long) {
         val lines = text.split("\n"); tv.text = ""; tv.alpha = 1f
         lines.forEachIndexed { i, line ->
@@ -488,7 +488,7 @@ class LoginPageFragment : Fragment() {
 
     // ═══════════════════════════════════════
     //  AutomationDemo (step 5)
-    //  模拟手机自动发帖: 手机框 + 点击App → 打开编辑 → 输入 → 发布 → 成功
+    // Simulate phone autoposting: phone frame + tap app -> open editor -> type -> post -> success.
     // ═══════════════════════════════════════
 
     private fun showAutomationDemo(anim: Boolean) {
@@ -525,9 +525,9 @@ class LoginPageFragment : Fragment() {
         binding.permDot2.setBackgroundResource(if (currentStep == 8) R.drawable.dot_rounded_green else R.drawable.dot_rounded_gray)
         binding.permIconContainer.setBackgroundResource(if (isAcc) R.drawable.bg_gradient_blue_rounded else R.drawable.bg_gradient_green_rounded)
         binding.permIcon.setImageResource(if (isAcc) R.drawable.ic_accessibility_perm else R.drawable.ic_overlay_perm)
-        binding.permTitle.text = if (isAcc) "让OpenGUI帮你操控手机" else "随时查看任务进度"
+        binding.permTitle.text = if (isAcc) "Let OpenGUI control your phone" else "Check task progress anytime"
         binding.permSubtitle.text =
-            if (isAcc) "开启后，OpenGUI可以自动帮你完成任务" else "开启后，你可以实时看到执行状态"
+            if (isAcc) "Once enabled, OpenGUI can complete tasks automatically." else "Once enabled, you can see execution status in real time."
 
         showPermissionDemo(isAcc)
 
@@ -564,7 +564,7 @@ class LoginPageFragment : Fragment() {
     }
 
     // ═══════════════════════════════════════
-    //  行业选择 step 9
+    // Industry selection, step 9.
     // ═══════════════════════════════════════
 
     private fun showIndustry(anim: Boolean) {
@@ -572,7 +572,7 @@ class LoginPageFragment : Fragment() {
         buildTags()
         binding.industrySelectedCount.visibility =
             if (selectedScenes.isNotEmpty()) View.VISIBLE else View.GONE
-        binding.industrySelectedCount.text = "已选择 ${selectedScenes.size} 个行业"
+        binding.industrySelectedCount.text = "Selected ${selectedScenes.size} industries"
         if (anim) {
             binding.industryContainer.alpha = 0f; binding.industryContainer.animate().alpha(1f)
                 .setDuration(300).start()
@@ -607,7 +607,7 @@ class LoginPageFragment : Fragment() {
                         ); buildTags()
                         binding.industrySelectedCount.visibility =
                             if (selectedScenes.isNotEmpty()) View.VISIBLE else View.GONE
-                        binding.industrySelectedCount.text = "已选择 ${selectedScenes.size} 个行业"
+                        binding.industrySelectedCount.text = "Selected ${selectedScenes.size} industries"
                     }
                 }
                 rl.addView(
@@ -628,7 +628,7 @@ class LoginPageFragment : Fragment() {
     }
 
     // ═══════════════════════════════════════
-    //  完成 step 10
+    // Completion, step 10.
     // ═══════════════════════════════════════
 
     private fun showComplete(anim: Boolean) {
@@ -648,15 +648,15 @@ class LoginPageFragment : Fragment() {
         }
     }
 
-    // ── 按钮 ──
+    // Buttons.
 
     private fun updateButton(anim: Boolean) {
         binding.btnNext.text = when {
             currentStep <= 6 -> steps[currentStep - 1].buttonText
-            currentStep == 7 -> if (accessibilityEnabled) "继续" else "去设置开启"
-            currentStep == 8 -> if (overlayEnabled) "继续" else "继续开启"
-            currentStep == 9 -> "继续"
-            else -> "进入OpenGUI"
+            currentStep == 7 -> if (accessibilityEnabled) "Continue" else "Open Settings"
+            currentStep == 8 -> if (overlayEnabled) "Continue" else "Continue Setup"
+            currentStep == 9 -> "Continue"
+            else -> "Enter OpenGUI"
         }
         binding.btnNext.setBackgroundResource(if (currentStep == 10) R.drawable.rounded_green_button else R.drawable.bg_btn_primary_shadow)
         if (anim) {
@@ -666,7 +666,7 @@ class LoginPageFragment : Fragment() {
         }
     }
 
-    // ── 容器切换 ──
+    // Container switching.
 
     private fun showOnly(
         dialogue: Boolean = false,
@@ -680,19 +680,19 @@ class LoginPageFragment : Fragment() {
         binding.completeContainer.visibility = if (complete) View.VISIBLE else View.GONE
     }
 
-    // ── 工具 ──
+    // Utilities.
     private fun dp(v: Float) = v * resources.displayMetrics.density
     private fun dpI(v: Int) = (v * resources.displayMetrics.density + 0.5f).toInt()
 
     // ═══════════════════════════════════════════════════════════════
-    //  AutomationDemoView — 手机模拟自动发帖动画 (对齐 Web AutomationDemo)
-    //  手机框 + 状态栏 + 主屏 → X编辑(header: ✕/Drafts/Post + 输入 + 底部3图标) → 发布成功
+    //  AutomationDemoView - simulated phone autoposting animation aligned with the web AutomationDemo.
+    //  Phone frame + status bar + home screen -> X editor -> post success.
     // ═══════════════════════════════════════════════════════════════
 
     private inner class AutomationDemoView(ctx: Context) : View(ctx) {
         private val p = Paint(Paint.ANTI_ALIAS_FLAG)
         private val r = RectF()
-        private var phase = 0  // 0~6 循环
+        private var phase = 0  // Loops through 0..6.
         private var running = false
         private val sequence = listOf(800L, 600L, 700L, 500L, 1200L, 400L, 1500L)
         private val d = resources.displayMetrics.density
@@ -726,7 +726,7 @@ class LoginPageFragment : Fragment() {
             val px = (w - phoneW) / 2;
             val py = (h - phoneH) / 2
 
-            // 手机外框 (dark border)
+            // Phone outer frame with dark border.
             p.color = 0xFF333333.toInt(); p.style = Paint.Style.STROKE; p.strokeWidth = 2 * d
             r.set(px, py, px + phoneW, py + phoneH)
             canvas.drawRoundRect(r, 28 * d, 28 * d, p)
@@ -734,7 +734,7 @@ class LoginPageFragment : Fragment() {
             r.set(px + d, py + d, px + phoneW - d, py + phoneH - d)
             canvas.drawRoundRect(r, 28 * d, 28 * d, p)
 
-            // 屏幕
+            // Screen.
             val sx = px + 5 * d;
             val sy = py + 5 * d;
             val sw = phoneW - 10 * d;
@@ -752,13 +752,13 @@ class LoginPageFragment : Fragment() {
             r.set(sx + (sw - diW) / 2, sy + 4 * d, sx + (sw + diW) / 2, sy + 4 * d + diH)
             canvas.drawRoundRect(r, diH / 2, diH / 2, p)
 
-            // 状态栏: 9:41 + 信号/WiFi/电量
+            // Status bar: 9:41 plus signal/Wi-Fi/battery.
             p.color = Color.WHITE; p.textSize = 9 * d; p.textAlign = Paint.Align.LEFT
             p.setTypeface(Typeface.DEFAULT_BOLD)
             canvas.drawText("9:41", sx + 12 * d, sy + 15 * d, p)
             p.setTypeface(Typeface.DEFAULT)
 
-            // 信号柱
+            // Signal bars.
             val sigX = sx + sw - 60 * d;
             val sigY = sy + 8 * d
             p.color = 0x80FFFFFF.toInt()
@@ -771,7 +771,7 @@ class LoginPageFragment : Fragment() {
                 canvas.drawRoundRect(r, d, d, p)
             }
 
-            // WiFi 三角
+            // Wi-Fi triangle.
             p.color = 0xCCFFFFFF.toInt()
             val wifiX = sigX + 18 * d;
             val wifiY = sigY + 2 * d
@@ -782,7 +782,7 @@ class LoginPageFragment : Fragment() {
             ); path.lineTo(wifiX + 10 * d, wifiY + 6 * d); path.close()
             canvas.drawPath(path, p)
 
-            // 电量
+            // Battery.
             p.color = Color.WHITE; p.style = Paint.Style.STROKE; p.strokeWidth = 0.8f * d
             val batX = sigX + 32 * d
             r.set(batX, sigY + 1 * d, batX + 16 * d, sigY + 8 * d)
@@ -790,7 +790,7 @@ class LoginPageFragment : Fragment() {
             p.style = Paint.Style.FILL
             r.set(batX + 1.5f * d, sigY + 2.5f * d, batX + 12 * d, sigY + 6.5f * d)
             canvas.drawRoundRect(r, d, d, p)
-            // 电量头
+            // Battery cap.
             p.color = 0x66FFFFFF.toInt()
             r.set(batX + 16 * d, sigY + 3 * d, batX + 17.5f * d, sigY + 6 * d)
             canvas.drawRoundRect(r, d, d, p)
@@ -801,12 +801,12 @@ class LoginPageFragment : Fragment() {
                 drawComposeScreen(canvas, sx, sy, sw, sh)
             }
 
-            // 触摸指示器
+            // Touch indicator.
             if (phase == 1 || phase == 3 || phase == 5) {
                 drawTouchIndicator(canvas, sx, sy, sw, sh)
             }
 
-            // 成功标签 (phase 6) — 右上角蓝色 pill
+            // Success label (phase 6), shown as a blue pill in the top-right corner.
             if (phase == 6) {
                 p.color = 0xFF1D9BF0.toInt(); p.style = Paint.Style.FILL
                 val tagW = 58 * d;
@@ -817,7 +817,7 @@ class LoginPageFragment : Fragment() {
                 canvas.drawRoundRect(r, tagH / 2, tagH / 2, p)
                 p.color = Color.WHITE; p.textSize = 8.5f * d; p.textAlign = Paint.Align.CENTER
                 p.setTypeface(Typeface.DEFAULT_BOLD)
-                canvas.drawText("✓ 已发布", r.centerX(), r.centerY() + 3 * d, p)
+                canvas.drawText("✓ Posted", r.centerX(), r.centerY() + 3 * d, p)
                 p.setTypeface(Typeface.DEFAULT)
             }
 
@@ -900,10 +900,10 @@ class LoginPageFragment : Fragment() {
                     sy + sh
                 ),
                 floatArrayOf(
-                    0f, 0f,          // 左上
-                    0f, 0f,          // 右上
-                    radius, radius,  // 右下
-                    radius, radius   // 左下
+                    0f, 0f,          // Top-left.
+                    0f, 0f,          // Top-right.
+                    radius, radius,  // Bottom-right.
+                    radius, radius   // Bottom-left.
                 ),
                 Path.Direction.CW
             )
@@ -1006,10 +1006,10 @@ class LoginPageFragment : Fragment() {
 
             if (phase >= 4) {
                 p.color = 0xFFFFFFFF.toInt()
-                canvas.drawText("刚完成了今日的工作目标 🎯", textX, textY + 10 * d, p)
-                canvas.drawText("效率提升了50%！", textX, textY + 24 * d, p)
+                canvas.drawText("Finished today's work goal 🎯", textX, textY + 10 * d, p)
+                canvas.drawText("50% efficiency boost!", textX, textY + 24 * d, p)
                 p.color = 0xCCFFFFFF.toInt()
-                canvas.drawText("#高效工作 #自动化", textX, textY + 38 * d, p)
+                canvas.drawText("#Productivity #Automation", textX, textY + 38 * d, p)
             } else {
                 p.color = if (phase >= 3) 0x80FFFFFF.toInt() else 0x4DFFFFFF.toInt()
                 canvas.drawText("What's happening?", textX, textY + 10 * d, p)
@@ -1019,7 +1019,7 @@ class LoginPageFragment : Fragment() {
             if (phase in 3..4) {
                 p.color = 0xFF1D9BF0.toInt()
                 val cursorX =
-                    if (phase == 4) textX + p.measureText("效率提升了50%！") else textX
+                    if (phase == 4) textX + p.measureText("50% efficiency boost!") else textX
                 canvas.drawRect(
                     cursorX,
                     textY + if (phase == 4) 17 * d else 2 * d,
@@ -1126,16 +1126,16 @@ class LoginPageFragment : Fragment() {
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  AccessibilityDemoView — 无障碍设置页面翻页动画 (对齐 Web PermissionDemo accessibility)
-    //  模拟 MIUI: 无障碍主页 → 已下载应用列表 → OpenGUI详情页 → 开关开启
-    //  完全对齐 Web 实现: 每个列表项带副标题, 开关, 箭头; 详情页带选项/简介
+    //  AccessibilityDemoView - accessibility settings page animation.
+    //  Simulates MIUI: accessibility home -> downloaded apps -> OpenGUI detail -> switch on.
+    //  Matches the web permission demo: rows have subtitles, switches, arrows, and detail sections.
     // ═══════════════════════════════════════════════════════════════
 
     private inner class AccessibilityDemoView(ctx: Context) : View(ctx) {
         private val p = Paint(Paint.ANTI_ALIAS_FLAG)
         private val r = RectF()
         private val d = resources.displayMetrics.density
-        private var step = 0 // 0~4 循环
+        private var step = 0 // Loops through 0..4.
 
         fun startAnimation(h: Handler) {
             step = 0; invalidate()
@@ -1154,7 +1154,7 @@ class LoginPageFragment : Fragment() {
             val w = width.toFloat();
             val h = height.toFloat()
 
-            // 手机框 白色圆角 + 灰边
+            // Phone frame with white rounded corners and a gray border.
             p.color = Color.WHITE; p.style = Paint.Style.FILL
             r.set(0f, 0f, w, h)
             canvas.drawRoundRect(r, 16 * d, 16 * d, p)
@@ -1174,19 +1174,19 @@ class LoginPageFragment : Fragment() {
                 2 -> drawAppDetail(canvas, w, h, switchOn)
             }
 
-            // 手指点击 (step 1,2,3)
+            // Finger tap animation (steps 1, 2, and 3).
             if (step in 1..3) drawFinger(canvas, w, h)
 
             canvas.restore()
 
-            // 底部导航条
+            // Bottom navigation bar.
             p.color = 0xFF111827.toInt(); p.style = Paint.Style.FILL
             val barW = 60 * d
             r.set((w - barW) / 2, h - 8 * d, (w + barW) / 2, h - 5 * d)
             canvas.drawRoundRect(r, 2 * d, 2 * d, p)
         }
 
-        /** 画 V 形箭头 */
+        /** Draw a chevron arrow. */
         private fun drawChevron(canvas: Canvas, cx: Float, cy: Float, sz: Float) {
             p.color = 0xFFC4C4C4.toInt()
             p.style = Paint.Style.STROKE
@@ -1195,7 +1195,7 @@ class LoginPageFragment : Fragment() {
             p.strokeJoin = Paint.Join.ROUND
 
             val half = sz / 2f
-            val dx = half * 0.65f   // 横向比例，稳定不变形
+            val dx = half * 0.65f   // Keep the horizontal ratio stable.
 
             val path = Path()
             path.moveTo(cx - dx, cy - half)
@@ -1208,7 +1208,7 @@ class LoginPageFragment : Fragment() {
             p.strokeCap = Paint.Cap.BUTT
         }
 
-        /** 画返回箭头 ‹ */
+        /** Draw the back arrow. */
         private fun drawBackArrow(canvas: Canvas, cx: Float, cy: Float) {
             p.color = 0xFF111827.toInt(); p.style = Paint.Style.STROKE; p.strokeWidth = 1.5f * d
             p.strokeCap = Paint.Cap.ROUND; p.strokeJoin = Paint.Join.ROUND
@@ -1217,7 +1217,7 @@ class LoginPageFragment : Fragment() {
             p.style = Paint.Style.FILL; p.strokeCap = Paint.Cap.BUTT
         }
 
-        /** 画 MIUI 风格 Toggle */
+        /** Draw a MIUI-style toggle. */
         private fun drawToggle(canvas: Canvas, x: Float, y: Float, on: Boolean) {
             val tw = 26 * d;
             val th = 16 * d
@@ -1230,18 +1230,18 @@ class LoginPageFragment : Fragment() {
             canvas.drawCircle(knobCx, y + th / 2, knobR, p)
         }
 
-        // ── 第一页: 无障碍主页 ──
+        // Page 1: accessibility home.
         private fun drawAccessibilityMain(canvas: Canvas, w: Float, h: Float) {
             val padX = 14 * d
 
-            // 大标题
+            // Large title.
             p.color = 0xFF111827.toInt(); p.textSize = 14 * d; p.textAlign = Paint.Align.LEFT
             p.setTypeface(Typeface.DEFAULT_BOLD)
-            canvas.drawText("无障碍", padX, 24 * d, p)
+            canvas.drawText("Accessibility", padX, 24 * d, p)
             p.setTypeface(Typeface.DEFAULT)
 
-            // Tab 栏
-            val tabs = arrayOf("通用", "视觉", "听觉", "肢体")
+            // Tabs.
+            val tabs = arrayOf("General", "Vision", "Hearing", "Physical")
             var tx = 10 * d
             tabs.forEachIndexed { i, t ->
                 if (i == 0) {
@@ -1255,52 +1255,52 @@ class LoginPageFragment : Fragment() {
                 tx += 40 * d
             }
 
-            // ── 列表项 ──
+            // Rows.
             var iy = 54 * d
 
-            // 项1: "无障碍"按钮
+            // Row 1: Accessibility button.
             p.color = 0xFF111827.toInt(); p.textSize = 9 * d; p.textAlign = Paint.Align.LEFT
             p.setTypeface(Typeface.DEFAULT_BOLD)
-            canvas.drawText("\"无障碍\"按钮", padX, iy + 12 * d, p)
+            canvas.drawText("\"Accessibility\" button", padX, iy + 12 * d, p)
             p.setTypeface(Typeface.DEFAULT)
             p.color = 0xFF9CA3AF.toInt(); p.textSize = 7.5f * d
-            canvas.drawText("快速使用无障碍功能", padX, iy + 22 * d, p)
+            canvas.drawText("Quickly use accessibility features", padX, iy + 22 * d, p)
             drawChevron(canvas, w - 16 * d, iy + 14 * d, 10 * d)
             iy += 30 * d
 
-            // 分隔线
+            // Divider.
             p.color = 0xFFF3F4F6.toInt(); canvas.drawRect(padX, iy, w - padX, iy + d, p)
             iy += d + 2 * d
 
-            // 项2: 在锁定屏幕上使用快捷方式 + 蓝色开关(开)
+            // Row 2: lock-screen shortcut with the blue switch enabled.
             p.color = 0xFF111827.toInt(); p.textSize = 9 * d
             p.setTypeface(Typeface.DEFAULT_BOLD)
-            canvas.drawText("在锁定屏幕上使用快捷方式", padX, iy + 12 * d, p)
+            canvas.drawText("Use shortcut on lock screen", padX, iy + 12 * d, p)
             p.setTypeface(Typeface.DEFAULT)
             p.color = 0xFF9CA3AF.toInt(); p.textSize = 6.5f * d
-            canvas.drawText("允许在锁定屏幕时开启功能快捷方式。", padX, iy + 23 * d, p)
+            canvas.drawText("Allow feature shortcuts on the lock screen.", padX, iy + 23 * d, p)
             drawToggle(canvas, w - padX - 26 * d, iy + 4 * d, true)
             iy += 32 * d
 
-            // 分隔线
+            // Divider.
             p.color = 0xFFF3F4F6.toInt(); canvas.drawRect(padX, iy, w - padX, iy + d, p)
             iy += d + 2 * d
 
-            // 项3: 无障碍功能菜单
+            // Row 3: accessibility menu.
             p.color = 0xFF111827.toInt(); p.textSize = 9 * d
             p.setTypeface(Typeface.DEFAULT_BOLD)
-            canvas.drawText("无障碍功能菜单", padX, iy + 12 * d, p)
+            canvas.drawText("Accessibility menu", padX, iy + 12 * d, p)
             p.setTypeface(Typeface.DEFAULT)
             p.color = 0xFF9CA3AF.toInt(); p.textSize = 7.5f * d
-            canvas.drawText("已关闭 / 通过大型菜单控制手机", padX, iy + 22 * d, p)
+            canvas.drawText("Off / Control phone with a large menu", padX, iy + 22 * d, p)
             drawChevron(canvas, w - 16 * d, iy + 14 * d, 10 * d)
             iy += 30 * d
 
-            // 分隔线
+            // Divider.
             p.color = 0xFFF3F4F6.toInt(); canvas.drawRect(padX, iy, w - padX, iy + d, p)
             iy += d + 2 * d
 
-            // 项4: 已下载的应用 (target, 可高亮)
+            // Row 4: downloaded apps (target row, can be highlighted).
             if (step == 1) {
                 p.color = 0xFFF0F7FF.toInt()
                 r.set(8 * d, iy - 2 * d, w - 8 * d, iy + 22 * d)
@@ -1308,25 +1308,25 @@ class LoginPageFragment : Fragment() {
             }
             p.color = 0xFF111827.toInt(); p.textSize = 9 * d; p.textAlign = Paint.Align.LEFT
             p.setTypeface(Typeface.DEFAULT_BOLD)
-            canvas.drawText("已下载的应用", padX, iy + 12 * d, p)
+            canvas.drawText("Downloaded apps", padX, iy + 12 * d, p)
             p.setTypeface(Typeface.DEFAULT)
             drawChevron(canvas, w - 16 * d, iy + 10 * d, 10 * d)
         }
 
-        // ── 第二页: 已下载的应用列表 ──
+        // Page 2: downloaded app list.
         private fun drawDownloadedApps(canvas: Canvas, w: Float, h: Float) {
             val padX = 14 * d
 
-            // 返回箭头
+            // Back arrow.
             drawBackArrow(canvas, 14 * d, 14 * d)
 
-            // 大标题
+            // Large title.
             p.color = 0xFF111827.toInt(); p.textSize = 14 * d; p.textAlign = Paint.Align.LEFT
             p.setTypeface(Typeface.DEFAULT_BOLD)
-            canvas.drawText("已下载的应用", padX, 42 * d, p)
+            canvas.drawText("Downloaded apps", padX, 42 * d, p)
             p.setTypeface(Typeface.DEFAULT)
 
-            // 应用列表
+            // App list.
             data class AppRow(
                 val name: String,
                 val provider: String,
@@ -1335,29 +1335,29 @@ class LoginPageFragment : Fragment() {
             )
 
             val apps = listOf(
-                AppRow("OpenGUI-新版", "由OpenGUI新版提供", "已开启"),
-                AppRow("OpenGUI自动化服务", "由OpenGUI提供", "已关闭", true),
-                AppRow("搜狗输入法小米版", "由搜狗输入法小米版提供", "已关闭"),
-                AppRow("百度输入法小米版", "由百度输入法小米版提供", "已关闭")
+                AppRow("OpenGUI - New Version", "Provided by the new OpenGUI", "Enabled"),
+                AppRow("OpenGUI Automation Service", "Provided by OpenGUI", "Off", true),
+                AppRow("Sogou Input for Xiaomi", "Provided by Sogou Input for Xiaomi", "Off"),
+                AppRow("Baidu Input for Xiaomi", "Provided by Baidu Input for Xiaomi", "Off")
             )
 
             var iy = 54 * d
             apps.forEachIndexed { i, app ->
-                // 高亮OpenGUI
+                // Highlight OpenGUI.
                 if (i == 1 && step == 2) {
                     p.color = 0xFFF0F7FF.toInt()
                     r.set(8 * d, iy - 2 * d, w - 8 * d, iy + 26 * d)
                     canvas.drawRoundRect(r, 6 * d, 6 * d, p)
                 }
-                // 名称
+                // Name
                 p.color = 0xFF111827.toInt(); p.textSize = 9 * d; p.textAlign = Paint.Align.LEFT
                 p.setTypeface(if (app.isBold) Typeface.DEFAULT_BOLD else Typeface.DEFAULT)
                 canvas.drawText(app.name, padX, iy + 11 * d, p)
                 p.setTypeface(Typeface.DEFAULT)
-                // 提供者
+                // Provider.
                 p.color = 0xFF9CA3AF.toInt(); p.textSize = 7 * d
                 canvas.drawText(app.provider, padX, iy + 22 * d, p)
-                // 右侧状态 + 箭头
+                // Right-side status and arrow.
                 p.color = 0xFF9CA3AF.toInt(); p.textSize = 7.5f * d; p.textAlign = Paint.Align.RIGHT
                 canvas.drawText(app.status, w - 24 * d, iy + 14 * d, p)
                 drawChevron(canvas, w - 14 * d, iy + 12 * d, 9 * d)
@@ -1365,29 +1365,29 @@ class LoginPageFragment : Fragment() {
             }
         }
 
-        // ── 第三页: 详情页 ──
+        // Page 3: detail page.
         private fun drawAppDetail(canvas: Canvas, w: Float, h: Float, switchOn: Boolean) {
             val padX = 14 * d
 
-            // 返回箭头
+            // Back arrow.
             drawBackArrow(canvas, 14 * d, 14 * d)
 
-            // 标题 (两行)
+            // Title (two lines).
             p.color = 0xFF111827.toInt(); p.textSize = 12 * d; p.textAlign = Paint.Align.LEFT
             p.setTypeface(Typeface.DEFAULT_BOLD)
-            canvas.drawText("OpenGUI自动化服务", padX, 38 * d, p)
-            canvas.drawText("【必须开启】", padX, 52 * d, p)
+            canvas.drawText("OpenGUI Automation Service", padX, 38 * d, p)
+            canvas.drawText("[Required]", padX, 52 * d, p)
             p.setTypeface(Typeface.DEFAULT)
 
-            // 主开关行
+            // Main switch row.
             val switchRowY = 60 * d
             p.color = 0xFF111827.toInt(); p.textSize = 9 * d; p.textAlign = Paint.Align.LEFT
-            canvas.drawText("使用\"OpenGUI自动化服务【必须开...\"", padX, switchRowY + 12 * d, p)
+            canvas.drawText("Use \"OpenGUI Automation Service [Required]...\"", padX, switchRowY + 12 * d, p)
 
-            // 开关
+            // Switch.
             drawToggle(canvas, w - padX - 28 * d, switchRowY + 2 * d, switchOn)
 
-            // 已开启提示
+            // Enabled hint.
             if (switchOn) {
                 p.color = 0xFF22C55E.toInt(); p.textSize = 7.5f * d; p.textAlign = Paint.Align.LEFT
                 // checkmark
@@ -1402,61 +1402,61 @@ class LoginPageFragment : Fragment() {
                     p
                 )
                 p.style = Paint.Style.FILL; p.strokeCap = Paint.Cap.BUTT
-                canvas.drawText("已开启", padX + 11 * d, switchRowY + 29 * d, p)
+                canvas.drawText("Enabled", padX + 11 * d, switchRowY + 29 * d, p)
             }
 
-            // 分隔线
+            // Divider.
             val divY1 = switchRowY + 36 * d
             p.color = 0xFFF3F4F6.toInt()
             canvas.drawRect(padX, divY1, w - padX, divY1 + d, p)
 
-            // 选项区域
+            // Options section.
             val optY = divY1 + 6 * d
             p.color = 0xFF3B82F6.toInt(); p.textSize = 7.5f * d; p.textAlign = Paint.Align.LEFT
-            canvas.drawText("选项", padX, optY + 10 * d, p)
+            canvas.drawText("Options", padX, optY + 10 * d, p)
             p.color = 0xFF111827.toInt(); p.textSize = 8.5f * d
-            canvas.drawText("\"OpenGUI自动化服务\"快捷方式", padX, optY + 24 * d, p)
+            canvas.drawText("\"OpenGUI Automation Service\" shortcut", padX, optY + 24 * d, p)
             p.color = 0xFF9CA3AF.toInt(); p.textSize = 7 * d
-            canvas.drawText("关闭", padX, optY + 34 * d, p)
-            // 关闭状态的开关
+            canvas.drawText("Off", padX, optY + 34 * d, p)
+            // Disabled switch.
             drawToggle(canvas, w - padX - 28 * d, optY + 16 * d, false)
 
-            // 分隔线
+            // Divider.
             val divY2 = optY + 42 * d
             p.color = 0xFFF3F4F6.toInt()
             canvas.drawRect(padX, divY2, w - padX, divY2 + d, p)
 
-            // 简介区域
+            // Introduction section.
             val introY = divY2 + 6 * d
             p.color = 0xFF3B82F6.toInt(); p.textSize = 7.5f * d; p.textAlign = Paint.Align.LEFT
-            canvas.drawText("OpenGUI自动化服务简介", padX, introY + 10 * d, p)
+            canvas.drawText("About OpenGUI Automation Service", padX, introY + 10 * d, p)
             p.color = 0xFF666666.toInt(); p.textSize = 7.5f * d
-            canvas.drawText("启用此服务以进行自动化手势", padX, introY + 24 * d, p)
-            canvas.drawText("和屏幕操作。", padX, introY + 36 * d, p)
+            canvas.drawText("Enable this service for automated gestures", padX, introY + 24 * d, p)
+            canvas.drawText("and screen operations.", padX, introY + 36 * d, p)
         }
 
-        // 手指点击 — 使用实际的手型 SVG 图标 + 波纹 (对齐 Web)
-        // Web: <svg width="28" height="28" viewBox="0 0 24 24" fill="#3B82F6"> + 波纹 bg-[#3B82F6]/30
+        // Finger tap with the actual hand SVG icon and ripple.
+        // Web reference: <svg width="28" height="28" viewBox="0 0 24 24" fill="#3B82F6"> + ripple bg-[#3B82F6]/30.
         private var handDrawable: Drawable? = null
 
         private fun drawFinger(canvas: Canvas, w: Float, h: Float) {
-            // 对齐 Web 坐标: step1→top:268/right:15, step2→top:95/right:15, step3→top:72/right:20
-            // Web phone 是 200x320; 我们的 View 也是 200dp x 280dp
+            // Match the web coordinates: step1 top 268/right 15, step2 top 95/right 15, step3 top 72/right 20.
+            // The web phone is 200x320; this View is 200dp x 280dp.
             val fx: Float; val fy: Float
             when (step) {
-                1 -> { fx = w - 15 * d; fy = 200 * d }    // 已下载的应用 (右下方)
-                2 -> { fx = w - 15 * d; fy = 95 * d }     // OpenGUI (右侧中间)
-                3 -> { fx = w - 20 * d; fy = 68 * d }     // 开关 (偏右上)
+                1 -> { fx = w - 15 * d; fy = 200 * d }    // Downloaded apps row.
+                2 -> { fx = w - 15 * d; fy = 95 * d }     // OpenGUI row.
+                3 -> { fx = w - 20 * d; fy = 68 * d }     // Toggle.
                 else -> return
             }
 
-            // 波纹动画圈 (bg-[#3B82F6]/30, animate scale 1→1.5→1)
+            // Ripple animation circle.
             p.color = 0x4D3B82F6.toInt(); p.style = Paint.Style.FILL
             canvas.drawCircle(fx, fy, 18 * d, p)
             p.color = 0x303B82F6.toInt()
             canvas.drawCircle(fx, fy, 22 * d, p)
 
-            // 手型 icon (28x28dp, 从 drawable 加载)
+            // Hand icon (28x28dp, loaded from drawable).
             if (handDrawable == null) {
                 handDrawable = ContextCompat.getDrawable(context, R.drawable.ic_hand_touch)
             }
@@ -1471,9 +1471,9 @@ class LoginPageFragment : Fragment() {
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  OverlayDemoView — 悬浮窗权限演示 (对齐 Web PermissionDemo overlay)
-    //  深色 App 背景 + 状态栏刘海 + App内容占位 + 白色浮窗卡片 (带阴影)
-    //  卡片: 状态圆点 + 标题 + 进度条 + 描述 + 动画
+    //  OverlayDemoView - overlay permission demo aligned with the web PermissionDemo overlay.
+    //  Dark app background + status bar cutout + app content placeholders + floating card.
+    //  Card: status dot, title, progress bar, description, and animation.
     // ═══════════════════════════════════════════════════════════════
 
     private inner class OverlayDemoView(ctx: Context) : View(ctx) {
@@ -1500,7 +1500,7 @@ class LoginPageFragment : Fragment() {
             val w = width.toFloat(); val h = height.toFloat()
             val cornerR = 16 * d
 
-            // ── 1. 画深色渐变背景圆角矩形 ──
+            // 1. Draw the dark gradient rounded background.
 //            val grad = LinearGradient(0f, 0f, 0f, h,
 //                0xFF1A1A2E.toInt(), 0xFF16213E.toInt(), Shader.TileMode.CLAMP)
 //            p.shader = grad;
@@ -1510,42 +1510,42 @@ class LoginPageFragment : Fragment() {
             canvas.drawRoundRect(r, cornerR, cornerR, p)
             p.shader = null
 
-            // ── 2. 用 clipPath 做圆角裁剪 (对齐 Web overflow-hidden + rounded-[20px]) ──
+            // 2. Clip rounded corners with clipPath, matching web overflow-hidden and rounded-[20px].
             canvas.save()
             clipPath.reset()
             clipPath.addRoundRect(r, cornerR, cornerR, Path.Direction.CW)
             canvas.clipPath(clipPath)
 
-            // ── 3. 状态栏 h-6 bg-black/30 ──
+            // 3. Status bar h-6 bg-black/30.
             // Web: h-6 = 1.5rem = 24px
             val statusH = 24 * d
             p.color = 0x4D000000.toInt(); p.style = Paint.Style.FILL
             canvas.drawRect(0f, 0f, w, statusH, p)
-            // Dynamic Island 刘海 (w-14 h-3 bg-black rounded-full)
+            // Dynamic Island cutout (w-14 h-3 bg-black rounded-full).
             p.color = 0xFF000000.toInt()
             val diW = 56 * d; val diH = 12 * d // w-14=3.5rem=56px, h-3=0.75rem=12px
             r.set((w - diW) / 2, (statusH - diH) / 2, (w + diW) / 2, (statusH + diH) / 2)
             canvas.drawRoundRect(r, diH / 2, diH / 2, p)
 
-            // ── 4. 模拟APP界面 p-3 space-y-2 ──
+            // 4. Simulated app interface p-3 space-y-2.
             // Web: p-3 = 12px, space-y-2 = 8px
             val pad = 12 * d; val gap = 8 * d
             var by = statusH + pad
 
-            // 搜索栏: h-7 bg-white/10 rounded-lg (h-7 = 1.75rem = 28px)
+            // Search bar: h-7 bg-white/10 rounded-lg (h-7 = 1.75rem = 28px).
             p.color = 0x1AFFFFFF.toInt()
             r.set(pad, by, w - pad, by + 28 * d)
             canvas.drawRoundRect(r, 6 * d, 6 * d, p)
             by += 28 * d + gap
 
-            // 内容卡片 x4: h-10 bg-white/10 rounded-xl (h-10 = 2.5rem = 40px)
+            // Four content cards: h-10 bg-white/10 rounded-xl (h-10 = 2.5rem = 40px).
             for (i in 0..3) {
                 r.set(pad, by, w - pad, by + 40 * d)
                 canvas.drawRoundRect(r, 10 * d, 10 * d, p)
                 by += 40 * d + gap
             }
 
-            // ── 5. 悬浮窗卡片 (absolute top-14 right-3, w-[130px]) ──
+            // 5. Floating card (absolute top-14 right-3, w-[130px]).
             // top-14 = 3.5rem = 56px, right-3 = 0.75rem = 12px, w-[130px]
             val cardW = 130 * d; val cardH = 72 * d
             val cardScale = if (step >= 2) 1.02f else 1f
@@ -1556,7 +1556,7 @@ class LoginPageFragment : Fragment() {
             canvas.save()
             canvas.scale(cardScale, cardScale, cx + cardW / 2, cy + cardH / 2)
 
-            // 卡片阴影 (shadow-2xl)
+            // Card shadow (shadow-2xl).
             setLayerType(LAYER_TYPE_SOFTWARE, null)
             p.color = Color.WHITE; p.style = Paint.Style.FILL
             p.setShadowLayer(14 * d, 0f, 6 * d, 0x40000000.toInt())
@@ -1564,10 +1564,10 @@ class LoginPageFragment : Fragment() {
             canvas.drawRoundRect(r, 12 * d, 12 * d, p)
             p.clearShadowLayer()
 
-            // p-3 = 12px 卡片内填充
+            // p-3 = 12px inner card padding.
             val cPad = 12 * d
 
-            // 状态行: 圆点 + 文字 (flex items-center gap-2 mb-2)
+            // Status row: dot plus text (flex items-center gap-2 mb-2).
             val dotColor = if (step < 2) 0xFF2E58FF.toInt() else 0xFF22C55E.toInt()
             p.color = dotColor; p.style = Paint.Style.FILL
             // w-2 h-2 = 8px dot
@@ -1576,36 +1576,36 @@ class LoginPageFragment : Fragment() {
             p.color = 0xFF111827.toInt(); p.textSize = 8 * d; p.textAlign = Paint.Align.LEFT
             p.setTypeface(Typeface.DEFAULT_BOLD)
             canvas.drawText(
-                if (step < 2) "正在执行..." else "任务完成！",
+                if (step < 2) "Running..." else "Task complete!",
                 cx + cPad + 12 * d, cy + cPad + 9 * d, p)
             p.setTypeface(Typeface.DEFAULT)
 
-            // 进度条 (h-1.5 bg-[#E5E7EB] rounded-full, mb-2)
+            // Progress bar (h-1.5 bg-[#E5E7EB] rounded-full, mb-2).
             val barX = cx + cPad; val barY = cy + cPad + 18 * d
             val barW = cardW - 2 * cPad; val barH = 5 * d
             p.color = 0xFFE5E7EB.toInt()
             r.set(barX, barY, barX + barW, barY + barH)
             canvas.drawRoundRect(r, barH / 2, barH / 2, p)
-            // 填充 (bg-[#2E58FF])
+            // Fill (bg-[#2E58FF]).
             p.color = 0xFF2E58FF.toInt()
             val progress = minOf(1f, (step + 1) * 0.25f)
             r.set(barX, barY, barX + barW * progress, barY + barH)
             canvas.drawRoundRect(r, barH / 2, barH / 2, p)
 
-            // 描述文字 (text-[9px] text-[#6B7280])
+            // Description text (text-[9px] text-[#6B7280]).
             p.color = 0xFF6B7280.toInt(); p.textSize = 7 * d; p.textAlign = Paint.Align.LEFT
             val desc = when (step) {
-                0 -> "打开微信..."
-                1 -> "发送消息..."
-                2 -> "已完成发送"
-                else -> "✓ 任务成功"
+                0 -> "Opening WeChat..."
+                1 -> "Send a message..."
+                2 -> "Message sent"
+                else -> "Task succeeded"
             }
             canvas.drawText(desc, cx + cPad, barY + barH + 14 * d, p)
 
             canvas.restore() // cardScale
             canvas.restore() // clipPath
 
-            // ── 6. 底部导航条 (w-[80px] h-1 bg-white/30 rounded-full) ──
+            // 6. Bottom navigation bar (w-[80px] h-1 bg-white/30 rounded-full).
             p.color = 0x4DFFFFFF.toInt(); p.style = Paint.Style.FILL
             val bW = 60 * d
             r.set((w - bW) / 2, h - 8 * d, (w + bW) / 2, h - 5 * d)

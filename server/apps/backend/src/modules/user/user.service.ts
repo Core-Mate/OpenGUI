@@ -23,7 +23,6 @@ export class UserService {
 	}
 
 	/**
-	 * 提交用户 Onboarding 信息
 	 */
 	async submitOnboarding(
 		userId: number,
@@ -31,7 +30,7 @@ export class UserService {
 	): Promise<OnboardingResponseDto> {
 		this.logger.log(`User ${userId} submitting onboarding info`);
 
-		// 创建或更新 user_profile 记录
+
 		await this.prismaService.user_profile.upsert({
 			where: { user_id: userId },
 			update: {
@@ -56,13 +55,11 @@ export class UserService {
 
 		return {
 			success: true,
-			message: "用户信息保存成功",
+			message: "User information saved",
 		};
 	}
 
 	/**
-	 * 完成引导流程
-	 * 将用户的 is_active 设置为 true
 	 */
 	async completeOnboarding(userId: number): Promise<OnboardingResponseDto> {
 		this.logger.log(`User ${userId} completing onboarding`);
@@ -80,23 +77,23 @@ export class UserService {
 
 		return {
 			success: true,
-			message: "引导流程已完成",
+			message: "Onboarding completed",
 		};
 	}
 
 	/**
-	 * 获取用户 Onboarding 信息
+	 * Get user onboarding information
 	 */
 	async getOnboarding(userId: number): Promise<UserProfileResponseDto> {
 		this.logger.log(`Getting onboarding info for user ${userId}`);
 
-		// 获取用户信息
+
 		const user = await this.prismaService.users.findUnique({
 			where: { id: userId },
 			select: { is_active: true },
 		});
 
-		// 获取用户档案
+
 		const profile = await this.prismaService.user_profile.findUnique({
 			where: { user_id: userId },
 		});
@@ -125,7 +122,6 @@ export class UserService {
 	}
 
 	/**
-	 * 获取用户执行偏好
 	 */
 	async getExecutionPreference(
 		userId: number,
@@ -165,7 +161,6 @@ export class UserService {
 	}
 
 	/**
-	 * 创建用户执行偏好
 	 */
 	async createExecutionPreference(
 		userId: number,
@@ -193,12 +188,11 @@ export class UserService {
 
 		return {
 			success: true,
-			message: "执行偏好创建成功",
+			message: "Execution preferences created",
 		};
 	}
 
 	/**
-	 * 更新用户执行偏好
 	 */
 	async updateExecutionPreference(
 		userId: number,
@@ -240,12 +234,11 @@ export class UserService {
 
 		return {
 			success: true,
-			message: "执行偏好更新成功",
+			message: "Execution preferences updated",
 		};
 	}
 
 	/**
-	 * 清空用户执行偏好（不删除记录，仅将所有字段置空）
 	 */
 	async clearExecutionPreference(
 		userId: number,
@@ -260,7 +253,7 @@ export class UserService {
 		if (!existing) {
 			return {
 				success: true,
-				message: "执行偏好不存在，无需清空",
+				message: "Execution preferences do not exist; nothing to clear",
 			};
 		}
 
@@ -283,7 +276,7 @@ export class UserService {
 
 		return {
 			success: true,
-			message: "执行偏好已清空",
+			message: "Execution preferences cleared",
 		};
 	}
 }

@@ -5,7 +5,6 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 
 /**
- * 前后台切换
  */
 object FrontAndBackgroundSwitchEventBus {
     private val _events = MutableSharedFlow<FrontAndBackgroundSwitchEvent>(

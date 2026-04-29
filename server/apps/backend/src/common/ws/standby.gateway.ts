@@ -14,15 +14,8 @@ import { StandbySocketService } from "./standby-socket.service";
 import type { StandbySocket } from "./types";
 
 /**
- * 设备待命 WebSocket 网关
  *
- * 独立 namespace /standby，与执行 namespace 互不干扰。
  *
- * 生命周期：
- * 1. App 启动 → 连接 /standby，发送 standby:register { deviceId }
- * 2. 待命期间每 30s 发送 standby:heartbeat
- * 3. Server 收到 IM 命令 → 通过此 gateway emit standby:dispatch
- * 4. App 收到 dispatch → 断开 standby → 连接执行 WS → 执行完后重连 standby
  */
 @WebSocketGateway({
 	namespace: "/standby",
@@ -71,7 +64,6 @@ export class StandbyGateway
 	}
 
 	/**
-	 * 设备注册待命
 	 */
 	@SubscribeMessage("standby:register")
 	handleRegister(
@@ -92,7 +84,6 @@ export class StandbyGateway
 	}
 
 	/**
-	 * 心跳（保持在线状态）
 	 */
 	@SubscribeMessage("standby:heartbeat")
 	handleHeartbeat(
@@ -104,9 +95,7 @@ export class StandbyGateway
 	}
 
 	/**
-	 * 向待命设备派发任务
 	 *
-	 * 由 ImChannelService 调用，不是客户端消息。
 	 */
 	dispatchToDevice(
 		socket: StandbySocket,

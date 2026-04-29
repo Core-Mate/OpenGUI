@@ -32,7 +32,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:padding="12dp"
-                android:text="以后再说"
+                android:text="Maybe later"
                 android:textColor="#6B7280"
                 android:textSize="15sp"
                 android:textStyle="bold" />
@@ -44,7 +44,7 @@
             android:layout_height="0dp"
             android:layout_weight="1">
 
-            <!-- ========= 对话步骤 1-6 ========= -->
+
             <LinearLayout
                 android:id="@+id/dialogue_container"
                 android:layout_width="match_parent"
@@ -52,7 +52,7 @@
                 android:gravity="center_vertical"
                 android:orientation="vertical">
 
-                <!-- 历史区 -->
+
                 <LinearLayout
                     android:id="@+id/history_container"
                     android:layout_width="match_parent"
@@ -62,7 +62,7 @@
                     android:orientation="vertical"
                     android:visibility="gone" />
 
-                <!-- 当前内容 -->
+
                 <LinearLayout
                     android:id="@+id/current_content"
                     android:layout_width="match_parent"
@@ -103,7 +103,7 @@
                         android:textSize="15sp"
                         android:visibility="gone" />
 
-                    <!-- Step 6: 权限卡片 -->
+
 
                     <com.lihang.ShadowLayout
                         android:id="@+id/card_permission_intro"
@@ -130,7 +130,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginBottom="12dp"
-                                android:text="无障碍权限"
+                                android:text="Accessibility permission"
                                 android:textColor="#111827"
                                 android:textSize="15sp"
                                 android:textStyle="bold" />
@@ -138,7 +138,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="这项权限让OpenGUI能够:"
+                                android:text="This permission lets OpenGUI:"
                                 android:textColor="#6B7280"
                                 android:textSize="13sp" />
 
@@ -147,7 +147,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="8dp"
                                 android:lineSpacingExtra="4dp"
-                                android:text="· 让AI有眼睛去看\n· 有动手能力替你点屏幕"
+                                android:text="· Let AI see the screen\n· Let AI tap the screen for you"
                                 android:textColor="#6B7280"
                                 android:textSize="13sp" />
 
@@ -155,7 +155,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="12dp"
-                                android:text="就像给OpenGUI一双能操作手机的手 ✋"
+                                android:text="It gives OpenGUI hands to operate your phone."
                                 android:textColor="#9CA3AF"
                                 android:textSize="13sp" />
                         </LinearLayout>
@@ -163,7 +163,7 @@
                     </com.lihang.ShadowLayout>
 
 
-                    <!-- Step 5: AutomationDemo 容器 -->
+
                     <FrameLayout
                         android:id="@+id/automation_demo_container"
                         android:layout_width="match_parent"
@@ -174,7 +174,7 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- ========= 权限步骤 7-8 ========= -->
+
             <LinearLayout
                 android:id="@+id/permission_container"
                 android:layout_width="match_parent"
@@ -185,7 +185,7 @@
                 android:paddingEnd="24dp"
                 android:visibility="gone">
 
-                <!-- 步骤指示器 -->
+
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -208,14 +208,14 @@
                         android:background="@drawable/dot_rounded_gray" />
                 </LinearLayout>
 
-                <!-- PermissionDemo 容器 -->
+
                 <FrameLayout
                     android:id="@+id/permission_demo_container"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="24dp" />
 
-                <!-- 图标 -->
+
                 <FrameLayout
                     android:id="@+id/perm_icon_container"
                     android:layout_width="48dp"
@@ -232,7 +232,7 @@
                         android:src="@drawable/ic_accessibility_perm" />
                 </FrameLayout>
 
-                <!-- 标题 -->
+                <!-- Title -->
                 <TextView
                     android:id="@+id/perm_title"
                     android:layout_width="wrap_content"
@@ -251,7 +251,7 @@
                     android:textColor="#6B7280"
                     android:textSize="14sp" />
 
-                <!-- 安全提示 -->
+
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -270,13 +270,13 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="仅在执行任务时使用，可随时关闭"
+                        android:text="Used only while running tasks. You can turn it off anytime."
                         android:textColor="#9CA3AF"
                         android:textSize="12sp" />
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- ========= 行业选择 step 9 ========= -->
+
             <ScrollView
                 android:id="@+id/industry_container"
                 android:layout_width="match_parent"
@@ -299,7 +299,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="12dp"
-                        android:text="你所在的行业?"
+                        android:text="What industry are you in?"
                         android:textColor="#111827"
                         android:textSize="26sp"
                         android:textStyle="bold" />
@@ -308,7 +308,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="32dp"
-                        android:text="选择后我们会为你推荐相关任务"
+                        android:text="We will recommend relevant tasks after you choose."
                         android:textColor="#6B7280"
                         android:textSize="15sp" />
 
@@ -330,7 +330,7 @@
                 </LinearLayout>
             </ScrollView>
 
-            <!-- ========= 完成 step 10 ========= -->
+
             <LinearLayout
                 android:id="@+id/complete_container"
                 android:layout_width="match_parent"
@@ -353,7 +353,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="8dp"
-                    android:text="一切就绪"
+                    android:text="All set"
                     android:textColor="#111827"
                     android:textSize="28sp"
                     android:textStyle="bold" />
@@ -361,7 +361,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="开始探索OpenGUI能为你做什么"
+                    android:text="Start exploring what OpenGUI can do for you"
                     android:textColor="#6B7280"
                     android:textSize="15sp" />
             </LinearLayout>
@@ -385,7 +385,7 @@
                 android:paddingBottom="4dp"
                 android:gravity="center"
                 android:stateListAnimator="@null"
-                android:text="开始体验"
+                android:text="Get started"
                 android:textColor="#FFFFFF"
                 android:textSize="17sp"
                 android:textStyle="bold" />
@@ -413,7 +413,7 @@
         android:paddingTop="12dp"
         android:paddingEnd="20dp"
         android:paddingBottom="12dp"
-        android:text="需要开启权限才能正常使用"
+        android:text="Permissions are required for normal use"
         android:textColor="#FFFFFF"
         android:textSize="14sp"
         android:visibility="gone" />

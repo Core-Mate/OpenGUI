@@ -29,7 +29,7 @@ import {
     SignedUrlDto,
 } from './dto/device-log.dto'
 
-@ApiTags('设备日志管理')
+@ApiTags('Device Log Management')
 @Controller('device-logs')
 export class DeviceLogController {
     constructor(
@@ -42,104 +42,104 @@ export class DeviceLogController {
     @Get()
     @HttpCode(HttpStatus.OK)
     @ApiOperation({
-        summary: '查询设备日志列表',
-        description: '分页查询设备日志列表，支持按用户 ID 和状态过滤',
+        summary: 'List device logs',
+        description: 'Paginated device log query with optional user ID and status filters',
     })
     @ApiResponse({
         status: HttpStatus.OK,
-        description: '查询成功',
+        description: 'Query succeeded',
         type: PaginatedDeviceLogsDto,
     })
     async queryDeviceLogs(
         @Query() dto: QueryDeviceLogsDto,
     ): Promise<PaginatedDeviceLogsDto> {
-        this.logger.log('查询设备日志列表', { dto })
+        this.logger.log('List device logs', { dto })
         return this.deviceLogService.queryDeviceLogs(dto)
     }
 
     @Get(':id')
     @HttpCode(HttpStatus.OK)
     @ApiOperation({
-        summary: '获取单条日志详情',
-        description: '根据日志 ID 获取详细信息',
+        summary: 'Get device log details',
+        description: 'Get detailed information by log ID',
     })
     @ApiParam({
         name: 'id',
-        description: '日志记录 ID',
+        description: 'Log record ID',
         example: 456,
     })
     @ApiResponse({
         status: HttpStatus.OK,
-        description: '查询成功',
+        description: 'Query succeeded',
         type: DeviceLogDto,
     })
     @ApiResponse({
         status: 404,
-        description: '日志记录不存在',
+        description: 'Log record not found',
     })
     async getDeviceLogDetail(
         @Param('id', ParseIntPipe) id: number,
     ): Promise<DeviceLogDto> {
-        this.logger.log(`获取日志详情，ID: ${id}`)
+        this.logger.log(`Getting log details, ID: ${id}`)
         return this.deviceLogService.getDeviceLogDetail(id)
     }
 
     @Get(':id/signed-url')
     @HttpCode(HttpStatus.OK)
     @ApiOperation({
-        summary: '获取日志文件下载链接',
-        description: '生成日志文件的临时下载链接（有效期 1 小时）',
+        summary: 'Get log file download URL',
+        description: 'Generate a temporary log file download URL that is valid for 1 hour',
     })
     @ApiParam({
         name: 'id',
-        description: '日志记录 ID',
+        description: 'Log record ID',
         example: 456,
     })
     @ApiResponse({
         status: HttpStatus.OK,
-        description: '生成成功',
+        description: 'Generated successfully',
         type: SignedUrlDto,
     })
     async getSignedUrl(
         @Param('id', ParseIntPipe) id: number,
     ): Promise<SignedUrlDto> {
-        this.logger.log(`获取签名 URL，日志 ID: ${id}`)
+        this.logger.log(`Getting signed URL, log ID: ${id}`)
         return this.deviceLogService.getSignedUrl(id)
     }
 
     @Delete('batch')
     @HttpCode(HttpStatus.OK)
     @ApiOperation({
-        summary: '批量删除日志记录',
-        description: '软删除指定的日志记录',
+        summary: 'Batch delete log records',
+        description: 'Soft delete the specified log records',
     })
     @ApiResponse({
         status: HttpStatus.OK,
-        description: '删除完成',
+        description: 'Deletion completed',
         type: BatchOperationResultDto,
     })
     async batchDelete(
         @Body() dto: BatchDeleteDto,
     ): Promise<BatchOperationResultDto> {
-        this.logger.log(`批量删除日志记录，IDs: ${dto.ids.join(', ')}`)
+        this.logger.log(`Batch delete log records，IDs: ${dto.ids.join(', ')}`)
         return this.deviceLogService.batchDelete(dto)
     }
 
     @Post('batch/retry')
     @HttpCode(HttpStatus.OK)
     @ApiOperation({
-        summary: '批量重试推送',
-        description: '重新发送推送通知给指定日志记录对应的用户',
+        summary: 'Batch retry push notifications',
+        description: 'Resend push notifications to users associated with the selected log records',
     })
     @ApiResponse({
         status: HttpStatus.OK,
-        description: '重试完成',
+        description: 'Retry completed',
         type: BatchOperationResultDto,
     })
     async batchRetry(
         @Body() dto: BatchRetryDto,
     ): Promise<BatchOperationResultDto> {
-        this.logger.log(`批量重试推送，IDs: ${dto.ids.join(', ')}`)
+        this.logger.log(`Batch retry push notifications，IDs: ${dto.ids.join(', ')}`)
         return this.deviceLogService.batchRetry(dto)
     }
 }

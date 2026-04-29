@@ -32,7 +32,7 @@
             android:paddingEnd="16dp"
             android:paddingBottom="24dp">
 
-            <!-- 名称卡片：点击整块可编辑名称 -->
+
             <LinearLayout
                 android:id="@+id/card_name_container"
                 android:layout_width="match_parent"
@@ -56,7 +56,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="名称"
+                        android:text="Name"
                         android:textColor="@color/task_detail_label"
                         android:textSize="14sp"
                         android:textStyle="bold" />
@@ -79,12 +79,12 @@
                     android:layout_height="32dp"
                     android:layout_marginStart="16dp"
                     android:background="@drawable/bg_circle_task_detail_edit"
-                    android:contentDescription="编辑名称"
+                    android:contentDescription="EditName"
                     android:padding="8dp"
                     android:src="@drawable/icon_edit" />
             </LinearLayout>
 
-            <!-- 任务描述卡片 -->
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
@@ -108,7 +108,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="任务描述"
+                        android:text="Task Description"
                         android:textColor="@color/task_detail_label"
                         android:textSize="14sp"
                         android:textStyle="bold" />
@@ -120,7 +120,7 @@
                         android:clickable="true"
                         android:focusable="true"
                         android:padding="4dp"
-                        android:text="编辑"
+                        android:text="Edit"
                         android:textColor="@color/task_detail_edit_blue"
                         android:textSize="14sp"
                         android:textStyle="bold" />
@@ -141,7 +141,7 @@
                 </ScrollView>
             </LinearLayout>
 
-            <!-- 执行记录卡片 -->
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
@@ -159,7 +159,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
-                    android:text="执行记录"
+                    android:text="Execution History"
                     android:textColor="@color/task_detail_label"
                     android:textSize="14sp"
                     android:textStyle="bold" />
@@ -180,7 +180,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center"
-                        android:text="暂无执行记录"
+                        android:text="No execution history yet"
                         android:textColor="@color/task_detail_empty_hint"
                         android:textSize="14sp"
                         android:visibility="gone" />
@@ -188,7 +188,7 @@
             </LinearLayout>
         </LinearLayout>
 
-        <!-- 底部开始执行 -->
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -217,7 +217,7 @@
                     android:layout_height="64dp"
                     android:layout_marginLeft="8dp"
                     android:gravity="center"
-                    android:text="开始执行"
+                    android:text="Start Execution"
                     android:textColor="@android:color/white"
                     android:textSize="18sp"
                     android:textStyle="bold" />

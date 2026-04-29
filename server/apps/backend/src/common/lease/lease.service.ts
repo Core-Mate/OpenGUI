@@ -2,7 +2,6 @@ import { Injectable, Logger } from "@nestjs/common";
 import { RedisService } from "../redis/redis.service";
 
 /**
- * 租约信息
  */
 export interface LeaseInfo {
 	executionId: number;
@@ -12,35 +11,22 @@ export interface LeaseInfo {
 }
 
 /**
- * 租约服务
  *
- * 提供心跳租约机制，用于检测客户端是否存活。
- * 当客户端杀掉进程后，租约会自动过期，服务端可以终止任务执行。
  *
- * 核心参数：
- * - TTL: 120秒（租约有效期，必须 > Socket.IO 死连接检测窗口 45s + 重连 10s）
- * - 心跳间隔: 5秒（客户端实际配置）
  */
 @Injectable()
 export class LeaseService {
 	private readonly logger = new Logger(LeaseService.name);
 
-	/** 租约 Key 前缀 */
 	private readonly LEASE_KEY_PREFIX = "lease:execution:";
 
-	/** 默认租约 TTL（秒）— 必须 > pingInterval(25s) + pingTimeout(20s) + 重连时间(~10s) */
 	private readonly DEFAULT_TTL_SECONDS = 120;
 
 	constructor(private readonly redisService: RedisService) {}
 
 	/**
-	 * 创建租约
 	 *
-	 * @param executionId 执行 ID
-	 * @param userId 用户 ID
-	 * @param taskId 任务 ID
-	 * @param ttlSeconds 租约有效期（秒），默认 120 秒
-	 * @returns 是否创建成功
+	 * @param userId User ID
 	 */
 	async createLease(
 		executionId: number,
@@ -71,11 +57,7 @@ export class LeaseService {
 	}
 
 	/**
-	 * 续租
 	 *
-	 * @param executionId 执行 ID
-	 * @param ttlSeconds 续租时间（秒），默认 120 秒
-	 * @returns 是否续租成功（false 表示租约不存在或已过期）
 	 */
 	async renewLease(
 		executionId: number,
@@ -84,7 +66,7 @@ export class LeaseService {
 		const key = this.getLeaseKey(executionId);
 
 		try {
-			// 直接使用 expire，如果 key 不存在会返回 false（原子操作，避免 TOCTOU 竞态）
+
 			const success = await this.redisService.expire(key, ttlSeconds);
 			if (success) {
 				this.logger.debug(
@@ -105,10 +87,7 @@ export class LeaseService {
 	}
 
 	/**
-	 * 检查租约是否有效
 	 *
-	 * @param executionId 执行 ID
-	 * @returns 是否有效
 	 */
 	async isLeaseValid(executionId: number): Promise<boolean> {
 		const key = this.getLeaseKey(executionId);
@@ -119,16 +98,13 @@ export class LeaseService {
 			this.logger.error(
 				`[LEASE] Failed to check lease for execution ${executionId}: ${(error as Error).message}`,
 			);
-			// 出错时默认租约有效，避免误杀任务
+
 			return true;
 		}
 	}
 
 	/**
-	 * 获取租约信息
 	 *
-	 * @param executionId 执行 ID
-	 * @returns 租约信息，不存在返回 null
 	 */
 	async getLeaseInfo(executionId: number): Promise<LeaseInfo | null> {
 		const key = this.getLeaseKey(executionId);
@@ -148,10 +124,7 @@ export class LeaseService {
 	}
 
 	/**
-	 * 获取租约剩余 TTL
 	 *
-	 * @param executionId 执行 ID
-	 * @returns 剩余秒数，-2 表示不存在，-1 表示无过期时间
 	 */
 	async getLeaseTTL(executionId: number): Promise<number> {
 		const key = this.getLeaseKey(executionId);
@@ -167,10 +140,7 @@ export class LeaseService {
 	}
 
 	/**
-	 * 释放租约
 	 *
-	 * @param executionId 执行 ID
-	 * @returns 是否释放成功
 	 */
 	async releaseLease(executionId: number): Promise<boolean> {
 		const key = this.getLeaseKey(executionId);
@@ -191,11 +161,8 @@ export class LeaseService {
 	}
 
 	/**
-	 * 批量续租
 	 *
-	 * @param executionIds 执行 ID 列表
-	 * @param ttlSeconds 续租时间（秒）
-	 * @returns 成功续租的执行 ID 列表
+	 * @param executionIds Execution ID list
 	 */
 	async renewLeasesBatch(
 		executionIds: number[],
@@ -209,7 +176,7 @@ export class LeaseService {
 		const client = this.redisService.getClient();
 		const pipeline = client.pipeline();
 
-		// 构建批量 EXPIRE 命令
+
 		for (const executionId of executionIds) {
 			const key = this.getLeaseKey(executionId);
 			pipeline.expire(key, ttlSeconds);
@@ -219,7 +186,7 @@ export class LeaseService {
 			const results = await pipeline.exec();
 			if (results) {
 				results.forEach((result, index) => {
-					// result 格式: [error, value]
+
 					if (!result[0] && result[1] === 1) {
 						renewed.push(executionIds[index]);
 					}
@@ -239,21 +206,18 @@ export class LeaseService {
 	}
 
 	/**
-	 * 获取租约 Redis Key
 	 */
 	private getLeaseKey(executionId: number): string {
 		return `${this.LEASE_KEY_PREFIX}${executionId}`;
 	}
 
 	/**
-	 * 获取默认 TTL（供客户端参考）
 	 */
 	getDefaultTTL(): number {
 		return this.DEFAULT_TTL_SECONDS;
 	}
 
 	/**
-	 * 获取建议的心跳间隔（TTL 的一半）
 	 */
 	getRecommendedHeartbeatInterval(): number {
 		return Math.floor(this.DEFAULT_TTL_SECONDS / 2);

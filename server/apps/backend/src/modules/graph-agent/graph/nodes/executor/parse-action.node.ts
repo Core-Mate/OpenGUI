@@ -10,6 +10,18 @@ import { ErrorSeverity } from "../../utils/error-classification";
 
 const logger = new Logger("ParseActionNode");
 
+const USER_INTERVENTION_ACTIONS = new Set([
+	"need_login",
+	"asset_risk",
+	"delete_confirm",
+]);
+
+const USER_INTERVENTION_MESSAGES: Record<string, string> = {
+	need_login: "User must complete login, registration, or identity verification",
+	asset_risk: "Involves assets, payment, transfer, refund, or major asset changes and requires user confirmation",
+	delete_confirm: "Involves important data deletion or irreversible operations and requires user confirmation",
+};
+
 /** @internal exported for testing */
 export function parseVlmPrediction(
 	text: string,
@@ -126,7 +138,7 @@ export function parseVlmPrediction(
 					floatNumbers.push(floatNumbers[0], floatNumbers[1]);
 				}
 
-				// 保留原始 box 值用于 JSON 存储
+
 				actionInputs[
 					paramName.trim() as keyof Omit<
 						ActionInputs,
@@ -134,7 +146,7 @@ export function parseVlmPrediction(
 					>
 				] = JSON.stringify(floatNumbers);
 
-				// 使用 CoordinateTransformer 统一坐标转换
+
 				if (transformer) {
 					const boxKey = paramName.includes("start_box")
 						? "start_coords"
@@ -177,6 +189,11 @@ export function parseVlmPrediction(
 
 function parseAction(actionStr: string) {
 	try {
+		actionStr = normalizeActionSyntax(actionStr.trim()).replace(
+			/^Action[:：]\s*/i,
+			"",
+		);
+
 		// Support format: click(start_box='<|box_start|>(x1,y1)<|box_end|>')
 		actionStr = actionStr.replace(/<\|box_start\|>|<\|box_end\|>/g, "");
 
@@ -187,22 +204,23 @@ function parseAction(actionStr: string) {
 			.replace(/start_point=/g, "start_box=")
 			.replace(/end_point=/g, "end_box=");
 
-		// Match function name and arguments using regex
-		const functionPattern = /^(\w+)\((.*)\)$/;
+		// Match function name and arguments. Allow trailing punctuation/text so
+		// model outputs like click(start_box=(500, 420)). remain recoverable.
+		const functionPattern = /^(\w+)\s*\(([\s\S]*)\)/;
 		const match = actionStr.trim().match(functionPattern);
 
 		if (!match) {
 			throw new Error("Not a function call");
 		}
 
-		const [_, functionName, argsStr] = match;
+		const [_, rawFunctionName, argsStr] = match;
+		let functionName = rawFunctionName;
 
 		// Parse keyword arguments
-		const kwargs = {};
+		const kwargs: Record<string, string> = {};
 
 		if (argsStr.trim()) {
-			// Split on commas that aren't inside quotes or parentheses
-			const argPairs = argsStr.match(/([^,']|'[^']*')+/g) || [];
+			const argPairs = splitKeywordArgs(argsStr);
 
 			for (const pair of argPairs) {
 				const [key, ...valueParts] = pair.split("=");
@@ -225,9 +243,14 @@ function parseAction(actionStr: string) {
 					value = `(${value})`;
 				}
 
-				//@ts-ignore
 				kwargs[key.trim()] = value;
 			}
+		}
+
+		if (USER_INTERVENTION_ACTIONS.has(functionName)) {
+			const originalContent = kwargs.content || USER_INTERVENTION_MESSAGES[functionName];
+			kwargs.content = `[${functionName}] ${originalContent}`;
+			functionName = "call_user";
 		}
 
 		return {
@@ -240,8 +263,77 @@ function parseAction(actionStr: string) {
 	}
 }
 
+function normalizeActionSyntax(input: string): string {
+	let quote: "'" | '"' | null = null;
+	let normalized = "";
+
+	for (let i = 0; i < input.length; i++) {
+		const ch = input[i];
+		const prev = input[i - 1];
+
+		if ((ch === "'" || ch === '"') && prev !== "\\") {
+			quote = quote === ch ? null : quote ?? ch;
+			normalized += ch;
+			continue;
+		}
+
+		if (!quote) {
+			if (ch === "（") {
+				normalized += "(";
+				continue;
+			}
+			if (ch === "）") {
+				normalized += ")";
+				continue;
+			}
+			if (ch === "，") {
+				normalized += ",";
+				continue;
+			}
+		}
+
+		normalized += ch;
+	}
+
+	return normalized;
+}
+
+function splitKeywordArgs(argsStr: string): string[] {
+	const args: string[] = [];
+	let current = "";
+	let quote: "'" | '"' | null = null;
+	let depth = 0;
+
+	for (let i = 0; i < argsStr.length; i++) {
+		const ch = argsStr[i];
+		const prev = argsStr[i - 1];
+
+		if ((ch === "'" || ch === '"') && prev !== "\\") {
+			quote = quote === ch ? null : quote || ch;
+			current += ch;
+			continue;
+		}
+
+		if (!quote) {
+			if (ch === "(" || ch === "[") {
+				depth++;
+			} else if (ch === ")" || ch === "]") {
+				depth = Math.max(0, depth - 1);
+			} else if (ch === "," && depth === 0) {
+				if (current.trim()) args.push(current.trim());
+				current = "";
+				continue;
+			}
+		}
+
+		current += ch;
+	}
+
+	if (current.trim()) args.push(current.trim());
+	return args;
+}
+
 /**
- * 构建语义历史记录
  */
 function buildSemanticRecord(
 	state: AgentState,
@@ -273,14 +365,12 @@ function buildSemanticRecord(
 }
 
 /**
- * 从 action_inputs 中提取 working memory 内容
- * 兼容模型输出 content=xxx / facts=xxx 等各种参数名
  */
 function extractWorkingMemoryContent(inputs: ActionInputs): string | null {
 	if (!inputs) return null;
-	// 优先取 content 字段
+
 	if (inputs.content) return inputs.content;
-	// 兜底：取所有非坐标/非控制字段的值拼接
+
 	const values = Object.entries(inputs)
 		.filter(([key]) => !["start_coords", "end_coords", "direction", "app_name"].includes(key))
 		.map(([_, val]) => (typeof val === "string" ? val : ""))
@@ -289,9 +379,7 @@ function extractWorkingMemoryContent(inputs: ActionInputs): string | null {
 }
 
 /**
- * 创建解析动作节点
  *
- * @returns 解析动作节点函数
  */
 export function createParseActionNode(
 	prismaService: PrismaService,
@@ -311,7 +399,7 @@ export function createParseActionNode(
 				screenHeight,
 				"gui",
 			);
-			// 先只取一个 应该没啥问题
+
 			if (parsedPredictions.length > 1) {
 				logger.error(
 					"multi predictions, only use the first one",
@@ -322,7 +410,7 @@ export function createParseActionNode(
 
 			logger.log(`Parsed action: ${parsedPrediction.action_type}`);
 
-			// 检查特殊动作类型
+
 			if (parsedPrediction.action_type === "finished") {
 				return {
 					executor: {
@@ -356,7 +444,25 @@ export function createParseActionNode(
 				} as Partial<AgentState>;
 			}
 
-			// 拦截 working memory 文本动作（兼容模型未走 tool_call 的情况）
+			if (parsedPrediction.action_type === "downgrade_to_a11y") {
+				logger.log("Ignoring downgrade_to_a11y because this build is GUI-only");
+				return {
+					executor: {
+						parsedPrediction: null,
+						status: "running",
+						sharedMessages: [
+							new HumanMessage({
+								content:
+									"A11Y channel is unavailable in this build. Continue with GUI screenshot actions and output one valid GUI action.",
+								additional_kwargs: { created_at: new Date().toISOString() },
+							}),
+						],
+						semanticHistory: [buildSemanticRecord(state, parsedPrediction)],
+					},
+				} as Partial<AgentState>;
+			}
+
+
 			if (parsedPrediction.action_type === "update_working_memory") {
 				const rawContent = extractWorkingMemoryContent(parsedPrediction.action_inputs);
 				if (rawContent) {
@@ -423,7 +529,7 @@ export function createParseActionNode(
 					lastError: {
 						severity: ErrorSeverity.RECOVERABLE,
 						code: "PARSE_FAILED",
-						message: `解析动作失败: ${error.message}`,
+							message: `Failed to parse action: ${error.message}`,
 					},
 				},
 			} as Partial<AgentState>;

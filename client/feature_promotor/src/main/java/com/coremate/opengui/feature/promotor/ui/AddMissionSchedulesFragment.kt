@@ -133,17 +133,17 @@ class AddMissionSchedulesFragment() : Fragment() {
         }
         binding.cardSaveWrap.setOnClickListener {
             if (selectedMission == null) {
-                Toast.makeText(requireContext(), "还没选择任务", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "No task selected yet", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
             if (missionStart == null || missionEnd == null) {
-                Toast.makeText(requireContext(), "还没选择执行时间", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "No execution time selected yet", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
             if (selectColor == null) {
-                Toast.makeText(requireContext(), "还没选择任务颜色", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "No task color selected yet", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
             val bean = AddMissionSchedulesRequestBean(
@@ -158,28 +158,28 @@ class AddMissionSchedulesFragment() : Fragment() {
     }
 
     fun convertBeijingTimeForUTC(hour: Int, minute: Int): String {
-        // 1. 定义北京时区和UTC时区
+
         val beijingZone = ZoneId.of("Asia/Shanghai")
         val utcZone = ZoneId.of("UTC")
 
-        // 2. 获取当前北京时间
+
         val nowBeijing = ZonedDateTime.now(beijingZone)
 
-        // 3. 创建一个以当前日期为基础，但使用传入的小时和分钟的北京时间
+
         var targetBeijingTime = nowBeijing.withHour(hour)
             .withMinute(minute)
             .withSecond(0)
             .withNano(0)
 
-        // 4. 如果目标时间小于当前时间，则日期加一天
+
         if (targetBeijingTime.isBefore(nowBeijing)) {
             targetBeijingTime = targetBeijingTime.plusDays(1)
         }
 
-        // 5. 将这个北京时间转换为UTC时间
+
         val targetUtcTime = targetBeijingTime.withZoneSameInstant(utcZone)
 
-        // 6. 格式化并返回ISO_INSTANT格式的字符串
+
         return DateTimeFormatter.ISO_INSTANT.format(targetUtcTime.toInstant())
     }
 
@@ -190,33 +190,33 @@ class AddMissionSchedulesFragment() : Fragment() {
     }
 
     fun getDateTimeISO8601(hour: Int, minute: Int): String {
-        // 获取当前北京时间
+
         val beijingZone = ZoneId.of("Asia/Shanghai")
         val currentBeijingTime = ZonedDateTime.now(beijingZone)
         
-        // 获取今天的北京日期
+
         val todayBeijing = currentBeijingTime.toLocalDate()
         
-        // 创建用户输入的时间
+
         val inputTime = LocalTime.of(hour, minute)
         
-        // 创建今天的用户输入时间（北京时间）
+
         val inputDateTimeToday = LocalDateTime.of(todayBeijing, inputTime)
         val inputZonedDateTimeToday = inputDateTimeToday.atZone(beijingZone)
         
-        // 判断输入时间是否小于当前北京时间
+
         val targetZonedDateTime = if (inputZonedDateTimeToday.isBefore(currentBeijingTime)) {
-//            // 如果小于当前北京时间，则使用明天的日期
+
 //            val tomorrowBeijing = todayBeijing.plusDays(1)
 //            val inputDateTimeTomorrow = LocalDateTime.of(tomorrowBeijing, inputTime)
 //            inputDateTimeTomorrow.atZone(beijingZone)
             inputZonedDateTimeToday
         } else {
-            // 否则使用今天的日期
+
             inputZonedDateTimeToday
         }
         
-        // 转换为 ISO 8601 格式（带时区）
+
         return targetZonedDateTime.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
     }
 

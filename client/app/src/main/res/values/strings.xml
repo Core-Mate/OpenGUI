@@ -1,5 +1,5 @@
 <resources>
     <string name="app_name">OpenGUI</string>
-    <string name="accessibility_service_label">OpenGUI AI 新版自动化服务【必须开启】</string>
-    <string name="accessibility_service_description">启用此服务以进行自动化手势和屏幕操作。</string>
+    <string name="accessibility_service_label">OpenGUI AI Automation Service (required)</string>
+    <string name="accessibility_service_description">Enable this service to perform automated gestures and screen operations.</string>
 </resources>

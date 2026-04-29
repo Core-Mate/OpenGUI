@@ -84,9 +84,9 @@ class LogActivity() :
                 }
                 "${formatTs(minTime)} — ${formatTs(maxTime)}"
             }
-            else -> "暂无日志"
+            else -> "No logs yet"
         }
-        binding.tvDesc.text = "共有 ${totalCount} 条日志\n时间范围：$timeRangeStr"
+        binding.tvDesc.text = "Total ${totalCount} logs\nTime Range：$timeRangeStr"
     }
 
     private var startTime: Long = -1L
@@ -96,9 +96,9 @@ class LogActivity() :
     fun showTimePicker() {
         val picker = DatimePicker(this)
         if (startTime == -1L) {
-            picker.setTitle("设置 开始 时间")
+            picker.setTitle("Set Start Time")
         } else {
-            picker.setTitle("设置 结束 时间")
+            picker.setTitle("Set End Time")
         }
         val wheelLayout = picker.getWheelLayout()
         picker.setOnDatimePickedListener { year, month, day, hour, minute, second ->
@@ -111,12 +111,12 @@ class LogActivity() :
             calendar.set(Calendar.SECOND, second)
             if (startTime == -1L) {
                 startTime = calendar.time.time
-                binding.tvTimeRange.text = "开始时间  " +
+                binding.tvTimeRange.text = "Start time  " +
                         year.toString() + "-" + month + "-" + day + " " + hour + ":" + minute + ":" + second
                 showTimePicker()
             } else {
                 endTime = calendar.time.time
-                binding.tvTimeRange.text = "结束时间  " +
+                binding.tvTimeRange.text = "End time  " +
                         year.toString() + "-" + month + "-" + day + " " + hour + ":" + minute + ":" + second
                 PushManager.instance.uploadLogs(startTime, endTime)
                 startTime = -1L
@@ -127,33 +127,33 @@ class LogActivity() :
         wheelLayout.setTimeMode(TimeMode.HOUR_24_NO_SECOND)
         wheelLayout.setRange(DatimeEntity.monthOnFuture(-1), DatimeEntity.now())
 
-        wheelLayout.setDateLabel("年", "月", "日")
-        wheelLayout.setTimeLabel("时", "分", "秒")
+        wheelLayout.setDateLabel("Year", "Month", "Day")
+        wheelLayout.setTimeLabel("Hour", "Minute", "Second")
         picker.show()
     }
 
     private fun shareFileToWeChat() {
         try {
-            // 查找最新的日志文件
+
             val logFileName = "push_log.txt"
             val logFile = File(context.filesDir?.absolutePath + "/push_logs", logFileName)
             if (!logFile.absoluteFile.exists()) {
                 logFile.absoluteFile.mkdirs()
             }
-            // 如果今天的日志文件不存在，尝试查找其他日志文件
+
             if (!logFile.exists()) {
-                Toast.makeText(context, "文件不存在", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "File not found", Toast.LENGTH_SHORT).show()
                 return
             }
 
-            // 使用 FileProvider 获取文件 URI
+
             val fileUri: Uri = FileProvider.getUriForFile(
                 context,
                 "${context.packageName}.fileprovider",
                 logFile
             )
 
-            // 根据文件扩展名确定 MIME 类型
+
             val mimeType = when (logFile.extension.lowercase()) {
                 "txt" -> "text/plain"
                 "jpg", "jpeg" -> "image/jpeg"
@@ -162,43 +162,43 @@ class LogActivity() :
                 else -> "*/*"
             }
 
-            // 创建分享 Intent
+            // CreateShare Intent
             val shareIntent = Intent(Intent.ACTION_SEND).apply {
                 type = mimeType
                 putExtra(Intent.EXTRA_STREAM, fileUri)
-                putExtra(Intent.EXTRA_TEXT, "分享文件: ${logFile.name}")
+                putExtra(Intent.EXTRA_TEXT, "Share File: ${logFile.name}")
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
 
-            // 启动分享
-            startActivity(Intent.createChooser(shareIntent, "分享文件到微信"))
+
+            startActivity(Intent.createChooser(shareIntent, "Share File to WeChat"))
         } catch (e: Exception) {
             e.printStackTrace()
-            Toast.makeText(context, "分享失败: ${e.message}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Share failed: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun saveFileToDownload() {
         try {
-            // 查找日志文件
+
             val logFileName = "push_log.txt"
             val logFile = File(context.filesDir?.absolutePath + "/push_logs", logFileName)
 
-            // 检查文件是否存在
+
             if (!logFile.exists()) {
                 logFile.parentFile.absoluteFile.mkdirs()
             }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                // Android 10 (API 29) 及以上使用 MediaStore API
+
                 saveFileToDownloadUsingMediaStore(logFile)
             } else {
-                // Android 10 以下使用传统方式
+
                 saveFileToDownloadLegacy(logFile)
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            Toast.makeText(context, "保存失败: ${e.message}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Save failed: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -220,13 +220,13 @@ class LogActivity() :
                         inputStream.copyTo(outputStream)
                     }
                 }
-                Toast.makeText(context, "文件已保存到下载目录", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "File saved to Downloads", Toast.LENGTH_SHORT).show()
             } else {
-                Toast.makeText(context, "保存失败: 无法创建文件", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Save failed: could not create file", Toast.LENGTH_SHORT).show()
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            Toast.makeText(context, "保存失败: ${e.message}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Save failed: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -235,14 +235,14 @@ class LogActivity() :
             val downloadDir =
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
 
-            // 确保目录存在
+
             if (!downloadDir.exists()) {
                 downloadDir.mkdirs()
             }
 
             val targetFile = File(downloadDir, sourceFile.name)
 
-            // 复制文件
+
             FileInputStream(sourceFile).use { inputStream ->
                 FileOutputStream(targetFile).use { outputStream ->
                     inputStream.copyTo(outputStream)
@@ -251,12 +251,12 @@ class LogActivity() :
 
             Toast.makeText(
                 context,
-                "文件已保存到下载目录: ${targetFile.absolutePath}",
+                "File saved to Downloads: ${targetFile.absolutePath}",
                 Toast.LENGTH_SHORT
             ).show()
         } catch (e: IOException) {
             e.printStackTrace()
-            Toast.makeText(context, "保存失败: ${e.message}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Save failed: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 

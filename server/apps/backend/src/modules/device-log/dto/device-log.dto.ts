@@ -11,7 +11,6 @@ import {
 } from 'class-validator'
 
 /**
- * 日志任务状态枚举
  */
 export enum LogTaskStatus {
     INIT = 'init',
@@ -21,11 +20,10 @@ export enum LogTaskStatus {
 }
 
 /**
- * 查询日志列表请求 DTO
  */
 export class QueryDeviceLogsDto {
     @ApiPropertyOptional({
-        description: '用户 ID 过滤',
+        description: 'User ID filter',
         example: 1001,
     })
     @IsOptional()
@@ -33,7 +31,7 @@ export class QueryDeviceLogsDto {
     user_id?: number
 
     @ApiPropertyOptional({
-        description: '日志状态过滤（支持多个）',
+        description: 'Log status filter (multiple values supported)',
         example: ['wait_upload', 'uploaded'],
         enum: LogTaskStatus,
         isArray: true,
@@ -44,7 +42,7 @@ export class QueryDeviceLogsDto {
     log_status?: LogTaskStatus[]
 
     @ApiPropertyOptional({
-        description: '页码（从 1 开始）',
+        description: 'Page number (starts from 1)',
         example: 1,
         default: 1,
     })
@@ -55,7 +53,7 @@ export class QueryDeviceLogsDto {
     page?: number = 1
 
     @ApiPropertyOptional({
-        description: '每页数量',
+        description: 'Items per page',
         example: 10,
         default: 10,
     })
@@ -67,7 +65,7 @@ export class QueryDeviceLogsDto {
     limit?: number = 10
 
     @ApiPropertyOptional({
-        description: '排序字段',
+        description: 'Sort field',
         example: 'created_at',
         enum: ['created_at', 'updated_at', 'log_status'],
         default: 'created_at',
@@ -77,7 +75,7 @@ export class QueryDeviceLogsDto {
     sort?: 'created_at' | 'updated_at' | 'log_status' = 'created_at'
 
     @ApiPropertyOptional({
-        description: '排序顺序',
+        description: 'Sort order',
         example: 'desc',
         enum: ['asc', 'desc'],
         default: 'desc',
@@ -88,106 +86,103 @@ export class QueryDeviceLogsDto {
 }
 
 /**
- * 日志记录响应 DTO
  */
 export class DeviceLogDto {
     @ApiProperty({
-        description: '日志记录 ID',
+        description: 'Log record ID',
         example: 456,
     })
     id: number
 
     @ApiProperty({
-        description: '用户 ID',
+        description: 'User ID',
         example: 1001,
     })
     user_id: number
 
     @ApiProperty({
-        description: '用户手机号',
+        description: 'User phone number',
         example: '13800138000',
     })
     phone_number?: string
 
     @ApiPropertyOptional({
-        description: '日志文件 URI',
+        description: 'Log file URI',
         example: 'logs/1001/2025-01-15-142530.zip',
     })
     log_uri: string | null
 
     @ApiProperty({
-        description: '日志起始时间',
+        description: 'Log start time',
         example: '2025-01-01T00:00:00Z',
     })
     log_start_at: Date
 
     @ApiProperty({
-        description: '日志结束时间',
+        description: 'Log end time',
         example: '2025-01-15T23:59:59Z',
     })
     log_end_at: Date
 
     @ApiProperty({
-        description: '日志状态',
+        description: 'Log status',
         enum: LogTaskStatus,
         example: LogTaskStatus.UPLOADED,
     })
     log_status: LogTaskStatus
 
     @ApiProperty({
-        description: '创建时间',
+        description: 'Created at',
         example: '2025-01-15T14:23:00Z',
     })
     created_at: Date
 
     @ApiProperty({
-        description: '更新时间',
+        description: 'Updated at',
         example: '2025-01-15T14:25:30Z',
     })
     updated_at: Date
 }
 
 /**
- * 分页日志列表响应 DTO
  */
 export class PaginatedDeviceLogsDto {
     @ApiProperty({
-        description: '总记录数',
+        description: 'Total records',
         example: 24,
     })
     total: number
 
     @ApiProperty({
-        description: '当前页码',
+        description: 'Current page number',
         example: 1,
     })
     page: number
 
     @ApiProperty({
-        description: '每页数量',
+        description: 'Items per page',
         example: 10,
     })
     limit: number
 
     @ApiProperty({
-        description: '总页数',
+        description: 'Total pages',
         example: 3,
     })
     total_pages: number
 
     @ApiProperty({
-        description: '日志记录列表',
+        description: 'Log record list',
         type: [DeviceLogDto],
     })
     data: DeviceLogDto[]
 }
 
 /**
- * 批量删除请求 DTO
  */
 export class BatchDeleteDto {
     @ApiProperty({
-        description: '要删除的日志记录 ID 数组',
+        description: 'Array of log record IDs to delete',
         example: [456, 457],
         type: [Number],
     })
@@ -197,11 +192,10 @@ export class BatchDeleteDto {
 }
 
 /**
- * 批量重试推送请求 DTO
  */
 export class BatchRetryDto {
     @ApiProperty({
-        description: '要重试的日志记录 ID 数组',
+        description: 'Array of log record IDs to retry',
         example: [456, 457],
         type: [Number],
     })
@@ -211,29 +205,28 @@ export class BatchRetryDto {
 }
 
 /**
- * 批量操作响应 DTO
  */
 export class BatchOperationResultDto {
     @ApiProperty({
-        description: '操作是否成功',
+        description: 'Operation success flag',
         example: true,
     })
     success: boolean
 
     @ApiProperty({
-        description: '成功处理的记录数',
+        description: 'Successfully processed record count',
         example: 2,
     })
     success_count: number
 
     @ApiProperty({
-        description: '失败的记录数',
+        description: 'Failed record count',
         example: 0,
     })
     failed_count: number
 
     @ApiPropertyOptional({
-        description: '失败详情',
+        description: 'Failure details',
         example: [],
     })
     failed_details?: Array<{
@@ -243,24 +236,23 @@ export class BatchOperationResultDto {
 }
 
 /**
- * 获取签名 URL 响应 DTO
  */
 export class SignedUrlDto {
     @ApiProperty({
-        description: '操作是否成功',
+        description: 'Operation success flag',
         example: true,
     })
     success: boolean
 
     @ApiPropertyOptional({
-        description: '签名 URL',
+        description: 'Signed URL',
         example: 'https://oss.example.com/logs/1001/xxx.zip?signature=...',
     })
     url?: string
 
     @ApiPropertyOptional({
-        description: '错误信息',
-        example: '日志文件不存在',
+        description: 'Error message',
+        example: 'Log file does not exist',
     })
     error?: string
 }

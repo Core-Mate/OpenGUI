@@ -31,17 +31,17 @@ import io.noties.markwon.syntax.SyntaxHighlightPlugin;
 import io.noties.prism4j.Prism4j;
 import io.noties.prism4j.annotations.PrismBundle;
 
-@PrismBundle(include = {"java", "kotlin", "python", "javascript", "css", "markup", "c", "cpp"}, grammarLocatorClassName = ".MyGrammarLocator"  // 修改这里
+@PrismBundle(include = {"java", "kotlin", "python", "javascript", "css", "markup", "c", "cpp"}, grammarLocatorClassName = ".MyGrammarLocator"  // Customize the grammar locator here.
 )
 public class MarkwonManager {
     private static volatile MarkwonManager instance;
     private Markwon markwon;
 
-    // 代码高亮颜色配置
-    private static final int THEME_COLOR = Color.parseColor("#f5f5f5");  // 背景色
-    private static final int TEXT_COLOR = Color.parseColor("#333333");   // 默认文本颜色
 
-    float lineHeightDp = 30; // 行间距
+    private static final int THEME_COLOR = Color.parseColor("#f5f5f5");  // Background color.
+    private static final int TEXT_COLOR = Color.parseColor("#333333");   // Default text color.
+
+    float lineHeightDp = 30;
     int lineHeightPx = 0;
 
     private MarkwonManager() {
@@ -68,14 +68,14 @@ public class MarkwonManager {
                 context.getResources().getDisplayMetrics()
         );
 
-        // 创建 Prism4j 实例
+
         Prism4j prism4j = new Prism4j(new MyGrammarLocator());
 
-        // 创建 Markwon 实例
+
         markwon = Markwon.builder(context)
-                // 添加代码高亮插件
+
                 .usePlugin(SyntaxHighlightPlugin.create(prism4j, Prism4jThemeDefault.create()))
-                // 添加主题配置
+
                 .usePlugin(new AbstractMarkwonPlugin() {
                     @Override
                     public void configureTheme(@NonNull MarkwonTheme.Builder builder) {
@@ -85,8 +85,8 @@ public class MarkwonManager {
                                 .codeBlockBackgroundColor(THEME_COLOR)
                                 .blockMargin(16)
                                 .blockQuoteWidth(0)
-                                .listItemColor(TEXT_COLOR)    // 设置列表项颜色
-                                .bulletWidth(8);             // 设置列表符号半径;
+                                .listItemColor(TEXT_COLOR)
+                                .bulletWidth(8);
                     }
 
                     @Override
@@ -116,7 +116,7 @@ public class MarkwonManager {
                 .usePlugin(HtmlPlugin.create())
                 .usePlugin(TablePlugin.create(context))
                 .usePlugin(MovementMethodPlugin.create(TableAwareMovementMethod.create()))
-                .build(); // 添加表格插件.build();
+                .build();
     }
 
     public void setMarkdown(Context context, TextView textView, String markdown) {

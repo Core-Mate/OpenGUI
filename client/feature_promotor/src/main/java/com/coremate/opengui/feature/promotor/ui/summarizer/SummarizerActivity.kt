@@ -83,7 +83,7 @@ class SummarizerActivity :
     private var from: String? = null
     private var presenter: SummarizerPresenter? = null
 
-    // 新增参数
+
     private var taskId: String? = null
     private var taskName: String? = null
     private var historyId: String? = null
@@ -94,7 +94,7 @@ class SummarizerActivity :
     private var markwonAdapter: MarkwonAdapter? = null
     private var exportLoadingDialog: AlertDialog? = null
 
-    // 滚动相关
+
     private var userScrolledUp = false
     private val THEME_COLOR: Int = -0xa0a0b
     private val TEXT_COLOR: Int = -0xcccccd
@@ -114,7 +114,7 @@ class SummarizerActivity :
             visibility = GONE
             setImageResource(R.drawable.icon_download)
             setOnClickListener {
-                val name = taskName ?: "任务"
+                val name = taskName ?: "Task"
                 val fileName = "OpenGUI_${name.take(20)}.pdf"
                 val dir = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS) ?: filesDir
                 val file = File(dir, fileName)
@@ -132,7 +132,7 @@ class SummarizerActivity :
             alpha = 0.5f
             imageTintList = ColorStateList.valueOf(Color.parseColor("#6B7280"))
             setOnClickListener {
-                //TODO:分享
+                //TODO:Share
             }
             setPadding(
                 AMScreenUtils.dp2px(7f),
@@ -141,13 +141,13 @@ class SummarizerActivity :
                 AMScreenUtils.dp2px(7f),
             )
         }
-        // 显示任务名称
+
         binding.tvTaskTitle.text = if (!taskName.isNullOrEmpty()) taskName else TaskCenter.taskTitle
-        // 设置执行状态
+
         updateStatusBadge()
         when (from) {
             "MyTask", "TaskFinish" -> {
-                // 使用 getTaskExecutionsSummarizer 获取 AI 执行决策树数据
+
                 val executionId = TaskCenter.executionId
                 if (executionId != null) {
                     presenter?.getTaskExecutionsSummarizer(executionId)
@@ -163,7 +163,7 @@ class SummarizerActivity :
             "MyTaskEdit" -> {
                 binding.loadingContainer.visibility = GONE
                 binding.imgLoading.clearAnimation()
-                markwonAdapter!!.setMarkdown(markwon!!, "本次任务没有反馈")
+                markwonAdapter!!.setMarkdown(markwon!!, "No feedback for this task")
                 markwonAdapter?.notifyDataSetChanged()
                 scrollToBottom()
             }
@@ -172,14 +172,14 @@ class SummarizerActivity :
 
     private fun scrollToBottom() {
         if (userScrolledUp) {
-            // 用户已向上滚动，不自动滚动到底部
+
             return
         }
         if (markwonAdapter != null && markwonAdapter?.itemCount!! > 0) {
-            // 先直接滚动到底部
+
             val lastPosition = markwonAdapter?.itemCount?.minus(1)
             binding.rvSummarizerContent.scrollToPosition(lastPosition!!)
-            // 使用 post 延迟确保滚动生效
+
             binding.rvSummarizerContent.post {
                 val layoutManager =
                     binding.rvSummarizerContent.layoutManager as LinearLayoutManager?
@@ -193,8 +193,8 @@ class SummarizerActivity :
             binding.layoutStatusBadge.visibility = VISIBLE
             val isSuccess = "SUCCEED" == executionResult
             binding.tvStatus.text =
-                if ("SUCCEED" == executionResult) "执行成功" else if ("CANCELLED" == executionResult) "取消执行" else "执行失败"
-            // 更新状态文本和颜色
+                if ("SUCCEED" == executionResult) "Execution Succeeded" else if ("CANCELLED" == executionResult) "Execution Cancelled" else "Execution Failed"
+
             if (isSuccess) {
                 binding.tvStatus.setTextColor("#059669".toColorInt())
                 binding.layoutStatusBadge.setBackgroundResource(R.drawable.bg_status_success)
@@ -215,14 +215,14 @@ class SummarizerActivity :
             val extra = Gson().fromJson(extraStr.toString(), Extra::class.java)
             if (extra == null || extra.extraResult == null) {
                 isSuccess = false
-                binding.tvStatus.text = "取消执行"
+                binding.tvStatus.text = "Execution Cancelled"
             } else {
                 if (extra.extraResult?.success == true) {
                     isSuccess = true
-                    binding.tvStatus.text = "执行成功"
+                    binding.tvStatus.text = "Execution Succeeded"
                 } else {
                     isSuccess = false
-                    binding.tvStatus.text = "执行失败"
+                    binding.tvStatus.text = "Execution Failed"
                 }
             }
         }
@@ -249,11 +249,11 @@ class SummarizerActivity :
                             visibility = VISIBLE
                         }
                         TaskCenter.isSummarizing = false
-                        // 从 DB 拉取最终版总结（防止 WS 丢包导致内容不完整）
+
                         TaskCenter.executionId?.let { execId ->
                             presenter?.getTaskExecutionsSummarizer(execId)
                         }
-                        MessageController.cancelNetConnection("总结页流式完成")
+                        MessageController.cancelNetConnection("Summary page stream finished")
                     } else {
                         binding.loadingContainer.visibility = GONE
                         binding.imgLoading.clearAnimation()
@@ -276,13 +276,13 @@ class SummarizerActivity :
         TaskCenter.isSummarizing = true
         presenter = SummarizerPresenter(this)
         from = intent.getStringExtra("from")
-        // 接收新的参数
+
         taskId = intent.getStringExtra("id")
         taskName = intent.getStringExtra("taskName")
         historyId = intent.getStringExtra("historyId")
         timeText = intent.getStringExtra("timeText")
         executionResult = intent.getStringExtra("executionResult")
-        // 如果 TaskCenter.executionId 为空，就用传进来的id
+
         if (TaskCenter.executionId == null && taskId != null) {
             TaskCenter.executionId = taskId?.toIntOrNull()
         }
@@ -294,8 +294,8 @@ class SummarizerActivity :
 
     override fun onDestroy() {
         super.onDestroy()
-        // 仅清理 socket 连接，不再重复调用 cancel API（cancel 已由 SummarizerPresenter 发起）
-        MessageController.cancelNetConnection("总结页销毁")
+
+        MessageController.cancelNetConnection("Summary page destroyed")
         TaskCenter.isSummarizing = false
     }
 
@@ -313,9 +313,9 @@ class SummarizerActivity :
         )
         if (duration != null) {
             binding.tvTimeInfo.text =
-                "耗时:${calculateDuration(result?.startedAt, result?.finishedAt)}"
+                "Duration: ${calculateDuration(result?.startedAt, result?.finishedAt)}"
         } else {
-            binding.tvTimeInfo.text = "未知时长"
+            binding.tvTimeInfo.text = "Unknown duration"
         }
 
         result?.let {
@@ -326,7 +326,7 @@ class SummarizerActivity :
                     }
                     markwonAdapter!!.setMarkdown(
                         markwon!!,
-                        it.executionResultSummary ?: "本次任务没有反馈"
+                        it.executionResultSummary ?: "No feedback for this task"
                     )
                     markwonAdapter?.notifyDataSetChanged()
                 }
@@ -340,10 +340,10 @@ class SummarizerActivity :
         val adapter = recyclerView.adapter ?: return
         showExportLoading()
         val document = PdfDocument()
-        val pageWidth = 595  // A4 标准宽度
-        val pageHeight = 842 // A4 标准高度
-        val contentWidth = pageWidth - (2 * 20) // 实际绘制内容的宽度
-        var currentHeight = 20 // 初始高度从顶部内边距开始
+        val pageWidth = 595
+        val pageHeight = 842
+        val contentWidth = pageWidth - (2 * 20)
+        var currentHeight = 20
         var pageNumber = 1
         var pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNumber).create()
         var page = document.startPage(pageInfo)
@@ -353,13 +353,13 @@ class SummarizerActivity :
                 val holder = adapter.createViewHolder(recyclerView, adapter.getItemViewType(i))
                 adapter.onBindViewHolder(holder, i)
                 val itemView = holder.itemView
-                // 1. 测量：减去左右边距，确保内容不会溢出
+
                 val widthSpec =
                     View.MeasureSpec.makeMeasureSpec(contentWidth, View.MeasureSpec.EXACTLY)
                 val heightSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
                 itemView.measure(widthSpec, heightSpec)
                 itemView.layout(0, 0, itemView.measuredWidth, itemView.measuredHeight)
-                // 2. 检查分页：当前高度 + 当前条目高度 + 底部边距 是否超过页面高度
+
                 if (currentHeight + itemView.measuredHeight + 20 > pageHeight) {
                     document.finishPage(page)
                     pageNumber++
@@ -367,9 +367,9 @@ class SummarizerActivity :
                         PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNumber).create()
                     page = document.startPage(pageInfo)
                     canvas = page.canvas
-                    currentHeight = 20 // 新页面从顶部边距开始
+                    currentHeight = 20
                 }
-                // 3. 绘制：平移 Canvas 到内边距位置
+
                 canvas.save()
                 canvas.translate(20.toFloat(), currentHeight.toFloat())
                 itemView.draw(canvas)
@@ -379,10 +379,10 @@ class SummarizerActivity :
             document.finishPage(page)
             FileOutputStream(pdfFile).use { document.writeTo(it) }
             shareOrOpenPdf(pdfFile, pdfFile.name)
-            Toast.makeText(this, "PDF 已下载", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "PDF downloaded", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             e.printStackTrace()
-            Toast.makeText(this, "PDF 导出失败，请重试", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "PDF export failed. Please try again.", Toast.LENGTH_SHORT).show()
         } finally {
             document.close()
             hideExportLoading()
@@ -395,7 +395,7 @@ class SummarizerActivity :
             progressBar.isIndeterminate = true
             exportLoadingDialog = AlertDialog.Builder(this)
                 .setView(progressBar)
-                .setMessage("正在导出 PDF...")
+                .setMessage("Exporting PDF...")
                 .setCancelable(false)
                 .create()
         }
@@ -419,11 +419,10 @@ class SummarizerActivity :
             putExtra(Intent.EXTRA_STREAM, uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        startActivity(Intent.createChooser(intent, "保存或分享 PDF"))
+        startActivity(Intent.createChooser(intent, "Save or share PDF"))
     }
 
     /**
-     * 设置 Markdown 渲染器
      */
     @RequiresApi(Build.VERSION_CODES.O)
     private fun setupMarkdown() {
@@ -504,7 +503,7 @@ class SummarizerActivity :
             .usePlugin(MovementMethodPlugin.create(TableAwareMovementMethod.create()))
             .usePlugin(ParagraphLineHeightPlugin(lineHeightPx.toInt()))
             .build()
-        // 创建 MarkwonAdapter
+        // Create MarkwonAdapter
         val adapterBuilder = MarkwonAdapter.builder(R.layout.adapter_node, R.id.text_view)
         val simpleEntry = XMNotTableEntry(R.layout.adapter_fenced_code_block, R.id.text)
         markwonAdapter = adapterBuilder
@@ -527,7 +526,7 @@ class SummarizerActivity :
         binding.rvSummarizerContent.adapter = markwonAdapter
         binding.rvSummarizerContent.itemAnimator = null
         binding.rvSummarizerContent.isNestedScrollingEnabled = false
-        // 添加滚动监听器，检测用户是否向上滚动或向下滚动到底部
+
         binding.rvSummarizerContent.addOnScrollListener(object :
             RecyclerView.OnScrollListener() {
             override fun onScrolled(
@@ -536,16 +535,16 @@ class SummarizerActivity :
                 dy: Int
             ) {
                 super.onScrolled(recyclerView, dx, dy)
-                // 如果 dy < 0，说明用户向上滚动
+
                 if (dy < 0) {
                     userScrolledUp = true
                 }
-                // 检查是否滚动到底部
+
                 val layoutManager = recyclerView.layoutManager as LinearLayoutManager?
                 if (layoutManager != null) {
                     val lastVisiblePosition = layoutManager.findLastVisibleItemPosition()
                     val totalItemCount = layoutManager.itemCount
-                    // 如果最后一个可见的 item 是最后一个 item，说明已滚动到底部
+
                     if (lastVisiblePosition >= totalItemCount - 1) {
                         userScrolledUp = false
                     }

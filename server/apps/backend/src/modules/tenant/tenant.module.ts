@@ -4,8 +4,6 @@ import { TenantController } from "./tenant.controller";
 import { TenantService } from "./tenant.service";
 
 /**
- * 租户模块
- * 提供租户验证、订阅状态查询等功能
  */
 @Module({
 	imports: [LogModule],

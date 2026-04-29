@@ -95,7 +95,7 @@ class TaskSelectFragment : BottomSheetDialogFragment() {
                     val behavior = BottomSheetBehavior.from<View?>(bottomSheet)
                     behavior.skipCollapsed = true
                     behavior.setState(BottomSheetBehavior.STATE_EXPANDED)
-                    // 禁止通过手指下滑关闭对话框
+
                     behavior.isDraggable = false
                 }
             }

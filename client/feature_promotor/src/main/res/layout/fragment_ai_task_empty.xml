@@ -35,7 +35,7 @@
             android:layout_marginTop="52dp"
             android:layout_marginEnd="27dp"
             android:gravity="center"
-            android:text="你可以这样命令"
+            android:text="Try commands like these"
             android:textColor="#99000000"
             android:textSize="14sp" />
 

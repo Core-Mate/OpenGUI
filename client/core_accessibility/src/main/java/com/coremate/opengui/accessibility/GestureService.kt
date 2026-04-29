@@ -46,30 +46,29 @@ class GestureService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         instance = this
-//        scope.launch { AutomationEventBus.publish(AutomationEvent.StatusUpdate("AI: 无障碍服务已连接")) }
+//        scope.launch { AutomationEventBus.publish(AutomationEvent.StatusUpdate("AI: Accessibility service connected")) }
         statusBarHeight = getStatusBarHeight()
         logger.info("GestureService", "Accessibility service connected.")
-        LogManager.saveLog(applicationContext, "GestureService", "无障碍服务已连接", TaskCenter.executionId?:-1)
+        LogManager.saveLog(applicationContext, "GestureService", "Accessibility service connected", TaskCenter.executionId?:-1)
     }
 
     override fun onLowMemory() {
         super.onLowMemory()
-        LogManager.saveLog(applicationContext, "GestureService", "无障碍服务  onLowMemory", TaskCenter.executionId?:-1)
+        LogManager.saveLog(applicationContext, "GestureService", "Accessibility service onLowMemory", TaskCenter.executionId?:-1)
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
-        LogManager.saveLog(applicationContext, "GestureService", "无障碍服务  onUnbind", TaskCenter.executionId?:-1)
-        Toast.makeText(this@GestureService,"无障碍服务 Unbind", Toast.LENGTH_SHORT).show()
+        LogManager.saveLog(applicationContext, "GestureService", "Accessibility service onUnbind", TaskCenter.executionId?:-1)
+        Toast.makeText(this@GestureService,"Accessibility service unbound", Toast.LENGTH_SHORT).show()
         return super.onUnbind(intent)
     }
 
     /**
-     * 获取状态栏高度的方法。
-     * @return 状态栏高度（像素），如果无法获取则返回 0。
+     * Returns the status bar height in pixels, or 0 if it cannot be resolved.
      */
     fun getStatusBarHeight(): Int {
         if (statusBarHeight != -1) {
-            return statusBarHeight // 使用缓存值
+            return statusBarHeight
         }
         var result = 0
         val resourceId = resources.getIdentifier("status_bar_height", "dimen", "android")
@@ -111,16 +110,16 @@ class GestureService : AccessibilityService() {
     override fun onInterrupt() {
 //        instance = null
         HapticFeedbackHelper.vibrate(this, 3000)
-        LogManager.saveLog(applicationContext, "GestureService", "无障碍服务  onInterrupt,系统希望收回无障碍权限", TaskCenter.executionId?:-1)
-        Toast.makeText(this@GestureService,"无障碍服务被中断", Toast.LENGTH_SHORT).show()
+        LogManager.saveLog(applicationContext, "GestureService", "Accessibility service interrupted; the system may revoke the permission", TaskCenter.executionId?:-1)
+        Toast.makeText(this@GestureService,"Accessibility service interrupted", Toast.LENGTH_SHORT).show()
     }
 
     override fun onDestroy() {
         HapticFeedbackHelper.vibrate(this, 3000)
 //        instance = null
-        scope.launch { AutomationEventBus.publish(AutomationEvent.StatusUpdate("退出APP")) }
-        LogManager.saveLog(applicationContext, "GestureService", "无障碍服务  onDestroy   ${Thread.currentThread().name}", TaskCenter.executionId?:-1)
-        Toast.makeText(this@GestureService,"无障碍服务被销毁", Toast.LENGTH_SHORT).show()
+        scope.launch { AutomationEventBus.publish(AutomationEvent.StatusUpdate("Exit app")) }
+        LogManager.saveLog(applicationContext, "GestureService", "Accessibility service onDestroy ${Thread.currentThread().name}", TaskCenter.executionId?:-1)
+        Toast.makeText(this@GestureService,"Accessibility service destroyed", Toast.LENGTH_SHORT).show()
         super.onDestroy()
     }
 
@@ -215,7 +214,7 @@ class GestureService : AccessibilityService() {
      */
     fun performTypeText(text: String): Boolean {
         // Get the root node of the current window
-        logger.info("GestureService", "Attempting to type text: '$text'") // 每次调用时记录
+        logger.info("GestureService", "Attempting to type text: '$text'")
         val rootNode = rootInActiveWindow
         if (rootNode == null) {
             logger.error(
@@ -228,7 +227,7 @@ class GestureService : AccessibilityService() {
 
         var editableNode: AccessibilityNodeInfo? = null
 
-        // 尝试查找当前具有输入焦点的节点
+        // Try the currently focused input node first.
         val focusedNode = rootNode.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
         if (focusedNode != null) {
             logger.debug(
@@ -254,33 +253,32 @@ class GestureService : AccessibilityService() {
             )
         }
 
-        // 回退逻辑：如果未找到焦点节点或焦点节点不可编辑，则遍历所有节点查找可编辑节点
+        // Fall back to scanning all nodes when the focused node is missing or not editable.
         if (editableNode == null) {
             val queue: Queue<AccessibilityNodeInfo> = LinkedList()
             queue.add(rootNode)
-            val visitedNodes = mutableSetOf<AccessibilityNodeInfo>() // 避免循环引用和重复访问
+            val visitedNodes = mutableSetOf<AccessibilityNodeInfo>()
 
             while (queue.isNotEmpty()) {
                 val node = queue.poll()
                 if (node != null && !visitedNodes.contains(node)) {
-                    visitedNodes.add(node) // 标记为已访问
+                    visitedNodes.add(node)
 
-                    // 检查节点是否可编辑并且支持 ACTION_SET_TEXT 动作
-                    // ACTION_SET_TEXT 动作需要通过 performAction 来判断其可用性，如果其enabled属性为false，则performAction会返回false
+                    // Check whether the node is editable and supports ACTION_SET_TEXT.
                     val canSetText =
                         node.actionList?.any { it.id == AccessibilityNodeInfo.ACTION_SET_TEXT }
                             ?: false
 
-                    if (node.isEditable && canSetText) { // 增加检查 actionList
+                    if (node.isEditable && canSetText) {
                         editableNode = node
                         logger.debug(
                             "GestureService",
                             "performTypeText: Found editable node by traversal: $node, Text: ${node.text}"
                         )
-                        break // 找到一个可编辑节点，停止搜索
+                        break
                     }
 
-                    // 遍历子节点
+                    // Traverse child nodes.
                     for (i in 0 until node.childCount) {
                         val child = node.getChild(i)
                         if (child != null) {
@@ -304,7 +302,7 @@ class GestureService : AccessibilityService() {
             putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
         }
 
-        // 尝试执行 ACTION_SET_TEXT
+        // Try ACTION_SET_TEXT.
         val performResult =
             editableNode.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, arguments)
         if (performResult) {
@@ -346,7 +344,7 @@ class GestureService : AccessibilityService() {
                         continuation.resume(bitmap)
                         LogManager.saveLog(
                             applicationContext, "ActionExecutor",
-                            "无障碍服务   Captured bitmap success", TaskCenter.executionId?:-1
+                            "Accessibility service captured bitmap successfully", TaskCenter.executionId?:-1
                         )
                         hardwareBuffer.close()
                     }
@@ -355,7 +353,7 @@ class GestureService : AccessibilityService() {
                         // On failure, print an error and resume with null.
                         LogManager.saveLog(
                             applicationContext, "ActionExecutor",
-                            "无障碍服务  Screen capture failed with error code: $errorCode", TaskCenter.executionId?:-1
+                            "Accessibility service screen capture failed with error code: $errorCode", TaskCenter.executionId?:-1
                         )
                         continuation.resume(null)
                     }
@@ -366,7 +364,7 @@ class GestureService : AccessibilityService() {
             continuation.invokeOnCancellation { throwable ->
                 LogManager.saveLog(
                     applicationContext, "ActionExecutor",
-                    "无障碍服务 Screen capture was cancelled: ${throwable?.message}", TaskCenter.executionId?:-1
+                    "Accessibility service screen capture was cancelled: ${throwable?.message}", TaskCenter.executionId?:-1
                 )
                 System.err.println("Screen capture was cancelled: ${throwable?.message}")
             }

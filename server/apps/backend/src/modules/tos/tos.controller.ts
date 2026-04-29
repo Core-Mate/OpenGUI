@@ -27,7 +27,6 @@ export class TosController {
 	constructor(private readonly tosService: TosService) {}
 
 	/**
-	 * 上传文件
 	 */
 	@Post("upload")
 	@UseInterceptors(FileInterceptor("file"))
@@ -38,7 +37,7 @@ export class TosController {
 		if (!file) {
 			return {
 				success: false,
-				error: "请选择要上传的文件",
+				error: "Select a file to upload",
 			};
 		}
 
@@ -52,14 +51,13 @@ export class TosController {
 	}
 
 	/**
-	 * 上传Base64图片
 	 */
 	@Post("upload-base64")
 	async uploadBase64(@Body() dto: UploadBase64Dto) {
 		if (!dto.base64) {
 			return {
 				success: false,
-				error: "Base64数据不能为空",
+				error: "Base64 data cannot be empty",
 			};
 		}
 
@@ -73,7 +71,6 @@ export class TosController {
 	}
 
 	/**
-	 * 上传图片到 'chat-api' 桶，并返回公共URL
 	 */
 	@Post("upload-chat-image")
 	@UseInterceptors(FileInterceptor("file"))
@@ -84,7 +81,7 @@ export class TosController {
 		if (!file) {
 			return {
 				success: false,
-				error: "请选择要上传的图片文件",
+				error: "Select an image file to upload",
 			};
 		}
 
@@ -98,7 +95,6 @@ export class TosController {
 	}
 
 	/**
-	 * 获取图片（返回图片数据）
 	 */
 	@Get("image/:key")
 	async getImage(
@@ -116,19 +112,18 @@ export class TosController {
 			} else {
 				res.status(HttpStatus.NOT_FOUND).json({
 					success: false,
-					error: result.error || "图片未找到",
+					error: result.error || "Image not found",
 				});
 			}
 		} catch (error) {
 			res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
 				success: false,
-				error: error.message || "获取图片失败",
+				error: error.message || "Failed to fetch image",
 			});
 		}
 	}
 
 	/**
-	 * 获取图片的Base64编码
 	 */
 	@Get("image-base64/:key")
 	async getImageBase64(
@@ -140,14 +135,13 @@ export class TosController {
 	}
 
 	/**
-	 * 根据URL获取图片的Base64编码
 	 */
 	@Get("image-base64-by-url")
 	async getImageBase64ByUrl(@Query() dto: GetImageByUrlDto) {
 		if (!dto.url) {
 			return {
 				success: false,
-				error: "URL参数不能为空",
+				error: "URL parameter cannot be empty",
 			};
 		}
 
@@ -156,7 +150,6 @@ export class TosController {
 	}
 
 	/**
-	 * 删除图片
 	 */
 	@Delete("image/:key")
 	async deleteImage(
@@ -168,7 +161,6 @@ export class TosController {
 	}
 
 	/**
-	 * 获取图片的公共URL
 	 */
 	@Get("public-url/:key")
 	async getPublicUrl(
@@ -183,7 +175,6 @@ export class TosController {
 	}
 
 	/**
-	 * 获取图片的预签名URL
 	 */
 	@Get("signed-url/:key")
 	async getSignedUrl(
@@ -201,13 +192,12 @@ export class TosController {
 		} catch (error) {
 			return {
 				success: false,
-				error: error.message || "生成预签名URL失败",
+				error: error.message || "Failed to generate presigned URL",
 			};
 		}
 	}
 
 	/**
-	 * 检查TOS连接状态
 	 */
 	@Get("health")
 	async checkHealth(@Query("bucket") bucket?: string) {
@@ -216,7 +206,6 @@ export class TosController {
 	}
 
 	/**
-	 * 上传日志文件
 	 */
 	@Post("upload-log")
 	@UseInterceptors(FileInterceptor("file"))
@@ -225,31 +214,31 @@ export class TosController {
 		@Body("user_device_log_id") logIdStr: string,
 	) {
 		const userId = DEFAULT_USER_ID;
-		// 1. 验证文件
+
 		if (!file) {
-			throw new BadRequestException("请选择要上传的日志文件");
+			throw new BadRequestException("Select a log file to upload");
 		}
 
-		// 2. 验证 user_device_log_id
+
 		if (!logIdStr) {
-			throw new BadRequestException("user_device_log_id 不能为空");
+			throw new BadRequestException("user_device_log_id cannot be empty");
 		}
 
 		const logId = parseInt(logIdStr, 10);
 		if (isNaN(logId)) {
-			throw new BadRequestException("user_device_log_id 格式错误，必须是数字");
+			throw new BadRequestException("user_device_log_id format is invalid. It must be a number.");
 		}
 
-		// 3. 查询 user_device_log 记录
+
 		const userDeviceLog = await prisma.user_device_log.findUnique({
 			where: { id: logId },
 		});
 
 		if (!userDeviceLog) {
-			throw new NotFoundException(`日志记录不存在，ID: ${logId}`);
+			throw new NotFoundException(`Log record not found，ID: ${logId}`);
 		}
 
-		// 4. 更新 log_status 为 uploading
+
 		await prisma.user_device_log.update({
 			where: { id: logId },
 			data: {
@@ -259,7 +248,7 @@ export class TosController {
 		});
 
 		try {
-			// 5. 上传文件到 TOS
+
 			const uploadResult = await this.tosService.uploadLogFile(
 				file.buffer,
 				file.originalname,
@@ -268,7 +257,7 @@ export class TosController {
 			);
 
 			if (!uploadResult.success) {
-				// 上传失败，更新状态为 failed
+
 				await prisma.user_device_log.update({
 					where: { id: logId },
 					data: {
@@ -279,11 +268,11 @@ export class TosController {
 
 				return {
 					success: false,
-					error: uploadResult.error || "文件上传失败",
+					error: uploadResult.error || "File upload failed",
 				};
 			}
 
-			// 6. 上传成功，更新 user_device_log 的 log_uri 和 log_status
+
 			await prisma.user_device_log.update({
 				where: { id: logId },
 				data: {
@@ -297,10 +286,10 @@ export class TosController {
 				success: true,
 				url: uploadResult.url,
 				key: uploadResult.key,
-				message: "日志文件上传成功",
+				message: "Log file uploaded successfully",
 			};
 		} catch (error) {
-			// 发生异常，更新状态为 failed
+
 			await prisma.user_device_log.update({
 				where: { id: logId },
 				data: {

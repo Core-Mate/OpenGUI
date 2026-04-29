@@ -19,7 +19,7 @@ class PreviewSquareTaskActivity() :
             }
         }
         binding.tvSuccessRate.text = "$successRate %"
-        binding.tvExecuteTime.text = "~10 分钟"
+        binding.tvExecuteTime.text = "~10 min"
         binding.tvTitle.text = data?.taskName
         binding.tvPrompt.text = data?.taskDescription
     }

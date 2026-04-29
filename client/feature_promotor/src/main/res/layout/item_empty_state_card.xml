@@ -10,6 +10,6 @@
     android:layout_marginEnd="27dp"
     android:background="@drawable/index_sug_bg"
     android:gravity="center"
-    android:text="打开小红书发布三条评论"
+    android:text="Open Xiaohongshu and post three comments"
     android:textColor="#000000"
     android:textSize="14sp" />

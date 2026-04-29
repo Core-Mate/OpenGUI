@@ -18,7 +18,7 @@ import {
     AppConfigResponseDto,
 } from './dto/app-config.dto'
 
-@ApiTags('客户端配置')
+@ApiTags('Client Configuration')
 @Controller('app-config')
 export class AppConfigController {
     constructor(
@@ -29,21 +29,21 @@ export class AppConfigController {
     }
 
     /**
-     * 获取所有 active 配置（扁平 map）
+     * Get all active configs as a flat map
      */
     @Get()
     @HttpCode(HttpStatus.OK)
     @ApiOperation({
-        summary: '获取所有客户端配置',
-        description: '返回所有激活状态的客户端配置，以 key-value 扁平 map 形式返回',
+        summary: 'Get all client configuration values',
+        description: 'Returns all active client configuration values as a flat key-value map.',
     })
     @ApiResponse({
         status: HttpStatus.OK,
-        description: '获取成功',
+        description: 'Success',
         type: AppConfigListResponseDto,
     })
     async getAllConfigs(): Promise<AppConfigListResponseDto> {
-        this.logger.log('获取所有客户端配置')
+        this.logger.log('Getting all client configuration values')
         const configs = await this.appConfigService.getAllActiveConfigs()
 
         return {
@@ -53,22 +53,22 @@ export class AppConfigController {
     }
 
     /**
-     * 按 key 获取单个 active 配置
+     * Get one active config by key
      */
     @Get(':key')
     @HttpCode(HttpStatus.OK)
     @ApiOperation({
-        summary: '按 key 获取客户端配置',
-        description: '根据配置 key 获取单个激活状态的客户端配置',
+        summary: 'Get a client configuration value by key',
+        description: 'Returns one active client configuration value by configuration key.',
     })
-    @ApiParam({ name: 'key', description: '配置 Key' })
+    @ApiParam({ name: 'key', description: 'Config key' })
     @ApiResponse({
         status: HttpStatus.OK,
-        description: '获取成功',
+        description: 'Success',
         type: AppConfigResponseDto,
     })
     async getConfigByKey(@Param('key') key: string): Promise<AppConfigResponseDto> {
-        this.logger.log(`获取客户端配置: ${key}`)
+        this.logger.log(`Getting client configuration: ${key}`)
         const config = await this.appConfigService.getConfigByKey(key)
 
         if (!config) {

@@ -21,7 +21,6 @@ import {
 /**
  * Skill Service
  *
- * 提供 Skill 的 CRUD 操作
  */
 @Injectable()
 export class SkillService {
@@ -34,12 +33,12 @@ export class SkillService {
 	) {}
 
 	/**
-	 * 创建 Skill
+	 * Create Skill
 	 */
 	async create(dto: CreateSkillDTO): Promise<SkillDTO> {
 		const tenantId = dto.tenantId ?? -1;
 
-		// 检查同租户下是否存在同名 Skill
+
 		const existing = await this.prismaService.skill.findFirst({
 			where: {
 				name: dto.name,
@@ -71,17 +70,17 @@ export class SkillService {
 
 		this.logger.log(`Created skill ${skill.id}: ${skill.name}`);
 
-		// 清除相关缓存
+
 		this.invalidateCacheForNodeTypes(dto.nodeTypes);
 
-		// 同步到文件系统
+
 		this.triggerSkillSync();
 
 		return this.mapToDTO(skill);
 	}
 
 	/**
-	 * 获取单个 Skill
+	 * Get one Skill
 	 */
 	async findById(id: number): Promise<SkillDTO | null> {
 		const skill = await this.prismaService.skill.findFirst({
@@ -99,14 +98,13 @@ export class SkillService {
 	}
 
 	/**
-	 * 获取 Skill 列表（支持分页和筛选）
 	 */
 	async findAll(params: SkillListParams): Promise<SkillListResponse> {
 		const page = params.page || 1;
 		const pageSize = params.pageSize || 20;
 		const skip = (page - 1) * pageSize;
 
-		// 构建查询条件
+
 		const where: any = {
 			is_deleted: false,
 		};
@@ -159,7 +157,6 @@ export class SkillService {
 	}
 
 	/**
-	 * 更新 Skill
 	 */
 	async update(id: number, dto: UpdateSkillDTO): Promise<SkillDTO> {
 		const existing = await this.prismaService.skill.findFirst({
@@ -212,20 +209,19 @@ export class SkillService {
 
 		this.logger.log(`Updated skill ${id}: ${skill.name}`);
 
-		// 清除相关缓存
+
 		const nodeTypes = dto.nodeTypes
 			? dto.nodeTypes
 			: fromDbSkillNodeTypes(existing.node_types);
 		this.invalidateCacheForNodeTypes(nodeTypes);
 
-		// 同步到文件系统
+
 		this.triggerSkillSync();
 
 		return this.mapToDTO(skill);
 	}
 
 	/**
-	 * 软删除 Skill
 	 */
 	async delete(id: number): Promise<void> {
 		const existing = await this.prismaService.skill.findFirst({
@@ -249,15 +245,14 @@ export class SkillService {
 
 		this.logger.log(`Deleted skill ${id}: ${existing.name}`);
 
-		// 清除相关缓存
+
 		this.invalidateCacheForNodeTypes(fromDbSkillNodeTypes(existing.node_types));
 
-		// 同步到文件系统
+
 		this.triggerSkillSync();
 	}
 
 	/**
-	 * 切换激活状态
 	 */
 	async toggleActive(id: number): Promise<SkillDTO> {
 		const existing = await this.prismaService.skill.findFirst({
@@ -283,17 +278,16 @@ export class SkillService {
 			`Toggled skill ${id} active status: ${existing.is_active} -> ${skill.is_active}`,
 		);
 
-		// 清除相关缓存
+
 		this.invalidateCacheForNodeTypes(fromDbSkillNodeTypes(existing.node_types));
 
-		// 同步到文件系统
+
 		this.triggerSkillSync();
 
 		return this.mapToDTO(skill);
 	}
 
 	/**
-	 * 映射数据库记录到 DTO
 	 */
 	private mapToDTO(skill: any): SkillDTO {
 		return {
@@ -313,7 +307,6 @@ export class SkillService {
 	}
 
 	/**
-	 * 清除指定 node 类型的缓存
 	 */
 	private invalidateCacheForNodeTypes(nodeTypes: SkillNodeType[]): void {
 		for (const nodeType of nodeTypes) {
@@ -322,7 +315,6 @@ export class SkillService {
 	}
 
 	/**
-	 * 触发 Skill 文件系统同步（异步，失败只记录日志不阻塞 CRUD）
 	 */
 	private triggerSkillSync(): void {
 		this.skillSyncService.syncAllSkills().catch((error) => {

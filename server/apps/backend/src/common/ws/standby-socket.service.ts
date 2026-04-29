@@ -3,17 +3,13 @@ import { AppLogger } from "../log";
 import type { StandbySocket } from "./types";
 
 /**
- * 设备待命注册表
  *
- * 管理通过 /standby namespace 连接的待命设备。
- * 使用内存 Map（与 ExecutionSocketService 同理：dispatch 需要直接 socket 引用）。
  */
 @Injectable()
 export class StandbySocketService implements OnModuleDestroy {
 	/** deviceId → socket */
 	private readonly devices = new Map<string, StandbySocket>();
 
-	/** socketId → deviceId（反向索引） */
 	private readonly socketToDevice = new Map<string, string>();
 
 	constructor(private readonly logger: AppLogger) {
@@ -26,14 +22,13 @@ export class StandbySocketService implements OnModuleDestroy {
 	}
 
 	/**
-	 * 注册待命设备
 	 */
 	registerDevice(
 		deviceId: string,
 		socket: StandbySocket,
 		deviceName?: string,
 	): void {
-		// 如果同一设备已有旧连接，先断开
+
 		if (this.devices.has(deviceId)) {
 			const old = this.devices.get(deviceId)!;
 			this.logger.warn(
@@ -60,7 +55,6 @@ export class StandbySocketService implements OnModuleDestroy {
 	}
 
 	/**
-	 * 移除待命设备
 	 */
 	unregisterDevice(socketId: string): string | undefined {
 		const deviceId = this.socketToDevice.get(socketId);
@@ -73,7 +67,6 @@ export class StandbySocketService implements OnModuleDestroy {
 	}
 
 	/**
-	 * 获取一台在线待命设备（单用户模式下取第一台）
 	 */
 	getOnlineDevice(): StandbySocket | null {
 		for (const [, socket] of this.devices) {
@@ -83,7 +76,6 @@ export class StandbySocketService implements OnModuleDestroy {
 	}
 
 	/**
-	 * 获取所有在线设备信息
 	 */
 	getOnlineDevices(): Array<{
 		deviceId: string;
@@ -99,7 +91,6 @@ export class StandbySocketService implements OnModuleDestroy {
 	}
 
 	/**
-	 * 检查是否有设备在线
 	 */
 	hasOnlineDevice(): boolean {
 		return this.getOnlineDevice() !== null;

@@ -2,109 +2,101 @@ import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { IsArray, IsEnum, IsOptional, IsString } from "class-validator";
 
 /**
- * 行业枚举 - 与数据库 UserIndustry 枚举保持一致
  */
 export enum Industry {
-	EDUCATION = "EDUCATION", // 教育培训
-	REAL_ESTATE = "REAL_ESTATE", // 房屋中介
-	INSURANCE = "INSURANCE", // 保险理财
-	MEDICAL_BEAUTY = "MEDICAL_BEAUTY", // 医疗美容
-	AUTO_SALES = "AUTO_SALES", // 汽车销售
-	DECORATION = "DECORATION", // 装修建材
-	FOOD = "FOOD", // 餐饮美食
-	OVERSEAS_STUDY = "OVERSEAS_STUDY", // 留学咨询
-	OTHER = "OTHER", // 其他
+	EDUCATION = "EDUCATION", // Education and Training
+	REAL_ESTATE = "REAL_ESTATE", // Real Estate Agency
+	INSURANCE = "INSURANCE", // Insurance and Finance
+	MEDICAL_BEAUTY = "MEDICAL_BEAUTY", // Medical Aesthetics
+	AUTO_SALES = "AUTO_SALES", // Auto Sales
+	DECORATION = "DECORATION", // Renovation and Building Materials
+	FOOD = "FOOD", // Food and Dining
+	OVERSEAS_STUDY = "OVERSEAS_STUDY", // Study Abroad Consulting
+	OTHER = "OTHER", // Other
 }
 
 /**
- * 行业枚举的中文显示名称映射
  */
 export const IndustryLabels: Record<Industry, string> = {
-	[Industry.EDUCATION]: "教育培训",
-	[Industry.REAL_ESTATE]: "房屋中介",
-	[Industry.INSURANCE]: "保险理财",
-	[Industry.MEDICAL_BEAUTY]: "医疗美容",
-	[Industry.AUTO_SALES]: "汽车销售",
-	[Industry.DECORATION]: "装修建材",
-	[Industry.FOOD]: "餐饮美食",
-	[Industry.OVERSEAS_STUDY]: "留学咨询",
-	[Industry.OTHER]: "其他",
+	[Industry.EDUCATION]: "Education and Training",
+	[Industry.REAL_ESTATE]: "Real Estate Agency",
+	[Industry.INSURANCE]: "Insurance and Finance",
+	[Industry.MEDICAL_BEAUTY]: "Medical Aesthetics",
+	[Industry.AUTO_SALES]: "Auto Sales",
+	[Industry.DECORATION]: "Renovation and Building Materials",
+	[Industry.FOOD]: "Food and Dining",
+	[Industry.OVERSEAS_STUDY]: "Study Abroad Consulting",
+	[Industry.OTHER]: "Other",
 };
 
 /**
- * 用户目标枚举 - 与数据库 UserGoal 枚举保持一致
  */
 export enum UserGoal {
-	SELF_MEDIA_OPERATION = "SELF_MEDIA_OPERATION", // 自媒体账号自动运营
-	EFFICIENT_ACQUISITION = "EFFICIENT_ACQUISITION", // 网络平台高效获客
-	CUSTOMER_CARE = "CUSTOMER_CARE", // 老客户贴心维护
-	DORMANT_USER_ACTIVATION = "DORMANT_USER_ACTIVATION", // 沉睡用户定期激活
-	DATA_REVIEW = "DATA_REVIEW", // 核心数据精准复盘
-	OTHER = "OTHER", // 其他
+	SELF_MEDIA_OPERATION = "SELF_MEDIA_OPERATION", // Automated creator account operations
+	EFFICIENT_ACQUISITION = "EFFICIENT_ACQUISITION", // Efficient lead acquisition on online platforms
+	CUSTOMER_CARE = "CUSTOMER_CARE", // Existing customer care
+	DORMANT_USER_ACTIVATION = "DORMANT_USER_ACTIVATION", // Dormant user activation
+	DATA_REVIEW = "DATA_REVIEW", // Core data review
+	OTHER = "OTHER", // Other
 }
 
 /**
- * 用户目标枚举的中文显示名称映射
  */
 export const UserGoalLabels: Record<UserGoal, string> = {
-	[UserGoal.SELF_MEDIA_OPERATION]: "自媒体账号自动运营",
-	[UserGoal.EFFICIENT_ACQUISITION]: "网络平台高效获客",
-	[UserGoal.CUSTOMER_CARE]: "老客户贴心维护",
-	[UserGoal.DORMANT_USER_ACTIVATION]: "沉睡用户定期激活",
-	[UserGoal.DATA_REVIEW]: "核心数据精准复盘",
-	[UserGoal.OTHER]: "其他",
+	[UserGoal.SELF_MEDIA_OPERATION]: "Automated creator account operations",
+	[UserGoal.EFFICIENT_ACQUISITION]: "Efficient lead acquisition on online platforms",
+	[UserGoal.CUSTOMER_CARE]: "Existing customer care",
+	[UserGoal.DORMANT_USER_ACTIVATION]: "Dormant user activation",
+	[UserGoal.DATA_REVIEW]: "Core data review",
+	[UserGoal.OTHER]: "Other",
 };
 
 /**
- * 目标人群枚举 - 与数据库 TargetAudience 枚举保持一致
  */
 export enum TargetAudience {
-	SMALL_BUSINESS = "SMALL_BUSINESS", // 小微企业主/个体户
-	HIGH_NET_WORTH = "HIGH_NET_WORTH", // 高净值富裕人群
-	MOTHERS = "MOTHERS", // 宝妈/家庭主妇
-	YOUNG_WORKERS = "YOUNG_WORKERS", // 年轻白领
-	ELDERLY = "ELDERLY", // 银发长者
-	NEWLYWEDS = "NEWLYWEDS", // 新婚夫妇
-	OTHER = "OTHER", // 其他
+	SMALL_BUSINESS = "SMALL_BUSINESS", // Small business owners / sole proprietors
+	HIGH_NET_WORTH = "HIGH_NET_WORTH", // High-net-worth individuals
+	MOTHERS = "MOTHERS", // Mothers / homemakers
+	YOUNG_WORKERS = "YOUNG_WORKERS", // Young professionals
+	ELDERLY = "ELDERLY", // Older adults
+	NEWLYWEDS = "NEWLYWEDS", // Newlyweds
+	OTHER = "OTHER", // Other
 }
 
 /**
- * 目标人群枚举的中文显示名称映射
  */
 export const TargetAudienceLabels: Record<TargetAudience, string> = {
-	[TargetAudience.SMALL_BUSINESS]: "小微企业主/个体户",
-	[TargetAudience.HIGH_NET_WORTH]: "高净值富裕人群",
-	[TargetAudience.MOTHERS]: "宝妈/家庭主妇",
-	[TargetAudience.YOUNG_WORKERS]: "年轻白领",
-	[TargetAudience.ELDERLY]: "银发长者",
-	[TargetAudience.NEWLYWEDS]: "新婚夫妇",
-	[TargetAudience.OTHER]: "其他",
+	[TargetAudience.SMALL_BUSINESS]: "Small business owners / sole proprietors",
+	[TargetAudience.HIGH_NET_WORTH]: "High-net-worth individuals",
+	[TargetAudience.MOTHERS]: "Mothers / homemakers",
+	[TargetAudience.YOUNG_WORKERS]: "Young professionals",
+	[TargetAudience.ELDERLY]: "Older adults",
+	[TargetAudience.NEWLYWEDS]: "Newlyweds",
+	[TargetAudience.OTHER]: "Other",
 };
 
 /**
- * 地区信息 DTO
  */
 export class ServiceRegionDto {
-	@ApiProperty({ description: "省份", example: "北京市" })
+	@ApiProperty({ description: "Province", example: "Beijing" })
 	@IsString()
 	province: string;
 
-	@ApiProperty({ description: "城市", example: "北京市" })
+	@ApiProperty({ description: "City", example: "Beijing" })
 	@IsString()
 	city: string;
 
-	@ApiPropertyOptional({ description: "区县", example: "朝阳区" })
+	@ApiPropertyOptional({ description: "District", example: "Chaoyang District" })
 	@IsString()
 	@IsOptional()
 	district?: string;
 }
 
 /**
- * 用户信息收集请求 DTO
  */
 export class OnboardingDto {
 	@ApiProperty({
-		description: "用户目标（多选，最多6个）",
+		description: "User goals (multiple selection, up to 6)",
 		enum: UserGoal,
 		isArray: true,
 		example: [UserGoal.SELF_MEDIA_OPERATION, UserGoal.EFFICIENT_ACQUISITION],
@@ -114,15 +106,15 @@ export class OnboardingDto {
 	goals: UserGoal[];
 
 	@ApiPropertyOptional({
-		description: "目标-其他（当选择其他时填写）",
-		example: "其他目标描述",
+		description: "Goal other value, used when Other is selected",
+		example: "Other goal description",
 	})
 	@IsString()
 	@IsOptional()
 	goalsOther?: string;
 
 	@ApiProperty({
-		description: "所在行业",
+		description: "Industry",
 		enum: Industry,
 		example: Industry.EDUCATION,
 	})
@@ -130,16 +122,16 @@ export class OnboardingDto {
 	industry: Industry;
 
 	@ApiPropertyOptional({
-		description: "行业-其他（当选择其他时填写）",
-		example: "其他行业描述",
+		description: "Industry other value, used when Other is selected",
+		example: "Other industry description",
 	})
 	@IsString()
 	@IsOptional()
 	industryOther?: string;
 
 	@ApiPropertyOptional({
-		description: "产品/服务描述",
-		example: "提供优质的教育培训服务，课程价格实惠",
+		description: "Product or service description",
+		example: "Provides high-quality education and training services at affordable prices",
 	})
 	@IsString()
 	@IsOptional()
@@ -147,41 +139,39 @@ export class OnboardingDto {
 }
 
 /**
- * Onboarding 响应 DTO
  */
 export class OnboardingResponseDto {
-	@ApiProperty({ description: "操作是否成功" })
+	@ApiProperty({ description: "Operation success flag" })
 	success: boolean;
 
-	@ApiProperty({ description: "提示信息" })
+	@ApiProperty({ description: "Message" })
 	message: string;
 }
 
 /**
- * 用户档案响应 DTO
  */
 export class UserProfileResponseDto {
-	@ApiProperty({ description: "用户ID" })
+	@ApiProperty({ description: "User ID" })
 	userId: number;
 
 	@ApiPropertyOptional({
-		description: "用户目标",
+		description: "User goals",
 		type: [String],
 	})
 	goals?: string[];
 
-	@ApiPropertyOptional({ description: "目标-其他" })
+	@ApiPropertyOptional({ description: "Other goals" })
 	goalsOther?: string | null;
 
-	@ApiPropertyOptional({ description: "所在行业", enum: Industry })
+	@ApiPropertyOptional({ description: "Industry", enum: Industry })
 	industry?: Industry | null;
 
-	@ApiPropertyOptional({ description: "行业-其他" })
+	@ApiPropertyOptional({ description: "Other industry" })
 	industryOther?: string | null;
 
-	@ApiPropertyOptional({ description: "产品/服务描述" })
+	@ApiPropertyOptional({ description: "Product or service description" })
 	productInfo?: string | null;
 
-	@ApiProperty({ description: "是否已完成引导" })
+	@ApiProperty({ description: "Whether onboarding is complete" })
 	onboardingCompleted: boolean;
 }

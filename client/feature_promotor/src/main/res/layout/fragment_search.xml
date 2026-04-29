@@ -14,7 +14,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:searchActionInPage="false"
-        app:title="探索" />
+        app:title="Explore" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -24,12 +24,12 @@
         android:paddingTop="8dp"
         android:paddingEnd="24dp"
         android:paddingBottom="16dp"
-        android:text="为你推荐"
+        android:text="Recommended for You"
         android:textColor="#111827"
         android:textSize="20sp"
         android:textStyle="bold" />
 
-    <!--    为你推荐-->
+    <!--    Recommended for You-->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_recommend_list"
         android:layout_width="match_parent"
@@ -54,7 +54,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:letterSpacing="0.01"
-            android:text="任务分类"
+            android:text="Task categories"
             android:textColor="#111827"
             android:textSize="20sp"
             android:textStyle="bold" />

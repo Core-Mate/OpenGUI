@@ -4,7 +4,7 @@
     android:viewportWidth="24"
     android:viewportHeight="24">
 
-    <!-- 左上角 -->
+
     <path
         android:fillColor="@android:color/transparent"
         android:strokeColor="#111827"
@@ -13,7 +13,7 @@
         android:strokeLineJoin="round"
         android:pathData="M8,3 L5,3 L3,5 L3,8" />
 
-    <!-- 右上角 -->
+
     <path
         android:fillColor="@android:color/transparent"
         android:strokeColor="#111827"
@@ -22,7 +22,7 @@
         android:strokeLineJoin="round"
         android:pathData="M21,8 L21,5 L19,3 L16,3" />
 
-    <!-- 左下角 -->
+
     <path
         android:fillColor="@android:color/transparent"
         android:strokeColor="#111827"
@@ -31,7 +31,7 @@
         android:strokeLineJoin="round"
         android:pathData="M3,16 L3,19 L5,21 L8,21" />
 
-    <!-- 右下角 -->
+
     <path
         android:fillColor="@android:color/transparent"
         android:strokeColor="#111827"

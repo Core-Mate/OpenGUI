@@ -9,12 +9,11 @@ import {
 import { PlatformType, TaskCategory } from '../enums/task.enums'
 
 /**
- * 创建模板任务 DTO
  */
 export class CreateTemplateTaskDto {
     @ApiProperty({
-        description: '任务名称',
-        example: '小红书发布动态',
+        description: 'Task name',
+        example: 'Post an update on Xiaohongshu',
         maxLength: 255,
     })
     @IsString()
@@ -22,8 +21,8 @@ export class CreateTemplateTaskDto {
     taskName: string
 
     @ApiProperty({
-        description: '任务描述',
-        example: '在小红书上发布一条关于今天天气很好的动态',
+        description: 'Task description',
+        example: 'Post a short weather update on Xiaohongshu',
         required: false,
     })
     @IsOptional()
@@ -31,7 +30,7 @@ export class CreateTemplateTaskDto {
     taskDescription?: string
 
     @ApiProperty({
-        description: '相关平台列表',
+        description: 'Related platforms',
         enum: PlatformType,
         isArray: true,
         required: false,
@@ -43,7 +42,7 @@ export class CreateTemplateTaskDto {
     relatedPlatforms?: PlatformType[]
 
     @ApiProperty({
-        description: '任务类别',
+        description: 'Task category',
         enum: TaskCategory,
         required: false,
         default: TaskCategory.CUSTOM,
@@ -54,12 +53,11 @@ export class CreateTemplateTaskDto {
 }
 
 /**
- * 更新模板任务 DTO
  */
 export class UpdateTemplateTaskDto {
     @ApiProperty({
-        description: '任务名称',
-        example: '小红书发布动态',
+        description: 'Task name',
+        example: 'Post an update on Xiaohongshu',
         maxLength: 255,
         required: false,
     })
@@ -69,8 +67,8 @@ export class UpdateTemplateTaskDto {
     taskName?: string
 
     @ApiProperty({
-        description: '任务描述',
-        example: '在小红书上发布一条关于今天天气很好的动态',
+        description: 'Task description',
+        example: 'Post a short weather update on Xiaohongshu',
         required: false,
     })
     @IsOptional()
@@ -78,7 +76,7 @@ export class UpdateTemplateTaskDto {
     taskDescription?: string
 
     @ApiProperty({
-        description: '相关平台列表',
+        description: 'Related platforms',
         enum: PlatformType,
         isArray: true,
         required: false,
@@ -90,7 +88,7 @@ export class UpdateTemplateTaskDto {
     relatedPlatforms?: PlatformType[]
 
     @ApiProperty({
-        description: '任务类别',
+        description: 'Task category',
         enum: TaskCategory,
         required: false,
     })
@@ -100,19 +98,18 @@ export class UpdateTemplateTaskDto {
 }
 
 /**
- * 模板任务查询参数 DTO
  */
 export class TemplateTaskQueryDto {
-    @ApiProperty({ description: '页码', required: false, default: 1 })
+    @ApiProperty({ description: 'Page number', required: false, default: 1 })
     @IsOptional()
     page?: number
 
-    @ApiProperty({ description: '每页数量', required: false, default: 20 })
+    @ApiProperty({ description: 'Items per page', required: false, default: 20 })
     @IsOptional()
     pageSize?: number
 
     @ApiProperty({
-        description: '任务类别筛选',
+	        description: 'Task category filter',
         enum: TaskCategory,
         required: false,
     })
@@ -121,7 +118,7 @@ export class TemplateTaskQueryDto {
     category?: TaskCategory
 
     @ApiProperty({
-        description: '平台筛选',
+        description: 'Platform filter',
         enum: PlatformType,
         required: false,
     })
@@ -129,7 +126,7 @@ export class TemplateTaskQueryDto {
     @IsEnum(PlatformType)
     platform?: PlatformType
 
-    @ApiProperty({ description: '搜索关键词', required: false })
+    @ApiProperty({ description: 'Search keyword', required: false })
     @IsOptional()
     @IsString()
     keyword?: string

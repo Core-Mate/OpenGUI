@@ -1,4 +1,4 @@
 <resources>
     <string name="app_name">OpenGUI</string>
-    <string name="accessibility_service_description">此服务用于执行自动化点击任务。</string>
+    <string name="accessibility_service_description">This service performs automated click tasks.</string>
 </resources>

@@ -25,12 +25,12 @@ export class AgentConfigController {
 	constructor(private readonly configService: AgentConfigService) {}
 
 	@Get()
-	@ApiOperation({ summary: "获取配置列表" })
+	@ApiOperation({ summary: "Get config list" })
 	@ApiQuery({ name: "page", required: false, type: Number })
 	@ApiQuery({ name: "pageSize", required: false, type: Number })
 	@ApiQuery({ name: "agentName", required: false, enum: AgentName })
 	@ApiQuery({ name: "search", required: false, type: String })
-	@ApiResponse({ status: 200, description: "成功获取配置列表" })
+	@ApiResponse({ status: 200, description: "Config list retrieved successfully" })
 	async getConfigs(
 		@Query("page") page?: string,
 		@Query("pageSize") pageSize?: string,
@@ -57,9 +57,9 @@ export class AgentConfigController {
 	}
 
 	@Get(":id")
-	@ApiOperation({ summary: "获取单个配置" })
-	@ApiResponse({ status: 200, description: "成功获取配置" })
-	@ApiResponse({ status: 404, description: "配置不存在" })
+	@ApiOperation({ summary: "Get one config" })
+	@ApiResponse({ status: 200, description: "Config retrieved successfully" })
+	@ApiResponse({ status: 404, description: "Config does not exist" })
 	async getConfig(@Param("id", ParseIntPipe) id: number) {
 		const config = await this.configService.getConfigById(id);
 
@@ -74,11 +74,11 @@ export class AgentConfigController {
 	}
 
 	@Post()
-	@ApiOperation({ summary: "创建配置" })
-	@ApiResponse({ status: 201, description: "成功创建配置" })
-	@ApiResponse({ status: 400, description: "参数错误" })
+	@ApiOperation({ summary: "Create config" })
+	@ApiResponse({ status: 201, description: "Config created successfully" })
+	@ApiResponse({ status: 400, description: "Invalid parameters" })
 	async createConfig(@Body() data: CreateAgentConfigDTO) {
-		// 验证必填字段
+
 		if (!data.agentName || !data.configName || !data.systemPrompt) {
 			throw new HttpException(
 				"agentName, configName, systemPrompt are required",
@@ -86,7 +86,7 @@ export class AgentConfigController {
 			);
 		}
 
-		// 验证 agentName 是否有效
+
 		if (!Object.values(AgentName).includes(data.agentName)) {
 			throw new HttpException(
 				`Invalid agentName: ${data.agentName}`,
@@ -103,9 +103,9 @@ export class AgentConfigController {
 	}
 
 	@Patch(":id")
-	@ApiOperation({ summary: "更新配置" })
-	@ApiResponse({ status: 200, description: "成功更新配置" })
-	@ApiResponse({ status: 404, description: "配置不存在" })
+	@ApiOperation({ summary: "Update config" })
+	@ApiResponse({ status: 200, description: "Config updated successfully" })
+	@ApiResponse({ status: 404, description: "Config does not exist" })
 	async updateConfig(
 		@Param("id", ParseIntPipe) id: number,
 		@Body() data: UpdateAgentConfigDTO,
@@ -126,10 +126,10 @@ export class AgentConfigController {
 	}
 
 	@Delete(":id")
-	@ApiOperation({ summary: "删除配置" })
-	@ApiResponse({ status: 200, description: "成功删除配置" })
-	@ApiResponse({ status: 400, description: "无法删除激活的配置" })
-	@ApiResponse({ status: 404, description: "配置不存在" })
+	@ApiOperation({ summary: "Delete config" })
+	@ApiResponse({ status: 200, description: "Config deleted successfully" })
+	@ApiResponse({ status: 400, description: "Cannot delete active config" })
+	@ApiResponse({ status: 404, description: "Config does not exist" })
 	async deleteConfig(@Param("id", ParseIntPipe) id: number) {
 		try {
 			await this.configService.deleteConfig(id);
@@ -150,9 +150,9 @@ export class AgentConfigController {
 	}
 
 	@Post(":id/activate")
-	@ApiOperation({ summary: "激活配置" })
-	@ApiResponse({ status: 200, description: "成功激活配置" })
-	@ApiResponse({ status: 404, description: "配置不存在" })
+	@ApiOperation({ summary: "Activate config" })
+	@ApiResponse({ status: 200, description: "Config activated successfully" })
+	@ApiResponse({ status: 404, description: "Config does not exist" })
 	async activateConfig(@Param("id", ParseIntPipe) id: number) {
 		try {
 			const config = await this.configService.activateConfig(id);
@@ -171,9 +171,9 @@ export class AgentConfigController {
 	}
 
 	@Post(":id/duplicate")
-	@ApiOperation({ summary: "复制配置" })
-	@ApiResponse({ status: 201, description: "成功复制配置" })
-	@ApiResponse({ status: 404, description: "配置不存在" })
+	@ApiOperation({ summary: "Duplicate config" })
+	@ApiResponse({ status: 201, description: "Config duplicated successfully" })
+	@ApiResponse({ status: 404, description: "Config does not exist" })
 	async duplicateConfig(@Param("id", ParseIntPipe) id: number) {
 		try {
 			const config = await this.configService.duplicateConfig(id);

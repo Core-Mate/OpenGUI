@@ -24,7 +24,7 @@
             android:textSize="11sp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            tools:text="暂停中" />
+            tools:text="Paused" />
 
         <TextView
             android:id="@+id/tv_content"
@@ -37,7 +37,7 @@
             android:textSize="16sp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/tv_status"
-            tools:text="正在用 Capcut 剪辑广告视频，准备发布" />
+            tools:text="Editing an ad video in CapCut and preparing to publish" />
 
         <androidx.cardview.widget.CardView
             android:id="@+id/card_pause_resume"
@@ -60,7 +60,7 @@
                 android:layout_marginTop="7.5dp"
                 android:layout_marginEnd="12dp"
                 android:layout_marginBottom="7.5dp"
-                android:text="人工接管"
+                android:text="Take over"
                 android:textColor="#FFFFFF"
                 android:textSize="14sp" />
         </androidx.cardview.widget.CardView>
@@ -86,7 +86,7 @@
                 android:layout_marginTop="7.5dp"
                 android:layout_marginEnd="12dp"
                 android:layout_marginBottom="7.5dp"
-                android:text="补充指令"
+                android:text="Add Instruction"
                 android:textColor="#FFFFFF"
                 android:textSize="14sp" />
         </androidx.cardview.widget.CardView>
@@ -111,7 +111,7 @@
                 android:layout_marginTop="7.5dp"
                 android:layout_marginEnd="12dp"
                 android:layout_marginBottom="7.5dp"
-                android:text="终止"
+                android:text="Stop"
                 android:textColor="#FF0000"
                 android:textSize="14sp" />
         </androidx.cardview.widget.CardView>
@@ -145,7 +145,7 @@
                     android:layout_marginTop="7.5dp"
                     android:layout_marginEnd="12dp"
                     android:layout_marginBottom="7.5dp"
-                    android:text="取消"
+                    android:text="Cancel"
                     android:textColor="#FFFFFF"
                     android:textSize="14sp" />
             </androidx.cardview.widget.CardView>
@@ -170,7 +170,7 @@
                     android:layout_marginTop="7.5dp"
                     android:layout_marginEnd="12dp"
                     android:layout_marginBottom="7.5dp"
-                    android:text="确认"
+                    android:text="Confirm"
                     android:textColor="#FFFFFF"
                     android:textSize="14sp" />
             </androidx.cardview.widget.CardView>
@@ -190,7 +190,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="20dp"
             android:layout_marginTop="20dp"
-            android:text="请补充指令"
+            android:text="Add an instruction"
             android:textColor="#99FFFFFF"
             android:textSize="15sp"
             app:layout_constraintStart_toStartOf="parent"
@@ -207,7 +207,7 @@
             android:minLines="3"
             android:gravity="top|start"
             android:background="@drawable/bg_supplement_input"
-            android:hint="输入补充指令，AI 将记住你的调整"
+            android:hint="Enter an instruction. AI will remember your adjustment."
             android:paddingStart="14dp"
             android:paddingEnd="14dp"
             android:paddingTop="14dp"
@@ -242,7 +242,7 @@
                 android:layout_marginTop="7.5dp"
                 android:layout_marginEnd="12dp"
                 android:layout_marginBottom="7.5dp"
-                android:text="取消"
+                android:text="Cancel"
                 android:textColor="#FFFFFF"
                 android:textSize="14sp" />
         </androidx.cardview.widget.CardView>
@@ -269,7 +269,7 @@
                 android:layout_marginTop="7.5dp"
                 android:layout_marginEnd="12dp"
                 android:layout_marginBottom="7.5dp"
-                android:text="确认补充"
+                android:text="Confirm Instruction"
                 android:textColor="#FFFFFF"
                 android:textSize="14sp" />
         </androidx.cardview.widget.CardView>

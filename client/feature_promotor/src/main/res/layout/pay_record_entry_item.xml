@@ -44,7 +44,7 @@
             android:maxLines="1"
             android:textColor="@color/task_detail_label"
             android:textSize="15sp"
-            tools:text="推文批量定时发布" />
+            tools:text="Batch Scheduled Tweet Posting" />
 
         <TextView
             android:id="@+id/tv_time_range"
@@ -64,7 +64,7 @@
         android:textColor="@color/task_detail_primary_text"
         android:textSize="16sp"
         android:textStyle="bold"
-        tools:text="-0.4积分" />
+        tools:text="-0.4Credits" />
     </LinearLayout>
 
     <View

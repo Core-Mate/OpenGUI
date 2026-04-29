@@ -49,7 +49,7 @@ class PromotorViewModel(application: Application) : AndroidViewModel(application
 
                         Toast.makeText(
                             getApplication(),
-                            "任务已暂停",
+                            "Task paused",
                             Toast.LENGTH_LONG
                         ).show()
                     }
@@ -63,7 +63,7 @@ class PromotorViewModel(application: Application) : AndroidViewModel(application
                     }
 
                     else -> {
-                        // 处理其他 AutomationEvent 类型，如果需要
+
                     }
                 }
             }

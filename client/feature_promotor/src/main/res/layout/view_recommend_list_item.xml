@@ -45,7 +45,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="4dp"
-                    android:text="快速完成"
+                    android:text="Quick finish"
                     android:textColor="#9CA3AF"
                     android:textSize="11sp"
                     android:textStyle="bold" />
@@ -61,7 +61,7 @@
                 android:ellipsize="end"
                 android:lineHeight="23sp"
                 android:maxLines="2"
-                android:text="用豆包生成的海报发布小红书"
+                android:text="Post a Doubao-generated poster to Xiaohongshu"
                 android:textColor="#111827"
                 android:textSize="18sp"
                 android:textStyle="bold" />

@@ -12,16 +12,13 @@ import {
 } from "./types";
 
 /**
- * Agent 配置服务
  *
- * 提供 Agent 配置的 CRUD 操作
  */
 @Injectable()
 export class AgentConfigService {
 	private readonly logger = new Logger(AgentConfigService.name);
 
 	/**
-	 * 获取配置列表
 	 */
 	async getConfigs(
 		params: AgentConfigListParams,
@@ -80,7 +77,6 @@ export class AgentConfigService {
 	}
 
 	/**
-	 * 获取单个配置
 	 */
 	async getConfigById(id: number): Promise<AgentConfigDTO | null> {
 		const config = await prisma.system_prompt_config.findFirst({
@@ -92,7 +88,6 @@ export class AgentConfigService {
 	}
 
 	/**
-	 * 创建配置
 	 */
 	async createConfig(data: CreateAgentConfigDTO): Promise<AgentConfigDTO> {
 		const config = await prisma.system_prompt_config.create({
@@ -120,13 +115,12 @@ export class AgentConfigService {
 	}
 
 	/**
-	 * 更新配置
 	 */
 	async updateConfig(
 		id: number,
 		data: UpdateAgentConfigDTO,
 	): Promise<AgentConfigDTO> {
-		// 获取当前配置以获取 agent_name
+
 		const current = await prisma.system_prompt_config.findFirst({
 			where: { id, is_deleted: false },
 		});
@@ -161,7 +155,6 @@ export class AgentConfigService {
 	}
 
 	/**
-	 * 删除配置（软删除）
 	 */
 	async deleteConfig(id: number): Promise<void> {
 		const config = await prisma.system_prompt_config.findFirst({
@@ -189,8 +182,6 @@ export class AgentConfigService {
 	}
 
 	/**
-	 * 激活配置
-	 * 同时会禁用同一 (agent_name, region) 组合下的其他 active 配置
 	 */
 	async activateConfig(id: number): Promise<AgentConfigDTO> {
 		const config = await prisma.system_prompt_config.findFirst({
@@ -201,9 +192,9 @@ export class AgentConfigService {
 			throw new Error(`Config not found: ${id}`);
 		}
 
-		// 在事务中处理：先禁用同 (agent_name, region) 的其他配置，再激活当前配置
+
 		const [, updatedConfig] = await prisma.$transaction([
-			// 禁用同 (agent_name, region) 的其他 active 配置
+
 			prisma.system_prompt_config.updateMany({
 				where: {
 					agent_name: config.agent_name,
@@ -217,7 +208,7 @@ export class AgentConfigService {
 					updated_at: new Date(),
 				},
 			}),
-			// 激活当前配置
+
 			prisma.system_prompt_config.update({
 				where: { id },
 				data: {
@@ -232,7 +223,6 @@ export class AgentConfigService {
 	}
 
 	/**
-	 * 复制配置
 	 */
 	async duplicateConfig(id: number): Promise<AgentConfigDTO> {
 		const source = await prisma.system_prompt_config.findFirst({
@@ -257,7 +247,7 @@ export class AgentConfigService {
 				system_prompt: source.system_prompt,
 				extra: source.extra || undefined,
 				region: source.region,
-				is_active: false, // 复制的配置默认不激活
+				is_active: false,
 			},
 		});
 
@@ -266,7 +256,6 @@ export class AgentConfigService {
 	}
 
 	/**
-	 * 转换数据库记录为 DTO
 	 */
 	private toDTO(config: {
 		id: number;

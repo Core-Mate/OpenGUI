@@ -34,7 +34,7 @@ class EditPromptPresenter(val view: EditPromptFragment) {
                     apiService?.updateTask(taskId, bean)
                 }.onSuccess {
                     launch(Dispatchers.Main) {
-                        TaskCenter.reset(view.requireContext(), "编辑任务弹窗 - 更新任务")
+                        TaskCenter.reset(view.requireContext(), "Edit Task Dialog - Update Task")
                         TaskCenter.taskId = it?.body()?.id
                         TaskCenter.taskTitle = it?.body()?.taskName
                         TaskCenter.taskPrompt = it?.body()?.taskDescription
@@ -58,7 +58,7 @@ class EditPromptPresenter(val view: EditPromptFragment) {
                 apiService?.addCustomTask(bean)
             }.onSuccess {
                 launch(Dispatchers.Main) {
-                    TaskCenter.reset(view.requireContext(),"编辑任务弹窗 - 创建新任务")
+                    TaskCenter.reset(view.requireContext(),"Edit Task Dialog - Create New Task")
                     TaskCenter.taskId = it?.body()?.id
                     TaskCenter.taskTitle = it?.body()?.taskName
                     TaskCenter.taskPrompt = it?.body()?.taskDescription
@@ -115,7 +115,7 @@ class EditPromptPresenter(val view: EditPromptFragment) {
                     apiService?.updateTask(taskId, bean)
                 }.onSuccess {
                     launch(Dispatchers.Main) {
-                        TaskCenter.reset(view.requireContext(),"编辑任务弹窗 - 更新任务")
+                        TaskCenter.reset(view.requireContext(),"Edit Task Dialog - Update Task")
                         TaskCenter.taskId = it?.body()?.id
                         TaskCenter.taskTitle = it?.body()?.taskName
                         TaskCenter.taskPrompt = it?.body()?.taskDescription

@@ -7,14 +7,8 @@ import { AgentState } from "../../state/executor-state.types";
 const logger = new Logger("ExecutorExitNode");
 
 /**
- * 创建 Executor 出口节点
  *
- * 从 executor 内部状态读取结果，写入 executorOutput
- * 读取 VLM 记录的 Working Memory 内容作为 notes 返回
  *
- * @param executionGateway 执行网关
- * @param workingMemoryService 工作记忆服务
- * @returns 出口节点函数
  */
 export function createExecutorExitNode(
 	executionGateway: ExecutionGateway,
@@ -27,7 +21,7 @@ export function createExecutorExitNode(
 		const exec = state.executor;
 		logger.log(`Executor exit: status=${exec.status}`);
 
-		// 输出执行指标摘要
+
 		const m = exec.executionMetrics;
 		const sc = m?.senseCount ?? 0;
 		if (sc > 0) {
@@ -45,10 +39,10 @@ export function createExecutorExitNode(
 			);
 		}
 
-		// 根据 executor 状态确定是否成功
+
 		const success = exec.status === "finished";
 
-		// 从 config 中提取 thread_id 并读取 Working Memory
+
 		let notes = "";
 		const threadId = (config?.configurable as Record<string, unknown>)
 			?.thread_id as string | undefined;
@@ -74,8 +68,8 @@ export function createExecutorExitNode(
 			);
 		}
 
-		// 汇总本次 executor 的 token 消耗到父图级别
-		// 这确保多次调用 executor 时 token 统计不会因重置而丢失
+
+
 		const currentTokenUsage = state.tokenUsage || {
 			promptTokens: 0,
 			completionTokens: 0,

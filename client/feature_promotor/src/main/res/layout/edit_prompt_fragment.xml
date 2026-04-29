@@ -40,7 +40,7 @@
             android:layout_marginEnd="50dp"
             android:ellipsize="end"
             android:maxLines="1"
-            tools:text="任务描述任务描述任务描述任务描述任务描述任务描述任务描述"
+            tools:text="Task DescriptionTask DescriptionTask DescriptionTask DescriptionTask DescriptionTask DescriptionTask Description"
             android:textColor="#000000"
             android:textFontWeight="600"
             android:textSize="20sp"
@@ -58,9 +58,9 @@
         android:paddingStart="20dp"
         android:paddingEnd="20dp"
         android:paddingBottom="20dp"
-        android:text="打开小红书"
+        android:text="Open Xiaohongshu"
         android:textSize="15sp" />
-    <!--    设计一张小红书爆款风格海报，尺寸为3:4竖版（适配手机全屏浏览），整体色调明亮清新/元气撞色（二选一或自定义），视觉中心突出核心主题（需补充具体主题，如：AI工具推荐、跨境出行攻略、自由职业接单技巧、北京自驾路线），搭配简约可爱/高级质感的插画元素+醒目艺术字标题（标题控制在10字内，带emoji点缀），底部预留2-3行短句文案位（风格：口语化、干货感z、带话题引导），画面留白充足不拥挤，字体层级清晰（标题粗体醒目，正文轻盈易读），整体风格符合小红书年轻女性/职场人审美（根据受众调整），可直接用于平台发布，吸引点击和收藏。设计一张小红书爆款风格海报，尺寸为3:4竖版（适配手机全屏浏览），整体色调明亮清新/元气撞色（二选一或自定义），视觉中心突出核心主题（需补充具体主题，如：AI工具推荐、跨境出行攻略、自由职业接单技巧、北京自驾路线），搭配简约可爱/高级质感的插画元素+醒目艺术字标题（标题控制在10字内，带emoji点缀），底部预留2-3行短句文案位（风格：口语化、干货感z、带话题引导），画面留白充足不拥挤，字体层级清晰（标题粗体醒目，正文轻盈易读），整体风格符合小红书年轻女性/职场人审美（根据受众调整），可直接用于平台发布，吸引点击和收藏。-->
+
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -111,7 +111,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="6dp"
                 android:layout_marginEnd="12dp"
-                android:text="保存任务"
+                android:text="Save Task"
                 android:textColor="#000000"
                 android:textFontWeight="500"
                 android:textSize="15sp"
@@ -143,7 +143,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="6dp"
                 android:layout_marginEnd="12dp"
-                android:text="开始执行"
+                android:text="Start Execution"
                 android:textColor="#FFFFFF"
                 android:textFontWeight="500"
                 android:textSize="15sp"

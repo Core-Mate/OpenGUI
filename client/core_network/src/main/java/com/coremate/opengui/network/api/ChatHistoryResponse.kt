@@ -2,24 +2,24 @@ package com.coremate.opengui.network.api
 
 import com.google.gson.annotations.SerializedName
 
-// 最外层响应结构
+
 data class ChatHistoryResponse(
     @SerializedName("messages") val messages: List<ChatMessage>,
     @SerializedName("pagination") val pagination: Pagination
 )
 
-// 单条聊天消息
+
 data class ChatMessage(
     @SerializedName("id") val id: Int,
     @SerializedName("deviceId") val deviceId: String,
-    @SerializedName("content") val content: String?, // content 可以为空，因为 server_chat 消息可能没有 content
+    @SerializedName("content") val content: String?, // Content may be empty because server_chat messages may not include content.
     @SerializedName("isRead") val isRead: Boolean,
     @SerializedName("msgType") val msgType: String, // "server_chat", "client_chat"
     @SerializedName("createdAt") val createdAt: String,
     @SerializedName("updatedAt") val updatedAt: String
 )
 
-// AI 思考历史中的单条记录
+
 data class ModelChatHistoryItem(
     @SerializedName("id") val id: Int,
     @SerializedName("taskId") val taskId: Int,
@@ -28,7 +28,7 @@ data class ModelChatHistoryItem(
     @SerializedName("msgType") val msgType: String, // "screenshot", "thinking"
     @SerializedName("timingInfo") val timingInfo: TimingInfo?,
     @SerializedName("screenshotContext") val screenshotContext: ScreenshotContext?,
-    @SerializedName("predictionSummary") val predictionSummary: String?, // AI 思考的总结
+    @SerializedName("predictionSummary") val predictionSummary: String?, // AI thought summary.
     @SerializedName("predictionData") val predictionData: List<PredictionData>?,
     @SerializedName("actionType") val actionType: String?,
     @SerializedName("actionParams") val actionParams: ActionParams?,
@@ -57,7 +57,7 @@ data class PredictionData(
     @SerializedName("thought") val thought: String?,
     @SerializedName("reflection") val reflection: String?,
     @SerializedName("action_type") val actionType: String?,
-    @SerializedName("action_inputs") val actionInputs: Map<String, Any>? // 使用 Map<String, Any> 处理动态键值
+    @SerializedName("action_inputs") val actionInputs: Map<String, Any>? // Use Map<String, Any> for dynamic keys.
 )
 
 data class ActionParams(

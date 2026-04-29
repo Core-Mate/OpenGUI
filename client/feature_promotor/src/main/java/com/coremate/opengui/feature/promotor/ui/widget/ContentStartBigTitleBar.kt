@@ -38,7 +38,7 @@ class ContentStartBigTitleBar @JvmOverloads constructor(
         )
 
     init {
-        // 读取自定义属性
+
         attrs?.let {
             val typedArray = context.obtainStyledAttributes(it, R.styleable.ContentStartTitleBar)
             val title = typedArray.getString(R.styleable.ContentStartTitleBar_title)
@@ -105,12 +105,12 @@ class ContentStartBigTitleBar @JvmOverloads constructor(
 
     fun showSearchWidget() {
         val searchContainer = binding.searchContainer
-        // 先设置为可见
+
         searchContainer.visibility = View.VISIBLE
         searchContainer.alpha = 0f
-        // 先让容器完全展开以测量目标宽度
+
         val layoutParams = searchContainer.layoutParams as ConstraintLayout.LayoutParams
-        // 临时设置为 match_parent 来测量完整宽度
+
         val originalWidth = layoutParams.width
         layoutParams.width = ConstraintLayout.LayoutParams.MATCH_PARENT
         searchContainer.layoutParams = layoutParams
@@ -119,26 +119,26 @@ class ContentStartBigTitleBar @JvmOverloads constructor(
             View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
         )
         val targetWidth = searchContainer.measuredWidth
-        // 设置初始状态：宽度为0，右边固定（通过 endToEnd 约束）
+
         layoutParams.width = 0
-        // 确保右边固定，左边可以自由移动
+
         layoutParams.endToEnd = ConstraintLayout.LayoutParams.PARENT_ID
         layoutParams.startToStart = ConstraintLayout.LayoutParams.UNSET
-        layoutParams.marginStart = width // 初始左边距使视图在右边
+        layoutParams.marginStart = width
         searchContainer.layoutParams = layoutParams
         searchContainer.requestLayout()
-        // 等待布局完成后再开始动画
+
         searchContainer.post {
-            // 创建宽度动画
+
             val animator = ValueAnimator.ofInt(0, targetWidth)
-            animator.duration = 300 // 动画时长300ms
+            animator.duration = 300
             animator.addUpdateListener { animation ->
                 val currentWidth = animation.animatedValue as Int
                 layoutParams.width = currentWidth
-                // 从右边展开到左边：调整左边距使内容从右向左展开
+
                 layoutParams.marginStart = width - currentWidth
                 searchContainer.layoutParams = layoutParams
-                // 同时淡入效果
+
                 val progress = currentWidth.toFloat() / targetWidth
                 searchContainer.alpha = progress
             }
@@ -153,38 +153,38 @@ class ContentStartBigTitleBar @JvmOverloads constructor(
 
     fun hideSearchWidget() {
         val searchContainer = binding.searchContainer
-        // 如果已经隐藏，直接返回
+
         if (searchContainer.visibility == View.GONE) {
             return
         }
-        // 获取当前宽度
+
         val layoutParams = searchContainer.layoutParams as ConstraintLayout.LayoutParams
         val currentWidth = searchContainer.width
         if (currentWidth <= 0) {
-            // 如果宽度为0，直接隐藏
+
             searchContainer.visibility = View.GONE
             binding.titleContainer.visibility = View.VISIBLE
             return
         }
-        // 创建宽度动画：从当前宽度到0
+
         val animator = ValueAnimator.ofInt(currentWidth, 0)
-        animator.duration = 300 // 动画时长300ms
+        animator.duration = 300
         animator.addUpdateListener { animation ->
             val width = animation.animatedValue as Int
             layoutParams.width = width
-            // 从左边收缩到右边：调整左边距使内容从左向右收缩
+
             layoutParams.marginStart = this@ContentStartBigTitleBar.width - width
             searchContainer.layoutParams = layoutParams
-            // 同时淡出效果
+
             val progress = width.toFloat() / currentWidth
             searchContainer.alpha = progress
         }
         animator.addListener(object : AnimatorListenerAdapter() {
             override fun onAnimationEnd(animation: android.animation.Animator) {
-                // 动画结束后隐藏搜索容器，显示标题容器
+
                 searchContainer.visibility = View.GONE
                 binding.titleContainer.visibility = View.VISIBLE
-                // 重置状态
+
                 searchContainer.alpha = 1f
             }
         })

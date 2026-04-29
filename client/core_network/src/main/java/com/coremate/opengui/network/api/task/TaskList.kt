@@ -20,7 +20,6 @@ data class TaskTemplatesResp(
 ) : Serializable
 
 /**
- * 创建任务请求
  */
 data class CreateTaskReq(
     val taskName: String,
@@ -30,7 +29,6 @@ data class CreateTaskReq(
 )
 
 /**
- * 创建任务响应
  */
 data class CreateTaskResp(
     val id: Int,
@@ -49,7 +47,6 @@ data class CreateTaskResp(
 )
 
 /**
- * 获取任务列表请求
  */
 data class GetTaskListReq(
     val page: Int,
@@ -60,7 +57,6 @@ data class GetTaskListReq(
 )
 
 /**
- * 获取任务列表响应
  */
 data class TaskListResp(
     val items: List<TaskListRespItem>,
@@ -93,7 +89,6 @@ data class TaskListRespLastExecution(
 ) : Serializable
 
 /**
- * 获取任务详情请求
  */
 data class GetTaskDetailsReq(
     val id: Long,
@@ -119,7 +114,6 @@ data class GetTaskDetailsReqLastExecution(
 
 
 /**
- * 获取任务详情响应
  */
 data class GetTaskDetailsResp(
     val statusCode: Long,
@@ -127,7 +121,6 @@ data class GetTaskDetailsResp(
 )
 
 /**
- * 更新任务请求
  */
 data class UpdateTaskReq(
     val taskName: String?,
@@ -137,7 +130,6 @@ data class UpdateTaskReq(
 )
 
 /**
- * 删除任务请求
  */
 data class DeleteTaskReq(
     val success: Boolean,

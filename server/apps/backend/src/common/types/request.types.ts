@@ -1,5 +1,4 @@
 /**
- * 扩展Express Request接口
  */
 declare global {
     namespace Express {

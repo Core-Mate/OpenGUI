@@ -26,21 +26,21 @@ object FuncRetrofitClient {
         val cache = Cache(File(context.cacheDir, "http-cache"), cacheSize)
         val token = MMKV.defaultMMKV().decodeString("token")
         val httpLoggingInterceptor = HttpLoggingInterceptor { msg ->
-            // 这里使用 ApplicationContext + 你习惯的 executionId
+
             LogManager.saveLog(
-                context = context,   // 或 context.applicationContext
+                context = context,
                 tag = "OkHttp",
                 message = msg,
-                executionId = TaskCenter.executionId ?: -1  // 或者 0
+                executionId = TaskCenter.executionId ?: -1
             )
         }.apply {
             level = HttpLoggingInterceptor.Level.BODY
         }
         // Build OkHttpClient with interceptors and cache
         val okHttpClient = OkHttpClient.Builder()
-            .connectTimeout(30, TimeUnit.SECONDS) // 连接超时
-            .writeTimeout(30, TimeUnit.SECONDS)   // 这个无所谓GET，但最好保持一致
-            .readTimeout(30, TimeUnit.SECONDS)    // 读取超时
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
             .addInterceptor(httpLoggingInterceptor)
             .addInterceptor(LoggingInterceptor())
             .addInterceptor(HttpInterceptor())

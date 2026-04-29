@@ -13,7 +13,7 @@
         android:id="@+id/v_status"
         android:layout_width="match_parent"
         android:layout_height="20dp" />
-    <!-- 标题栏：左返回、中间「任务详情」、右更多 -->
+
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/title_container"
         android:layout_width="match_parent"
@@ -44,7 +44,7 @@
             app:layout_constraintEnd_toStartOf="@id/img_menu"
             app:layout_constraintStart_toEndOf="@id/img_close"
             app:layout_constraintTop_toTopOf="parent"
-            tools:text="任务详情" />
+            tools:text="Task Details" />
 
         <ImageView
             android:id="@+id/img_menu0"

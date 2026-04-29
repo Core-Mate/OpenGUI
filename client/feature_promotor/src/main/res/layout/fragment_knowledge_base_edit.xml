@@ -23,7 +23,7 @@
             android:layout_height="wrap_content"
             android:padding="16dp"
             android:src="@drawable/ic_arrow_back"
-            android:contentDescription="返回"
+            android:contentDescription="Back"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent" />
@@ -32,7 +32,7 @@
             android:id="@+id/tv_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="新增知识库" android:textColor="@android:color/black"
+            android:text="New knowledge base" android:textColor="@android:color/black"
             android:textSize="18sp"
             android:textStyle="bold"
             app:layout_constraintStart_toStartOf="parent"
@@ -57,16 +57,16 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <TextView style="@style/FormLabel" android:text="名称" />
+            <TextView style="@style/FormLabel" android:text="Name" />
             <EditText
                 android:id="@+id/et_knowledge_base_name"
                 style="@style/FormEditText"
-                android:hint="知识库名称"
+                android:hint="Knowledge Base Name"
                 android:inputType="textPersonName" />
 
             <TextView
                 style="@style/FormLabel"
-                android:text="文档" />
+                android:text="Documents" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -76,24 +76,24 @@
                 <TextView
                     android:id="@+id/tv_document_1"
                     style="@style/DocumentItem"
-                    android:text="产品知识文档01"
+                    android:text="Product Knowledge Document 01"
                     android:visibility="gone" />
                 <TextView
                     android:id="@+id/tv_document_2"
                     style="@style/DocumentItem"
-                    android:text="产品销售知识文档02"
+                    android:text="Product Sales Knowledge Document 02"
                     android:visibility="gone" />
             </LinearLayout>
 
             <Button
                 android:id="@+id/btn_upload_document"
                 style="@style/FormButtonOutlined"
-                android:text="上传文档"
+                android:text="UploadDocuments"
                 android:layout_marginTop="16dp" />
 
             <TextView
                 style="@style/FormLabel"
-                android:text="问答" />
+                android:text="Q&amp;A" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rv_qa_pairs"
@@ -106,7 +106,7 @@
             <Button
                 android:id="@+id/btn_add_new_qa_pair"
                 style="@style/FormButtonOutlined"
-                android:text="新增问答对"
+                android:text="Add Q&amp;A Pair"
                 android:layout_marginTop="16dp" />
 
             <Button
@@ -116,7 +116,7 @@
                 android:layout_marginTop="32dp"
                 android:layout_marginBottom="16dp"
                 android:background="@drawable/bg_save_button"
-                android:text="保存知识库"
+                android:text="Save Knowledge Base"
                 android:textColor="@android:color/white"
                 android:textSize="18sp"
                 android:textStyle="bold"

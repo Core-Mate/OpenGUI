@@ -37,7 +37,7 @@ object VolcanoTokenManager {
         val canonicalQueryString = "Action=GetToken&Version=2021-01-01"
         val canonicalHeaders = "host:$HOST\nx-amz-date:$amzDate\n"
         val signedHeaders = "host;x-amz-date"
-        val hashedPayload = sha256Hex("") // GET请求的payload为空字符串
+        val hashedPayload = sha256Hex("") // GET requests use an empty payload string.
 
         val canonicalRequest = "GET\n/\n$canonicalQueryString\n$canonicalHeaders\n$signedHeaders\n$hashedPayload"
         val hashedCanonicalRequest = sha256Hex(canonicalRequest)

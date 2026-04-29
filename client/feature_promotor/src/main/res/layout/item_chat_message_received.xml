@@ -28,7 +28,7 @@
             android:id="@+id/tv_top_state"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="思考中"
+            android:text="Thinking"
             android:textColor="#66000000"
             android:textFontWeight="400"
             android:textSize="14dp" />
@@ -69,7 +69,7 @@
                 android:textColor="#000000"
                 android:textFontWeight="400"
                 android:textSize="14dp"
-                tools:text="啊啊啊啊  啊啊啊啊  啊啊啊啊  啊啊啊啊  啊啊啊啊  啊啊啊啊  啊啊啊啊  啊啊啊啊  " />
+                tools:text="Sample sample sample sample sample sample sample sample" />
         </LinearLayout>
     </com.coremate.opengui.feature.promotor.ui.views.NonTouchNestedScrollView>
 
@@ -82,9 +82,9 @@
         android:textColor="#000000"
         android:textFontWeight="400"
         android:textSize="16dp"
-        tools:text="哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈" />
+        tools:text="This is a long sample received message used to preview wrapping and spacing in the chat bubble layout." />
 
-    <!--    任务最终状态-->
+
     <LinearLayout
         android:id="@+id/final_result_wrap"
         android:layout_width="wrap_content"
@@ -105,7 +105,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="10dp"
-            android:text="任务已完成"
+            android:text="Task completed"
             android:textColor="#000000"
             android:textFontWeight="500"
             android:textSize="16dp" />

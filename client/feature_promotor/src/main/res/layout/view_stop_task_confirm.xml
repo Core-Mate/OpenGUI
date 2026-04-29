@@ -10,7 +10,7 @@
         android:id="@+id/tv_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="确定停止？"
+        android:text="Stop?"
         android:textStyle="bold"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -19,7 +19,7 @@
         android:id="@+id/tv_message"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="当前任务进度将丢失"
+        android:text="Current task progress will be lost."
         android:layout_marginTop="10dp"
         android:textColor="@color/black"
         app:layout_constraintStart_toStartOf="parent"
@@ -32,7 +32,7 @@
         android:layout_marginStart="10dp"
         android:layout_marginTop="20dp"
         android:layout_marginEnd="20dp"
-        android:text="继续执行"
+        android:text="Continue Execution"
         android:textColor="@color/grey"
         app:layout_constraintEnd_toStartOf="@id/tv_confirm"
         app:layout_constraintTop_toBottomOf="@id/tv_message" />
@@ -43,7 +43,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="10dp"
         android:layout_marginTop="20dp"
-        android:text="确定取消"
+        android:text="ConfirmCancel"
         android:textColor="@color/add_button_blue"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tv_message" />

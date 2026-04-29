@@ -13,17 +13,14 @@ import androidx.lifecycle.Observer
 abstract class BaseFragment : Fragment {
 
     /**
-     * 无参构造函数
      */
     constructor() : super()
 
     /**
-     * 可以填入layout布局的构造函数，使用viewBinding的方便
-     * [layout] layout布局文件的id
      */
     constructor(@LayoutRes layout: Int) : super(layout)
 
-    //UI的viewDataBinding对象
+
     private var mBinding: ViewDataBinding? = null
 
 
@@ -49,13 +46,11 @@ abstract class BaseFragment : Fragment {
     abstract fun bindView(view: View, savedInstanceState: Bundle?): ViewDataBinding
 
     /**
-     * view初始化后的必要配置
      */
     open fun initConfig() {
     }
 
     /**
-     * view初始化后的必要数据
      */
     open fun initData() {
     }
@@ -66,8 +61,6 @@ abstract class BaseFragment : Fragment {
     }
 
     /**
-     * 扩展用于liveData便捷写法的函数
-     * [block]liveData对象，响应change变化的逻辑块
      */
     protected fun <T : Any> LiveData<T>.observeKt(block: (T?) -> Unit) {
         this.observe(viewLifecycleOwner, Observer {

@@ -6,7 +6,7 @@
     android:background="@android:color/white"
     android:fitsSystemWindows="false">
 
-    <!-- Header: 与 Web 一致 pt-16 pb-4 -->
+
     <LinearLayout
         android:id="@+id/headerLayout"
         android:layout_width="match_parent"
@@ -31,7 +31,7 @@
                 android:id="@+id/tvTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="你想做什么?"
+                android:text="What do you want to do?"
                 android:textColor="#111827"
                 android:textSize="28sp"
                 android:textStyle="bold" />
@@ -52,12 +52,12 @@
             android:layout_marginTop="12dp"
             android:gravity="center"
             android:lineSpacingExtra="4dp"
-            android:text="选择你感兴趣的场景，我们为你\n推荐最适合的自动化任务"
+            android:text="Choose the scenarios you care about.\nWe will recommend the best automation tasks."
             android:textColor="#6B7280"
             android:textSize="15sp" />
     </LinearLayout>
 
-    <!-- Pills 区域：flex-1，与 Web 一致 -->
+
     <FrameLayout
         android:id="@+id/pillsContainer"
         android:layout_width="0dp"
@@ -71,7 +71,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/headerLayout" />
 
-    <!-- Bottom: 与 Web 一致 px-6 pb-8 pt-4 -->
+
     <LinearLayout
         android:id="@+id/bottomSection"
         android:layout_width="match_parent"
@@ -91,7 +91,7 @@
             android:layout_height="56dp"
             android:background="@drawable/bg_user_guide_continue"
             android:stateListAnimator="@null"
-            android:text="继续"
+            android:text="Continue"
             android:textColor="@color/user_guide_continue_text"
             android:textSize="17sp"
             android:textStyle="bold" />
@@ -102,12 +102,12 @@
             android:layout_height="44dp"
             android:background="@null"
             android:gravity="center"
-            android:text="跳过，稍后添加"
+            android:text="Skip for now"
             android:textColor="#888888"
             android:textSize="15sp" />
     </LinearLayout>
 
-    <!-- Home Indicator 与 Web 一致 mb-2 -->
+
     <View
         android:id="@+id/homeIndicator"
         android:layout_width="128dp"

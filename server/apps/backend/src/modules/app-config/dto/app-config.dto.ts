@@ -1,10 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger'
 
 export class AppConfigItemDto {
-    @ApiProperty({ description: '配置 Key' })
+    @ApiProperty({ description: 'Config key' })
     key: string
 
-    @ApiProperty({ description: '配置值 (JSON)' })
+    @ApiProperty({ description: 'Config value (JSON)' })
     value: unknown
 }
 
@@ -20,6 +20,6 @@ export class AppConfigListResponseDto {
     @ApiProperty({ type: Boolean })
     success: boolean
 
-    @ApiProperty({ description: '所有 active 配置的扁平 map', type: Object })
+    @ApiProperty({ description: 'Flat map of all active configs', type: Object })
     data: Record<string, unknown>
 }

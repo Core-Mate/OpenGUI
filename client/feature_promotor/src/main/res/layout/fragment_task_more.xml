@@ -9,7 +9,7 @@
     android:paddingEnd="16dp"
     android:paddingBottom="32dp">
 
-    <!-- 标题 -->
+    <!-- Title -->
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="58dp">
@@ -59,7 +59,7 @@
             android:layout_height="wrap_content"
             android:layout_marginLeft="10dp"
             android:alpha="0.5"
-            android:text="复制链接"
+            android:text="Copy link"
             android:textColor="#6B7280"
             android:textSize="16sp"
             android:textStyle="bold" />
@@ -91,7 +91,7 @@
             android:layout_height="wrap_content"
             android:layout_marginLeft="10dp"
             android:alpha="0.5"
-            android:text="分享"
+            android:text="Share"
             android:textColor="#6B7280"
             android:textSize="16sp"
             android:textStyle="bold" />
@@ -121,7 +121,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginLeft="10dp"
-            android:text="删除"
+            android:text="Delete"
             android:textColor="#EF4444"
             android:textSize="16sp"
             android:textStyle="bold" />

@@ -17,7 +17,7 @@ import {
     CheckUpdateDto,
 } from './dto/apk.dto'
 
-@ApiTags('APK 管理')
+@ApiTags('APK Management')
 @Controller('apks')
 export class ApkController {
     constructor(
@@ -28,24 +28,24 @@ export class ApkController {
     }
 
     /**
-     * 检查更新
-     * 客户端调用此接口检查是否有新版本 APK
+     * Check for updates
+     * Client calls this endpoint to check for a new APK version
      */
     @Get('check-update')
     @HttpCode(HttpStatus.OK)
     @ApiOperation({
-        summary: '检查更新',
-        description: '客户端传入当前 APK 版本号，返回是否有新版本及下载地址',
+        summary: 'Check for updates',
+        description: 'Client sends the current APK version and receives update availability and download URL',
     })
     @ApiResponse({
         status: HttpStatus.OK,
-        description: '检查成功',
+        description: 'Check succeeded',
         type: CheckUpdateApiResponseDto,
     })
     async checkUpdate(
         @Query() dto: CheckUpdateDto,
     ): Promise<CheckUpdateApiResponseDto> {
-        this.logger.log('检查 APK 更新', { dto })
+        this.logger.log('Check APK update', { dto })
 
         const result = await this.apkService.checkUpdate(
             dto.type ?? 'production',

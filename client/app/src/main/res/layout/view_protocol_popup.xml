@@ -9,7 +9,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="24dp"
-        android:text="用户授权"
+        android:text="User Authorization"
         android:textFontWeight="600"
         android:textSize="20sp" />
 
@@ -24,17 +24,17 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议这是协议" />
+            android:text="Terms and policy details go here." />
     </LinearLayout>
 
     <EditText
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="这是保证这是保证这是保证这是保证这是保证这是保证这是保证这是保证这是保证这是保证" />
+        android:text="We protect your privacy and data security." />
 
     <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="保存" />
+        android:text="Save" />
 
 </LinearLayout>

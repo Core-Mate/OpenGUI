@@ -23,7 +23,7 @@
             android:layout_height="wrap_content"
             android:padding="16dp"
             android:src="@drawable/ic_arrow_back"
-            android:contentDescription="返回"
+            android:contentDescription="Back"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent" />
@@ -32,7 +32,7 @@
             android:id="@+id/tv_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="AI角色设置"
+            android:text="AI Role Settings"
             android:textColor="@android:color/black"
             android:textSize="18sp"
             android:textStyle="bold"
@@ -59,41 +59,41 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <TextView style="@style/FormLabel" android:text="角色名" />
+            <TextView style="@style/FormLabel" android:text="Role name" />
             <EditText
                 android:id="@+id/et_role_name"
                 style="@style/FormEditText"
-                android:hint="客服1号"
+                android:hint="Support Agent 1"
                 android:inputType="textPersonName" />
 
-            <TextView style="@style/FormLabel" android:text="角色性别" />
+            <TextView style="@style/FormLabel" android:text="Role gender" />
             <Spinner
                 android:id="@+id/spinner_gender"
                 style="@style/FormSpinner"
-                android:entries="@array/ai_role_genders" /> <TextView style="@style/FormLabel" android:text="角色风格" />
+                android:entries="@array/ai_role_genders" /> <TextView style="@style/FormLabel" android:text="Role style" />
             <Spinner
                 android:id="@+id/spinner_style"
                 style="@style/FormSpinner"
                 android:entries="@array/ai_role_styles" /> <TextView
             style="@style/FormLabel"
-            android:text="手机号 (可以联系到真人客服的手机号)" />
+            android:text="Phone number (reachable support phone number)" />
             <EditText
                 android:id="@+id/et_phone_number"
                 style="@style/FormEditText"
                 android:hint="15874746969"
                 android:inputType="phone" />
 
-            <TextView style="@style/FormLabel" android:text="所属行业" />
+            <TextView style="@style/FormLabel" android:text="Industry" />
             <Spinner
                 android:id="@+id/spinner_industry"
                 style="@style/FormSpinner"
                 android:entries="@array/ai_role_industries" /> <TextView
             style="@style/FormLabel"
-            android:text="产品知识库 (销售的产品，常见的用户问答)" />
+            android:text="Product knowledge base (products sold and common user Q&amp;A)" />
             <EditText
                 android:id="@+id/et_knowledge_base"
                 style="@style/FormEditText"
-                android:hint="美丽人生医美知识库"
+                android:hint="Beauty Life medical aesthetics knowledge base"
                 android:inputType="textMultiLine"
                 android:minLines="1"
                 android:maxLines="3"
@@ -106,7 +106,7 @@
             android:layout_marginTop="32dp"
             android:layout_marginBottom="16dp"
             android:background="@drawable/bg_save_button"
-            android:text="保存设置"
+            android:text="SaveSettings"
             android:textColor="@android:color/white"
             android:textSize="18sp"
             android:textStyle="bold"

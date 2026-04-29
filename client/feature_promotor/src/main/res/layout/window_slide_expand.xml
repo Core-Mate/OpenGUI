@@ -22,7 +22,7 @@
         android:marqueeRepeatLimit="marquee_forever"
         android:maxLines="1"
         android:singleLine="true"
-        android:text="任务执行中..."
+        android:text="Task running..."
         android:textColor="#FFFFFF"
         android:textSize="12sp" />
 </com.coremate.opengui.feature.promotor.ui.views.FlowLightLinearLayout>

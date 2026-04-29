@@ -18,11 +18,11 @@ class SettingActivity :
     }
 
     override fun initView() {
-        // 显示当前服务器地址
+
         val currentUrl = urlMMKV.decodeString("BaseUrl", null) ?: ServerConstant.BASE_URL_DEBUG
         binding.etServerUrl.setText(currentUrl)
 
-        // 版本号
+
         binding.tvVersion.text = "version: ${getVersionName()}"
     }
 
@@ -32,15 +32,15 @@ class SettingActivity :
         binding.btnSave.setOnClickListener {
             val url = binding.etServerUrl.text.toString().trim()
             if (url.isEmpty()) {
-                Toast.makeText(this, "请输入服务器地址", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Enter the server URL", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
             if (!url.startsWith("http://") && !url.startsWith("https://")) {
-                Toast.makeText(this, "地址需要以 http:// 或 https:// 开头", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "The URL must start with http:// or https://", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
             urlMMKV.encode("BaseUrl", url)
-            Toast.makeText(this, "已保存，重启应用生效", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Saved. Restart the app to apply changes.", Toast.LENGTH_SHORT).show()
             finish()
         }
     }

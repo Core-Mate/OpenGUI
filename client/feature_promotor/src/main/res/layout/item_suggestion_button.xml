@@ -19,7 +19,7 @@
     app:backgroundTint="@null"
     android:background="@drawable/suggestion_button_background_light_gray" android:textColor="#333333"
     android:textSize="16sp"
-    android:text="帮我打开今日头条"
+    android:text="Open Toutiao"
     android:textAllCaps="false"
     android:ellipsize="end"
     android:maxLines="1"

@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!--  标题  -->
+    <!--  Title  -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/fl_title"
         android:layout_width="match_parent"
@@ -25,7 +25,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="抖音发视频"
+            android:text="Post Douyin Video"
             android:textColor="@color/black"
             android:textSize="17sp"
             android:textStyle="bold"
@@ -63,7 +63,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical">
-                    <!--     生成方式       -->
+                    <!--     Generation Method       -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -75,7 +75,7 @@
                             android:layout_marginStart="16dp"
                             android:layout_marginTop="18dp"
                             android:layout_marginBottom="18dp"
-                            android:text="生成方式"
+                            android:text="Generation Method"
                             android:textColor="@color/black"
                             android:textSize="12dp"
                             android:textStyle="bold"
@@ -99,20 +99,20 @@
                                 android:layout_height="wrap_content"
                                 android:buttonTint="#673AB7"
                                 android:checked="true"
-                                android:text="视频合成 (已有视频，AI配音解说)" />
+                                android:text="Video composition (existing video with AI voiceover)" />
 
                             <RadioButton
                                 android:id="@+id/rb_ai"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:buttonTint="#673AB7"
-                                android:text="AI生成视频（需要剪映SVIP)" />
+                                android:text="AI-generated video (requires Jianying SVIP)" />
 
                         </RadioGroup>
 
 
                     </LinearLayout>
-                    <!--     视频选择      -->
+
                     <LinearLayout
                         android:id="@+id/ll_video_count"
                         android:layout_width="match_parent"
@@ -124,7 +124,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="16dp"
                             android:layout_marginTop="18dp"
-                            android:text="视频选择 （相册中最新的前几个视频）"
+                            android:text="Video selection (latest videos in album)"
                             android:textColor="@color/black"
                             android:textFontWeight="400"
                             android:textSize="12dp"
@@ -140,14 +140,14 @@
                             android:layout_marginEnd="16dp"
                             android:layout_marginBottom="16dp"
                             android:background="@drawable/role_setting_et_bg"
-                            android:hint="请输入数量"
+                            android:hint="Enter quantity"
                             android:inputType="number"
                             android:lines="1"
                             android:padding="12dp"
                             android:textSize="14dp" />
 
                     </LinearLayout>
-                    <!--      视频主题     -->
+                    <!--      Video Topic     -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="170dp"
@@ -158,7 +158,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="16dp"
                             android:layout_marginTop="12dp"
-                            android:text="视频主题"
+                            android:text="Video Topic"
                             android:textColor="@color/black"
                             android:textSize="12dp"
                             android:textStyle="bold"
@@ -181,7 +181,7 @@
                                 android:layout_marginBottom="36dp"
                                 android:background="@null"
                                 android:gravity="top"
-                                android:hint="请输入视频主题"
+                                android:hint="Enter video topic"
                                 android:lines="4"
                                 android:maxLength="300"
                                 android:text=""
@@ -200,7 +200,7 @@
 
                         </RelativeLayout>
                     </LinearLayout>
-                    <!--     视频长度      -->
+
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -211,7 +211,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="16dp"
                             android:layout_marginTop="18dp"
-                            android:text="视频长度（秒）"
+                            android:text="Video Length (seconds)"
                             android:textColor="@color/black"
                             android:textSize="12dp"
                             android:textStyle="bold"
@@ -227,7 +227,7 @@
                             android:layout_marginEnd="16dp"
                             android:layout_marginBottom="16dp"
                             android:background="@drawable/role_setting_et_bg"
-                            android:hint="请输入秒数"
+                            android:hint="Enter seconds"
                             android:inputType="number"
                             android:lines="1"
                             android:padding="12dp"
@@ -260,7 +260,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="使用业务信息作为背景"
+                        android:text="Use business information as background"
                         android:textColor="#000000"
                         android:textSize="14dp"
                         android:textStyle="bold"
@@ -284,7 +284,7 @@
                     android:layout_marginTop="60dp"
                     android:layout_marginBottom="10dp"
                     android:gravity="center"
-                    android:text="暂未设置" />
+                    android:text="Not Set" />
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rv_list"
@@ -321,7 +321,7 @@
         android:layout_marginBottom="24dp"
         android:background="@drawable/shaper_radius_black_16"
         android:gravity="center"
-        android:text="开始执行"
+        android:text="Start Execution"
         android:textColor="@color/white"
         android:textSize="14sp"
         android:visibility="gone"

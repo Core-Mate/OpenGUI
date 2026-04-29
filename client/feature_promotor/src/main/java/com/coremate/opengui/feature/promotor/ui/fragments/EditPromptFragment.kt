@@ -67,8 +67,8 @@ class EditPromptFragment : BottomSheetDialogFragment() {
                 behavior.isFitToContents = true
             }
         }
-        // 使用 ADJUST_RESIZE 确保内容不被键盘遮挡
-        // 但不立即显示键盘，而是延迟显示以避免闪烁
+
+
         dialog.window?.setSoftInputMode(
             WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
         )
@@ -89,7 +89,7 @@ class EditPromptFragment : BottomSheetDialogFragment() {
             this.from = it
         }
 
-        // 初始保存任务按钮状态
+
         when (from) {
             "MyTask" -> {
                 binding.iconEditPromptAdd.setImageResource(R.drawable.icon_edit_prompt_add_disable)
@@ -108,8 +108,8 @@ class EditPromptFragment : BottomSheetDialogFragment() {
         binding.tvTitle.text = TaskCenter.taskTitle
         this.originalPrompt = TaskCenter.taskPrompt
 
-        if ("MyTask" == this.from) {//从 我的任务 进来
-            // 先添加文本监听器，再设置文本，确保监听器能正常工作
+        if ("MyTask" == this.from) { // Entered from My Tasks.
+
             binding.etPrompt.addTextChangedListener(object : TextWatcher {
                 override fun beforeTextChanged(
                     p0: CharSequence?, p1: Int, p2: Int, p3: Int
@@ -125,7 +125,7 @@ class EditPromptFragment : BottomSheetDialogFragment() {
                 override fun afterTextChanged(p0: Editable?) {
                 }
             })
-        } else {//从 任务广场 进来
+        } else {
             binding.iconEditPromptAdd.setImageResource(R.drawable.icon_edit_prompt_add_enable)
             binding.tvEditPromptAdd.setTextColor(Color.parseColor("#000000"))
             binding.llSaveTask.isClickable = true
@@ -209,19 +209,19 @@ class EditPromptFragment : BottomSheetDialogFragment() {
             binding.iconEditPromptAdd.setImageResource(R.drawable.icon_edit_prompt_add_disable)
             binding.tvEditPromptAdd.setTextColor(Color.parseColor("#bfbfbf"))
             binding.llSaveTask.isClickable = false
-            Toast.makeText(requireContext(), "任务更新成功", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Task updated", Toast.LENGTH_SHORT).show()
             AutomationEventBus.publish(AutomationEvent.UpdateMyTask)
         } else {
-            Toast.makeText(requireContext(), "任务更新出错", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Task update failed", Toast.LENGTH_SHORT).show()
         }
     }
 
     suspend fun createTaskResult(isSuccess: Boolean) {
         if (isSuccess) {
-            Toast.makeText(requireContext(), "任务保存成功", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "TaskSaved successfully", Toast.LENGTH_SHORT).show()
             AutomationEventBus.publish(AutomationEvent.UpdateMyTask)
         } else {
-            Toast.makeText(requireContext(), "任务保存出错", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Task save failed", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -229,7 +229,6 @@ class EditPromptFragment : BottomSheetDialogFragment() {
         const val ARG_FROM = "from"
 
         /**
-         * 创建新的 EditPromptFragment 实例
          */
         fun newInstance(
             from: String

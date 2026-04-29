@@ -66,7 +66,6 @@ class TaskDetailPresenter(private val context: Context) {
     }
 
     /**
-     * 仅更新任务（名称/描述），不触发执行；成功后通过 callback 回传最新数据以便刷新 UI。
      */
     fun updateTaskOnly(
         taskId: Int?,
@@ -122,12 +121,12 @@ class TaskDetailPresenter(private val context: Context) {
                 apiService?.addCustomTask(bean)
             }.onSuccess {
                 launch(Dispatchers.Main) {
-                    Toast.makeText(context, "保存任务成功", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Task saved", Toast.LENGTH_SHORT).show()
                 }
             }.onFailure {
                 it.printStackTrace()
                 launch(Dispatchers.Main) {
-                    Toast.makeText(context, "保存任务失败", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Failed to save task", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -140,13 +139,13 @@ class TaskDetailPresenter(private val context: Context) {
                 apiService?.addCustomTask(bean)
             }.onSuccess {
                 launch(Dispatchers.Main) {
-                    Toast.makeText(context, "保存任务成功", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Task saved", Toast.LENGTH_SHORT).show()
                     callback(true)
                 }
             }.onFailure {
                 it.printStackTrace()
                 launch(Dispatchers.Main) {
-                    Toast.makeText(context, "保存任务失败", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Failed to save task", Toast.LENGTH_SHORT).show()
                     callback(false)
                 }
             }
@@ -160,7 +159,7 @@ class TaskDetailPresenter(private val context: Context) {
                 apiService?.addCustomTask(bean)
             }.onSuccess {
                 launch(Dispatchers.Main) {
-                    TaskCenter.reset(context,"任务广场 - 列表 - 预览")
+                    TaskCenter.reset(context,"Task Square - List - Preview")
                     TaskCenter.taskId = it?.body()?.id
                     TaskCenter.taskTitle = it?.body()?.taskName
                     TaskCenter.taskPrompt = it?.body()?.taskDescription
@@ -171,7 +170,7 @@ class TaskDetailPresenter(private val context: Context) {
             }.onFailure {
                 it.printStackTrace()
                 launch(Dispatchers.Main) {
-                    Toast.makeText(context, "保存任务失败", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Failed to save task", Toast.LENGTH_SHORT).show()
                 }
             }
         }

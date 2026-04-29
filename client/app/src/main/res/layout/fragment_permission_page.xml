@@ -43,7 +43,7 @@
             android:clickable="true"
             android:focusable="true"
             android:padding="12dp"
-            android:text="以后再说"
+            android:text="Maybe later"
             android:textColor="#6B7280"
             android:textSize="15sp"
             android:textStyle="bold" />
@@ -69,7 +69,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="32dp"
-                android:text="启用必要权限"
+                android:text="Enable Required Permissions"
                 android:textAlignment="center"
                 android:textColor="#111827"
                 android:textSize="24sp"
@@ -140,7 +140,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="无障碍权限"
+                                android:text="Accessibility permission"
                                 android:textColor="#111827"
                                 android:textSize="15sp"
                                 android:textStyle="bold" />
@@ -149,7 +149,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
-                                android:text="辅助操控手机完成任务"
+                                android:text="Help control the phone to complete tasks"
                                 android:textColor="#9CA3AF"
                                 android:textSize="12sp" />
                         </LinearLayout>
@@ -202,7 +202,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="悬浮窗权限"
+                                android:text="Overlay Permission"
                                 android:textColor="#111827"
                                 android:textSize="15sp"
                                 android:textStyle="bold" />
@@ -211,7 +211,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
-                                android:text="显示任务执行状态"
+                                android:text="Show task execution status"
                                 android:textColor="#9CA3AF"
                                 android:textSize="12sp" />
                         </LinearLayout>
@@ -265,7 +265,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginStart="8dp"
-                                android:text="0/2 已开启"
+                                android:text="0/2 Enabled"
                                 android:textColor="#9CA3AF"
                                 android:textSize="13sp" />
                         </LinearLayout>
@@ -278,7 +278,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
-            android:text="点击权限项跳转到系统设置开启"
+            android:text="Tap a permission item to open system settings."
             android:textAlignment="center"
             android:textColor="#9CA3AF"
             android:textSize="13sp" />
@@ -301,7 +301,7 @@
             android:background="@drawable/rounded_button"
             android:gravity="center"
             android:stateListAnimator="@null"
-            android:text="去设置中开启"
+            android:text="Open Settings"
             android:textColor="#FFFFFF"
             android:textSize="17sp"
             android:textStyle="bold" />

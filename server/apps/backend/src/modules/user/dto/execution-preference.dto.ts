@@ -15,11 +15,10 @@ import {
 } from "./onboarding.dto";
 
 /**
- * 执行偏好请求 DTO
  */
 export class ExecutionPreferenceDto {
 	@ApiPropertyOptional({
-		description: "APP使用目标（多选）",
+		description: "App usage goals (multiple selection)",
 		enum: UserGoal,
 		isArray: true,
 		example: [UserGoal.SELF_MEDIA_OPERATION, UserGoal.EFFICIENT_ACQUISITION],
@@ -30,15 +29,15 @@ export class ExecutionPreferenceDto {
 	goals?: UserGoal[];
 
 	@ApiPropertyOptional({
-		description: "目标-其他（当选择其他时填写）",
-		example: "其他目标描述",
+		description: "Goal other value, used when Other is selected",
+		example: "Other goal description",
 	})
 	@IsString()
 	@IsOptional()
 	goalsOther?: string;
 
 	@ApiPropertyOptional({
-		description: "所在行业",
+		description: "Industry",
 		enum: Industry,
 		example: Industry.EDUCATION,
 	})
@@ -47,15 +46,15 @@ export class ExecutionPreferenceDto {
 	industry?: Industry;
 
 	@ApiPropertyOptional({
-		description: "行业-其他（当选择其他时填写）",
-		example: "其他行业描述",
+		description: "Industry other value, used when Other is selected",
+		example: "Other industry description",
 	})
 	@IsString()
 	@IsOptional()
 	industryOther?: string;
 
 	@ApiPropertyOptional({
-		description: "服务目标人群（多选）",
+		description: "Service target audience (multiple selection)",
 		enum: TargetAudience,
 		isArray: true,
 		example: [TargetAudience.YOUNG_WORKERS, TargetAudience.SMALL_BUSINESS],
@@ -66,23 +65,23 @@ export class ExecutionPreferenceDto {
 	targetAudience?: TargetAudience[];
 
 	@ApiPropertyOptional({
-		description: "服务目标人群-其他（当选择其他时填写）",
-		example: "其他人群描述",
+		description: "Target audience other value, used when Other is selected",
+		example: "Other target audience description",
 	})
 	@IsString()
 	@IsOptional()
 	targetAudienceOther?: string;
 
 	@ApiPropertyOptional({
-		description: "销售产品介绍",
-		example: "提供优质的教育培训服务，课程价格实惠",
+		description: "Sales product description",
+		example: "Provides high-quality education and training services at affordable prices",
 	})
 	@IsString()
 	@IsOptional()
 	productInfo?: string;
 
 	@ApiPropertyOptional({
-		description: "目标服务地区",
+		description: "Target service region",
 		type: [ServiceRegionDto],
 	})
 	@IsArray()
@@ -93,53 +92,51 @@ export class ExecutionPreferenceDto {
 }
 
 /**
- * 执行偏好响应 DTO
  */
 export class ExecutionPreferenceResponseDto {
-	@ApiProperty({ description: "用户ID" })
+	@ApiProperty({ description: "User ID" })
 	userId: number;
 
 	@ApiPropertyOptional({
-		description: "APP使用目标",
+		description: "App usage goals",
 		type: [String],
 	})
 	goals?: string[];
 
-	@ApiPropertyOptional({ description: "目标-其他" })
+	@ApiPropertyOptional({ description: "Other goals" })
 	goalsOther?: string | null;
 
-	@ApiPropertyOptional({ description: "所在行业", enum: Industry })
+	@ApiPropertyOptional({ description: "Industry", enum: Industry })
 	industry?: Industry | null;
 
-	@ApiPropertyOptional({ description: "行业-其他" })
+	@ApiPropertyOptional({ description: "Other industry" })
 	industryOther?: string | null;
 
 	@ApiPropertyOptional({
-		description: "服务目标人群",
+			description: "Service target audience",
 		type: [String],
 	})
 	targetAudience?: string[];
 
-	@ApiPropertyOptional({ description: "服务目标人群-其他" })
+	@ApiPropertyOptional({ description: "Other service target audience" })
 	targetAudienceOther?: string | null;
 
-	@ApiPropertyOptional({ description: "销售产品介绍" })
+	@ApiPropertyOptional({ description: "Sales product description" })
 	productInfo?: string | null;
 
 	@ApiPropertyOptional({
-		description: "目标服务地区",
+		description: "Target service region",
 		type: [ServiceRegionDto],
 	})
 	serviceRegion?: ServiceRegionDto[] | null;
 }
 
 /**
- * 执行偏好操作响应 DTO
  */
 export class ExecutionPreferenceOperationResponseDto {
-	@ApiProperty({ description: "操作是否成功" })
+	@ApiProperty({ description: "Operation success flag" })
 	success: boolean;
 
-	@ApiProperty({ description: "提示信息" })
+	@ApiProperty({ description: "Message" })
 	message: string;
 }

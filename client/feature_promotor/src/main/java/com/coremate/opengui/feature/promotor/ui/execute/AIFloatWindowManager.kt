@@ -11,7 +11,6 @@ import com.coremate.opengui.feature.promotor.ui.window.GradientWindow
 import com.coremate.opengui.feature.promotor.ui.window.SlideExpandWindow
 
 object AIFloatWindowManager {
-    /** 任务执行期间保持亮屏，因 overlay 上 FLAG_KEEP_SCREEN_ON 常被系统忽略 */
     @Volatile
     private var screenWakeLock: PowerManager.WakeLock? = null
 
@@ -22,8 +21,6 @@ object AIFloatWindowManager {
     private var accessibilityServiceWarningWindow: AccessibilityServiceWarningWindow? = null
 
     /**
-     * 任务已经执行了
-     * 主要是为了方式在 task plan 阶段，侧边栏显示
      */
     var taskIsExecuted = false
 
@@ -139,7 +136,7 @@ object AIFloatWindowManager {
             ).apply {
                 setReferenceCounted(false)
             }
-            wakeLock.acquire(10 * 60 * 60 * 1000L) // 最多 10 小时，防止忘记释放
+            wakeLock.acquire(10 * 60 * 60 * 1000L)
             screenWakeLock = wakeLock
         }
     }

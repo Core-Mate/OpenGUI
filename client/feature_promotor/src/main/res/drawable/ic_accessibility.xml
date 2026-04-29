@@ -4,11 +4,11 @@
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
-    <!-- 头部 -->
+
     <path
         android:fillColor="#FFFFFF"
         android:pathData="M12,2 C14.21,2 16,3.79 16,6 C16,8.21 14.21,10 12,10 C9.79,10 8,8.21 8,6 C8,3.79 9.79,2 12,2 Z" />
-    <!-- 身体 -->
+
     <path
         android:fillColor="#FFFFFF"
         android:pathData="M12,11 C8.13,11 5,12.79 5,15 L5,22 L19,22 L19,15 C19,12.79 15.87,11 12,11 Z" />

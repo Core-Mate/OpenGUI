@@ -19,7 +19,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Debug 面板"
+            android:text="Debug Panel"
             android:textColor="#333333"
             android:textFontWeight="500"
             android:textSize="16sp"
@@ -79,7 +79,7 @@
                     android:layout_gravity="center_vertical"
                     android:layout_marginStart="16dp"
                     android:layout_marginTop="16dp"
-                    android:text="模型切换"
+                    android:text="Model Switching"
                     android:textColor="#000000"
                     android:textFontWeight="500"
                     android:textSize="14dp" />
@@ -94,7 +94,7 @@
                     android:ellipsize="none"
                     android:maxLines="2"
                     android:singleLine="false"
-                    android:text="不同模型不同效果"
+                    android:text="Different models may behave differently"
                     android:textColor="#66000000"
                     android:textFontWeight="400"
                     android:textSize="13dp" />
@@ -130,21 +130,21 @@
                     android:layout_height="wrap_content"
                     android:buttonTint="#673AB7"
                     android:checked="true"
-                    android:text="国内" />
+                    android:text="Mainland China" />
 
                 <RadioButton
                     android:id="@+id/hongkong"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:buttonTint="#673AB7"
-                    android:text="香港" />
+                    android:text="Hong Kong" />
 
                 <RadioButton
                     android:id="@+id/test"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:buttonTint="#673AB7"
-                    android:text="测试" />
+                    android:text="Test" />
 
             </RadioGroup>
 
@@ -163,7 +163,7 @@
                     android:layout_gravity="center_vertical"
                     android:layout_marginStart="16dp"
                     android:layout_marginTop="16dp"
-                    android:text="服务器切换"
+                    android:text="Server Switch"
                     android:textColor="#000000"
                     android:textFontWeight="500"
                     android:textSize="14dp" />
@@ -178,7 +178,7 @@
                     android:ellipsize="none"
                     android:maxLines="2"
                     android:singleLine="false"
-                    android:text="香港、国内、测试"
+                    android:text="Hong Kong、Mainland China、Test"
                     android:textColor="#66000000"
                     android:textFontWeight="400"
                     android:textSize="13dp" />
@@ -212,7 +212,7 @@
                     android:layout_gravity="center_vertical"
                     android:layout_marginStart="16dp"
                     android:layout_marginTop="16dp"
-                    android:text="友盟 Push Device Token(点击复制)"
+                    android:text="Umeng Push Device Token (tap to copy)"
                     android:textColor="#000000"
                     android:textFontWeight="500"
                     android:textSize="14dp" />
@@ -261,7 +261,7 @@
                     android:layout_gravity="center_vertical"
                     android:layout_marginStart="16dp"
                     android:layout_marginTop="16dp"
-                    android:text="User Token(点击复制)"
+                    android:text="User Token (tap to copy)"
                     android:textColor="#000000"
                     android:textFontWeight="500"
                     android:textSize="14dp" />
@@ -310,7 +310,7 @@
                     android:layout_gravity="center_vertical"
                     android:layout_marginStart="16dp"
                     android:layout_marginTop="16dp"
-                    android:text="最后上传日志(点击复制)"
+                    android:text="Last Uploaded Log (tap to copy)"
                     android:textColor="#000000"
                     android:textFontWeight="500"
                     android:textSize="14dp" />
@@ -361,7 +361,7 @@
                     android:layout_gravity="center_vertical"
                     android:layout_marginStart="16dp"
                     android:layout_marginTop="16dp"
-                    android:text="图片压缩质量"
+                    android:text="Image Compression Quality"
                     android:textColor="#000000"
                     android:textFontWeight="500"
                     android:textSize="14dp" />

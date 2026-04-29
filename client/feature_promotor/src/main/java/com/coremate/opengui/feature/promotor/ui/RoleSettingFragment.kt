@@ -110,7 +110,7 @@ class RoleSettingFragment : Fragment() {
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
         })
         binding.tvClean.setOnClickListener {
-            // 清除所有输入框的焦点
+
             binding.etPersonalTitle.clearFocus()
             binding.etIndustry.clearFocus()
             binding.etProductCategory.clearFocus()
@@ -118,7 +118,7 @@ class RoleSettingFragment : Fragment() {
             binding.etTargetCustomerGroup.clearFocus()
             binding.etTargetCustomerCity.clearFocus()
 
-            // 清空所有输入框内容
+
             binding.etPersonalTitle.text = null
             binding.etIndustry.text = null
             binding.etProductCategory.text = null
@@ -126,7 +126,7 @@ class RoleSettingFragment : Fragment() {
             binding.etTargetCustomerGroup.text = null
             binding.etTargetCustomerCity.text = null
 
-            // 重置字数统计
+
             binding.tvPersonalTitleWordCount.text = "0/$MAX_INPUT_WORD_COUNT"
             binding.tvIndustryWordCount.text = "0/$MAX_INPUT_WORD_COUNT"
             binding.tvProductCategoryWordCount.text = "0/$MAX_INPUT_WORD_COUNT"
@@ -134,7 +134,7 @@ class RoleSettingFragment : Fragment() {
             binding.tvTargetCustomerGroupWordCount.text = "0/$MAX_INPUT_WORD_COUNT"
             binding.tvTargetCustomerCityWordCount.text = "0/$MAX_INPUT_WORD_COUNT"
 
-            // 让根布局获得焦点，确保软键盘隐藏
+
             binding.root.requestFocus()
         }
         binding.tvSave.setOnClickListener {
@@ -151,11 +151,11 @@ class RoleSettingFragment : Fragment() {
             viewModel?.aiRole?.targetCustomerCity =
                 binding.etTargetCustomerCity.text.toString().trim()
 
-            // 让根布局获得焦点，确保软键盘隐藏
+
             binding.root.requestFocus()
             val result = viewModel?.validateRequiredFields(viewModel?.aiRole)
             if (result == false) {
-                Toast.makeText(requireContext(), "必填字段为空", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Required fields are empty", Toast.LENGTH_SHORT).show()
             } else {
                 if (remoteHaveRole) {
                     viewModel?.updateAiRoleConfig()

@@ -29,7 +29,7 @@ class ChatAdapter(private val itemLongClickListener: OnItemLongClickListener) :
     private var itemList: MutableList<UIMessageBean> = mutableListOf()
 
 
-    // 定义不同的视图类型
+
     private val VIEW_TYPE_SENT = 1
     private val VIEW_TYPE_RECEIVED = 2
     private val VIEW_TYPE_FOOTER = 3
@@ -91,18 +91,18 @@ class ChatAdapter(private val itemLongClickListener: OnItemLongClickListener) :
                 var touchX = 0
                 var touchY = 0
                 holder.itemView.setOnTouchListener { v, event ->
-                    // 只需要记录 ACTION_DOWN 时的坐标，这是手指按下的起始位置
+
                     if (event.action == MotionEvent.ACTION_DOWN) {
-                        touchX = event.rawX.toInt() // 屏幕绝对 X 坐标
-                        touchY = event.rawY.toInt() // 屏幕绝对 Y 坐标
+                        touchX = event.rawX.toInt()
+                        touchY = event.rawY.toInt()
                     }
-                    // 必须返回 false，以便事件能继续传递给 OnLongClickListener
+
                     false
                 }
                 holder.itemView.setOnLongClickListener {
-                    // 在长按发生时，使用之前在 OnTouchListener 中记录的坐标
+
                     itemLongClickListener.onLongClick(it, itemList[position],itemList[position - 1].content, touchX, touchY)
-                    true // 返回 true 表示已消耗此长按事件
+                    true
                 }
             }
 
@@ -210,18 +210,18 @@ class ChatAdapter(private val itemLongClickListener: OnItemLongClickListener) :
             var touchX = 0
             var touchY = 0
             textView.setOnTouchListener { v, event ->
-                // 只需要记录 ACTION_DOWN 时的坐标，这是手指按下的起始位置
+
                 if (event.action == MotionEvent.ACTION_DOWN) {
-                    touchX = event.rawX.toInt() // 屏幕绝对 X 坐标
-                    touchY = event.rawY.toInt() // 屏幕绝对 Y 坐标
+                    touchX = event.rawX.toInt()
+                    touchY = event.rawY.toInt()
                 }
-                // 必须返回 false，以便事件能继续传递给 OnLongClickListener
+
                 false
             }
             textView.setOnLongClickListener {
-                // 在长按发生时，使用之前在 OnTouchListener 中记录的坐标
+
                 itemLongClickListener.onLongClick(it, item,item.content, touchX, touchY)
-                true // 返回 true 表示已消耗此长按事件
+                true
             }
 
         }
@@ -257,7 +257,7 @@ class ChatAdapter(private val itemLongClickListener: OnItemLongClickListener) :
                 imgExpand.setImageResource(R.drawable.icon_chat_message_contract)
                 scrollView.maxHeightPx = dpToPx(200, itemView.context)
             }
-            // 触发重新测量，使 maxHeightPx 的更改生效
+
             scrollView.requestLayout()
             if (!TextUtils.isEmpty(item.summary)) {
                 tvSummary.visibility = View.VISIBLE
@@ -268,43 +268,43 @@ class ChatAdapter(private val itemLongClickListener: OnItemLongClickListener) :
             }
             when (item.finalState) {
                 FinalStateEnum.THINKING -> {
-                    tvTopState.text = "思考中"
+                    tvTopState.text = "Thinking"
                     ivFinalResult.visibility = View.GONE
                     tvFinalResult.visibility = View.GONE
                     loadingDotsView.visibility = View.VISIBLE
                 }
 
                 FinalStateEnum.THINK_SUCCESS -> {
-                    tvTopState.text = "已完成思考"
+                    tvTopState.text = "Thinking Completed"
                     ivFinalResult.visibility = View.GONE
                     tvFinalResult.visibility = View.GONE
                     loadingDotsView.visibility = View.VISIBLE
                 }
 
                 FinalStateEnum.TASK_SUCCESS -> {
-                    tvTopState.text = "思考已完成"
+                    tvTopState.text = "Thinking Completed"
                     ivFinalResult.visibility = View.VISIBLE
                     ivFinalResult.setImageResource(R.drawable.tool_action_completed)
                     tvFinalResult.visibility = View.VISIBLE
-                    tvFinalResult.text = "任务已完成"
+                    tvFinalResult.text = "Task completed"
                     loadingDotsView.visibility = View.GONE
                 }
 
                 FinalStateEnum.FAIL -> {
-                    tvTopState.text = "思考出错"
+                    tvTopState.text = "Thinking Error"
                     ivFinalResult.visibility = View.VISIBLE
                     ivFinalResult.setImageResource(R.drawable.tool_action_fail)
                     tvFinalResult.visibility = View.VISIBLE
-                    tvFinalResult.text = "任务失败"
+                    tvFinalResult.text = "Task Failed"
                     loadingDotsView.visibility = View.GONE
                 }
 
                 FinalStateEnum.INTERRUPT -> {
-                    tvTopState.text = "思考被打断"
+                    tvTopState.text = "Thinking Interrupted"
                     ivFinalResult.visibility = View.VISIBLE
                     ivFinalResult.setImageResource(R.drawable.tool_action_fail)
                     tvFinalResult.visibility = View.VISIBLE
-                    tvFinalResult.text = "任务已中断"
+                    tvFinalResult.text = "Task Interrupted"
                     loadingDotsView.visibility = View.GONE
                 }
 

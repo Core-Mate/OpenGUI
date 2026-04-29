@@ -35,6 +35,6 @@
             android:includeFontPadding="false"
             android:textColor="#FFFFFF"
             android:textSize="16sp"
-            tools:text="你好，AI！你好，AI！你好，AI！你好，AI！你好，AI！你好，AI！你好，AI！" />
+            tools:text="Hello, AI! Hello, AI! Hello, AI! Hello, AI! Hello, AI!" />
     </FrameLayout>
 </LinearLayout>

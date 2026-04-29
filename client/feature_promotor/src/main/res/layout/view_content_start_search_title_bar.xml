@@ -25,7 +25,7 @@
             android:editable="false"
             android:focusable="true"
             android:gravity="left|center"
-            android:hint="搜索任务"
+            android:hint="Search Tasks"
             android:imeOptions="actionSearch"
             android:inputType="none"
             android:maxLines="1"

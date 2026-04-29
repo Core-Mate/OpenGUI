@@ -13,7 +13,7 @@ class ScreenCaptureManager : ScreenshotProvider {
     /**
      * Captures the current screen.
      */
-    override suspend fun capture(): Bitmap? { // *** 标记为 override ***
+    override suspend fun capture(): Bitmap? {
         // Check for the required Android version.
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
             System.err.println("Screen capture requires Android 11 (API 30) or higher.")

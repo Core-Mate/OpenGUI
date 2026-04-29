@@ -10,7 +10,7 @@
     android:orientation="vertical"
     android:paddingBottom="32dp">
 
-    <!--  标题  -->
+    <!--  Title  -->
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="48dp"
@@ -21,7 +21,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
-            android:text="订阅套餐"
+            android:text="Subscription Plans"
             android:textColor="#0B1120"
             android:textSize="18sp"
             android:textStyle="bold" />
@@ -38,7 +38,7 @@
             android:tint="@color/grey" />
     </RelativeLayout>
 
-    <!-- 当前积分   -->
+    <!-- Current Credits   -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -55,7 +55,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="当前积分"
+            android:text="Current Credits"
             android:textColor="#0369A1"
             android:textSize="14sp"
             android:textStyle="bold" />
@@ -67,7 +67,7 @@
             android:textColor="#0369A1"
             android:textSize="16sp"
             android:textStyle="bold"
-            tools:text="100积分" />
+            tools:text="100Credits" />
     </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView
@@ -102,7 +102,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:lineSpacingExtra="2dp"
-            android:text="每分钟消耗约2积分，实际消耗取决于任务复杂度。积分用于 AI 计算和云资源调用，当月有效。"
+            android:text="Uses about 2 credits per minute. Actual usage depends on task complexity. Credits cover AI compute and cloud resources and are valid for the current month."
             android:textColor="#64748B"
             android:textSize="13sp" />
     </LinearLayout>
@@ -114,7 +114,7 @@
         android:layout_marginBottom="16dp"
         android:gravity="center"
         android:lineSpacingExtra="2dp"
-        android:text="订阅即表示同意《用户协议》和《隐私政策》"
+        android:text="By subscribing, you agree to the User Agreement and Privacy Policy."
         android:textColor="#94A3B8"
         android:textSize="12sp" />
 
@@ -138,7 +138,7 @@
             android:clickable="true"
             android:focusable="true"
             android:gravity="center"
-            android:text="¥199/月 立即订阅"
+            android:text="¥199/month Subscribe Now"
             android:textColor="@android:color/white"
             android:textSize="17sp"
             android:textStyle="bold" />

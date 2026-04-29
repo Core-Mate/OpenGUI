@@ -32,7 +32,7 @@ class VerificationCodeFragment : Fragment() {
     private var presenter: Controller? = null
     private var countDownHandler: Handler? = null
     private var countDownRunnable: Runnable? = null
-    private var countDownTime = 60 // 倒计时60秒
+    private var countDownTime = 60
     private var phone: String = ""
     private var aff: String = ""
 
@@ -74,13 +74,13 @@ class VerificationCodeFragment : Fragment() {
             }
         }
         requireActivity().onBackPressedDispatcher.addCallback(this, callback)
-        // 初始化倒计时Handler
+
         countDownHandler = Handler(Looper.getMainLooper())
     }
 
     override fun onResume() {
         super.onResume()
-        // 确保验证码输入框自动获取焦点并弹出键盘
+
         binding.inputCodeLayout.edtCode.post {
             binding.inputCodeLayout.edtCode.requestFocus()
             KeyboardUtil.openKeyboard(requireContext(), binding.inputCodeLayout.edtCode)
@@ -89,7 +89,7 @@ class VerificationCodeFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        // 清理倒计时
+
         stopCountDown()
         countDownHandler = null
         _binding = null
@@ -99,8 +99,8 @@ class VerificationCodeFragment : Fragment() {
         this.phone = phone
         this.aff = aff
         activity?.runOnUiThread {
-            binding.title.text = "我们已向 $phone 发送验证码"
-            // 开始倒计时
+            binding.title.text = "We sent a code to $phone"
+
             startCountDown()
         }
     }
@@ -108,9 +108,9 @@ class VerificationCodeFragment : Fragment() {
     fun loginResult(result: VerifyCodeResp?) {
         activity?.runOnUiThread {
             if (result == null) {
-                binding.title.text = "短信验证失败"
+                binding.title.text = "SMS verification failed"
                 binding.title.setTextColor(Color.parseColor("#EF5350"))
-                // 与 Web 一致：验证失败时输入框水平抖动动效，约 400ms 后清空验证码
+
                 playShakeAndClear()
             } else {
                 val mmkv = MMKV.defaultMMKV()
@@ -125,11 +125,11 @@ class VerificationCodeFragment : Fragment() {
                 mmkv.encode("lastLoginTime", System.currentTimeMillis())
                 mmkv.encode("lastLoginVersion", getAppVersionCode(requireContext()))
 
-                // 根据 finishOnboarding 决定跳转
+
                 val intent = if (result.finishOnboarding) {
                     Intent(context, HomeActivity::class.java)
                 } else {
-                    // 未完成 onboarding，进入引导流程（产品介绍 → 目标选择）
+
                     Intent(context, IntroGuideActivity::class.java)
                 }
                 startActivity(intent)
@@ -139,27 +139,27 @@ class VerificationCodeFragment : Fragment() {
     }
 
     private fun startCountDown() {
-        // 取消之前的倒计时
+
         stopCountDown()
 
-        // 重置倒计时时间
+
         countDownTime = 60
 
-        // 禁用按钮（与前端一致：灰色背景、浅灰文字）
+
         binding.btRequestCode.isEnabled = false
         binding.btRequestCode.isClickable = false
         binding.btRequestCode.setTextColor(Color.parseColor("#9CA3AF"))
 
-        // 创建倒计时Runnable
+
         countDownRunnable = object : Runnable {
             override fun run() {
                 if (countDownTime > 0) {
-                    binding.btRequestCode.text = "重新发送（${countDownTime}s）"
+                    binding.btRequestCode.text = "Resend (${countDownTime}s）"
                     countDownTime--
                     countDownHandler?.postDelayed(this, 1000)
                 } else {
-                    // 倒计时结束，恢复按钮状态（与前端一致：灰色背景、深色文字）
-                    binding.btRequestCode.text = "重新发送"
+
+                    binding.btRequestCode.text = "Resend"
                     binding.btRequestCode.setBackgroundResource(R.drawable.login_v_bt_background)
                     binding.btRequestCode.setTextColor(Color.parseColor("#000000"))
                     binding.btRequestCode.isEnabled = true
@@ -169,7 +169,7 @@ class VerificationCodeFragment : Fragment() {
             }
         }
 
-        // 开始倒计时
+
         countDownHandler?.post(countDownRunnable!!)
     }
 
@@ -181,8 +181,6 @@ class VerificationCodeFragment : Fragment() {
     }
 
     /**
-     * 短信验证失败时的动效：与 Web 一致，输入框先切为错误色，再水平抖动 [0, -10, 10, -10, 10, 0] dp 约 400ms，
-     * 约 500ms 后清空验证码并恢复默认颜色便于重试。
      */
     private fun playShakeAndClear() {
         binding.inputCodeLayout.setErrorState(true)
@@ -203,7 +201,7 @@ class VerificationCodeFragment : Fragment() {
         try {
             val packageInfo: PackageInfo =
                 context.packageManager.getPackageInfo(context.packageName, 0)
-            // 注意：高版本 Android 使用 getLongVersionCode()
+
             return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 packageInfo.longVersionCode
             } else {

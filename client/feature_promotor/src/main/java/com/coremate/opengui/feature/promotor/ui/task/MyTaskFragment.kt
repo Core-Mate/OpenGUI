@@ -25,7 +25,7 @@ class MyTaskFragment : Fragment() {
     private lateinit var presenter: MyTaskPresenter
     private lateinit var taskListAdapter: ExecutedTaskListAdapter
 
-    // 分页相关变量
+
     private var currentPage = 1
     private val pageSize = 10
     private var isLoading = false
@@ -47,7 +47,7 @@ class MyTaskFragment : Fragment() {
         taskListAdapter = ExecutedTaskListAdapter(fragmentManager, presenter)
         binding.rvTaskList.adapter = taskListAdapter;
         binding.rvTaskList.layoutManager = LinearLayoutManager(requireContext())
-        // 添加滚动监听，实现分页加载
+
         binding.rvTaskList.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 super.onScrolled(recyclerView, dx, dy)
@@ -57,7 +57,7 @@ class MyTaskFragment : Fragment() {
                     val totalItemCount = it.itemCount
                     val firstVisibleItemPosition = it.findFirstVisibleItemPosition()
 
-                    // 当滚动到接近底部时（剩余3个item时）加载下一页
+
                     if (!isLoading && hasMoreData) {
                         if (visibleItemCount + firstVisibleItemPosition >= totalItemCount - 3) {
                             loadMoreData()
@@ -98,8 +98,8 @@ class MyTaskFragment : Fragment() {
             }
         };
 
-        // 将回调添加到 Activity 的分发器中
-        // 参数 1: LifecycleOwner (即 Fragment 本身)，确保生命周期感知
+
+
         requireActivity().onBackPressedDispatcher.addCallback(this, callback)
 
         lifecycleScope.launch {
@@ -118,7 +118,6 @@ class MyTaskFragment : Fragment() {
     }
 
     /**
-     * 刷新数据，重置分页状态
      */
     fun refreshData() {
         currentPage = 1
@@ -128,7 +127,6 @@ class MyTaskFragment : Fragment() {
     }
 
     /**
-     * 加载更多数据
      */
     private fun loadMoreData() {
         if (isLoading || !hasMoreData) {
@@ -149,16 +147,16 @@ class MyTaskFragment : Fragment() {
             if (isEmpty) {
                 hasMoreData = false
             } else {
-                // 如果返回的数据少于pageSize，说明没有更多数据了
-                // 如果等于pageSize，可能还有更多数据，继续允许加载
+
+
                 hasMoreData = (data?.size ?: 0) >= pageSize
             }
 
             if (isLoadMore) {
-                // 加载更多时追加数据
+
                 taskListAdapter.addData(data)
             } else {
-                // 刷新时替换数据
+
                 taskListAdapter.setData(data)
             }
         }

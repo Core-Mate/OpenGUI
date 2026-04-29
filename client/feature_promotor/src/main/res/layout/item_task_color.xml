@@ -5,7 +5,7 @@
     android:layout_marginStart="20dp"
     android:gravity="center">
 
-    <!-- 外层黑色圆环 (2dp) -->
+
     <View
         android:id="@+id/ring_black"
         android:layout_width="24dp"
@@ -14,7 +14,7 @@
         android:background="@drawable/task_color_ring_black"
         android:visibility="gone" />
 
-    <!-- 内层白色圆环 (2dp)，位于黑环之上 -->
+
     <View
         android:id="@+id/ring_white"
         android:layout_width="22dp"
@@ -23,7 +23,7 @@
         android:background="@drawable/task_color_ring_white"
         android:visibility="gone" />
 
-    <!-- 渐变色圆形 20x20 -->
+
     <View
         android:id="@+id/inner_circle"
         android:layout_width="20dp"

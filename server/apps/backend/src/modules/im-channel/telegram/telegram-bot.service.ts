@@ -4,17 +4,13 @@ import { Bot } from "grammy";
 import { AppLogger } from "../../../common/log";
 
 /**
- * Telegram Bot 服务 — 基于 grammY SDK
  *
- * 使用 long polling 模式接收消息（不需要公网 IP）。
- * 配置 TELEGRAM_BOT_TOKEN 即可启用。
  */
 @Injectable()
 export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
 	private bot: Bot | null = null;
 	private enabled = false;
 
-	/** 消息回调，由 ImChannelService 注册 */
 	onMessage: ((chatId: string, text: string) => Promise<void>) | null = null;
 
 	constructor(
@@ -36,7 +32,7 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
 		this.enabled = true;
 		this.bot = new Bot(token);
 
-		// 监听文本消息
+
 		this.bot.on("message:text", async (ctx) => {
 			const chatId = String(ctx.chat.id);
 			const text = ctx.message.text;
@@ -56,7 +52,7 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
 			}
 		});
 
-		// 启动 long polling（非阻塞）
+
 		this.bot.start({
 			onStart: () => {
 				this.logger.log("[TelegramBot] Connected, polling started ✓");
@@ -77,7 +73,6 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
 	}
 
 	/**
-	 * 发送文本消息给 Telegram 用户
 	 */
 	async sendMessage(chatId: string, text: string): Promise<void> {
 		if (!this.bot) return;

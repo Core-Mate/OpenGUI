@@ -2,109 +2,103 @@ import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { ContentPlatform, CreationScenario } from "../types";
 
 /**
- * 研究结果响应 DTO
  */
 export class ResearchResultDto {
-	@ApiProperty({ description: "来源URL" })
+	@ApiProperty({ description: "Source URL" })
 	sourceUrl: string;
 
-	@ApiProperty({ description: "来源标题" })
+	@ApiProperty({ description: "Source title" })
 	sourceTitle: string;
 
-	@ApiProperty({ description: "摘要内容" })
+	@ApiProperty({ description: "Summary content" })
 	summary: string;
 
-	@ApiProperty({ description: "关键要点", type: [String] })
+	@ApiProperty({ description: "Key points", type: [String] })
 	keyPoints: string[];
 
-	@ApiProperty({ description: "相关性评分 0-1" })
+	@ApiProperty({ description: "Relevance score, 0-1" })
 	relevanceScore: number;
 }
 
 /**
- * Token 使用量响应 DTO
  */
 export class TokenUsageDto {
-	@ApiProperty({ description: "输入 Token 数" })
+	@ApiProperty({ description: "Input token count" })
 	input: number;
 
-	@ApiProperty({ description: "输出 Token 数" })
+	@ApiProperty({ description: "Output token count" })
 	output: number;
 }
 
 /**
- * 内容元数据响应 DTO
  */
 export class ContentMetadataDto {
-	@ApiProperty({ description: "目标平台", enum: ContentPlatform })
+	@ApiProperty({ description: "Target platform", enum: ContentPlatform })
 	platform: ContentPlatform;
 
-	@ApiProperty({ description: "创作场景", enum: CreationScenario })
+	@ApiProperty({ description: "Creation scenario", enum: CreationScenario })
 	scenario: CreationScenario;
 
-	@ApiProperty({ description: "生成时间" })
+	@ApiProperty({ description: "Generated time" })
 	generatedAt: Date;
 
-	@ApiProperty({ description: "使用的模型" })
+	@ApiProperty({ description: "Model used" })
 	model: string;
 
-	@ApiPropertyOptional({ description: "Token 使用量", type: TokenUsageDto })
+	@ApiPropertyOptional({ description: "Token usage", type: TokenUsageDto })
 	tokenUsage?: TokenUsageDto;
 }
 
 /**
- * 内容输出响应 DTO
  */
 export class ContentOutputDto {
-	@ApiProperty({ description: "生成的内容" })
+	@ApiProperty({ description: "Generated content" })
 	content: string;
 
-	@ApiPropertyOptional({ description: "内容摘要" })
+	@ApiPropertyOptional({ description: "Content summary" })
 	summary?: string;
 
-	@ApiPropertyOptional({ description: "使用的研究资料", type: [ResearchResultDto] })
+	@ApiPropertyOptional({ description: "Research material used", type: [ResearchResultDto] })
 	researchUsed?: ResearchResultDto[];
 
-	@ApiProperty({ description: "字数统计" })
+	@ApiProperty({ description: "Word count" })
 	wordCount: number;
 
-	@ApiPropertyOptional({ description: "预估阅读时间(秒)" })
+	@ApiPropertyOptional({ description: "Estimated reading time in seconds" })
 	readingTime?: number;
 
-	@ApiProperty({ description: "创作元数据", type: ContentMetadataDto })
+	@ApiProperty({ description: "Creation metadata", type: ContentMetadataDto })
 	metadata: ContentMetadataDto;
 }
 
 /**
- * 研究响应 DTO
  */
 export class ResearchResponseDto {
-	@ApiProperty({ description: "研究主题" })
+	@ApiProperty({ description: "Research topic" })
 	topic: string;
 
-	@ApiProperty({ description: "研究结果列表", type: [ResearchResultDto] })
+	@ApiProperty({ description: "Research results", type: [ResearchResultDto] })
 	results: ResearchResultDto[];
 
-	@ApiProperty({ description: "综合摘要" })
+	@ApiProperty({ description: "Combined summary" })
 	summary: string;
 
-	@ApiProperty({ description: "生成时间" })
+	@ApiProperty({ description: "Generated time" })
 	generatedAt: Date;
 }
 
 /**
- * 流式消息响应 DTO (用于 SSE)
  */
 export class StreamMessageDto {
 	@ApiProperty({
-		description: "消息类型",
+		description: "Message type",
 		enum: ["text", "research", "draft", "final", "error", "progress"],
 	})
 	type: "text" | "research" | "draft" | "final" | "error" | "progress";
 
-	@ApiProperty({ description: "消息内容" })
+	@ApiProperty({ description: "Message content" })
 	content: string;
 
-	@ApiPropertyOptional({ description: "元数据" })
+	@ApiPropertyOptional({ description: "Metadata" })
 	metadata?: Record<string, unknown>;
 }

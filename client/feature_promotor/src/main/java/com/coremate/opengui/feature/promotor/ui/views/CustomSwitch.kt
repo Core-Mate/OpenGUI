@@ -20,49 +20,49 @@ class CustomSwitch @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
 
-    // 绘制画笔
+
     private val backgroundPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
     }
     private val thumbPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.WHITE
-        setShadowLayer(dpToPx(2f), 0f, dpToPx(1f), Color.parseColor("#40000000")) // 浅灰色阴影
+        setShadowLayer(dpToPx(2f), 0f, dpToPx(1f), Color.parseColor("#40000000")) // Light gray shadow.
     }
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         textSize = dpToPx(18f)
         textAlign = Paint.Align.CENTER
     }
 
-    // Switch 的尺寸和间距
-    private val cornerRadius = dpToPx(20f) // 背景圆角半径，设置为高度的一半
-    private val thumbRadius = dpToPx(10f)  // 游标半径，略小于背景高度的一半
-    private val padding = dpToPx(2f)      // 游标和背景边缘的间距
 
-    // 状态相关
+    private val cornerRadius = dpToPx(20f)
+    private val thumbRadius = dpToPx(10f)
+    private val padding = dpToPx(2f)
+
+
     private var isChecked = false
-    private var thumbXOffset = 0f // 游标当前X轴偏移量（动画用）
-    private var targetThumbXOffset = 0f // 游标目标X轴偏移量
+    private var thumbXOffset = 0f
+    private var targetThumbXOffset = 0f
 
-    // 颜色定义
-    private val onBgColor = Color.parseColor("#673AB7") // 开启状态背景色 (深紫色)
-    private val offBgColor = Color.parseColor("#E0E0E0") // 关闭状态背景色 (浅灰色)
-    private val onTextColor = Color.WHITE // 开启状态文本色
-    private val offTextColor = Color.GRAY // 关闭状态文本色
 
-    // 背景渐变色（图片中是整体颜色渐变，这里简化为单一色，如需复杂渐变，请在onDraw中创建LinearGradient）
-    // 如果需要渐变，可以在onDraw中根据onBgColor和offBgColor创建LinearGradient
+    private val onBgColor = Color.parseColor("#673AB7") // On-state background color, dark purple.
+    private val offBgColor = Color.parseColor("#E0E0E0") // Off-state background color, light gray.
+    private val onTextColor = Color.WHITE
+    private val offTextColor = Color.GRAY
 
-    // 监听器
+
+
+
+
     private var onCheckedChangeListener: ((Boolean) -> Unit)? = null
 
-    // 手势检测器用于处理点击事件
+
     private val gestureDetector: GestureDetector
 
     init {
-        // 启用软件渲染以支持阴影效果
+
         setLayerType(LAYER_TYPE_SOFTWARE, null)
 
-        // 初始化手势检测器
+
         gestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
             override fun onDown(e: MotionEvent): Boolean {
                 return true
@@ -76,8 +76,8 @@ class CustomSwitch @JvmOverloads constructor(
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        val desiredWidth = dpToPx(52f).toInt() // 默认宽度
-        val desiredHeight = dpToPx(28f).toInt() // 默认高度
+        val desiredWidth = dpToPx(52f).toInt()
+        val desiredHeight = dpToPx(28f).toInt()
 
         setMeasuredDimension(
             resolveSize(desiredWidth, widthMeasureSpec),
@@ -87,12 +87,12 @@ class CustomSwitch @JvmOverloads constructor(
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
-        // 确保游标半径和背景圆角与实际高度匹配
-        val actualHeight = h.toFloat()
-        // cornerRadius = actualHeight / 2 // 如果要完全椭圆形
-        // thumbRadius = (actualHeight - 2 * padding) / 2 // 游标半径
 
-        // 根据当前状态设置游标初始位置
+        val actualHeight = h.toFloat()
+
+
+
+
         targetThumbXOffset = if (isChecked) getThumbMaxOffset() else getThumbMinOffset()
         thumbXOffset = targetThumbXOffset
     }
@@ -111,16 +111,16 @@ class CustomSwitch @JvmOverloads constructor(
         val actualHeight = height.toFloat()
         val bgRect = RectF(0f, 0f, width.toFloat(), actualHeight)
 
-        // 1. 绘制背景
+
         val currentBgColor = (ArgbEvaluator().evaluate(
-            thumbXOffset / getThumbMaxOffset(), // 使用当前游标位置计算颜色过渡
+            thumbXOffset / getThumbMaxOffset(),
             offBgColor,
             onBgColor
         ) as Int)
         backgroundPaint.color = currentBgColor
         canvas.drawRoundRect(bgRect, cornerRadius, cornerRadius, backgroundPaint)
 
-        // 2. 绘制文本
+
         val currentTextColor = (ArgbEvaluator().evaluate(
             thumbXOffset / getThumbMaxOffset(),
             offTextColor,
@@ -129,25 +129,25 @@ class CustomSwitch @JvmOverloads constructor(
         textPaint.color = currentTextColor
 
         val textBounds = Rect()
-//        val text = if (isChecked) "是" else "否"
+//        val text = if (isChecked) "Yes" else "No"
         val text = if (isChecked) "" else ""
         textPaint.getTextBounds(text, 0, text.length, textBounds)
 
-        // 计算文本位置，使其在未被游标覆盖的一半区域居中
-        if (isChecked) { // "是" 文本在左侧
+
+        if (isChecked) { // "Yes" text on the left.
             val textX = (getThumbMinOffset() + thumbXOffset - thumbRadius) / 2
             canvas.drawText(text, textX, actualHeight / 2 + textBounds.height() / 2, textPaint)
-        } else { // "否" 文本在右侧
+        } else { // "No" text on the right.
             val textX = (getThumbMaxOffset() + thumbXOffset + thumbRadius) / 2
             canvas.drawText(text, textX, actualHeight / 2 + textBounds.height() / 2, textPaint)
         }
 
-        // 3. 绘制游标
+
         canvas.drawCircle(thumbXOffset, actualHeight / 2, thumbRadius, thumbPaint)
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        // 将触摸事件交给手势检测器处理，并始终消费事件以确保点击有效
+
         gestureDetector.onTouchEvent(event)
         return true
     }
@@ -167,11 +167,11 @@ class CustomSwitch @JvmOverloads constructor(
         this.isChecked = checked
         targetThumbXOffset = if (isChecked) getThumbMaxOffset() else getThumbMinOffset()
 
-        // 动画移动游标
+
         val animator = ValueAnimator.ofFloat(thumbXOffset, targetThumbXOffset)
         animator.addUpdateListener { animation ->
             thumbXOffset = animation.animatedValue as Float
-            invalidate() // 实时重绘
+            invalidate()
         }
         animator.interpolator = AccelerateDecelerateInterpolator()
         animator.duration = 200

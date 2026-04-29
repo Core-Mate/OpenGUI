@@ -37,8 +37,8 @@ class ExecutePreferenceEditFragment(var title: String, var content: String) :
                 behavior.isFitToContents = true
             }
         }
-        // 使用 ADJUST_RESIZE 确保内容不被键盘遮挡
-        // 但不立即显示键盘，而是延迟显示以避免闪烁
+
+
         dialog.window?.setSoftInputMode(
             WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
         )

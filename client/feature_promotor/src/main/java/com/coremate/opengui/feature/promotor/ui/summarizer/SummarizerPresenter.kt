@@ -68,12 +68,12 @@ class SummarizerPresenter(
                 LogManager.saveLog(view,"SummarizerPresenter",
                     "cancelTask initiated, summary will stream via WS, response=${it?.body()}",
                     TaskCenter.executionId?:-1)
-                // API 立即返回，总结通过 WS 流式推送到 summaryCallback，无需在此拉取
+
             }.onFailure {
                 LogManager.saveLog(view,"SummarizerPresenter","cancelTask,id = $executionId , error = ${it.message}",
                     TaskCenter.executionId?:-1)
                 it.printStackTrace()
-                // API 失败时，尝试从 DB 兜底拉取
+
                 getTaskExecutionsSummarizer(executionId)
             }
         }

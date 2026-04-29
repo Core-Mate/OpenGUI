@@ -58,112 +58,112 @@ class ExecuteTaskWindow(context: Context) : FrameLayout(context) {
     fun initEvent() {
         binding.cardPauseResume.setOnClickListener {
             if (currentTaskState == TaskState.PLAYING) {
-                // 执行中 -> 暂停任务
+                // Running -> pause task
                 HapticFeedbackHelper.click(context)
                 currentTaskState = TaskState.PAUSING
-                binding.tvPauseResume.text = "恢复执行"
-                binding.tvContent.text = "任务已暂停，点击继续按钮恢复任务"
-                binding.tvStatus.text = "暂停中"
+                binding.tvPauseResume.text = "Resume"
+                binding.tvContent.text = "Task paused. Tap Resume to continue."
+                binding.tvStatus.text = "Paused"
                 MessageController.pauseTask()
-                Toast.makeText(context.applicationContext, "任务已暂停", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context.applicationContext, "Task paused", Toast.LENGTH_SHORT).show()
                 LogManager.saveLog(
                     context,
                     TAG,
-                    "$TAG | 用户操作 | 点击人工接管 任务暂停",
+                    "$TAG | user action | tapped Take over, task paused",
                     TaskCenter.executionId ?: -1
                 )
-                AIFloatWindowManager.getSlideExpandWindow()?.updateContent("任务已暂停，点击恢复")
+                AIFloatWindowManager.getSlideExpandWindow()?.updateContent("Task paused. Tap to resume.")
                 AIFloatWindowManager.getSlideExpandWindow()?.updateBackground(true)
             } else {
-                // 暂停中 -> 恢复任务
+                // Paused -> resume task
                 HapticFeedbackHelper.click(context)
                 currentTaskState = TaskState.PLAYING
-                binding.tvPauseResume.text = "人工接管"
-                binding.tvContent.text = "任务执行中"
-                binding.tvStatus.text = "任务执行中"
+                binding.tvPauseResume.text = "Take over"
+                binding.tvContent.text = "Task running"
+                binding.tvStatus.text = "Task running"
                 MessageController.resumeTask(null)
-                Toast.makeText(context.applicationContext, "任务已恢复", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context.applicationContext, "Task resumed", Toast.LENGTH_SHORT).show()
                 LogManager.saveLog(
                     context,
                     TAG,
-                    "$TAG | 用户操作 | 点击恢复执行 任务执行",
+                    "$TAG | user action | tapped Resume, task running",
                     TaskCenter.executionId ?: -1
                 )
-                AIFloatWindowManager.getSlideExpandWindow()?.updateContent("任务执行中")
+                AIFloatWindowManager.getSlideExpandWindow()?.updateContent("Task running")
                 AIFloatWindowManager.getSlideExpandWindow()?.updateBackground(false)
             }
-            dismiss("点击接管/恢复按钮")
+            dismiss("take-over/resume button tapped")
             AIFloatWindowManager.showSlideExpandWindow(
                 currentTaskState == TaskState.PLAYING,
-                "接管/恢复"
+                "take over/resume"
             )
         }
         binding.cardStop.setOnClickListener {
-            // 点击结束任务：取消自动隐藏，显示确认和取消按钮
+            // Stop task: cancel auto-hide and show confirm/cancel buttons.
             HapticFeedbackHelper.lightTap(context)
-            handler.removeCallbacks(shrinkRunnable) // 取消自动隐藏计时器
+            handler.removeCallbacks(shrinkRunnable)
             binding.cardPauseResume.visibility = GONE
             binding.cardStop.visibility = GONE
             binding.confirmCancelContainer.visibility = VISIBLE
             MessageController.pauseTask()
-            binding.tvContent.text = "是否确认结束当前任务？"
+            binding.tvContent.text = "Stop the current task?"
             AIFloatWindowManager.getSlideExpandWindow()?.updateBackground(true)
             LogManager.saveLog(
-                context, TAG, "$TAG | 用户操作 | 点击终止按钮",
+                context, TAG, "$TAG | user action | tapped stop",
                 TaskCenter.executionId ?: -1
             )
         }
         binding.cardConfirm.setOnClickListener {
-            // 点击确认：真正停止任务
+            // Confirm: stop the task.
             HapticFeedbackHelper.confirm(context)
             LogManager.saveLog(
-                context, TAG, "$TAG | 用户操作 | 确认终止",
+                context, TAG, "$TAG | user action | confirmed stop",
                 TaskCenter.executionId ?: -1
             )
             AIFloatWindowManager.dismissAllWindow()
-            Toast.makeText(context.applicationContext, "任务已停止", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context.applicationContext, "Task stopped", Toast.LENGTH_SHORT).show()
             MessageController.cancelAndGotoSummarizer()
         }
         binding.cardCancel.setOnClickListener {
-            // 点击取消：恢复自动隐藏，隐藏确认/取消按钮，显示原来的按钮，然后立即隐藏窗口
+            // Cancel: restore controls and hide the window.
             HapticFeedbackHelper.click(context)
             MessageController.resumeTask(null)
             binding.confirmCancelContainer.visibility = GONE
             binding.cardPauseResume.visibility = VISIBLE
             binding.cardStop.visibility = VISIBLE
-            // 取消后直接 dismiss，无需再恢复计时器
-            AIFloatWindowManager.getSlideExpandWindow()?.updateContent("任务执行中")
+            // Dismiss directly after cancel.
+            AIFloatWindowManager.getSlideExpandWindow()?.updateContent("Task running")
             AIFloatWindowManager.getSlideExpandWindow()?.updateBackground(false)
             AIFloatWindowManager.showSlideExpandWindow(
                 currentTaskState == TaskState.PLAYING,
-                "接管/恢复"
+                "take over/resume"
             )
-            dismiss("点击取消按钮")
+            dismiss("cancel button tapped")
             LogManager.saveLog(
-                context, TAG, "$TAG | 用户操作 | 取消终止",
+                context, TAG, "$TAG | user action | cancelled stop",
                 TaskCenter.executionId ?: -1
             )
         }
         binding.cardSupplement.setOnClickListener {
             HapticFeedbackHelper.click(context)
-            handler.removeCallbacks(shrinkRunnable) // 取消自动隐藏计时器
+            handler.removeCallbacks(shrinkRunnable)
             currentTaskState = TaskState.PAUSING
-            binding.tvPauseResume.text = "恢复执行"
-            binding.tvContent.text = "任务已暂停，点击继续按钮恢复任务"
-            binding.tvStatus.text = "暂停中"
+            binding.tvPauseResume.text = "Resume"
+            binding.tvContent.text = "Task paused. Tap Resume to continue."
+            binding.tvStatus.text = "Paused"
             MessageController.pauseTask()
-            Toast.makeText(context.applicationContext, "任务已暂停", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context.applicationContext, "Task paused", Toast.LENGTH_SHORT).show()
             LogManager.saveLog(
                 context,
-                TAG, "$TAG | 用户操作 | 用户点击补充信息按钮，暂停任务",
+                TAG, "$TAG | user action | tapped add information, task paused",
                 TaskCenter.executionId ?: -1
             )
-            AIFloatWindowManager.getSlideExpandWindow()?.updateContent("任务已暂停，点击恢复")
+            AIFloatWindowManager.getSlideExpandWindow()?.updateContent("Task paused. Tap to resume.")
             AIFloatWindowManager.getSlideExpandWindow()?.updateBackground(true)
             binding.controlContainer.visibility = GONE
             binding.supplementContainer.visibility = VISIBLE
             binding.etSupplement.text = null
-            // 允许窗口获得焦点，以便 EditText 能弹出软键盘
+
             setWindowFocusable(true)
             binding.etSupplement.post {
                 binding.etSupplement.requestFocus()
@@ -174,55 +174,54 @@ class ExecuteTaskWindow(context: Context) : FrameLayout(context) {
         binding.cardCancelSupplement.setOnClickListener {
             HapticFeedbackHelper.click(context)
             currentTaskState = TaskState.PLAYING
-            binding.tvPauseResume.text = "人工接管"
-            binding.tvContent.text = "任务执行中"
-            binding.tvStatus.text = "任务执行中"
+            binding.tvPauseResume.text = "Take over"
+            binding.tvContent.text = "Task running"
+            binding.tvStatus.text = "Task running"
             MessageController.resumeTask(null)
-            Toast.makeText(context.applicationContext, "任务已恢复", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context.applicationContext, "Task resumed", Toast.LENGTH_SHORT).show()
             LogManager.saveLog(
                 context,
-                TAG, "$TAG | 用户操作 | 取消补充，任务恢复执行",
+                TAG, "$TAG | user action | cancelled additional information, task resumed",
                 TaskCenter.executionId ?: -1
             )
-            AIFloatWindowManager.getSlideExpandWindow()?.updateContent("任务执行中")
+            AIFloatWindowManager.getSlideExpandWindow()?.updateContent("Task running")
             AIFloatWindowManager.getSlideExpandWindow()?.updateBackground(false)
             AIFloatWindowManager.showSlideExpandWindow(
                 currentTaskState == TaskState.PLAYING,
-                "取消信息补充"
+                "cancel additional information"
             )
             binding.controlContainer.visibility = VISIBLE
             binding.supplementContainer.visibility = GONE
             setWindowFocusable(false)
-            startShrinkTimeDown("取消补充信息")
+            startShrinkTimeDown("cancel additional information")
         }
         binding.cardSubmitSupplement.setOnClickListener {
             HapticFeedbackHelper.click(context)
             currentTaskState = TaskState.PLAYING
-            binding.tvPauseResume.text = "人工接管"
-            binding.tvContent.text = "任务执行中"
-            binding.tvStatus.text = "任务执行中"
+            binding.tvPauseResume.text = "Take over"
+            binding.tvContent.text = "Task running"
+            binding.tvStatus.text = "Task running"
             MessageController.resumeTask(binding.etSupplement.text.toString())
-            Toast.makeText(context.applicationContext, "任务已恢复", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context.applicationContext, "Task resumed", Toast.LENGTH_SHORT).show()
             LogManager.saveLog(
                 context,
                 TAG,
-                "$TAG | 用户操作 | 提交补充 ，任务恢复执行，补充内容：${binding.etSupplement.text.toString()}",
+                "$TAG | user action | submitted additional information, task resumed, content: ${binding.etSupplement.text.toString()}",
                 TaskCenter.executionId ?: -1
             )
-            AIFloatWindowManager.getSlideExpandWindow()?.updateContent("任务执行中")
+            AIFloatWindowManager.getSlideExpandWindow()?.updateContent("Task running")
             AIFloatWindowManager.showSlideExpandWindow(
                 currentTaskState == TaskState.PLAYING,
-                "提交信息补充"
+                "submit additional information"
             )
             AIFloatWindowManager.getSlideExpandWindow()?.updateBackground(false)
             binding.controlContainer.visibility = VISIBLE
             binding.supplementContainer.visibility = GONE
             setWindowFocusable(false)
-            dismiss("提交信息补充")
+            dismiss("submit additional information")
         }
     }
 
-    /** 切换窗口是否可获焦：补充输入框需要可获焦才能弹出软键盘 */
     private fun setWindowFocusable(focusable: Boolean) {
         val params = layoutParams as? WindowManager.LayoutParams ?: return
         val newFlags = if (focusable) {
@@ -238,14 +237,14 @@ class ExecuteTaskWindow(context: Context) : FrameLayout(context) {
 
     fun loopFakeOperation() {
         LogManager.saveLog(
-            context, TAG, "$TAG | 开始循环播放预置文案",
+            context, TAG, "$TAG | start cycling preset status text",
             TaskCenter.executionId ?: -1
         )
         try {
             LogManager.saveLog(
                 context,
                 TAG,
-                "$TAG | fake operation 执行悬浮窗 显示 | isAttachedToWindow = $isShowing  | currentTaskState = ${TaskCenter.currentTaskState}," +
+                "$TAG | fake operation window shown | isAttachedToWindow = $isShowing  | currentTaskState = ${TaskCenter.currentTaskState}," +
                         "${TaskCenter.executionId ?: -1}",
                 TaskCenter.executionId ?: -1
             )
@@ -262,16 +261,16 @@ class ExecuteTaskWindow(context: Context) : FrameLayout(context) {
     }
 
     private val fakeOperations = arrayOf(
-        "正在获取当前屏幕焦点",
-        "正在校验 UI 元素布局状态",
-        "正在分析任务意图关联性",
-        "正在计算最优交互路径方案",
-        "正在预检系统安全访问权限",
-        "正在优化网络数据请求负载",
-        "正在过滤页面冗余干扰信息",
-        "正在生成操作执行指令序列",
-        "正在校验指令逻辑完整度",
-        "正在准备执行下一阶段动作"
+        "Getting current screen focus",
+        "Checking UI element layout",
+        "Analyzing task intent relevance",
+        "Calculating best interaction path",
+        "Checking system access permissions",
+        "Optimizing network request payload",
+        "Filtering irrelevant page noise",
+        "Generating action sequence",
+        "Checking instruction logic",
+        "Preparing next action phase"
     )
 
     private val loopFakeOperationRunnable = object : Runnable {
@@ -279,8 +278,8 @@ class ExecuteTaskWindow(context: Context) : FrameLayout(context) {
             val string = fakeOperations[getRandomSingleDigit()]
             val time = getRandomTime()
             Log.d(TAG, "ExecuteTaskWindow     $string     ${time.toLong()}")
-            // 1. 执行 UI 更新逻辑
-            binding.tvStatus.text = "执行中"
+            // Update the visible status text.
+            binding.tvStatus.text = "Running"
             binding.tvContent.text = string
             handler.postDelayed(this, time.toLong())
         }
@@ -296,7 +295,7 @@ class ExecuteTaskWindow(context: Context) : FrameLayout(context) {
 
     fun startShrinkTimeDown(from: String) {
         LogManager.saveLog(
-            context, TAG, "$TAG | 开始缩小倒计时 | from=$from",
+            context, TAG, "$TAG | start shrink countdown | from=$from",
             TaskCenter.executionId ?: -1
         )
         handler.removeCallbacks(shrinkRunnable)
@@ -305,13 +304,13 @@ class ExecuteTaskWindow(context: Context) : FrameLayout(context) {
 
     private var shrinkRunnable = Runnable {
         LogManager.saveLog(
-            context, TAG, "$TAG | shrinkRunnable | 隐藏执行弹窗",
+            context, TAG, "$TAG | shrinkRunnable | hide execution window",
             TaskCenter.executionId ?: -1
         )
-        dismiss("定时器触发隐藏")
+        dismiss("timer triggered hide")
         AIFloatWindowManager.showSlideExpandWindow(
             currentTaskState == TaskState.PLAYING,
-            "执行状态栏，计时器"
+            "execution status bar, timer"
         )
     }
 
@@ -321,13 +320,13 @@ class ExecuteTaskWindow(context: Context) : FrameLayout(context) {
             LogManager.saveLog(
                 context,
                 TAG,
-                "$TAG | 执行悬浮窗 显示 | from = $from | isShowing = $isShowing  | currentTaskState = ${TaskCenter.currentTaskState}," +
+                "$TAG | execution window show | from = $from | isShowing = $isShowing  | currentTaskState = ${TaskCenter.currentTaskState}," +
                         "${TaskCenter.executionId ?: -1}",
                 TaskCenter.executionId ?: -1
             )
             if (!isShowing && TaskCenter.currentTaskState == TaskCenter.TaskState.EXECUTE) {
                 reset("$from - show")
-                AIFloatWindowManager.getSlideExpandWindow()?.dismiss("悬浮窗显示，隐藏灵动岛")
+                AIFloatWindowManager.getSlideExpandWindow()?.dismiss("execution window shown, hide slide window")
                 windowManager.addView(this, baseLayoutParams)
                 isShowing = true
                 startShrinkTimeDown("show")
@@ -344,7 +343,7 @@ class ExecuteTaskWindow(context: Context) : FrameLayout(context) {
             LogManager.saveLog(
                 context,
                 TAG,
-                "$TAG | 执行悬浮窗 隐藏 | from = $from | isShowing = $isShowing",
+                "$TAG | execution window hide | from = $from | isShowing = $isShowing",
                 TaskCenter.executionId ?: -1
             )
             if (isShowing) {
@@ -360,13 +359,13 @@ class ExecuteTaskWindow(context: Context) : FrameLayout(context) {
 
     fun setPauseTaskStatus() {
         currentTaskState = TaskState.PAUSING
-        binding.tvPauseResume.text = "恢复执行"
-        binding.tvContent.text = "任务已暂停，点击继续按钮恢复任务"
-        binding.tvStatus.text = "暂停中"
+        binding.tvPauseResume.text = "Resume"
+        binding.tvContent.text = "Task paused. Tap Resume to continue."
+        binding.tvStatus.text = "Paused"
         startShrinkTimeDown("setPauseTaskStatus")
-        Toast.makeText(context, "任务已暂停", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, "Task paused", Toast.LENGTH_SHORT).show()
         LogManager.saveLog(
-            context, "ExecuteTaskWindow", "收到了用户接管的 action",
+            context, "ExecuteTaskWindow", "Received user takeover action",
             TaskCenter.executionId ?: -1
         )
     }
@@ -402,16 +401,16 @@ class ExecuteTaskWindow(context: Context) : FrameLayout(context) {
         )
         when (currentTaskState) {
             TaskState.PLAYING -> {
-                binding.tvPauseResume.text = "人工接管"
+                binding.tvPauseResume.text = "Take over"
             }
 
             TaskState.PAUSING -> {
-                binding.tvPauseResume.text = "恢复执行"
-                binding.tvStatus.text = "暂停中"
-                binding.tvContent.text = "任务已暂停，点击继续按钮恢复任务"
+                binding.tvPauseResume.text = "Resume"
+                binding.tvStatus.text = "Paused"
+                binding.tvContent.text = "Task paused. Tap Resume to continue."
             }
         }
-        // 确保按钮状态正确：显示原来的按钮，隐藏确认/取消按钮
+        // Restore the default controls and hide the confirmation controls.
         binding.cardPauseResume.visibility = VISIBLE
         binding.cardStop.visibility = VISIBLE
         binding.confirmCancelContainer.visibility = GONE

@@ -31,10 +31,10 @@ class GradientWindow(context: Context) : FrameLayout(context) {
     init {
         val themedContext = ContextThemeWrapper(context, R.style.Theme_Promotor_Feature)
         binding = WindowGradientBinding.inflate(LayoutInflater.from(themedContext), this, true)
-        // 顶部和底部蒙层添加呼吸动画效果
+
 //        startBreathAnimation(binding.topMaskBg)
         startBreathAnimation(binding.bottomMaskBg)
-        // 注册到管理器
+
         AIFloatWindowManager.registerGradientWindow(this)
     }
 
@@ -65,14 +65,14 @@ class GradientWindow(context: Context) : FrameLayout(context) {
 
 
     private fun startBreathAnimation(target: View) {
-        // 缩放动画（X、Y 同步）
+
         val scaleX = ObjectAnimator.ofFloat(target, View.SCALE_X, 0.96f, 1.04f).apply {
             duration = 1800
             repeatCount = ObjectAnimator.INFINITE
             repeatMode = ObjectAnimator.REVERSE
         }
 
-        // 透明度动画
+
         val alpha = ObjectAnimator.ofFloat(target, View.ALPHA, 0.3f, 1.0f).apply {
             duration = 1800
             repeatCount = ObjectAnimator.INFINITE
@@ -97,7 +97,7 @@ class GradientWindow(context: Context) : FrameLayout(context) {
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.MATCH_PARENT,
             type,
-            // 可点击但不获取焦点
+
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                     WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
                     WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
@@ -117,7 +117,7 @@ class GradientWindow(context: Context) : FrameLayout(context) {
         LogManager.saveLog(
             context,
             TAG,
-            "$TAG | 炫彩框 显示 | from = $from | isShowing = $isShowing | currentTaskState = ${TaskCenter.currentTaskState}"
+            "$TAG | gradient frame show | from = $from | isShowing = $isShowing | currentTaskState = ${TaskCenter.currentTaskState}"
             ,
             TaskCenter.executionId?:-1)
         if (!isShowing && TaskCenter.currentTaskState == TaskCenter.TaskState.EXECUTE) {
@@ -132,7 +132,7 @@ class GradientWindow(context: Context) : FrameLayout(context) {
         LogManager.saveLog(
             context,
             TAG,
-            "$TAG | 炫彩框 隐藏 | from = $from | isShowing = $isShowing",
+            "$TAG | gradient frame hide | from = $from | isShowing = $isShowing",
             TaskCenter.executionId?:-1
         )
         if (isShowing) {

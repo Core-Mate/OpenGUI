@@ -13,10 +13,10 @@ class LoadingDotsView @JvmOverloads constructor(
     defStyle: Int = 0
 ) : View(context, attrs, defStyle) {
 
-    private val dotRadius = dp2px(1.5f) // 半径 = 3dp / 2
-    private val dotSpacing = dp2px(2f)   // 圆点之间间距
+    private val dotRadius = dp2px(1.5f)
+    private val dotSpacing = dp2px(2f)
 
-    // 三个颜色
+
     private val colors = listOf(
         0x66000000, // #00000066
         0xCC000000.toInt(), // #000000CC
@@ -24,10 +24,10 @@ class LoadingDotsView @JvmOverloads constructor(
     )
 
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-    private var activeIndex = 0 // 当前高亮的圆点
+    private var activeIndex = 0
 
     init {
-        // 每 500 毫秒切换一次
+
         fixedRateTimer("loadingDots", initialDelay = 0, period = 500) {
             activeIndex = (activeIndex + 1) % 3
             postInvalidate()
@@ -41,7 +41,7 @@ class LoadingDotsView @JvmOverloads constructor(
         val startX = (width - (dotRadius * 2 * 3 + dotSpacing * 2)) / 2f
 
         for (i in 0 until 3) {
-            // 如果是当前 index，用对应颜色，否则颜色变淡
+
             paint.color = colors[(i + activeIndex) % colors.size]
             val cx = startX + i * (dotRadius * 2 + dotSpacing) + dotRadius
             canvas.drawCircle(cx, centerY, dotRadius, paint)

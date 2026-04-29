@@ -9,15 +9,15 @@ import retrofit2.http.Path
 
 interface FuncApiService {
 
-    // 获取自定义任务
+
     @GET("missions")
     suspend fun getMissions(): Response<List<FuncItemBean>>
 
-    // 创建用户自定义任务
+
     @POST("missions")
     suspend fun createMission(@Body requestBody: FuncCreateRequest): Response<FuncItemBean>
 
-    //删除自定义任务
+    //DeleteCustom task
     @DELETE("missions/{id}")
     suspend fun delMission(@Path("id") id: Long): Response<FuncItemBean>
 }

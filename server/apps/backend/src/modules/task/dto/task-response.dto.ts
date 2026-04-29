@@ -7,119 +7,117 @@ import {
 } from '../enums/task.enums'
 
 /**
- * 最近执行信息
+ * Last execution info
  */
 export class LastExecutionInfo {
-    @ApiProperty({ description: '执行记录ID' })
+    @ApiProperty({ description: 'Execution record ID' })
     id: number
 
-    @ApiProperty({ description: '执行状态', enum: ExecutionStatus })
+    @ApiProperty({ description: 'Execution status', enum: ExecutionStatus })
     status: ExecutionStatus
 
-    @ApiProperty({ description: '执行结果', enum: ExecutionResult, required: false })
+    @ApiProperty({ description: 'Execution result', enum: ExecutionResult, required: false })
     result?: ExecutionResult
 
-    @ApiProperty({ description: '完成时间', required: false })
+    @ApiProperty({ description: 'Completion time', required: false })
     finishedAt?: Date
 }
 
 /**
- * 任务响应DTO
+ * Task response DTO
  */
 export class TaskResponseDto {
-    @ApiProperty({ description: '任务ID' })
+    @ApiProperty({ description: 'Task ID' })
     id: number
 
-    @ApiProperty({ description: '用户ID' })
+    @ApiProperty({ description: 'User ID' })
     userId: number
 
-    @ApiProperty({ description: '任务名称' })
+    @ApiProperty({ description: 'Task name' })
     taskName: string
 
-    @ApiProperty({ description: '任务描述', required: false })
+    @ApiProperty({ description: 'Task description', required: false })
     taskDescription?: string
 
     @ApiProperty({
-        description: '相关平台列表',
+        description: 'Related platforms',
         enum: PlatformType,
         isArray: true,
     })
     relatedPlatforms: PlatformType[]
 
-    @ApiProperty({ description: '任务类别', enum: TaskCategory })
+    @ApiProperty({ description: 'Task category', enum: TaskCategory })
     category: TaskCategory
 
-    @ApiProperty({ description: '总执行次数' })
+    @ApiProperty({ description: 'Total executions' })
     totalExecutions: number
 
-    @ApiProperty({ description: '成功次数' })
+    @ApiProperty({ description: 'Success count' })
     successCount: number
 
-    @ApiProperty({ description: '失败次数' })
+    @ApiProperty({ description: 'Failure count' })
     failCount: number
 
-    @ApiProperty({ description: '创建时间' })
+    @ApiProperty({ description: 'Created at' })
     createdAt: Date
 
-    @ApiProperty({ description: '更新时间' })
+    @ApiProperty({ description: 'Updated at' })
     updatedAt: Date
 
-    @ApiProperty({ description: '发布时间', required: false })
+    @ApiProperty({ description: 'Published at', required: false })
     publishedAt?: Date
 
-    @ApiProperty({ description: '最近一次执行信息', type: LastExecutionInfo, required: false })
+    @ApiProperty({ description: 'Most recent execution info', type: LastExecutionInfo, required: false })
     lastExecution?: LastExecutionInfo
 
-    @ApiProperty({ description: '是否为模板任务' })
+    @ApiProperty({ description: 'Whether this is a template task' })
     isTemplate: boolean
 
-    @ApiProperty({ description: '是否为示例任务' })
+    @ApiProperty({ description: 'Whether this is an example task' })
     isExample: boolean
 
-    @ApiProperty({ description: '是否置顶' })
+    @ApiProperty({ description: 'Whether pinned' })
     isPinned: boolean
 }
 
 /**
- * 任务列表查询参数
  */
 export class TaskQueryDto {
-    @ApiProperty({ description: '页码', required: false, default: 1 })
+    @ApiProperty({ description: 'Page number', required: false, default: 1 })
     page?: number
 
-    @ApiProperty({ description: '每页数量', required: false, default: 20 })
+    @ApiProperty({ description: 'Items per page', required: false, default: 20 })
     pageSize?: number
 
-    @ApiProperty({ description: '任务类别筛选', enum: TaskCategory, required: false })
+    @ApiProperty({ description: 'Task category filter', enum: TaskCategory, required: false })
     category?: TaskCategory
 
     @ApiProperty({
-        description: '平台筛选',
+        description: 'Platform filter',
         enum: PlatformType,
         required: false,
     })
     platform?: PlatformType
 
-    @ApiProperty({ description: '搜索关键词', required: false })
+    @ApiProperty({ description: 'Search keyword', required: false })
     keyword?: string
 }
 
 /**
- * 分页任务列表响应
  */
 export class PaginatedTaskListDto {
-    @ApiProperty({ description: '任务列表', type: [TaskResponseDto] })
+    @ApiProperty({ description: 'Task list', type: [TaskResponseDto] })
     items: TaskResponseDto[]
 
-    @ApiProperty({ description: '总数' })
+    @ApiProperty({ description: 'Total count' })
     total: number
 
-    @ApiProperty({ description: '当前页码' })
+    @ApiProperty({ description: 'Current page number' })
     page: number
 
-    @ApiProperty({ description: '每页数量' })
+    @ApiProperty({ description: 'Items per page' })
     pageSize: number
 
-    @ApiProperty({ description: '总页数' })
+    @ApiProperty({ description: 'Total pages' })
     totalPages: number
 }

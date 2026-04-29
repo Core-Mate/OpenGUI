@@ -6,7 +6,6 @@ import {
 } from '../enums/task.enums'
 
 /**
- * 任务实体
  */
 export interface TaskEntity {
     id: number
@@ -29,7 +28,6 @@ export interface TaskEntity {
 }
 
 /**
- * 创建任务数据
  */
 export interface CreateTaskData {
     userId: number
@@ -40,7 +38,6 @@ export interface CreateTaskData {
 }
 
 /**
- * 更新任务数据
  */
 export interface UpdateTaskData {
     taskName?: string
@@ -50,7 +47,6 @@ export interface UpdateTaskData {
 }
 
 /**
- * 更新任务统计数据
  */
 export interface UpdateTaskStatsData {
     totalExecutions?: number
@@ -59,7 +55,6 @@ export interface UpdateTaskStatsData {
 }
 
 /**
- * 从Prisma模型映射到实体的辅助函数
  */
 export function mapPrismaToTaskEntity(prismaTask: any): TaskEntity {
     return {
@@ -84,7 +79,7 @@ export function mapPrismaToTaskEntity(prismaTask: any): TaskEntity {
 }
 
 /**
- * 最近执行信息
+ * Last execution info
  */
 export interface LastExecutionInfo {
     id: number

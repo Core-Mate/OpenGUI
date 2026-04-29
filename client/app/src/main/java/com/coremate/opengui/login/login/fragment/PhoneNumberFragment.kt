@@ -55,12 +55,12 @@ class PhoneNumberFragment : Fragment() {
 
         binding.inputPhone.addTextChangedListener(phoneTextWatcher)
 
-        // 显示邀请码输入框（可选填），隐藏模式切换按钮
+
         binding.inviteCodeContainer.visibility = View.VISIBLE
         binding.buttonToggle.visibility = View.GONE
 
-        binding.titleText.text = "欢迎"
-        binding.subtitleText.text = "输入手机号即可登录"
+        binding.titleText.text = "Welcome"
+        binding.subtitleText.text = "Enter your phone number to sign in"
 
         binding.buttonSubmit.setOnClickListener {
             handleSubmit()

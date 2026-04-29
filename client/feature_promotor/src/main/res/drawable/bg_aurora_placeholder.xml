@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 首页整体页面背景：白底 + Aurora 光晕（与 Web HomePage + AuroraBackground 一致） -->
+
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- 底层：纯白 bg-white -->
+
     <item>
         <shape android:shape="rectangle">
             <gradient
@@ -11,7 +11,7 @@
                 android:endColor="#1AFFFFFF" />
         </shape>
     </item>
-    <!-- 左上角蓝紫光晕 rgba(46, 88, 255, 0.12) -->
+
     <item
         android:left="-160dp"
         android:top="-160dp"
@@ -30,7 +30,7 @@
                 android:height="400dp" />
         </shape>
     </item>
-    <!-- 右下角青色光晕 rgba(0, 200, 255, 0.08) + blur(120px)：中心极淡，快速过渡到全透明 -->
+
     <item
         android:left="0dp"
         android:top="0dp"

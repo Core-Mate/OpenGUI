@@ -10,7 +10,7 @@
     android:paddingEnd="24dp"
     android:paddingBottom="32dp">
 
-    <!-- 关闭 -->
+
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="48dp">
@@ -27,7 +27,7 @@
             android:tint="@color/grey" />
     </RelativeLayout>
 
-    <!-- 标题：与 Web 一致 -->
+
     <TextView
         android:id="@+id/tv_detail_title"
         android:layout_width="match_parent"
@@ -37,9 +37,9 @@
         android:textColor="#111827"
         android:textSize="22sp"
         android:textStyle="bold"
-        tools:text="微信公众号 图文定时发布" />
+        tools:text="WeChat Official Account Scheduled Post" />
 
-    <!-- 统计行：使用次数、成功率、预计时间 -->
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -83,7 +83,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="使用次数"
+                android:text="Usage Count"
                 android:textColor="#9CA3AF"
                 android:textSize="12sp"
                 android:textStyle="bold" />
@@ -123,7 +123,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="成功率"
+                android:text="success rate"
                 android:textColor="#9CA3AF"
                 android:textSize="12sp"
                 android:textStyle="bold" />
@@ -164,14 +164,14 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="预计时间"
+                android:text="Estimated Time"
                 android:textColor="#9CA3AF"
                 android:textSize="12sp"
                 android:textStyle="bold" />
         </LinearLayout>
     </LinearLayout>
 
-    <!-- 任务描述 -->
+    <!-- Task Description -->
     <TextView
         android:id="@+id/tv_detail_description"
         android:layout_width="match_parent"
@@ -181,7 +181,7 @@
         android:textColor="#111827"
         android:textSize="16sp"
         android:textStyle="bold"
-        tools:text="专为微信内容创作者打造的自动化发布任务..." />
+        tools:text="An automated publishing task designed for WeChat content creators..." />
 
     <TextView
         android:id="@+id/tv_add"
@@ -190,7 +190,7 @@
         android:layout_marginTop="20dp"
         android:background="@drawable/bg_main_circle"
         android:gravity="center"
-        android:text="添加到我的任务"
+        android:text="Add to My Tasks"
         android:textColor="@color/white"
         android:textSize="18sp"
         android:textStyle="bold" />

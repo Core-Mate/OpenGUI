@@ -23,7 +23,7 @@
             android:layout_height="wrap_content"
             android:padding="16dp"
             android:src="@drawable/ic_arrow_back"
-            android:contentDescription="返回"
+            android:contentDescription="Back"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent" />
@@ -32,7 +32,7 @@
             android:id="@+id/tv_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="AI角色设置-知识库"
+            android:text="AI Role Settings - Knowledge Base"
             android:textColor="@android:color/black"
             android:textSize="18sp"
             android:textStyle="bold"
@@ -58,7 +58,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="选择知识库"
+            android:text="Select Knowledge Base"
             android:padding="16dp"
             android:textSize="16sp"
             android:textColor="#333333"
@@ -67,18 +67,18 @@
         <Button
             android:id="@+id/btn_knowledge_base_1"
             style="@style/KnowledgeBaseButton"
-            android:text="美丽人生医美知识库" />
+            android:text="Beauty Life medical aesthetics knowledge base" />
 
         <Button
             android:id="@+id/btn_knowledge_base_2"
             style="@style/KnowledgeBaseButton"
-            android:text="数字人生电商知识库" />
+            android:text="Digital Life E-commerce Knowledge Base" />
 
         <Button
             android:id="@+id/btn_add_new_knowledge_base"
             style="@style/KnowledgeBaseButton"
             android:layout_marginTop="32dp"
-            android:text="新增知识库" />
+            android:text="New knowledge base" />
 
     </LinearLayout>
 
@@ -86,7 +86,7 @@
         android:id="@+id/btn_save_settings_bottom"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="保存设置"
+        android:text="SaveSettings"
         android:textColor="@android:color/white"
         android:textSize="18sp"
         android:textStyle="bold"

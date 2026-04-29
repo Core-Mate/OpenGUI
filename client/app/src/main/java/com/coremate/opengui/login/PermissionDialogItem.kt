@@ -15,7 +15,7 @@ class PermissionDialogItem : LinearLayout {
         attrs,
         defStyleAttr
     ) {
-        //因为我们引入的布局文件根布局是merge，而我们的CustomViewGroup又是继承LinearLayout，所以我们在这里设置几个属性
+
         this.orientation = HORIZONTAL
         init()
     }

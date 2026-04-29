@@ -19,7 +19,7 @@ public class ParagraphLineHeightPlugin extends AbstractMarkwonPlugin {
 
     @Override
     public void configureSpansFactory(@NonNull MarkwonSpansFactory.Builder builder) {
-        // 针对段落设置行高
+
         builder.setFactory(Paragraph.class, new SpanFactory() {
             @Override
             public Object getSpans(

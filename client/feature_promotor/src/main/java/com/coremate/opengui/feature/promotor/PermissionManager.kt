@@ -29,7 +29,7 @@ object PermissionManager {
         LogManager.saveLog(
             context,
             TAG,
-            "$TAG | from = $from | checkPermission | 无障碍服务权限 = $hasAccessibilityServicePermission | 悬浮窗权限 = $hasDrawOverlaysPermission | 电池白名单 = $hasBatteryOptimizationExemption", TaskCenter.executionId?:-1
+            "$TAG | from = $from | checkPermission | accessibility = $hasAccessibilityServicePermission | overlay = $hasDrawOverlaysPermission | battery whitelist = $hasBatteryOptimizationExemption", TaskCenter.executionId?:-1
         )
         return hasAccessibilityServicePermission && hasDrawOverlaysPermission && hasBatteryOptimizationExemption
     }
@@ -50,45 +50,73 @@ object PermissionManager {
         val hasAccessibilityServicePermission = isAccessibilityServiceEnabled(context)
         if (!hasAccessibilityServicePermission) {
             val item = PermissionDialogItem(context)
-            item.setTitle("授予无障碍服务权限")
+            item.setTitle("Grant accessibility permission")
             item.setOnTextClickListener {
                 dialog.dismiss()
-                val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                context.startActivity(intent)
+                try {
+                    val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    context.startActivity(intent)
+                } catch (e: Exception) {
+                    Toast.makeText(context, "Could not open accessibility settings. Please enable it manually.", Toast.LENGTH_LONG).show()
+                    LogManager.saveLog(
+                        context,
+                        TAG,
+                        "$TAG | openAccessibilitySettings | Exception = ${e.message}", TaskCenter.executionId?:-1
+                    )
+                }
             }
             root.addView(item)
         }
         val hasDrawOverlaysPermission = Settings.canDrawOverlays(context)
         if (!hasDrawOverlaysPermission) {
             val item = PermissionDialogItem(context)
-            item.setTitle("授予悬浮窗权限")
+            item.setTitle("Grant overlay permission")
             item.setOnTextClickListener {
                 dialog.dismiss()
-                val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
-                    data = Uri.parse("package:${context.packageName}")
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                try {
+                    val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
+                        data = Uri.parse("package:${context.packageName}")
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    context.startActivity(intent)
+                } catch (e: Exception) {
+                    Toast.makeText(context, "Could not open overlay settings. Please enable it manually.", Toast.LENGTH_LONG).show()
+                    LogManager.saveLog(
+                        context,
+                        TAG,
+                        "$TAG | openOverlaySettings | Exception = ${e.message}", TaskCenter.executionId?:-1
+                    )
                 }
-                context.startActivity(intent)
             }
             root.addView(item)
         }
         if (!hasBatteryOptimizationExemption(context)) {
             try {
                 val item = PermissionDialogItem(context)
-                item.setTitle("将OpenGUI AI 加入电池白名单")
+                item.setTitle("Allow OpenGUI AI to ignore battery optimization")
                 item.setOnTextClickListener {
                     dialog.dismiss()
-                    val intent =
-                        Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-                            data = Uri.parse("package:${context.packageName}")
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) // <<< 在这里添加 FLAG_ACTIVITY_NEW_TASK
-                        }
-                    context.startActivity(intent)
+                    try {
+                        val intent =
+                            Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                                data = Uri.parse("package:${context.packageName}")
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                        context.startActivity(intent)
+                    } catch (e: Exception) {
+                        Toast.makeText(context, "Could not open battery optimization prompt. Opening battery settings instead.", Toast.LENGTH_LONG).show()
+                        LogManager.saveLog(
+                            context,
+                            TAG,
+                            "$TAG | openBatteryOptimizationPrompt | Exception = ${e.message}", TaskCenter.executionId?:-1
+                        )
+                        openBatteryOptimizationSettings(context)
+                    }
                 }
                 root.addView(item)
             } catch (e: Exception) {
-                Toast.makeText(context, "无法打开电池优化设置，请手动将OpenGUI AI 加入电池白名单", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, "Could not open battery optimization settings. Please allow OpenGUI AI manually.", Toast.LENGTH_LONG).show()
                 LogManager.saveLog(
                     context,
                     TAG,
@@ -107,7 +135,9 @@ object PermissionManager {
     }
 
     fun openBatteryOptimizationSettings(context: Context) {
-        val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+        val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
         context.startActivity(intent)
     }
 

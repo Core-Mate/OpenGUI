@@ -15,7 +15,7 @@
         android:textColor="@android:color/black"
         android:textSize="18sp"
         android:textStyle="bold"
-        tools:text="抖音" />
+        tools:text="Douyin" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_functions"

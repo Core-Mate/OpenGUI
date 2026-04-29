@@ -13,7 +13,7 @@ import io.noties.markwon.inlineparser.InlineProcessor;
  * @since 4.3.0
  */
 class JLatexMathInlineProcessor extends InlineProcessor {
-    // 支持 $...$ 与 $$...$$，并避免匹配到转义的 \$
+
     private static final Pattern RE = Pattern.compile("(?<!\\\\)(\\${1,2})([\\s\\S]+?)(?<!\\\\)\\1");
 
     @Override

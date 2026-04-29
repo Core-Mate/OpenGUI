@@ -15,8 +15,6 @@ import { catchError, timeout } from 'rxjs/operators'
 export const TIMEOUT_KEY = 'request-timeout'
 
 /**
- * 设置请求超时时间的装饰器
- * @param ms 超时时间（毫秒）
  */
 export const RequestTimeout = (ms: number) =>
 	applyDecorators(

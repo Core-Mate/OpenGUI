@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><!-- 账户页菜单单行：执行偏好、知识库、应用白名单等 -->
+<?xml version="1.0" encoding="utf-8"?><!-- Single account-menu row, such as Execution preferences, Knowledge Base, and App allowlist. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/account_menu_root"
     android:layout_width="match_parent"

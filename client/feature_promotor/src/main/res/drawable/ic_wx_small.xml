@@ -4,7 +4,7 @@
     android:viewportWidth="24"
     android:viewportHeight="24">
 
-    <!-- 左侧大气泡 -->
+
     <path
         android:fillColor="#07C160"
         android:pathData="M8.5,7
@@ -20,7 +20,7 @@
                           C15.06,8.22 12.01,7 8.5,7
                           Z" />
 
-    <!-- 右侧小气泡 -->
+
     <path
         android:fillColor="#07C160"
         android:pathData="M21,15.15
@@ -33,7 +33,7 @@
                           c1.06,-0.74 1.79,-1.88 1.79,-3.23
                           Z" />
 
-    <!-- 左侧气泡白点 -->
+
     <path
         android:fillColor="#FFFFFF"
         android:pathData="M7,10.75
@@ -46,7 +46,7 @@
                           a0.75,0.75 0 1,1 0,1.5
                           a0.75,0.75 0 1,1 0,-1.5" />
 
-    <!-- 右侧气泡白点 -->
+
     <path
         android:fillColor="#FFFFFF"
         android:pathData="M14.5,14.25

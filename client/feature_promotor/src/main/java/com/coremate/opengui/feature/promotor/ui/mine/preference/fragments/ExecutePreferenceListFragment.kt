@@ -68,7 +68,7 @@ class ExecutePreferenceListFragment(val title:String) : BottomSheetDialogFragmen
             dismiss()
         }
         binding.tvTitle.text = title
-        binding.etSearch.hint = "搜索${title}..."
+        binding.etSearch.hint = "Search${title}..."
         return binding.root
     }
 
@@ -79,19 +79,19 @@ class ExecutePreferenceListFragment(val title:String) : BottomSheetDialogFragmen
     }
 
     fun initData() {
-        val bean1 = ExecutePreferenceSubListItemData(1, "$title - 数据1", "")
-        val bean2 = ExecutePreferenceSubListItemData(2, "$title - 数据2", "")
-        val bean3 = ExecutePreferenceSubListItemData(3, "$title - 数据3", "")
-        val bean4 = ExecutePreferenceSubListItemData(4, "$title - 数据4", "")
-        val bean5 = ExecutePreferenceSubListItemData(5, "$title - 数据5", "")
-        val bean6 = ExecutePreferenceSubListItemData(6, "$title - 数据6", "")
-        val bean7 = ExecutePreferenceSubListItemData(7, "$title - 数据7", "")
-        val bean8 = ExecutePreferenceSubListItemData(8, "$title - 数据8", "")
-        val bean9 = ExecutePreferenceSubListItemData(9, "$title - 数据9", "")
-        val bean10 = ExecutePreferenceSubListItemData(10, "$title - 数据10", "")
-        val bean11 = ExecutePreferenceSubListItemData(11, "$title - 数据11", "")
-        val bean12 = ExecutePreferenceSubListItemData(12, "$title - 数据12", "")
-        val bean13 = ExecutePreferenceSubListItemData(13, "$title - 数据13", "")
+        val bean1 = ExecutePreferenceSubListItemData(1, "$title - Data1", "")
+        val bean2 = ExecutePreferenceSubListItemData(2, "$title - Data2", "")
+        val bean3 = ExecutePreferenceSubListItemData(3, "$title - Data3", "")
+        val bean4 = ExecutePreferenceSubListItemData(4, "$title - Data4", "")
+        val bean5 = ExecutePreferenceSubListItemData(5, "$title - Data5", "")
+        val bean6 = ExecutePreferenceSubListItemData(6, "$title - Data6", "")
+        val bean7 = ExecutePreferenceSubListItemData(7, "$title - Data7", "")
+        val bean8 = ExecutePreferenceSubListItemData(8, "$title - Data8", "")
+        val bean9 = ExecutePreferenceSubListItemData(9, "$title - Data9", "")
+        val bean10 = ExecutePreferenceSubListItemData(10, "$title - Data10", "")
+        val bean11 = ExecutePreferenceSubListItemData(11, "$title - Data11", "")
+        val bean12 = ExecutePreferenceSubListItemData(12, "$title - Data12", "")
+        val bean13 = ExecutePreferenceSubListItemData(13, "$title - Data13", "")
         list.add(bean1)
         list.add(bean2)
         list.add(bean3)
@@ -149,7 +149,7 @@ class ExecutePreferenceListFragment(val title:String) : BottomSheetDialogFragmen
                     val behavior = BottomSheetBehavior.from<View?>(bottomSheet)
                     behavior.skipCollapsed = true
                     behavior.setState(BottomSheetBehavior.STATE_EXPANDED)
-                    // 禁止通过手指下滑关闭对话框
+
                     behavior.isDraggable = false
                 }
             }

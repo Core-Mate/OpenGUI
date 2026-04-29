@@ -16,21 +16,13 @@ export interface TokenUsageResult {
 }
 
 /**
- * Callback handler 用于收集 LangGraph 图执行过程中所有 LLM 调用的 token 使用量。
  *
- * 原理：
- * - handleChatModelStart 被调用时，LangGraph 会在 metadata 中注入 langgraph_node（当前节点名）
- * - handleLLMEnd 被调用时，从 LLMResult.llmOutput.usage 中提取 token
- * - 通过 runId 关联节点名和 token 数据
  *
- * 在 graph.invoke() 时通过 callbacks 参数传入即可，零侵入节点代码。
  */
 export class TokenUsageCallbackHandler extends BaseCallbackHandler {
 	name = "TokenUsageCallbackHandler";
 
-	/** runId → 节点名映射 */
 	private runNodeMap: Record<string, string> = {};
-	/** 按节点累加的 token 数据 */
 	private nodeUsage: Record<string, NodeTokenUsage> = {};
 
 	handleChatModelStart(
@@ -77,7 +69,6 @@ export class TokenUsageCallbackHandler extends BaseCallbackHandler {
 		this.nodeUsage[nodeName].total_tokens += totalTokens;
 	}
 
-	/** 获取汇总结果 */
 	getResult(): TokenUsageResult {
 		let totalInput = 0;
 		let totalOutput = 0;
@@ -95,7 +86,6 @@ export class TokenUsageCallbackHandler extends BaseCallbackHandler {
 		};
 	}
 
-	/** 合并已有的 token 使用结果（用于 resume/fork 场景增量累加） */
 	merge(other: TokenUsageResult): void {
 		for (const [node, usage] of Object.entries(other.by_node)) {
 			if (!this.nodeUsage[node]) {

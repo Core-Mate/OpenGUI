@@ -6,15 +6,13 @@ import { KnowledgeService } from "../../knowledge/knowledge.service";
 import type { KnowledgeChunk } from "../../knowledge/rag/rag.interface";
 
 /**
- * Knowledge 工具输入 Schema
  */
 const KnowledgeSearchInputSchema = z.object({
-	query: z.string().describe("搜索查询文本，用于在知识库中检索相关信息"),
-	limit: z.number().default(3).describe("返回结果数量限制"),
+	query: z.string().describe("Search query text used to retrieve relevant information from the knowledge base"),
+	limit: z.number().default(3).describe("Maximum number of results to return"),
 });
 
 /**
- * Knowledge 工具输出类型
  */
 export interface KnowledgeSearchOutput {
 	success: boolean;
@@ -23,8 +21,6 @@ export interface KnowledgeSearchOutput {
 }
 
 /**
- * Knowledge 工具服务
- * 使用 RAG 从知识库中检索相关信息
  */
 @Injectable()
 export class KnowledgeToolService {
@@ -33,7 +29,6 @@ export class KnowledgeToolService {
 	constructor(private readonly knowledgeService: KnowledgeService) {}
 
 	/**
-	 * 创建知识库搜索工具
 	 */
 	createTool(defaultKnowledgeBaseId?: number) {
 		return tool(
@@ -44,7 +39,7 @@ export class KnowledgeToolService {
 					if (!knowledgeBaseId) {
 						return {
 							success: false,
-							error: "未指定知识库ID",
+							error: "Knowledge base ID was not specified",
 						};
 					}
 
@@ -77,14 +72,14 @@ export class KnowledgeToolService {
 					);
 					return {
 						success: false,
-						error: `知识库搜索失败: ${error.message}`,
+						error: `Knowledge base search failed: ${error.message}`,
 					};
 				}
 			},
 			{
 				name: "search_knowledge",
 				description:
-					"使用 RAG (检索增强生成) 从知识库中搜索相关信息。用于查找特定信息以帮助回答问题或完成任务。",
+					"Use RAG to search relevant information from the knowledge base. Use this to find specific information for answering questions or completing tasks.",
 				schema: KnowledgeSearchInputSchema,
 			},
 		);

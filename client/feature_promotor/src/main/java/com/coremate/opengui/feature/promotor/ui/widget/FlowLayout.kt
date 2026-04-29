@@ -6,8 +6,6 @@ import android.view.View
 import android.view.ViewGroup
 
 /**
- * 流式布局：子 View 从左到右排列，空间不足时自动换行。
- * 用于历史记录、热门关键词等 chip 的自动换行展示。
  */
 class FlowLayout @JvmOverloads constructor(
     context: Context,
@@ -15,13 +13,11 @@ class FlowLayout @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : ViewGroup(context, attrs, defStyleAttr) {
 
-    /** 子 View 之间的水平间距（px） */
     var horizontalSpacing: Int = 0
         set(value) {
             field = value.coerceAtLeast(0)
         }
 
-    /** 子 View 之间的垂直间距（px） */
     var verticalSpacing: Int = 0
         set(value) {
             field = value.coerceAtLeast(0)

@@ -10,8 +10,8 @@ import { PlatformType, TaskCategory } from '../enums/task.enums'
 
 export class CreateTaskDto {
     @ApiProperty({
-        description: '任务名称',
-        example: '小红书发布动态',
+        description: 'Task name',
+        example: 'Post an update on Xiaohongshu',
         maxLength: 255,
     })
     @IsString()
@@ -19,8 +19,8 @@ export class CreateTaskDto {
     taskName: string
 
     @ApiProperty({
-        description: '任务描述',
-        example: '在小红书上发布一条关于今天天气很好的动态',
+        description: 'Task description',
+        example: 'Post a short weather update on Xiaohongshu',
         required: false,
     })
     @IsOptional()
@@ -28,7 +28,7 @@ export class CreateTaskDto {
     taskDescription?: string
 
     @ApiProperty({
-        description: '相关平台列表',
+        description: 'Related platforms',
         enum: PlatformType,
         isArray: true,
         required: false,
@@ -40,7 +40,7 @@ export class CreateTaskDto {
     relatedPlatforms?: PlatformType[]
 
     @ApiProperty({
-        description: '任务类别',
+        description: 'Task category',
         enum: TaskCategory,
         required: false,
         default: TaskCategory.CUSTOM,

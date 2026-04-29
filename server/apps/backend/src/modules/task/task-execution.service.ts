@@ -62,6 +62,7 @@ export class TaskExecutionService implements OnModuleInit {
 
 	private executionGateway: any = null;
 	private executionSocketService: any = null;
+	private readonly disconnectedExecutionTimers = new Map<number, NodeJS.Timeout>();
 
 	constructor(
 		private readonly prismaService: PrismaService,
@@ -108,8 +109,90 @@ export class TaskExecutionService implements OnModuleInit {
 		}
 	}
 
+	handleExecutionSocketDisconnected(executionId: number): void {
+		if (this.disconnectedExecutionTimers.has(executionId)) {
+			clearTimeout(this.disconnectedExecutionTimers.get(executionId));
+		}
+
+		const timer = setTimeout(() => {
+			this.disconnectedExecutionTimers.delete(executionId);
+			void this.failExecutionIfStillDisconnected(executionId);
+		}, 15000);
+
+		this.disconnectedExecutionTimers.set(executionId, timer);
+	}
+
+	private async failExecutionIfStillDisconnected(executionId: number): Promise<void> {
+		try {
+			if (this.executionSocketService?.isConnected?.(executionId)) {
+				this.logger.log(
+					`[WS DISCONNECT] Execution ${executionId} reconnected before timeout, keeping running`,
+				);
+				return;
+			}
+
+			const execution = await this.prismaService.task_execution.findUnique({
+				where: { id: executionId },
+				select: {
+					id: true,
+					task_id: true,
+					user_id: true,
+					execution_status: true,
+				},
+			});
+
+			if (!execution || execution.execution_status !== ExecutionStatus.RUNNING) {
+				return;
+			}
+
+			try {
+				await this.graphRunnerService.cancelExecution(
+					executionId,
+					execution.user_id,
+					execution.task_id,
+					true,
+				);
+			} catch (error) {
+				this.logger.warn(
+					`[WS DISCONNECT] GraphRunner cancel failed for ${executionId}: ${(error as Error).message}`,
+				);
+			}
+
+				const message = "Phone-side execution connection disconnected. The task was stopped automatically. Reopen the execution page on the phone, then run it again.";
+			const updateResult = await this.prismaService.task_execution.updateMany({
+				where: {
+					id: executionId,
+					execution_status: ExecutionStatus.RUNNING,
+				},
+				data: {
+					execution_status: ExecutionStatus.FINISHED,
+					execution_result: ExecutionResult.FAILED,
+					error_message: message,
+					status_message: message,
+					finished_at: new Date(),
+				},
+			});
+
+			if (updateResult.count > 0) {
+				this.logger.warn(
+					`[WS DISCONNECT] Execution ${executionId} marked FAILED after socket disconnect`,
+				);
+				await this.taskService.syncTaskStats(execution.task_id);
+				this.executionGateway?.sendExecutionFinished?.(executionId, {
+					status: ExecutionResult.FAILED,
+					message,
+				});
+			}
+		} catch (error) {
+			this.logger.error(
+				`[WS DISCONNECT] Failed to finalize disconnected execution ${executionId}: ${(error as Error).message}`,
+				(error as Error).stack,
+			);
+		}
+	}
+
 	/**
-	 * 执行任务
+	 * Execute task
 	 */
 	async executeTask(
 		taskId: number,
@@ -118,7 +201,7 @@ export class TaskExecutionService implements OnModuleInit {
 	): Promise<ExecuteTaskResponseDto> {
 		this.logger.log(`Executing task ${taskId} for user ${userId}`);
 
-		// [幂等校验] 3秒内同一用户同一任务只允许触发一次执行
+
 		const idempotencyKey = `execute:${userId}:${taskId}`;
 		const acquired = await this.redisService
 			.getClient()
@@ -128,11 +211,11 @@ export class TaskExecutionService implements OnModuleInit {
 				`[IDEMPOTENT] Duplicate execute request blocked: user=${userId}, task=${taskId}`,
 			);
 			throw new ConflictException(
-				"请求过于频繁，请稍后再试",
+					"Requests are too frequent. Please try again later.",
 			);
 		}
 
-		// [防抖机制] 并发取消用户所有正在运行的任务
+
 		const activeExecutions = await this.getActiveExecutionsByUserId(userId);
 		if (activeExecutions.length > 0) {
 			this.logger.log(
@@ -143,7 +226,7 @@ export class TaskExecutionService implements OnModuleInit {
 					this.cancelExecutionInternal(execution.id, userId, execution.taskId),
 				),
 			);
-			// 记录取消结果
+
 			cancelResults.forEach((result, index) => {
 				const executionId = activeExecutions[index].id;
 				if (result.status === "fulfilled" && result.value) {
@@ -156,7 +239,7 @@ export class TaskExecutionService implements OnModuleInit {
 			});
 		}
 
-		// 获取任务信息
+
 		const task = await this.taskService.getTaskEntity(taskId);
 		if (!task) {
 			throw new NotFoundException(`Task ${taskId} not found`);
@@ -166,7 +249,7 @@ export class TaskExecutionService implements OnModuleInit {
 			throw new ForbiddenException("No permission to execute this task");
 		}
 
-		// 获取用户 region 和 tenant_id
+
 		const user = await this.prismaService.users.findUnique({
 			where: { id: userId },
 			select: { region: true, tenant_id: true },
@@ -174,7 +257,7 @@ export class TaskExecutionService implements OnModuleInit {
 		const userRegion = user?.region || "CN";
 		const tenantId = user?.tenant_id ?? -1;
 
-		// 创建执行记录（PENDING 状态，等待客户端 WS 就绪后启动）
+
 		const execution = await this.prismaService.task_execution.create({
 			data: {
 				task_id: taskId,
@@ -187,10 +270,10 @@ export class TaskExecutionService implements OnModuleInit {
 
 		this.logger.log(`Created execution ${execution.id} for task ${taskId} (PENDING)`);
 
-		// 创建租约（心跳机制）
+
 		await this.leaseService.createLease(execution.id, userId, taskId);
 
-		// 设置 PENDING 超时保护（30s 内未收到 execution:ready 则自动失败）
+
 		try {
 			await this.pendingTimeoutQueue.add(
 				`pending-timeout-${execution.id}`,
@@ -212,13 +295,10 @@ export class TaskExecutionService implements OnModuleInit {
 	}
 
 	/**
-	 * 启动执行（两阶段启动的第二阶段）
 	 *
-	 * 由 ExecutionGateway 在收到 execution:ready 后调用。
-	 * 将状态从 PENDING → RUNNING 并异步启动 GraphRunner。
 	 */
 	async startExecution(executionId: number): Promise<void> {
-		// 查询 execution 并验证状态
+
 		const execution = await this.prismaService.task_execution.findUnique({
 			where: { id: executionId },
 		});
@@ -227,7 +307,7 @@ export class TaskExecutionService implements OnModuleInit {
 			throw new NotFoundException(`Execution ${executionId} not found`);
 		}
 
-		// 移除 PENDING 超时任务（执行已成功启动）
+
 		try {
 			const job = await this.pendingTimeoutQueue.getJob(`pending-timeout-${executionId}`);
 			if (job) await job.remove();
@@ -235,7 +315,7 @@ export class TaskExecutionService implements OnModuleInit {
 			// Best effort — job may have already fired or been removed
 		}
 
-		// 获取任务信息
+
 		const task = await this.taskService.getTaskEntity(execution.task_id);
 		if (!task) {
 			throw new NotFoundException(`Task ${execution.task_id} not found`);
@@ -243,7 +323,7 @@ export class TaskExecutionService implements OnModuleInit {
 
 		const taskDescription = task.taskDescription || task.taskName;
 
-		// 获取用户 region 和 tenant_id
+
 		const user = await this.prismaService.users.findUnique({
 			where: { id: execution.user_id },
 			select: { region: true, tenant_id: true },
@@ -251,14 +331,14 @@ export class TaskExecutionService implements OnModuleInit {
 		const userRegion = user?.region || "CN";
 		const tenantId = user?.tenant_id ?? -1;
 
-		// === 积分余额预检 ===
+
 		try {
 			const balance = await this.creditsService.getBalance(execution.user_id);
 			if (balance.remaining <= 0) {
 				await this.completeExecution(
 					executionId,
 					ExecutionResult.FAILED,
-					"积分不足，请充值后再试",
+						"Insufficient credits. Please recharge and try again.",
 				);
 				this.logger.warn(
 					`[START EXECUTION] Execution ${executionId} rejected: insufficient balance (${balance.remaining})`,
@@ -277,7 +357,7 @@ export class TaskExecutionService implements OnModuleInit {
 			// Don't block execution on balance check failure
 		}
 
-		// 原子 CAS：只有 PENDING 状态才能转为 RUNNING
+
 		const casResult = await this.prismaService.task_execution.updateMany({
 			where: { id: executionId, execution_status: ExecutionStatus.PENDING },
 			data: {
@@ -303,7 +383,7 @@ export class TaskExecutionService implements OnModuleInit {
 		// Pre-register so cancel can find it before setImmediate fires
 		this.graphRunnerService.preRegisterExecution(executionId);
 
-		// 后台异步执行任务
+
 		setImmediate(async () => {
 			try {
 				const result = await this.graphRunnerService.executeTask({
@@ -382,8 +462,6 @@ export class TaskExecutionService implements OnModuleInit {
 	}
 
 	/**
-	 * 启动 Fork 执行（由 ExecutionGateway 在收到 execution:ready 时，
-	 * 检测到 origin_execution_id 后调用）
 	 */
 	async startForkExecution(executionId: number): Promise<void> {
 		const execution = await this.prismaService.task_execution.findUnique({
@@ -416,14 +494,14 @@ export class TaskExecutionService implements OnModuleInit {
 		const userRegion = user?.region || "CN";
 		const tenantId = user?.tenant_id ?? -1;
 
-		// === 积分余额预检 ===
+
 		try {
 			const balance = await this.creditsService.getBalance(execution.user_id);
 			if (balance.remaining <= 0) {
 				await this.completeExecution(
 					executionId,
 					ExecutionResult.FAILED,
-					"积分不足，请充值后再试",
+						"Insufficient credits. Please recharge and try again.",
 				);
 				this.logger.warn(
 					`[START FORK EXECUTION] Execution ${executionId} rejected: insufficient balance (${balance.remaining})`,
@@ -445,7 +523,7 @@ export class TaskExecutionService implements OnModuleInit {
 		// Get instruction from status_message (stored by forkExecution)
 		const instruction = execution.status_message || undefined;
 
-		// 原子 CAS：只有 PENDING 状态才能转为 RUNNING
+
 		const casResult = await this.prismaService.task_execution.updateMany({
 			where: { id: executionId, execution_status: ExecutionStatus.PENDING },
 			data: {
@@ -544,8 +622,6 @@ export class TaskExecutionService implements OnModuleInit {
 	}
 
 	/**
-	 * 启动 Resume 执行（由 ExecutionGateway 在收到 execution:ready 时，
-	 * 检测到 status_message 为 resume_hitl:* 或 resume_pause:* 后调用）
 	 */
 	async startResumeExecution(
 		executionId: number,
@@ -567,7 +643,7 @@ export class TaskExecutionService implements OnModuleInit {
 			// Best effort
 		}
 
-		// 原子 CAS：只有 PENDING 状态才能转为 RUNNING
+
 		const casResult = await this.prismaService.task_execution.updateMany({
 			where: { id: executionId, execution_status: ExecutionStatus.PENDING },
 			data: {
@@ -614,7 +690,7 @@ export class TaskExecutionService implements OnModuleInit {
 						? feedbackStr.slice("resume_pause:".length)
 						: "";
 
-					// 存储 feedback 到长期记忆
+
 					const trimmedFeedback = pauseFeedback.trim();
 					if (trimmedFeedback) {
 						void (async () => {
@@ -708,14 +784,13 @@ export class TaskExecutionService implements OnModuleInit {
 	}
 
 	/**
-	 * 获取任务的执行历史
 	 */
 	async getExecutionHistory(
 		taskId: number,
 		userId: number,
 		query: ExecutionHistoryQueryDto,
 	): Promise<PaginatedExecutionHistoryDto> {
-		// 验证任务存在且属于用户
+
 		const task = await this.taskService.getTaskEntity(taskId);
 		if (!task) {
 			throw new NotFoundException(`Task ${taskId} not found`);
@@ -730,7 +805,7 @@ export class TaskExecutionService implements OnModuleInit {
 
 		const where: any = {
 			task_id: taskId,
-			//todo:先不限制 execution_status: ExecutionStatus.FINISHED,
+
 			is_deleted: false,
 		};
 
@@ -766,7 +841,6 @@ export class TaskExecutionService implements OnModuleInit {
 	}
 
 	/**
-	 * 内部查询 execution 记录（不做权限校验，供 Gateway 等内部调用使用）
 	 */
 	async getExecutionRecord(executionId: number): Promise<TaskExecutionEntity | null> {
 		const raw = await this.prismaService.task_execution.findUnique({
@@ -777,7 +851,6 @@ export class TaskExecutionService implements OnModuleInit {
 	}
 
 	/**
-	 * 获取执行记录详情
 	 */
 	async getExecutionById(
 		executionId: number,
@@ -802,7 +875,6 @@ export class TaskExecutionService implements OnModuleInit {
 	}
 
 	/**
-	 * 更新执行状态（工作流回调）
 	 */
 	async updateExecutionStatus(
 		executionId: number,
@@ -824,7 +896,7 @@ export class TaskExecutionService implements OnModuleInit {
 		}
 
 		if (status === ExecutionStatus.RUNNING) {
-			// 仅在首次运行时设置 started_at，恢复执行时不覆盖
+
 			const execution = await this.prismaService.task_execution.findUnique({
 				where: { id: executionId },
 				select: { started_at: true },
@@ -841,7 +913,7 @@ export class TaskExecutionService implements OnModuleInit {
 
 		this.logger.log(`Updated execution ${executionId} status to ${status}`);
 
-		// 当状态变为 SUSPENDED 时发出通知事件（通知 IM Channel 模块）
+
 		if (status === ExecutionStatus.SUSPENDED && message) {
 			try {
 				const execution = await this.prismaService.task_execution.findUnique({
@@ -856,13 +928,12 @@ export class TaskExecutionService implements OnModuleInit {
 					});
 				}
 			} catch {
-				// 通知失败不影响主流程
+
 			}
 		}
 	}
 
 	/**
-	 * 更新执行结果摘要
 	 */
 	async updateExecutionResultSummary(
 		executionId: number,
@@ -880,10 +951,7 @@ export class TaskExecutionService implements OnModuleInit {
 	}
 
 	/**
-	 * 完成执行（更新结果和统计）
 	 *
-	 * 使用数据库级别的原子操作（CAS）确保状态转换只发生一次，
-	 * 并使用精确计算（而非增量更新）来更新统计，确保幂等性。
 	 */
 	async completeExecution(
 		executionId: number,
@@ -891,8 +959,8 @@ export class TaskExecutionService implements OnModuleInit {
 		errorMessage?: string,
 		tokenUsage?: Record<string, any>,
 	): Promise<void> {
-		// 使用原子更新：只有当状态不是 FINISHED 时才更新
-		// 这避免了竞态条件导致的重复统计更新
+
+
 		const updateResult = await this.prismaService.task_execution.updateMany({
 			where: {
 				id: executionId,
@@ -909,17 +977,17 @@ export class TaskExecutionService implements OnModuleInit {
 			},
 		});
 
-		// 如果没有更新任何记录，说明执行已经完成或不存在
+
 		if (updateResult.count === 0) {
 			this.logger.log(
 				`Execution ${executionId} already completed or not found, skipping duplicate completion`,
 			);
-			// 兜底：如果已是 FINISHED 但 finished_at 为空，补写一次
+
 			await this.ensureFinishedAt(executionId, "completeExecution");
 			return;
 		}
 
-		// 获取任务ID用于更新统计（更新成功后才需要）
+
 		const execution = await this.prismaService.task_execution.findUnique({
 			where: { id: executionId },
 			select: { task_id: true },
@@ -930,11 +998,11 @@ export class TaskExecutionService implements OnModuleInit {
 			return;
 		}
 
-		// 释放租约
+
 		await this.leaseService.releaseLease(executionId);
 
-		// 使用精确计算更新任务统计（幂等操作）
-		// 即使多次调用也能保证统计准确
+
+
 		await this.taskService.syncTaskStats(execution.task_id);
 
 		// Notify client via WebSocket
@@ -960,7 +1028,7 @@ export class TaskExecutionService implements OnModuleInit {
 
 		this.logger.log(`Completed execution ${executionId} with result ${result}`);
 
-		// 通知 IM Channel 模块（异步，不影响主流程）
+
 		try {
 			const execForNotify = await this.prismaService.task_execution.findUnique({
 				where: { id: executionId },
@@ -976,14 +1044,12 @@ export class TaskExecutionService implements OnModuleInit {
 				});
 			}
 		} catch {
-			// 通知失败不影响主流程
+
 		}
 	}
 
 	/**
-	 * 内部取消执行方法（供防抖机制调用，不抛出异常）
 	 *
-	 * 使用原子操作先更新状态，防止重复取消
 	 */
 	private async cancelExecutionInternal(
 		executionId: number,
@@ -991,7 +1057,7 @@ export class TaskExecutionService implements OnModuleInit {
 		taskId: number,
 	): Promise<boolean> {
 		try {
-			// 【原子操作】立即更新状态为 FINISHED + CANCELLED，防止重复取消
+
 			const updateResult = await this.prismaService.task_execution.updateMany({
 				where: {
 					id: executionId,
@@ -1022,14 +1088,14 @@ export class TaskExecutionService implements OnModuleInit {
 				return false;
 			}
 
-			// 释放租约
+
 			await this.leaseService.releaseLease(executionId);
 
-			// 同步任务统计
+			// Sync task stats
 			await this.taskService.syncTaskStats(taskId);
 
-			// 调用 GraphRunner 取消（跳过总结生成，因为是启动新任务触发的取消）
-			// 先尝试本地实例，不存在则中继到其他实例
+
+
 			let cancelResult: CancelExecutionResult;
 			if (this.graphRunnerService.hasExecution(executionId)) {
 				cancelResult = await this.graphRunnerService.cancelExecution(
@@ -1069,14 +1135,8 @@ export class TaskExecutionService implements OnModuleInit {
 	}
 
 	/**
-	 * 取消执行（异步模式）
 	 *
-	 * API 立即返回，后台异步执行：
-	 * 1. 验证权限和状态
-	 * 2. 立即返回 { success: true }
-	 * 3. 后台：abort GraphRunner → 运行 summarizer（通过 WS 流式推送）→ 更新 FINISHED+CANCELLED → 发送 WS 通知
 	 *
-	 * 总结内容通过 WS agent:event 实时流式推送给客户端，无需等待 HTTP 响应。
 	 */
 	async cancelExecution(
 		executionId: number,
@@ -1097,7 +1157,7 @@ export class TaskExecutionService implements OnModuleInit {
 			throw new ForbiddenException("No permission to cancel this execution");
 		}
 
-		// 已在取消中（SUMMARIZING），直接返回成功
+
 		if (execution.execution_status === ExecutionStatus.SUMMARIZING) {
 			return {
 				success: true,
@@ -1105,7 +1165,7 @@ export class TaskExecutionService implements OnModuleInit {
 			};
 		}
 
-		// 检查状态是否可取消
+
 		const cancellableStatuses = [
 			ExecutionStatus.PENDING,
 			ExecutionStatus.RUNNING,
@@ -1123,7 +1183,7 @@ export class TaskExecutionService implements OnModuleInit {
 			);
 		}
 
-		// 后台异步执行取消 + 总结生成，API 立即返回
+
 		this.cancelAndSummarizeInBackground(executionId, userId, execution.task_id);
 
 		return {
@@ -1133,15 +1193,8 @@ export class TaskExecutionService implements OnModuleInit {
 	}
 
 	/**
-	 * 后台异步执行取消 + 总结生成
 	 *
-	 * 流程：
-	 * 1. 调用 GraphRunner 取消（abort + summarizer）
-	 * 2. CAS 更新状态为 FINISHED+CANCELLED
-	 * 3. 释放租约 + 同步统计
-	 * 4. 发送 execution:finished WS 通知（关键：确保客户端收到终态）
 	 *
-	 * 包含 SUMMARIZING 超时保护（60s），防止卡死。
 	 */
 	private cancelAndSummarizeInBackground(
 		executionId: number,
@@ -1150,7 +1203,7 @@ export class TaskExecutionService implements OnModuleInit {
 	): void {
 		setImmediate(async () => {
 			try {
-				// 设置 SUMMARIZING 超时保护（60s）
+
 				try {
 					await this.pendingTimeoutQueue.add(
 						`summarizing-timeout-${executionId}`,
@@ -1168,7 +1221,7 @@ export class TaskExecutionService implements OnModuleInit {
 					);
 				}
 
-				// 调用 GraphRunner 取消（含 summarizer 流式推送）
+
 				let cancelResult: CancelExecutionResult;
 				if (this.graphRunnerService.hasExecution(executionId)) {
 					cancelResult = await this.graphRunnerService.cancelExecution(
@@ -1195,7 +1248,7 @@ export class TaskExecutionService implements OnModuleInit {
 					);
 				}
 
-				// CAS: SUMMARIZING/可取消状态 → FINISHED+CANCELLED
+
 				const updateResult =
 					await this.prismaService.task_execution.updateMany({
 						where: {
@@ -1237,7 +1290,7 @@ export class TaskExecutionService implements OnModuleInit {
 					);
 				}
 
-				// 发送 WS 终态通知，确保客户端收到
+
 				try {
 					this.executionGateway?.sendExecutionFinished(executionId, {
 						status: ExecutionResult.CANCELLED,
@@ -1249,7 +1302,7 @@ export class TaskExecutionService implements OnModuleInit {
 					);
 				}
 
-				// 移除 SUMMARIZING 超时保护（任务已正常完成）
+
 				try {
 					const job = await this.pendingTimeoutQueue.getJob(
 						`summarizing-timeout-${executionId}`,
@@ -1263,7 +1316,7 @@ export class TaskExecutionService implements OnModuleInit {
 					`[CANCEL BG] Background cancel failed for ${executionId}: ${(err as Error).message}`,
 					(err as Error).stack,
 				);
-				// 兜底：确保执行不会永远卡在非终态
+
 				try {
 					const fallbackUpdate =
 						await this.prismaService.task_execution.updateMany({
@@ -1295,7 +1348,7 @@ export class TaskExecutionService implements OnModuleInit {
 	}
 
 	/**
-	 * 暂停执行
+	 * Pause execution
 	 */
 	async pauseExecution(
 		executionId: number,
@@ -1322,8 +1375,8 @@ export class TaskExecutionService implements OnModuleInit {
 			);
 		}
 
-		// 调用 GraphRunner 暂停
-		// 先尝试本地实例，不存在则中继到其他实例
+
+
 		let paused: boolean;
 		if (this.graphRunnerService.hasExecution(executionId)) {
 			paused = await this.graphRunnerService.pauseExecution(executionId);
@@ -1346,7 +1399,7 @@ export class TaskExecutionService implements OnModuleInit {
 			};
 		}
 
-		// CAS: 仅当状态仍为 RUNNING 时更新为 USER_PAUSED，防止覆盖 FINISHED 等终态
+
 		const pauseResult = await this.prismaService.task_execution.updateMany({
 			where: {
 				id: executionId,
@@ -1376,10 +1429,7 @@ export class TaskExecutionService implements OnModuleInit {
 	}
 
 	/**
-	 * 恢复执行
-	 * 支持两种场景：
-	 * 1. 从用户暂停 (USER_PAUSED) 恢复
-	 * 2. 从 HITL 中断 (SUSPENDED) 恢复，需要传入用户响应
+	 * Resume execution
 	 */
 	async resumeExecution(
 		executionId: number,
@@ -1412,11 +1462,11 @@ export class TaskExecutionService implements OnModuleInit {
 
 		const taskId = execution.task_id;
 
-		// === 积分余额预检（恢复执行前） ===
+
 		try {
 			const balance = await this.creditsService.getBalance(userId);
 			if (balance.remaining <= 0) {
-				throw new BadRequestException("积分不足，请充值后再试");
+					throw new BadRequestException("Insufficient credits. Please recharge and try again.");
 			}
 		} catch (error) {
 			if (error instanceof BadRequestException) {
@@ -1483,8 +1533,8 @@ export class TaskExecutionService implements OnModuleInit {
 		}
 
 		// WS connected — proceed immediately (existing behavior)
-		// 原子 CAS：只有一个请求能成功将状态从 SUSPENDED/USER_PAUSED 改为 RUNNING
-		// 防止并发调用导致同一个 HITL 被恢复多次（会创建多个 graph branch，后完成的 branch 覆盖真实 summary）
+
+
 		const casResult = await this.prismaService.task_execution.updateMany({
 			where: {
 				id: executionId,
@@ -1505,9 +1555,9 @@ export class TaskExecutionService implements OnModuleInit {
 			);
 		}
 
-		// 根据状态和 dto 判断恢复类型
+
 		if (isHitlResume) {
-			// HITL 恢复：传入用户响应
+
 			const response: CallUserResponse = {
 				feedback: dto?.feedback || "",
 			};
@@ -1516,13 +1566,13 @@ export class TaskExecutionService implements OnModuleInit {
 				`[RESUME EXECUTION] Resuming HITL execution ${executionId} with response: ${JSON.stringify(response)}`,
 			);
 
-			// ===== 存储 feedback 到长期记忆（50% 权重） =====
+
 			const feedbackContent = dto?.feedback?.trim();
 			if (feedbackContent) {
-				// 异步存储，不阻塞主流程（使用 void 明确表示有意忽略 Promise）
+
 				void (async () => {
 					try {
-						// 获取任务描述作为提取上下文
+
 						const task = await this.taskService.getTaskEntity(taskId);
 						const userInput = task?.taskDescription || task?.taskName || "";
 
@@ -1543,13 +1593,13 @@ export class TaskExecutionService implements OnModuleInit {
 				})();
 			}
 
-			// 重建租约（中断期间租约可能已过期）
+
 			await this.leaseService.createLease(executionId, userId, taskId);
 
 			// Pre-register so cancel can find it before setImmediate fires
 			this.graphRunnerService.preRegisterExecution(executionId);
 
-			// 后台执行恢复
+
 			setImmediate(async () => {
 				try {
 					const result = await this.graphRunnerService.resumeExecution(
@@ -1576,7 +1626,7 @@ export class TaskExecutionService implements OnModuleInit {
 						);
 					} else if (result.cancelled) {
 						if (result.abortReason === "lease_expired") {
-							// 租约过期：需要自行完成执行，没有其他流程负责
+
 							await this.completeExecution(
 								executionId,
 								ExecutionResult.CANCELLED,
@@ -1586,7 +1636,7 @@ export class TaskExecutionService implements OnModuleInit {
 								`[RESUME EXECUTION] Execution ${executionId} terminated due to lease expiration`,
 							);
 						} else {
-							// cancel 或 pause：由对应的流程（cancelExecution / pauseExecution）负责状态更新
+
 							this.logger.log(
 								`[RESUME EXECUTION] Execution ${executionId} was cancelled (reason: ${result.abortReason}, status update delegated)`,
 							);
@@ -1625,12 +1675,12 @@ export class TaskExecutionService implements OnModuleInit {
 				}
 			});
 		} else {
-			// 普通暂停恢复
+
 			this.logger.log(
 				`[RESUME EXECUTION] Resuming paused execution ${executionId}`,
 			);
 
-			// ===== 存储 feedback 到长期记忆（50% 权重） =====
+
 			const feedbackContent = dto?.feedback?.trim();
 			if (feedbackContent) {
 				void (async () => {
@@ -1655,15 +1705,15 @@ export class TaskExecutionService implements OnModuleInit {
 				})();
 			}
 
-			// 重建租约（暂停期间租约可能已过期）
+
 			await this.leaseService.createLease(executionId, userId, taskId);
 
-			// 状态已由上方 CAS 原子更新为 RUNNING，无需重复更新
+
 
 			// Pre-register so cancel can find it before setImmediate fires
 			this.graphRunnerService.preRegisterExecution(executionId);
 
-			// 后台执行恢复
+
 			setImmediate(async () => {
 				try {
 					const result = await this.graphRunnerService.resumeFromPause(
@@ -1691,7 +1741,7 @@ export class TaskExecutionService implements OnModuleInit {
 						);
 					} else if (result.cancelled) {
 						if (result.abortReason === "lease_expired") {
-							// 租约过期：需要自行完成执行，没有其他流程负责
+
 							await this.completeExecution(
 								executionId,
 								ExecutionResult.CANCELLED,
@@ -1701,7 +1751,7 @@ export class TaskExecutionService implements OnModuleInit {
 								`[RESUME EXECUTION] Execution ${executionId} terminated due to lease expiration`,
 							);
 						} else {
-							// cancel 或 pause：由对应的流程（cancelExecution / pauseExecution）负责状态更新
+
 							this.logger.log(
 								`[RESUME EXECUTION] Execution ${executionId} was cancelled (reason: ${result.abortReason}, status update delegated)`,
 							);
@@ -1748,7 +1798,6 @@ export class TaskExecutionService implements OnModuleInit {
 	}
 
 	/**
-	 * 获取用户所有活动执行（运行中、暂停状态）
 	 */
 	async getActiveExecutionsByUserId(
 		userId: number,
@@ -1774,10 +1823,7 @@ export class TaskExecutionService implements OnModuleInit {
 	}
 
 	/**
-	 * 批量取消用户所有活动执行（异步模式）
 	 *
-	 * API 立即返回，后台异步执行每个取消 + 总结。
-	 * 复用 cancelAndSummarizeInBackground 确保与单个取消一致。
 	 */
 	async cancelAllExecutions(
 		userId: number,
@@ -1789,7 +1835,7 @@ export class TaskExecutionService implements OnModuleInit {
 		if (activeExecutions.length === 0) {
 			return {
 				success: true,
-				message: "没有需要取消的活动执行",
+					message: "No active executions to cancel",
 				totalExecutions: 0,
 				cancelledExecutions: 0,
 				failedExecutions: 0,
@@ -1800,7 +1846,7 @@ export class TaskExecutionService implements OnModuleInit {
 			`Found ${activeExecutions.length} active executions for user ${userId}`,
 		);
 
-		// 对每个活动执行触发后台异步取消
+
 		for (const execution of activeExecutions) {
 			this.cancelAndSummarizeInBackground(
 				execution.id,
@@ -1811,7 +1857,7 @@ export class TaskExecutionService implements OnModuleInit {
 
 		return {
 			success: true,
-			message: `已发起 ${activeExecutions.length} 个执行的取消`,
+				message: `Started cancellation for ${activeExecutions.length} execution(s)`,
 			totalExecutions: activeExecutions.length,
 			cancelledExecutions: activeExecutions.length,
 			failedExecutions: 0,
@@ -1819,7 +1865,6 @@ export class TaskExecutionService implements OnModuleInit {
 	}
 
 	/**
-	 * 兜底修复：状态已是 FINISHED 但 finished_at 为空时补写时间
 	 */
 	private async ensureFinishedAt(
 		executionId: number,
@@ -1845,14 +1890,9 @@ export class TaskExecutionService implements OnModuleInit {
 	}
 
 	/**
-	 * Fork 执行
 	 *
-	 * 基于已完成的执行创建新的执行，复制原有对话历史，从 plan_supervisor 节点继续执行。
 	 *
-	 * @param originExecutionId 原执行 ID
-	 * @param userId 用户 ID
-	 * @param dto Fork 执行请求 DTO
-	 * @returns Fork 执行响应
+	 * @param userId User ID
 	 */
 	async forkExecution(
 		originExecutionId: number,
@@ -1863,7 +1903,7 @@ export class TaskExecutionService implements OnModuleInit {
 			`[FORK] User ${userId} forking execution ${originExecutionId}`,
 		);
 
-		// 1. 验证原执行存在且属于用户
+
 		const originExecution = await this.prismaService.task_execution.findFirst({
 			where: { id: originExecutionId, is_deleted: false },
 		});
@@ -1876,14 +1916,14 @@ export class TaskExecutionService implements OnModuleInit {
 			throw new ForbiddenException("No permission to fork this execution");
 		}
 
-		// 2. 验证原执行状态为 FINISHED
+
 		if (originExecution.execution_status !== ExecutionStatus.FINISHED) {
 			throw new BadRequestException(
-				`只能 fork 已完成的执行，当前状态为 ${originExecution.execution_status}`,
+					`Only completed executions can be forked; current status is ${originExecution.execution_status}`,
 			);
 		}
 
-		// 3. 获取用户信息
+
 		const user = await this.prismaService.users.findUnique({
 			where: { id: userId },
 			select: { region: true, tenant_id: true },
@@ -1891,7 +1931,7 @@ export class TaskExecutionService implements OnModuleInit {
 		const userRegion = user?.region || "CN";
 		const tenantId = user?.tenant_id ?? -1;
 
-		// 4. 创建新的 task_execution 记录 (PENDING — waits for WS ready)
+
 		const newExecution = await this.prismaService.task_execution.create({
 			data: {
 				task_id: originExecution.task_id,
@@ -1899,7 +1939,7 @@ export class TaskExecutionService implements OnModuleInit {
 				device_id: dto.deviceId || originExecution.device_id,
 				execution_mode: ExecutionMode.IMMEDIATE,
 				execution_status: ExecutionStatus.PENDING,
-				origin_execution_id: originExecutionId, // 关联原执行
+				origin_execution_id: originExecutionId,
 				// Store instruction in status_message for startForkExecution to read
 				status_message: dto.instruction || null,
 			},
@@ -1909,20 +1949,20 @@ export class TaskExecutionService implements OnModuleInit {
 			`[FORK] Created PENDING execution ${newExecution.id} from origin ${originExecutionId}`,
 		);
 
-		// 5. 创建租约
+
 		await this.leaseService.createLease(
 			newExecution.id,
 			userId,
 			originExecution.task_id,
 		);
 
-		// ===== 存储 instruction 到长期记忆（10% 权重） =====
+
 		const instructionContent = dto.instruction?.trim();
 		if (instructionContent) {
-			// 异步存储，不阻塞主流程（使用 void 明确表示有意忽略 Promise）
+
 			void (async () => {
 				try {
-					// 获取任务描述作为提取上下文
+
 					const task = await this.taskService.getTaskEntity(
 						originExecution.task_id,
 					);
@@ -1968,7 +2008,7 @@ export class TaskExecutionService implements OnModuleInit {
 	}
 
 	/**
-	 * 提交执行反馈
+	 * Submit execution feedback
 	 */
 	async submitFeedback(
 		executionId: number,
@@ -1979,7 +2019,7 @@ export class TaskExecutionService implements OnModuleInit {
 			`User ${userId} submitting feedback for execution ${executionId}`,
 		);
 
-		// 1. 验证执行记录存在且属于当前用户
+
 		const execution = await this.prismaService.task_execution.findFirst({
 			where: {
 				id: executionId,
@@ -1997,14 +2037,14 @@ export class TaskExecutionService implements OnModuleInit {
 			);
 		}
 
-		// 2. 验证执行已完成
+
 		if (execution.execution_status !== ExecutionStatus.FINISHED) {
 			throw new BadRequestException(
 				`Cannot submit feedback for execution in ${execution.execution_status} status. Only FINISHED executions can receive feedback.`,
 			);
 		}
 
-		// 3. 检查是否已有反馈（防止重复提交）
+
 		const existingFeedback =
 			await this.prismaService.task_execution_feedback.findUnique({
 				where: { execution_id: executionId },
@@ -2016,7 +2056,7 @@ export class TaskExecutionService implements OnModuleInit {
 			);
 		}
 
-		// 4. 创建反馈记录
+
 		const feedback = await this.prismaService.task_execution_feedback.create({
 			data: {
 				execution_id: executionId,
@@ -2032,13 +2072,12 @@ export class TaskExecutionService implements OnModuleInit {
 
 		return {
 			success: true,
-			message: "反馈提交成功",
+			message: "Feedback submitted",
 			feedbackId: feedback.id,
 		};
 	}
 
 	/**
-	 * 映射实体到响应DTO
 	 */
 	private mapEntityToResponse(
 		entity: TaskExecutionEntity,
@@ -2064,19 +2103,16 @@ export class TaskExecutionService implements OnModuleInit {
 		};
 	}
 
-	// ============= 心跳租约 API =============
+	// ============= Heartbeat lease API =============
 
 	/**
-	 * 处理心跳请求
 	 *
-	 * 客户端定期调用此方法续租，保持任务执行。
-	 * 如果客户端杀掉进程，心跳停止，租约过期后任务会被终止。
 	 */
 	async heartbeat(
 		executionId: number,
 		userId: number,
 	): Promise<HeartbeatResponseDto> {
-		// 验证执行记录存在且属于当前用户
+
 		const execution = await this.prismaService.task_execution.findFirst({
 			where: {
 				id: executionId,
@@ -2094,7 +2130,7 @@ export class TaskExecutionService implements OnModuleInit {
 			);
 		}
 
-		// 检查执行状态，只有运行中、暂停状态或总结中才需要心跳
+
 		const validStatuses = [
 			ExecutionStatus.RUNNING,
 			ExecutionStatus.SUSPENDED,
@@ -2114,10 +2150,10 @@ export class TaskExecutionService implements OnModuleInit {
 			};
 		}
 
-		// 续租
+
 		const renewed = await this.leaseService.renewLease(executionId);
 		if (!renewed) {
-			// 暂停状态允许重建（暂停期间租约自然过期是正常的）
+
 			if (
 				execution.execution_status === ExecutionStatus.USER_PAUSED ||
 				execution.execution_status === ExecutionStatus.SUSPENDED
@@ -2131,14 +2167,14 @@ export class TaskExecutionService implements OnModuleInit {
 					execution.task_id,
 				);
 			} else {
-				// RUNNING 状态下租约过期说明客户端曾长时间未发心跳，lease monitor 会处理
+
 				this.logger.warn(
 					`[HEARTBEAT] Lease expired for running execution ${executionId}, not recreating`,
 				);
 			}
 		}
 
-		// 获取剩余 TTL
+
 		const ttl = await this.leaseService.getLeaseTTL(executionId);
 
 		return {
@@ -2150,9 +2186,7 @@ export class TaskExecutionService implements OnModuleInit {
 	}
 
 	/**
-	 * 批量心跳处理
 	 *
-	 * 用于同时续租多个执行任务的租约
 	 */
 	async batchHeartbeat(
 		executionIds: number[],
@@ -2167,7 +2201,7 @@ export class TaskExecutionService implements OnModuleInit {
 			};
 		}
 
-		// 验证所有执行记录属于当前用户
+
 		const executions = await this.prismaService.task_execution.findMany({
 			where: {
 				id: { in: executionIds },
@@ -2180,7 +2214,7 @@ export class TaskExecutionService implements OnModuleInit {
 		const validIds = executions.map((e) => e.id);
 		const invalidIds = executionIds.filter((id) => !validIds.includes(id));
 
-		// 批量续租有效的执行 ID
+
 		const renewedIds = await this.leaseService.renewLeasesBatch(validIds);
 		const failedIds = [
 			...invalidIds,

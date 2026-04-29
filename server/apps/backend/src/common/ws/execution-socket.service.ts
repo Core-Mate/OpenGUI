@@ -4,12 +4,7 @@ import type { ExecutionConnection, ExecutionSocket } from "./types";
 import { executionRoom } from "./types";
 
 /**
- * Execution ↔ Socket 映射管理
  *
- * 使用内存 Map 而非 Redis，因为：
- * - ACK 请求（截屏、动作）需要直接 socket 引用，必须本地持有
- * - 每个 execution 恰好在运行 GraphRunner 的服务器实例上
- * - Redis Streams Adapter 负责跨实例广播事件
  */
 @Injectable()
 export class ExecutionSocketService implements OnModuleDestroy {
@@ -19,7 +14,6 @@ export class ExecutionSocketService implements OnModuleDestroy {
 	/** executionId → socket reference */
 	private readonly sockets = new Map<number, ExecutionSocket>();
 
-	/** socketId → executionId (反向索引) */
 	private readonly socketToExecution = new Map<string, number>();
 
 	constructor(private readonly logger: AppLogger) {
@@ -33,12 +27,11 @@ export class ExecutionSocketService implements OnModuleDestroy {
 	}
 
 	/**
-	 * 存储 execution 连接
 	 */
 	storeConnection(executionId: number, socket: ExecutionSocket): void {
 		let previousSeq = 0;
 
-		// 如果已有同 executionId 的连接，先清理并断开旧 socket
+
 		if (this.sockets.has(executionId)) {
 			const oldConn = this.connections.get(executionId);
 			if (oldConn) {
@@ -75,7 +68,6 @@ export class ExecutionSocketService implements OnModuleDestroy {
 	}
 
 	/**
-	 * 移除 execution 连接
 	 */
 	removeConnection(executionId: number): void {
 		const conn = this.connections.get(executionId);
@@ -88,7 +80,6 @@ export class ExecutionSocketService implements OnModuleDestroy {
 	}
 
 	/**
-	 * 通过 socketId 移除连接
 	 */
 	removeConnectionBySocketId(socketId: string): number | null {
 		const executionId = this.socketToExecution.get(socketId);
@@ -100,28 +91,24 @@ export class ExecutionSocketService implements OnModuleDestroy {
 	}
 
 	/**
-	 * 获取 execution 的 socket 引用（用于 emitWithAck）
 	 */
 	getSocketForExecution(executionId: number): ExecutionSocket | null {
 		return this.sockets.get(executionId) ?? null;
 	}
 
 	/**
-	 * 获取 execution 连接元数据
 	 */
 	getConnection(executionId: number): ExecutionConnection | null {
 		return this.connections.get(executionId) ?? null;
 	}
 
 	/**
-	 * 检查 execution 是否已连接
 	 */
 	isConnected(executionId: number): boolean {
 		return this.sockets.has(executionId);
 	}
 
 	/**
-	 * 递增并返回下一个 seq
 	 */
 	nextSeq(executionId: number): number {
 		const conn = this.connections.get(executionId);
@@ -135,7 +122,6 @@ export class ExecutionSocketService implements OnModuleDestroy {
 	}
 
 	/**
-	 * 获取活跃连接数
 	 */
 	getActiveCount(): number {
 		return this.connections.size;

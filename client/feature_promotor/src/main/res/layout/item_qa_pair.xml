@@ -26,7 +26,7 @@
         android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
         android:background="@drawable/bg_edittext_border"
-        android:hint="问题"
+        android:hint="Question"
         android:inputType="textMultiLine"
         android:minHeight="48dp"
         android:padding="8dp"
@@ -34,7 +34,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/tv_qa_number"
         app:layout_constraintTop_toTopOf="parent"
-        tools:text="我想要退款" />
+        tools:text="I want a refund" />
 
     <EditText
         android:id="@+id/et_answer"
@@ -45,7 +45,7 @@
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
         android:background="@drawable/bg_edittext_border"
-        android:hint="答案"
+        android:hint="Answer"
         android:inputType="textMultiLine"
         android:minHeight="48dp"
         android:padding="8dp"
@@ -54,6 +54,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="@+id/et_question"
         app:layout_constraintTop_toBottomOf="@+id/et_question"
-        tools:text="抱歉，平台暂时不支持退款！" />
+        tools:text="Sorry, refunds are not supported yet." />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

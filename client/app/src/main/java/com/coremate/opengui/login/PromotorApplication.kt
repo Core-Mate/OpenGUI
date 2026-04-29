@@ -58,7 +58,7 @@ class PromotorApplication : Application(), LifecycleOwner, ViewModelStoreOwner {
         super.onCreate()
         PushManager.applicationContext = applicationContext
         SpeechEngineManager.initialize(this, this)
-        //预初始化统计sdk
+
         StatisticsManager.instance.preInitSDK(this)
         // Initialize LifecycleRegistry
         lifecycleRegistry = LifecycleRegistry(this)
@@ -83,17 +83,17 @@ class PromotorApplication : Application(), LifecycleOwner, ViewModelStoreOwner {
                 }
             }
         }
-        //初始化自动化
+
         AMServiceManager.instance.init(this)
         MessageController.init(this)
-        val screenshotProviderInstance: ScreenshotProvider = ScreenCaptureManager() // 创建实例并向上转型为接口
+        val screenshotProviderInstance: ScreenshotProvider = ScreenCaptureManager()
 
-        //注册前台/后台监听
+
         ProcessLifecycleOwner.get().lifecycle.addObserver(AppLifecycleObserver(this@PromotorApplication))
-        //初始化 mmkv
+
         val rootDir: String = MMKV.initialize(this)
 
-        //初始化统计sdk
+
         StatisticsManager.instance.initSDK()
         TimeUtils.init(applicationContext)
     }
@@ -108,12 +108,12 @@ class PromotorApplication : Application(), LifecycleOwner, ViewModelStoreOwner {
                 LogManager.saveLog(
                     context,
                     "AppLifecycleObserver",
-                    "AppLifecycleObserver | OpenGUI进入前台",
+                    "AppLifecycleObserver | OpenGUI entered foreground",
                     TaskCenter.executionId ?: -1
                 )
                 MessageController.setBackgroundStatus(false)
                 AIFloatWindowManager.dismissAllWindow()
-                AIFloatWindowManager.hideExecuteTaskWindow("OpenGUI进入前台")
+                AIFloatWindowManager.hideExecuteTaskWindow("OpenGUI entered foreground")
             }
         }
 
@@ -124,14 +124,14 @@ class PromotorApplication : Application(), LifecycleOwner, ViewModelStoreOwner {
                 LogManager.saveLog(
                     context,
                     "AppLifecycleObserver",
-                    "AppLifecycleObserver | OpenGUI进入后台 | hasActiveExecution = $hasActiveExecution",
+                    "AppLifecycleObserver | OpenGUI entered background | hasActiveExecution = $hasActiveExecution",
                     TaskCenter.executionId ?: -1
                 )
                 if (hasActiveExecution && !TaskCenter.isSummarizing) {
                     MessageController.setBackgroundStatus(true)
-                    AIFloatWindowManager.getExecuteTaskWindow()?.reset("OpenGUI进入后台")
-                    AIFloatWindowManager.showExecuteTaskWindow("OpenGUI进入后台")
-                    AIFloatWindowManager.showGradientWindow("OpenGUI进入后台")
+                    AIFloatWindowManager.getExecuteTaskWindow()?.reset("OpenGUI entered background")
+                    AIFloatWindowManager.showExecuteTaskWindow("OpenGUI entered background")
+                    AIFloatWindowManager.showGradientWindow("OpenGUI entered background")
                 }
             }
         }
@@ -139,7 +139,6 @@ class PromotorApplication : Application(), LifecycleOwner, ViewModelStoreOwner {
 
 
     /**
-     * 检查我们的无障碍服务是否在系统设置中启用。
      */
     private fun isAccessibilityServiceEnabled(context: Context): Boolean {
         val service = "${context.packageName}/${GestureService::class.java.canonicalName}"
@@ -151,10 +150,9 @@ class PromotorApplication : Application(), LifecycleOwner, ViewModelStoreOwner {
     }
 
     /**
-     * 提示用户开启无障碍服务。
      */
     private fun promptEnableAccessibilityService(context: Context) {
-        Toast.makeText(context, "【重要】请开启应用的无障碍服务以使用自动化功能", Toast.LENGTH_LONG)
+        Toast.makeText(context, "[Important] Enable the accessibility service to use automation.", Toast.LENGTH_LONG)
             .show()
         val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -163,10 +161,9 @@ class PromotorApplication : Application(), LifecycleOwner, ViewModelStoreOwner {
     }
 
     /**
-     * 提示用户开启悬浮窗权限。
      */
     private fun promptEnableOverlayPermission(context: Context) {
-        Toast.makeText(context, "【重要】请授予悬浮窗权限以显示任务状态和交互", Toast.LENGTH_LONG)
+        Toast.makeText(context, "[Important] Grant overlay permission to show task status and controls.", Toast.LENGTH_LONG)
             .show()
         val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
             data = Uri.parse("package:${context.packageName}")
@@ -177,12 +174,11 @@ class PromotorApplication : Application(), LifecycleOwner, ViewModelStoreOwner {
     }
 
     /**
-     * 提示用户将应用加入电池优化白名单。
      */
     private fun promptIgnoreBatteryOptimizations(context: Context) {
         Toast.makeText(
             context,
-            "【重要】请关闭电池优化以保持自动化任务后台稳定运行",
+            "[Important] Disable battery optimization to keep background automation stable.",
             Toast.LENGTH_LONG
         ).show()
         val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)

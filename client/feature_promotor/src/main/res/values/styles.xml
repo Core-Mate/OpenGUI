@@ -100,7 +100,7 @@
         <item name="colorControlNormal">@color/transparent</item>
     </style>
 
-    <!--实现BottomSheetDialog圆角效果-->
+
     <style name="BottomSheetDialog" parent="Theme.Design.Light.BottomSheetDialog">
         <item name="bottomSheetStyle">@style/bottomSheetStyleWrapper</item>
         <item name="android:windowIsTranslucent">true</item>

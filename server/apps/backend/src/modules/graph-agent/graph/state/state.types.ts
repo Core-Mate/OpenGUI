@@ -15,7 +15,7 @@ import {
 } from "../utils/execution-metrics";
 
 /**
- * GUI Agent 运行状态
+ * GUI Agent runtime status.
  */
 export type ExecutorStatus =
 	| "running"
@@ -26,7 +26,7 @@ export type ExecutorStatus =
 	| "cancelled";
 
 /**
- * 解析后的预测结果
+ * Parsed prediction result.
  */
 export type Coords = [number, number] | [];
 
@@ -47,12 +47,12 @@ export interface PredictionParsed {
 	action_type: string;
 	/** `<thought>` parsed from Thought: `<thought>` */
 	thought: string;
-	/** `<summary>` parsed from Summary: `<summary>` — 当前操作的简短摘要 */
+	/** `<summary>` parsed from Summary: `<summary>`; a short summary of the current action. */
 	summary: string | null;
 }
 
 /**
- * 异常检测用的动作记录（轻量级）
+ * Lightweight action record for anomaly detection.
  */
 export interface ParsedActionRecord {
 	action_type: string;
@@ -60,29 +60,29 @@ export interface ParsedActionRecord {
 }
 
 /**
- * 统一语义历史记录（跨通道共享推理链）
+ * Unified semantic history shared across reasoning chains.
  */
 export interface SemanticRecord {
-	/** 该步使用的感知通道 */
+	/** Perception channel used by this step. */
 	channel: "gui";
-	/** 循环序号 */
+	/** Loop index. */
 	loopIndex: number;
-	/** 时间戳 */
+	/** Timestamp. */
 	timestamp: string;
-	/** 模型推理输出 */
+	/** Model reasoning output. */
 	summary: string;
 	thought: string;
 	action: string;
-	/** 解析后的动作（用于异常检测衍生） */
+	/** Parsed action used by anomaly detection. */
 	parsedAction: ParsedActionRecord | null;
-	/** 当前 APP 名称 */
+	/** Current app name. */
 	appName: string;
-	/** 截图 TOS key（仅 channel=gui） */
+	/** Screenshot TOS key for GUI channel. */
 	screenshotKey?: string;
 }
 
 /**
- * Token 使用统计
+ * Token usage.
  */
 export interface TokenUsage {
 	promptTokens: number;
@@ -91,132 +91,134 @@ export interface TokenUsage {
 }
 
 /**
- * Supervisor Todo 项（用于 write_todos 工具持久化）
+ * Supervisor todo item persisted by the write_todos tool.
  */
 export interface SupervisorTodo {
-	/** 任务内容 */
+	/** Todo content. */
 	content: string;
-	/** 任务状态 */
+	/** Todo status. */
 	status: "pending" | "in_progress" | "completed" | "failed";
-	/** 执行此任务所需的 Skill 名称列表（可选） */
+	/** Terminal result required for completed, failed, or refused todos. */
+	result?: "success" | "failure" | "refused";
+	/** Optional list of Skill names required to execute this todo. */
 	required_skills?: string[];
 }
 
 /**
- * Executor 输入 (父图 → 子图)
+ * Executor input from parent graph to subgraph.
  */
 export interface ExecutorInput {
-	/** 要执行的指令 */
+	/** Instruction to execute. */
 	instruction: string;
-	/** Plan Supervisor 选择的技能列表（可选） */
+	/** Optional skills selected by Plan Supervisor. */
 	skills?: SkillDTO[];
-	/** Task 级别长期记忆上下文（可选） */
+	/** Optional task-level long-term memory context. */
 	memory?: string;
 }
 
 /**
- * Executor 输出 (子图 → 父图)
+ * Executor output from subgraph to parent graph.
  */
 export interface ExecutorOutput {
-	/** 执行是否成功 */
+	/** Execution success flag. */
 	success: boolean;
-	/** 执行的任务描述 */
+	/** Executed task description. */
 	task: string;
-	/** 失败原因 */
+	/** Failure reason. */
 	fail_reason?: string;
-	/** 执行过程中收集的备注 */
+	/** Notes collected during execution. */
 	notes?: string;
 }
 
 /**
- * Executor 内部状态 (子图专属，命名空间隔离)
+ * Executor internal state, scoped to the subgraph namespace.
  *
- * 使用 sharedMessages 历史（不含 SystemMessage）。
- * 调用时 model 节点做运行时适配，prepend SystemMessage。
+ * Uses sharedMessages history without SystemMessage.
+ * Model nodes adapt at runtime and prepend their own SystemMessage.
  */
 export interface ExecutorInternalState {
-	// === 截图相关 ===
-	/** 截图 URI (TOS key) */
+	// === Screenshot ===
+	/** Screenshot URI (TOS key). */
 	screenshotUri: string;
-	/** 屏幕宽度 */
+	/** Screen width. */
 	screenWidth: number;
-	/** 屏幕高度 */
+	/** Screen height. */
 	screenHeight: number;
 	currentAppName: string;
 
-	// === 预测相关 ===
-	/** 当前预测文本 */
+	// === Prediction ===
+	/** Current prediction text. */
 	currentPrediction: string;
-	/** 解析后的预测结果 */
+	/** Parsed prediction result. */
 	parsedPrediction: PredictionParsed | null;
 
-	// === 循环控制 ===
-	/** 当前循环次数 */
+	// === Loop Control ===
+	/** Current loop count. */
 	loopCount: number;
-	/** 是否需要跳出循环（陷入死循环或者任务偏离） */
+	/** Whether execution should break out because it is looping or off-task. */
 	needRemind: boolean;
-	/** 跳出循环的原因 */
+	/** Reason for breaking out of the loop. */
 	remindReason: string | null;
 
-	// === 执行状态 ===
-	/** 当前状态 */
+	// === Execution status ===
+	/** Current status. */
 	status: ExecutorStatus;
-	/** 错误信息 */
+	/** Error message */
 	errorMessage: string;
-	/** 结构化错误（统一错误分类） */
+	/** Structured error using the unified error taxonomy. */
 	lastError: ExecutorError | null;
-	/** call_user 时的思考内容 */
+	/** Thought content when calling the user. */
 	callUserThought: string;
 
-	// === 共享消息历史 (不含 SystemMessage，仅 Human/AI) ===
-	/** A11Y 和 VLM 共享的对话历史，model 节点调用时各自 prepend SystemMessage */
+	// === Shared Message History (Human/AI only, no SystemMessage) ===
+	/** Shared dialog history; model nodes prepend their own SystemMessage at runtime. */
 	sharedMessages: BaseMessage[];
 
-	// === System Prompt 模板 (entry.node 构建，model 节点消费) ===
-	/** VLM 的 system prompt 文本 */
+	// === System Prompt Template ===
+	/** VLM system prompt text built by entry.node and consumed by model nodes. */
 	guiSystemPrompt: string;
 
-	// === Token 统计 ===
-	/** 子图内 token 消耗 */
+	// === Token Usage ===
+	/** Token usage inside the subgraph. */
 	totalTokens: number;
 
-	// === 执行指标 ===
-	/** 结构化执行指标（各节点可提供 Partial 更新，reducer 逐字段累加合并） */
+	// === Execution Metrics ===
+	/** Structured execution metrics; reducers merge partial updates field by field. */
 	executionMetrics: Partial<ExecutionMetrics>;
 
-	// === 异常检测 ===
-	/** 最近动作的滑动窗口（用于重复检测） */
+	// === Anomaly Detection ===
+	/** Sliding window of recent actions for repetition detection. */
 	recentActions: ParsedActionRecord[];
-	/** 最近截图的 pHash 列表（用于相似截图检测） */
+	/** Recent screenshot pHash list for similar-screenshot detection. */
 	recentScreenshotHashes: string[];
-	/** 当前截图的 pHash（由 sense 节点计算，anomaly-detect 读取） */
+	/** Current screenshot pHash computed by sense node and read by anomaly detection. */
 	currentScreenshotHash: string;
 
-	// === 图像 URL 刷新 ===
-	/** Fork resume 后需要刷新图片 URL（TOS 签名可能过期） */
+	// === Image URL Refresh ===
+	/** Refresh image URLs after fork resume because TOS signatures may expire. */
 	needRefreshImageUrls: boolean;
 
-	// === 通道路由 ===
+	// === Channel Routing ===
 	/** Current active channel; GUI only in the source-available release. */
 	currentChannel: "gui";
 
-	// === 历史摘要 ===
-	/** 上次生成摘要时的 loopCount */
+	// === History Summary ===
+	/** loopCount when the last summary was generated. */
 	lastSummarizedLoopCount: number;
-	/** 上次生成摘要时的 appName */
+	/** appName when the last summary was generated. */
 	lastSummarizedAppName: string;
 
-	// === 重置标志 ===
-	/** 显式重置信号：entry.node 正常入口设为 true，reducer 检测后执行全量重置并剔除此字段 */
+	// === Reset Flag ===
+	/** Explicit reset signal set by normal entry; reducer performs full reset and drops this field. */
 	_reset?: boolean;
 
-	// === 语义历史（仅用于异常检测） ===
-	/** 跨通道语义历史（每步记录 channel + summary + thought + action） */
+	// === Semantic History (Anomaly Detection Only) ===
+	/** Semantic history recording channel, summary, thought, and action for each step. */
 	semanticHistory: SemanticRecord[];
 }
 
 /**
- * ExecutorInternalState 默认值
+ * Default ExecutorInternalState.
  */
 const DEFAULT_EXECUTOR_INTERNAL_STATE: ExecutorInternalState = {
 	remindReason: "",
@@ -247,13 +249,13 @@ const DEFAULT_EXECUTOR_INTERNAL_STATE: ExecutorInternalState = {
 };
 
 /**
- * Executor 子图字段（供父图组合使用）
+ * Executor subgraph fields used by the parent graph.
  *
- * 重置机制：
- * - entry.node 正常入口设置 _reset: true 触发重置
- * - 此时 messages 和 totalTokens 会被直接替换而非累加
- * - _reset 字段在重置后被剔除，不持久到状态中
- * - 这确保每次进入 executor subgraph 时都是全新的上下文
+ * Reset behavior:
+ * - Normal entry in entry.node sets _reset: true.
+ * - messages and totalTokens are replaced instead of accumulated.
+ * - _reset is dropped after reset and is not persisted.
+ * - Each executor subgraph entry starts with a fresh context.
  */
 const executorStateFields = {
 	executorInput: z.custom<ExecutorInput>(),
@@ -271,7 +273,7 @@ const executorStateFields = {
 					return current;
 				}
 
-				// 检测显式重置信号：entry.node 正常入口设置 _reset: true
+				// Detect explicit reset signal set by normal entry in entry.node.
 				const isReset = update._reset === true;
 
 				if (isReset) {
@@ -285,7 +287,7 @@ const executorStateFields = {
 					};
 				}
 
-				// 正常合并逻辑（subgraph 内部循环时使用）
+				// Normal merge logic used during subgraph loops.
 				const mergedMessages =
 					update.sharedMessages !== undefined
 						? messagesStateReducer(
@@ -294,14 +296,14 @@ const executorStateFields = {
 							)
 						: current.sharedMessages;
 
-				// 滑动窗口上限保护（精细窗口由 model 节点在调用时构建）
+				// Sliding-window cap; model nodes build the precise window at runtime.
 				const windowSize = VLM_AGENT_DEFAULTS.MESSAGE_WINDOW_SIZE;
 				const finalMessages =
 					mergedMessages.length > windowSize
 						? mergedMessages.slice(-windowSize)
 						: mergedMessages;
 
-				// semanticHistory append 合并
+				// Append-merge semanticHistory.
 				const mergedSemanticHistory =
 					update.semanticHistory !== undefined
 						? [...current.semanticHistory, ...update.semanticHistory]
@@ -337,59 +339,59 @@ const executorStateFields = {
 export const ExecutorStateSchema = new StateSchema(executorStateFields);
 
 /**
- * 统一 Agent 状态 Schema
+ * Unified Agent state schema.
  *
- * 支持父图和子图共享状态，子图可直接作为节点添加
- * 使用 executorStateFields 组合 Executor 字段
+ * Supports shared parent/subgraph state and lets subgraphs be added as nodes.
+ * Combines Executor fields through executorStateFields.
  */
 export const AgentStateSchema = new StateSchema({
-	// === 任务基本信息 ===
+	// === Task Basics ===
 	userId: z.custom<number>(),
 	taskId: z.custom<number>(),
 	taskExecutionId: z.custom<number>(),
 	userInput: z.custom<string>(),
-	/** 用户地区 (CN/US) */
+	/** User region (CN/US). */
 	userRegion: z.custom<string>(),
-	/** 用户所属租户 ID（从 users.tenant_id 获取，-1 表示无租户） */
+	/** User tenant ID from users.tenant_id; -1 means no tenant. */
 	tenantId: z.custom<number>(),
 
-	// === 消息历史 (父图级别) ===
+	// === Message History (Parent Graph) ===
 	messages: MessagesValue,
 	plannerMessages: MessagesValue,
 
-	// === Supervisor 输出 ===
-	/** Supervisor 每轮流式输出文本（用于 fallback_extract 节点解析） */
+	// === Supervisor Output ===
+	/** Supervisor streaming text for each turn, parsed by fallback_extract. */
 	supervisorStreamOutput: z.string().default(""),
 
-	// === extract_todo 节点结果 ===
-	/** extract_todo 是否成功提取到待执行 todo */
+	// === extract_todo Result ===
+	/** Whether extract_todo found a todo to execute. */
 	todoFound: z.boolean().default(false),
 
-	// === Planner 所有待办都已完成 ===
+	// === Planner Todos Completed ===
 	planTodoComplete: z.custom<boolean>(),
 
-	// === Plan Generator / Supervisor 输出 ===
-	/** 计划文档 (Markdown 格式)，supervisor 首次调用时设置 */
+	// === Plan Generator / Supervisor Output ===
+	/** Plan document in Markdown, set on the first supervisor invocation. */
 	planDocument: z.string().default(""),
 
-	// === Executor Sub Graph (组合) ===
+	// === Executor Subgraph ===
 	...executorStateFields,
 
-	// === 中断状态 ===
+	// === Interrupt State ===
 	interruptReason: z.custom<string | null>(),
 	isCancelled: z.custom<boolean>(),
 	isPaused: z.custom<boolean>(),
 
-	// === Supervisor 错误标记 ===
-	/** Supervisor 节点是否发生不可恢复错误（LLM 调用失败等），用于路由到 summarizer 生成补救总结 */
+	// === Supervisor Error Flag ===
+	/** Whether supervisor hit an unrecoverable error, used to route to summarizer for recovery. */
 	supervisorError: z.boolean().default(false),
 
-	// === Executor 进入标记 ===
-	/** 是否进入过 executor 子图（用于取消时判断是否需要跳转 summarizer） */
+	// === Executor Entry Flag ===
+	/** Whether executor subgraph was entered, used to decide if cancel should jump to summarizer. */
 	executorEntered: z.custom<boolean>(),
 
-	// === summarizer 输出的最终总结 ===
-	/** 最终总结，使用显式 reducer 避免并发更新时的 LastValue 冲突 */
+	// === Final Summary from Summarizer ===
+	/** Final summary, using an explicit reducer to avoid concurrent LastValue conflicts. */
 	finalSummary: new ReducedValue(
 		z.string().nullable().default(null),
 		{
@@ -398,7 +400,7 @@ export const AgentStateSchema = new StateSchema({
 		},
 	),
 
-	// 每 50 轮总结一次，记录下来用于最终总结
+	// Summary generated every 50 loops and collected for the final summary.
 	actionSummaryList: new ReducedValue(
 		z.array(z.string()).default(() => []),
 		{
@@ -409,31 +411,31 @@ export const AgentStateSchema = new StateSchema({
 		},
 	),
 
-	// === 元数据 ===
+	// === Metadata ===
 	tokenUsage: z.custom<TokenUsage>(),
 	startTime: z.custom<number>(),
 
-	// === Fork 执行相关 ===
-	/** 原始执行 ID（用于 fork 场景，summarizer 会读取原执行的 summary 进行综合） */
+	// === Fork Execution ===
+	/** Original execution ID; summarizer reads its summary during fork flows. */
 	originExecutionId: z.custom<number | null>(),
-	/** Fork Resume 标志：entry 节点检测后清除，指示保留 executor 状态继续执行 */
+	/** Fork resume flag; entry node clears it after deciding to preserve executor state. */
 	forkResume: z.custom<boolean>(),
 });
 
 export type AgentState = typeof AgentStateSchema.State;
 
-/** @deprecated 使用 AgentStateSchema 替代 */
+/** @deprecated Use AgentStateSchema instead. */
 export const AgentStateAnnotation = AgentStateSchema;
-/** @deprecated 使用 ExecutorStateSchema 替代 */
+/** @deprecated Use ExecutorStateSchema instead. */
 export const ExecutorStateAnnotation = ExecutorStateSchema;
 
-/** VLM Agent 默认配置 */
+/** Default VLM Agent configuration. */
 export const VLM_AGENT_DEFAULTS = {
-	MAX_LOOP_COUNT: 500,
+	MAX_LOOP_COUNT: 150,
 	MESSAGE_WINDOW_SIZE: 100,
-	/** VLM 调用时的消息窗口（不含图片占位消息） */
+	/** VLM message window, excluding image placeholder messages. */
 	VLM_MODEL_WINDOW_SIZE: 10,
-	/** VLM 调用时保留的截图数量 */
+	/** Number of screenshots retained for VLM calls. */
 	VLM_IMAGE_WINDOW_SIZE: 3,
 	SEMANTIC_HISTORY_WINDOW_SIZE: 100,
 	DEFAULT_SCALE_FACTOR: 1,

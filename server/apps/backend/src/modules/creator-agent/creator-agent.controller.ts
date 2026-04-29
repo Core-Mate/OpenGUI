@@ -30,24 +30,24 @@ import {
 } from "./dto";
 
 /**
- * 测试接口 DTO
+ * Test endpoint DTO.
  */
 class GenerateFromDescriptionDto {
 	@ApiProperty({
-		description: "自然语言描述的创作需求",
+		description: "Natural-language content creation request",
 		example:
-			"在小红书上对一篇关于露营装备清单的笔记发表评论，帖子推荐了帐篷、睡袋和炊具，评论区在讨论性价比。目的是分享露营经验并推荐便携炉具，大约50字",
+			"Comment on a Xiaohongshu post about a camping gear checklist. The post recommends tents, sleeping bags, and cookware, while the comment section discusses value for money. Share camping experience and recommend a portable stove in about 50 words.",
 	})
 	description: string;
 
 	@ApiProperty({
-		description: "自定义 System Prompt（可选，不传则使用默认）",
+		description: "Custom system prompt (optional; defaults are used when omitted)",
 		required: false,
 	})
 	systemPrompt?: string;
 
 	@ApiProperty({
-		description: "选中的 Skill ID 列表（可选），对应 Skill 内容会拼入 System Prompt",
+		description: "Selected Skill ID list (optional; matching Skill content is appended to the system prompt)",
 		required: false,
 		type: [Number],
 	})
@@ -56,7 +56,7 @@ class GenerateFromDescriptionDto {
 
 /**
  * Creator Agent Controller
- * 内容创作 Agent API 接口
+ * Content-creation Agent API endpoints.
  */
 @ApiTags("Creator Agent")
 @Controller("creator-agent")
@@ -69,18 +69,18 @@ export class CreatorAgentController {
 	) {}
 
 	/**
-	 * 生成内容 (流式 SSE)
+	 * Generate content (streaming SSE).
 	 */
 	@Post("generate/stream")
 	@HttpCode(HttpStatus.OK)
 	@Sse()
 	@ApiOperation({
-		summary: "生成内容 (流式)",
-		description: "使用 SSE 流式返回内容生成过程",
+		summary: "Generate content (streaming)",
+		description: "Return the content generation process through SSE streaming",
 	})
 	@ApiResponse({
 		status: 200,
-		description: "流式返回生成内容",
+		description: "Stream generated content",
 		type: StreamMessageDto,
 	})
 	generateContentStream(
@@ -90,7 +90,7 @@ export class CreatorAgentController {
 
 		const subject = new Subject<MessageEvent<StreamMessageDto>>();
 
-		// 异步处理生成流
+		// Process the generation stream asynchronously.
 		(async () => {
 			try {
 				for await (const message of this.creatorAgentService.generateContent(
@@ -106,7 +106,7 @@ export class CreatorAgentController {
 				subject.next({
 					data: {
 						type: "error",
-						content: error instanceof Error ? error.message : "未知错误",
+						content: error instanceof Error ? error.message : "unknown error",
 					},
 				} as MessageEvent<StreamMessageDto>);
 				subject.complete();
@@ -117,17 +117,17 @@ export class CreatorAgentController {
 	}
 
 	/**
-	 * 生成内容 (同步)
+	 * Generate content (synchronous).
 	 */
 	@Post("generate")
 	@HttpCode(HttpStatus.OK)
-	@ApiOperation({
-		summary: "生成内容",
-		description: "同步返回完整的生成内容",
+		@ApiOperation({
+			summary: "Generate content",
+			description: "Synchronously return the full generated content",
 	})
 	@ApiResponse({
 		status: 200,
-		description: "生成的内容",
+		description: "Generated content",
 		type: ContentOutputDto,
 	})
 	async generateContent(
@@ -141,18 +141,18 @@ export class CreatorAgentController {
 	}
 
 	/**
-	 * 润色内容 (流式 SSE)
+	 * Polish content (streaming SSE).
 	 */
 	@Post("polish/stream")
 	@HttpCode(HttpStatus.OK)
 	@Sse()
 	@ApiOperation({
-		summary: "润色内容 (流式)",
-		description: "使用 SSE 流式返回润色过程",
+		summary: "Polish content (streaming)",
+		description: "Return the polishing process through SSE streaming",
 	})
 	@ApiResponse({
 		status: 200,
-		description: "流式返回润色内容",
+		description: "Stream polished content",
 		type: StreamMessageDto,
 	})
 	polishContentStream(
@@ -177,7 +177,7 @@ export class CreatorAgentController {
 				subject.next({
 					data: {
 						type: "error",
-						content: error instanceof Error ? error.message : "未知错误",
+						content: error instanceof Error ? error.message : "unknown error",
 					},
 				} as MessageEvent<StreamMessageDto>);
 				subject.complete();
@@ -188,17 +188,17 @@ export class CreatorAgentController {
 	}
 
 	/**
-	 * 润色内容 (同步)
+	 * Polish content (synchronous).
 	 */
 	@Post("polish")
 	@HttpCode(HttpStatus.OK)
 	@ApiOperation({
-		summary: "润色内容",
-		description: "同步返回润色后的内容",
+		summary: "Polish content",
+		description: "Synchronously return polished content",
 	})
 	@ApiResponse({
 		status: 200,
-		description: "润色后的内容",
+		description: "Polished content",
 		type: ContentOutputDto,
 	})
 	async polishContent(
@@ -220,18 +220,18 @@ export class CreatorAgentController {
 	}
 
 	/**
-	 * 研究主题 (流式 SSE)
+	 * Research topic (streaming SSE).
 	 */
 	@Post("research/stream")
 	@HttpCode(HttpStatus.OK)
 	@Sse()
 	@ApiOperation({
-		summary: "研究主题 (流式)",
-		description: "使用 SSE 流式返回研究过程",
+		summary: "Research topic (streaming)",
+		description: "Return the research process through SSE streaming",
 	})
 	@ApiResponse({
 		status: 200,
-		description: "流式返回研究结果",
+		description: "Stream research results",
 		type: StreamMessageDto,
 	})
 	researchTopicStream(
@@ -256,7 +256,7 @@ export class CreatorAgentController {
 				subject.next({
 					data: {
 						type: "error",
-						content: error instanceof Error ? error.message : "未知错误",
+						content: error instanceof Error ? error.message : "unknown error",
 					},
 				} as MessageEvent<StreamMessageDto>);
 				subject.complete();
@@ -267,17 +267,17 @@ export class CreatorAgentController {
 	}
 
 	/**
-	 * 研究主题 (同步)
+	 * Research topic (synchronous).
 	 */
 	@Post("research")
 	@HttpCode(HttpStatus.OK)
 	@ApiOperation({
-		summary: "研究主题",
-		description: "同步返回完整的研究报告",
+		summary: "Research topic",
+		description: "Synchronously return the complete research report",
 	})
 	@ApiResponse({
 		status: 200,
-		description: "研究报告",
+		description: "Research report",
 		type: ResearchResponseDto,
 	})
 	async researchTopic(
@@ -297,25 +297,25 @@ export class CreatorAgentController {
 
 		return {
 			topic: dto.topic,
-			results: [], // TODO: 解析研究结果
+			results: [], // TODO: parse research results.
 			summary: finalContent,
 			generatedAt: new Date(),
 		};
 	}
 
 	/**
-	 * 优化 Skill 内容 (流式 SSE)
+	 * Optimize Skill content (streaming SSE).
 	 */
 	@Post("optimize-skill")
 	@HttpCode(HttpStatus.OK)
 	@Sse()
 	@ApiOperation({
-		summary: "优化 Skill 内容 (流式)",
-		description: "使用 SSE 流式返回 Skill 优化结果",
+		summary: "Optimize Skill content (streaming)",
+		description: "Return Skill optimization results through SSE streaming",
 	})
 	@ApiResponse({
 		status: 200,
-		description: "流式返回优化后的 Skill 内容",
+		description: "Stream optimized Skill content",
 		type: StreamMessageDto,
 	})
 	optimizeSkillStream(
@@ -340,7 +340,7 @@ export class CreatorAgentController {
 				subject.next({
 					data: {
 						type: "error",
-						content: error instanceof Error ? error.message : "未知错误",
+						content: error instanceof Error ? error.message : "unknown error",
 					},
 				} as MessageEvent<StreamMessageDto>);
 				subject.complete();
@@ -351,33 +351,33 @@ export class CreatorAgentController {
 	}
 
 	/**
-	 * 触发 Skill 文件系统同步
-	 * Admin 修改 Skill 后调用此接口通知 Backend 重建 .claude/skills/ 目录
+	 * Trigger Skill file-system sync.
+	 * Admin calls this after editing Skills so the backend can rebuild .claude/skills/.
 	 */
 	@Post("sync-skills")
 	@HttpCode(HttpStatus.OK)
 	@ApiOperation({
-		summary: "同步 Skill 到文件系统",
-		description: "从 DB 重建 .claude/skills/ 目录，供 Claude Agent SDK 加载",
+		summary: "Sync Skills to the file system",
+		description: "Rebuild the .claude/skills/ directory from the DB for Claude Agent SDK loading",
 	})
-	@ApiResponse({ status: 200, description: "同步完成" })
+	@ApiResponse({ status: 200, description: "Sync completed" })
 	async syncSkills(): Promise<{ success: boolean; message: string }> {
 		this.logger.log("Sync skills request received");
 		await this.skillSyncService.syncAllSkills();
 		return { success: true, message: "Skills synced" };
 	}
 
-	/**
-	 * 测试 generateFromDescription 方法（无鉴权）
-	 */
+		/**
+		 * Test generateFromDescription without authentication.
+		 */
 	@Post("test/generate-from-description")
 	@HttpCode(HttpStatus.OK)
-	@ApiOperation({
-		summary: "[测试] 从自然语言描述生成内容",
-		description:
-			"测试接口：直接调用 generateFromDescription，输入自然语言描述，返回生成的内容文本",
-	})
-	@ApiResponse({ status: 200, description: "生成的内容文本" })
+		@ApiOperation({
+			summary: "[Test] Generate content from a natural-language description",
+			description:
+				"Test endpoint: call generateFromDescription directly with a natural-language description and return generated content text",
+		})
+		@ApiResponse({ status: 200, description: "Generated content text" })
 	async testGenerateFromDescription(
 		@Body() body: GenerateFromDescriptionDto,
 	): Promise<{ content: string }> {

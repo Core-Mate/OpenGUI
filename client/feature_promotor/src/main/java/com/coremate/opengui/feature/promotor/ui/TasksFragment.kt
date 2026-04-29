@@ -13,7 +13,7 @@ import androidx.fragment.app.Fragment
 import com.coremate.opengui.automation.base.utils.AMScreenUtils
 import com.coremate.opengui.feature.promotor.databinding.FragmentTasksBinding
 
-// 导入自动化模块的特定Activity
+
 import com.coremate.opengui.feature.promotor.ui.adapter.MissionScheduleListAdapter
 import com.coremate.opengui.feature.promotor.ui.viewmodel.MissionViewModel
 import com.coremate.opengui.network.api.mission_schedules.UIMissionSchedulesBean
@@ -66,7 +66,7 @@ class TasksFragment : Fragment() {
                 val data = result.data
                 val returnedValue = data?.getBooleanExtra("result", false)
                 returnedValue?.let {
-                    // 处理返回的数据
+
                     viewModel?.generateEmptyUIData()
                 }
             }

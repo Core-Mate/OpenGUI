@@ -25,7 +25,7 @@ class ContentStartSearchTitleBar @JvmOverloads constructor(
         )
 
     init {
-        // 读取自定义属性
+
         attrs?.let {
             val typedArray = context.obtainStyledAttributes(it, R.styleable.ContentStartTitleBar)
             searchActionInPage =

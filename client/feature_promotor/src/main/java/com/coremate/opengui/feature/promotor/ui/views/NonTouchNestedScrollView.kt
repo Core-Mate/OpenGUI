@@ -22,8 +22,8 @@ class NonTouchNestedScrollView @JvmOverloads constructor(
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         val limited = if (maxHeightPx > 0 && maxHeightPx < Int.MAX_VALUE) {
-            // 只有当 maxHeightPx 是一个合理的限制值时才使用它
-            // 如果设置为 Int.MAX_VALUE，则使用原始的 heightMeasureSpec，不进行限制
+
+
             MeasureSpec.makeMeasureSpec(maxHeightPx, MeasureSpec.AT_MOST)
         } else {
             heightMeasureSpec
@@ -32,12 +32,12 @@ class NonTouchNestedScrollView @JvmOverloads constructor(
     }
 
     override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
-        // 不拦截，交给父级（RecyclerView）
+
         return false
     }
 
     override fun onTouchEvent(motionEvent: MotionEvent): Boolean {
-        // 不处理触摸，返回 false 让事件上传
+
         return false
     }
 }

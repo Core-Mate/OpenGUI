@@ -15,7 +15,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 /**
- * 登录页
  * ViewPager: [PhoneNumberFragment, VerificationCodeFragment]
  */
 class LoginActivity : BaseBindingActivity<ActivityLoginBinding>(ActivityLoginBinding::inflate) {
@@ -45,13 +44,13 @@ class LoginActivity : BaseBindingActivity<ActivityLoginBinding>(ActivityLoginBin
     }
 
     private fun setupListeners() {
-        // 手机号页面监听
+
         pagerAdapter.getPhoneNumberPageFragment()
             .setRequestCodeListener { phoneNumber, aff ->
                 requestCode(phoneNumber, aff)
             }
 
-        // 验证码页面返回监听
+
         pagerAdapter.getVerificationCodeFragment().setBackListener {
             binding.viewPager.currentItem = 0
         }
@@ -74,7 +73,7 @@ class LoginActivity : BaseBindingActivity<ActivityLoginBinding>(ActivityLoginBin
                             429 -> {
                                 Toast.makeText(
                                     this@LoginActivity,
-                                    "请求过于频繁，请稍后再试",
+                                    "Too many requests. Please try again later.",
                                     Toast.LENGTH_SHORT
                                 ).show()
                             }
@@ -82,13 +81,13 @@ class LoginActivity : BaseBindingActivity<ActivityLoginBinding>(ActivityLoginBin
                             else -> {
                                 Toast.makeText(
                                     this@LoginActivity,
-                                    "出错了，请稍后重试",
+                                    "Something went wrong. Please try again later.",
                                     Toast.LENGTH_SHORT
                                 ).show()
                                 LogManager.saveLog(
                                     this@LoginActivity,
                                     TAG,
-                                    "$TAG | 错误 | requestCode | phone = $phoneNumber , resp = null? ${it == null}, code = ${it?.code()}, message = ${it?.message()}",
+                                    "$TAG | Error | requestCode | phone = $phoneNumber , resp = null? ${it == null}, code = ${it?.code()}, message = ${it?.message()}",
                                     TaskCenter.executionId ?: -1
                                 )
                             }
@@ -101,7 +100,7 @@ class LoginActivity : BaseBindingActivity<ActivityLoginBinding>(ActivityLoginBin
                 LogManager.saveLog(
                     this@LoginActivity,
                     TAG,
-                    "$TAG | 错误 | requestCode | phone = $phoneNumber , error = ${it.message}",
+                    "$TAG | Error | requestCode | phone = $phoneNumber , error = ${it.message}",
                     TaskCenter.executionId ?: -1
                 )
             }

@@ -52,7 +52,7 @@ import { TaskExecutionService } from './task-execution.service'
 
 const DEFAULT_USER_ID = 1
 
-@ApiTags('任务管理 V2')
+@ApiTags('Task Management V2')
 @Controller('tasks')
 export class TaskController {
     constructor(
@@ -63,16 +63,16 @@ export class TaskController {
         this.logger.setContext(TaskController.name)
     }
 
-    // ============= 任务管理 API =============
+    // ============= Task management API =============
 
     @Post()
-    @ApiOperation({ summary: '创建任务' })
+    @ApiOperation({ summary: 'Create task' })
     @ApiResponse({
         status: 201,
-        description: '任务创建成功',
+        description: 'Task created',
         type: TaskResponseDto,
     })
-    @ApiResponse({ status: 400, description: '请求参数错误' })
+    @ApiResponse({ status: 400, description: 'Invalid request parameters' })
     async createTask(
         @Body(ValidationPipe) dto: CreateTaskDto,
     ): Promise<TaskResponseDto> {
@@ -82,10 +82,10 @@ export class TaskController {
     }
 
     @Get()
-    @ApiOperation({ summary: '获取任务列表' })
+    @ApiOperation({ summary: 'Get task list' })
     @ApiResponse({
         status: 200,
-        description: '获取成功',
+        description: 'Success',
         type: PaginatedTaskListDto,
     })
     async getTaskList(
@@ -97,10 +97,10 @@ export class TaskController {
     }
 
     @Get('templates')
-    @ApiOperation({ summary: '获取模板任务列表' })
+    @ApiOperation({ summary: 'Get template task list' })
     @ApiResponse({
         status: 200,
-        description: '获取成功',
+        description: 'Success',
         type: [TaskResponseDto],
     })
     async getTemplateTasks(): Promise<TaskResponseDto[]> {
@@ -109,14 +109,14 @@ export class TaskController {
     }
 
     @Get(':id')
-    @ApiOperation({ summary: '获取任务详情' })
-    @ApiParam({ name: 'id', description: '任务ID', type: Number })
+    @ApiOperation({ summary: 'Get task details' })
+    @ApiParam({ name: 'id', description: 'Task ID', type: Number })
     @ApiResponse({
         status: 200,
-        description: '获取成功',
+        description: 'Success',
         type: TaskResponseDto,
     })
-    @ApiResponse({ status: 404, description: '任务不存在' })
+    @ApiResponse({ status: 404, description: 'Task not found' })
     async getTaskById(
         @Param('id', ParseIntPipe) taskId: number,
     ): Promise<TaskResponseDto> {
@@ -126,14 +126,14 @@ export class TaskController {
     }
 
     @Put(':id')
-    @ApiOperation({ summary: '更新任务' })
-    @ApiParam({ name: 'id', description: '任务ID', type: Number })
+    @ApiOperation({ summary: 'Update task' })
+    @ApiParam({ name: 'id', description: 'Task ID', type: Number })
     @ApiResponse({
         status: 200,
-        description: '更新成功',
+        description: 'Updated',
         type: TaskResponseDto,
     })
-    @ApiResponse({ status: 404, description: '任务不存在' })
+    @ApiResponse({ status: 404, description: 'Task not found' })
     async updateTask(
         @Param('id', ParseIntPipe) taskId: number,
         @Body(ValidationPipe) dto: UpdateTaskDto,
@@ -144,28 +144,28 @@ export class TaskController {
     }
 
     @Delete(':id')
-    @ApiOperation({ summary: '删除任务' })
-    @ApiParam({ name: 'id', description: '任务ID', type: Number })
-    @ApiResponse({ status: 200, description: '删除成功' })
-    @ApiResponse({ status: 404, description: '任务不存在' })
+    @ApiOperation({ summary: 'Delete task' })
+    @ApiParam({ name: 'id', description: 'Task ID', type: Number })
+    @ApiResponse({ status: 200, description: 'Deleted' })
+    @ApiResponse({ status: 404, description: 'Task not found' })
     async deleteTask(
         @Param('id', ParseIntPipe) taskId: number,
     ): Promise<{ success: boolean; message: string }> {
         const userId = DEFAULT_USER_ID
         this.logger.log(`User ${userId} deleting task ${taskId}`)
         await this.taskService.deleteTask(taskId, userId)
-        return { success: true, message: '任务删除成功' }
+        return { success: true, message: 'Task deleted' }
     }
 
     @Put(':id/pin')
-    @ApiOperation({ summary: '置顶/取消置顶任务' })
-    @ApiParam({ name: 'id', description: '任务ID', type: Number })
+    @ApiOperation({ summary: 'Pin or unpin task' })
+    @ApiParam({ name: 'id', description: 'Task ID', type: Number })
     @ApiResponse({
         status: 200,
-        description: '操作成功',
+        description: 'Operation succeeded',
         type: TaskResponseDto,
     })
-    @ApiResponse({ status: 404, description: '任务不存在' })
+    @ApiResponse({ status: 404, description: 'Task not found' })
     async pinTask(
         @Param('id', ParseIntPipe) taskId: number,
     ): Promise<TaskResponseDto> {
@@ -174,17 +174,17 @@ export class TaskController {
         return await this.taskService.pinTask(taskId, userId)
     }
 
-    // ============= 任务执行 API =============
+    // ============= Task execution API =============
 
     @Post(':id/execute')
-    @ApiOperation({ summary: '执行任务' })
-    @ApiParam({ name: 'id', description: '任务ID', type: Number })
+    @ApiOperation({ summary: 'Execute task' })
+    @ApiParam({ name: 'id', description: 'Task ID', type: Number })
     @ApiResponse({
         status: 200,
-        description: '任务执行已启动',
+        description: 'Task execution started',
         type: ExecuteTaskResponseDto,
     })
-    @ApiResponse({ status: 404, description: '任务不存在' })
+    @ApiResponse({ status: 404, description: 'Task not found' })
     async executeTask(
         @Param('id', ParseIntPipe) taskId: number,
         @Body(ValidationPipe) dto: ExecuteTaskDto,
@@ -195,14 +195,14 @@ export class TaskController {
     }
 
     @Get(':id/executions')
-    @ApiOperation({ summary: '获取任务执行历史' })
-    @ApiParam({ name: 'id', description: '任务ID', type: Number })
+    @ApiOperation({ summary: 'Get task execution history' })
+    @ApiParam({ name: 'id', description: 'Task ID', type: Number })
     @ApiResponse({
         status: 200,
-        description: '获取成功',
+        description: 'Success',
         type: PaginatedExecutionHistoryDto,
     })
-    @ApiResponse({ status: 404, description: '任务不存在' })
+    @ApiResponse({ status: 404, description: 'Task not found' })
     async getExecutionHistory(
         @Param('id', ParseIntPipe) taskId: number,
         @Query() query: ExecutionHistoryQueryDto,
@@ -218,34 +218,34 @@ export class TaskController {
 
     @Post(':id/sync-stats')
     @ApiOperation({
-        summary: '同步任务统计',
-        description: '根据 task_execution 表重新计算任务统计数据',
+        summary: 'Sync task stats',
+        description: 'Recalculate task statistics from the task_execution table',
     })
-    @ApiParam({ name: 'id', description: '任务ID', type: Number })
+    @ApiParam({ name: 'id', description: 'Task ID', type: Number })
     @ApiResponse({
         status: 200,
-        description: '同步成功',
+        description: 'Synced',
     })
-    @ApiResponse({ status: 404, description: '任务不存在' })
+    @ApiResponse({ status: 404, description: 'Task not found' })
     async syncTaskStats(
         @Param('id', ParseIntPipe) taskId: number,
     ): Promise<{ success: boolean; message: string }> {
         const userId = DEFAULT_USER_ID
         this.logger.log(`User ${userId} syncing stats for task ${taskId}`)
-        // 先验证任务存在且属于用户
+
         await this.taskService.getTaskById(taskId, userId)
         await this.taskService.syncTaskStats(taskId)
-        return { success: true, message: '任务统计同步成功' }
+        return { success: true, message: 'Task stats synced' }
     }
 
     @Post('sync-all-stats')
     @ApiOperation({
-        summary: '同步所有任务统计',
-        description: '批量同步所有任务的统计数据（管理员功能）',
+        summary: 'Sync all task stats',
+        description: 'Batch-sync all task statistics (admin operation)',
     })
     @ApiResponse({
         status: 200,
-        description: '同步成功',
+        description: 'Synced',
     })
     async syncAllTaskStats(): Promise<{ success: boolean; synced: number }> {
         this.logger.log('Syncing stats for all tasks')
@@ -254,7 +254,7 @@ export class TaskController {
     }
 }
 
-@ApiTags('任务执行管理 V2')
+@ApiTags('Execution Management V2')
 @Controller('executions')
 export class ExecutionController {
     constructor(
@@ -265,13 +265,13 @@ export class ExecutionController {
     }
 
     @Put('cancel-all')
-    @ApiOperation({ summary: '取消当前用户的所有执行' })
+    @ApiOperation({ summary: 'Cancel all executions for the current user' })
     @ApiResponse({
         status: 200,
-        description: '批量取消执行成功',
+        description: 'Executions cancelled',
         type: CancelAllExecutionsResponseDto,
     })
-    @ApiResponse({ status: 400, description: '请求参数错误' })
+    @ApiResponse({ status: 400, description: 'Invalid request parameters' })
     async cancelAllExecutions(): Promise<CancelAllExecutionsResponseDto> {
         const userId = DEFAULT_USER_ID
         this.logger.log(`User ${userId} cancelling all executions`)
@@ -279,14 +279,14 @@ export class ExecutionController {
     }
 
     @Get(':id')
-    @ApiOperation({ summary: '获取执行详情' })
-    @ApiParam({ name: 'id', description: '执行记录ID', type: Number })
+    @ApiOperation({ summary: 'Get execution details' })
+    @ApiParam({ name: 'id', description: 'Execution record ID', type: Number })
     @ApiResponse({
         status: 200,
-        description: '获取成功',
+        description: 'Success',
         type: TaskExecutionResponseDto,
     })
-    @ApiResponse({ status: 404, description: '执行记录不存在' })
+    @ApiResponse({ status: 404, description: 'Execution record not found' })
     async getExecutionById(
         @Param('id', ParseIntPipe) executionId: number,
     ): Promise<TaskExecutionResponseDto> {
@@ -299,15 +299,15 @@ export class ExecutionController {
     }
 
     @Put(':id/cancel')
-    @ApiOperation({ summary: '取消执行' })
-    @ApiParam({ name: 'id', description: '执行记录ID', type: Number })
+    @ApiOperation({ summary: 'Cancel execution' })
+    @ApiParam({ name: 'id', description: 'Execution record ID', type: Number })
     @ApiResponse({
         status: 200,
-        description: '取消成功',
+        description: 'Cancelled',
         type: ExecutionActionResponseDto,
     })
-    @ApiResponse({ status: 404, description: '执行记录不存在' })
-    @ApiResponse({ status: 400, description: '无法取消当前状态的执行' })
+    @ApiResponse({ status: 404, description: 'Execution record not found' })
+    @ApiResponse({ status: 400, description: 'Cannot cancel execution in the current state' })
     async cancelExecution(
         @Param('id', ParseIntPipe) executionId: number,
     ): Promise<ExecutionActionResponseDto> {
@@ -320,15 +320,15 @@ export class ExecutionController {
     }
 
     @Put(':id/pause')
-    @ApiOperation({ summary: '暂停执行' })
-    @ApiParam({ name: 'id', description: '执行记录ID', type: Number })
+    @ApiOperation({ summary: 'Pause execution' })
+    @ApiParam({ name: 'id', description: 'Execution record ID', type: Number })
     @ApiResponse({
         status: 200,
-        description: '暂停成功',
+        description: 'Paused',
         type: ExecutionActionResponseDto,
     })
-    @ApiResponse({ status: 404, description: '执行记录不存在' })
-    @ApiResponse({ status: 400, description: '无法暂停当前状态的执行' })
+    @ApiResponse({ status: 404, description: 'Execution record not found' })
+    @ApiResponse({ status: 400, description: 'Cannot pause execution in the current state' })
     async pauseExecution(
         @Param('id', ParseIntPipe) executionId: number,
     ): Promise<ExecutionActionResponseDto> {
@@ -341,15 +341,15 @@ export class ExecutionController {
     }
 
     @Put(':id/resume')
-    @ApiOperation({ summary: '恢复执行' })
-    @ApiParam({ name: 'id', description: '执行记录ID', type: Number })
+    @ApiOperation({ summary: 'Resume execution' })
+    @ApiParam({ name: 'id', description: 'Execution record ID', type: Number })
     @ApiResponse({
         status: 200,
-        description: '恢复成功',
+        description: 'Resumed',
         type: ExecutionActionResponseDto,
     })
-    @ApiResponse({ status: 404, description: '执行记录不存在' })
-    @ApiResponse({ status: 400, description: '无法恢复当前状态的执行' })
+    @ApiResponse({ status: 404, description: 'Execution record not found' })
+    @ApiResponse({ status: 400, description: 'Cannot resume execution in the current state' })
     async resumeExecution(
         @Param('id', ParseIntPipe) executionId: number,
         @Body(new ValidationPipe({ transform: true })) dto: ResumeExecutionDto,
@@ -365,18 +365,18 @@ export class ExecutionController {
 
     @Post(':id/feedback')
     @ApiOperation({
-        summary: '提交执行反馈',
-        description: '对已完成的任务执行提交反馈（每次执行只能反馈一次）',
+        summary: 'Submit execution feedback',
+        description: 'Submit feedback for a completed execution. Each execution can only be reviewed once.',
     })
-    @ApiParam({ name: 'id', description: '执行记录ID', type: Number })
+    @ApiParam({ name: 'id', description: 'Execution record ID', type: Number })
     @ApiResponse({
         status: 200,
-        description: '反馈提交成功',
+        description: 'Feedback submitted',
         type: FeedbackResponseDto,
     })
-    @ApiResponse({ status: 404, description: '执行记录不存在' })
-    @ApiResponse({ status: 400, description: '执行未完成或已有反馈' })
-    @ApiResponse({ status: 403, description: '无权限提交反馈' })
+    @ApiResponse({ status: 404, description: 'Execution record not found' })
+    @ApiResponse({ status: 400, description: 'Execution is not complete or already has feedback' })
+    @ApiResponse({ status: 403, description: 'No permission to submit feedback' })
     async submitFeedback(
         @Param('id', ParseIntPipe) executionId: number,
         @Body(ValidationPipe) dto: CreateFeedbackDto,
@@ -392,18 +392,18 @@ export class ExecutionController {
 
     @Post(':id/fork')
     @ApiOperation({
-        summary: 'Fork 已完成的执行',
-        description: '基于已完成的执行创建新执行，复制原有对话历史，从 plan_supervisor 节点继续执行',
+        summary: 'Fork completed execution',
+        description: 'Create a new execution from a completed one, copy its conversation history, and resume from plan_supervisor',
     })
-    @ApiParam({ name: 'id', description: '原执行记录ID', type: Number })
+    @ApiParam({ name: 'id', description: 'Original execution record ID', type: Number })
     @ApiResponse({
         status: 200,
-        description: 'Fork 成功',
+        description: 'Fork succeeded',
         type: ForkExecutionResponseDto,
     })
-    @ApiResponse({ status: 404, description: '执行记录不存在' })
-    @ApiResponse({ status: 400, description: '只能 fork 已完成的执行' })
-    @ApiResponse({ status: 403, description: '无权限 fork 此执行' })
+    @ApiResponse({ status: 404, description: 'Execution record not found' })
+    @ApiResponse({ status: 400, description: 'Only completed executions can be forked' })
+    @ApiResponse({ status: 403, description: 'No permission to fork this execution' })
     async forkExecution(
         @Param('id', ParseIntPipe) originExecutionId: number,
         @Body(ValidationPipe) dto: ForkExecutionDto,
@@ -417,21 +417,21 @@ export class ExecutionController {
         )
     }
 
-    // ============= 心跳租约 API =============
+    // ============= Heartbeat lease API =============
 
     @Post(':id/heartbeat')
     @ApiOperation({
-        summary: '发送心跳',
-        description: '客户端定期发送心跳续租，保持任务执行。如果心跳停止，租约过期后任务会被终止。建议心跳间隔为返回的 heartbeatInterval 值。',
+        summary: 'Send heartbeat',
+        description: 'The client periodically sends heartbeats to renew the lease and keep task execution alive. If heartbeats stop, the task is terminated after the lease expires. Use the returned heartbeatInterval value as the recommended interval.',
     })
-    @ApiParam({ name: 'id', description: '执行记录ID', type: Number })
+    @ApiParam({ name: 'id', description: 'Execution record ID', type: Number })
     @ApiResponse({
         status: 200,
-        description: '心跳成功',
+        description: 'Heartbeat accepted',
         type: HeartbeatResponseDto,
     })
-    @ApiResponse({ status: 404, description: '执行记录不存在' })
-    @ApiResponse({ status: 403, description: '无权限发送心跳' })
+    @ApiResponse({ status: 404, description: 'Execution record not found' })
+    @ApiResponse({ status: 403, description: 'No permission to send heartbeat' })
     async heartbeat(
         @Param('id', ParseIntPipe) executionId: number,
     ): Promise<HeartbeatResponseDto> {
@@ -441,12 +441,12 @@ export class ExecutionController {
 
     @Post('heartbeat/batch')
     @ApiOperation({
-        summary: '批量发送心跳',
-        description: '批量续租多个执行任务的租约，减少网络请求次数',
+        summary: 'Batch send heartbeat',
+        description: 'Batch renew leases for multiple task executions to reduce network requests',
     })
     @ApiResponse({
         status: 200,
-        description: '批量心跳成功',
+        description: 'Batch heartbeat accepted',
         type: BatchHeartbeatResponseDto,
     })
     async batchHeartbeat(
@@ -460,7 +460,7 @@ export class ExecutionController {
     }
 }
 
-@ApiTags('任务模板管理')
+@ApiTags('Task Template Management')
 @Controller('task-templates')
 export class TaskTemplateController {
     constructor(
@@ -471,13 +471,13 @@ export class TaskTemplateController {
     }
 
     @Post()
-    @ApiOperation({ summary: '创建模板任务' })
+	    @ApiOperation({ summary: 'Create template task' })
     @ApiResponse({
         status: 201,
-        description: '模板任务创建成功',
+	        description: 'Template task created',
         type: TaskResponseDto,
     })
-    @ApiResponse({ status: 400, description: '请求参数错误' })
+    @ApiResponse({ status: 400, description: 'Invalid request parameters' })
     async createTemplateTask(
         @Body(ValidationPipe) dto: CreateTemplateTaskDto,
     ): Promise<TaskResponseDto> {
@@ -486,10 +486,10 @@ export class TaskTemplateController {
     }
 
     @Get()
-    @ApiOperation({ summary: '获取模板任务列表' })
+    @ApiOperation({ summary: 'Get template task list' })
     @ApiResponse({
         status: 200,
-        description: '获取成功',
+        description: 'Success',
         type: PaginatedTaskListDto,
     })
     async getTemplateTaskList(
@@ -500,14 +500,14 @@ export class TaskTemplateController {
     }
 
     @Get(':id')
-    @ApiOperation({ summary: '获取模板任务详情' })
-    @ApiParam({ name: 'id', description: '模板任务ID', type: Number })
+	    @ApiOperation({ summary: 'Get template task details' })
+	    @ApiParam({ name: 'id', description: 'Template task ID', type: Number })
     @ApiResponse({
         status: 200,
-        description: '获取成功',
+        description: 'Success',
         type: TaskResponseDto,
     })
-    @ApiResponse({ status: 404, description: '模板任务不存在' })
+	    @ApiResponse({ status: 404, description: 'Template task not found' })
     async getTemplateTaskById(
         @Param('id', ParseIntPipe) taskId: number,
     ): Promise<TaskResponseDto> {
@@ -516,14 +516,14 @@ export class TaskTemplateController {
     }
 
     @Put(':id')
-    @ApiOperation({ summary: '更新模板任务' })
-    @ApiParam({ name: 'id', description: '模板任务ID', type: Number })
+	    @ApiOperation({ summary: 'Update template task' })
+	    @ApiParam({ name: 'id', description: 'Template task ID', type: Number })
     @ApiResponse({
         status: 200,
-        description: '更新成功',
+        description: 'Updated',
         type: TaskResponseDto,
     })
-    @ApiResponse({ status: 404, description: '模板任务不存在' })
+	    @ApiResponse({ status: 404, description: 'Template task not found' })
     async updateTemplateTask(
         @Param('id', ParseIntPipe) taskId: number,
         @Body(ValidationPipe) dto: UpdateTemplateTaskDto,
@@ -533,15 +533,15 @@ export class TaskTemplateController {
     }
 
     @Delete(':id')
-    @ApiOperation({ summary: '删除模板任务' })
-    @ApiParam({ name: 'id', description: '模板任务ID', type: Number })
-    @ApiResponse({ status: 200, description: '删除成功' })
-    @ApiResponse({ status: 404, description: '模板任务不存在' })
+	    @ApiOperation({ summary: 'Delete template task' })
+	    @ApiParam({ name: 'id', description: 'Template task ID', type: Number })
+    @ApiResponse({ status: 200, description: 'Deleted' })
+	    @ApiResponse({ status: 404, description: 'Template task not found' })
     async deleteTemplateTask(
         @Param('id', ParseIntPipe) taskId: number,
     ): Promise<{ success: boolean; message: string }> {
         this.logger.log(`Deleting template task ${taskId}`)
         await this.taskService.deleteTemplateTask(taskId)
-        return { success: true, message: '模板任务删除成功' }
+	        return { success: true, message: 'Template task deleted' }
     }
 }

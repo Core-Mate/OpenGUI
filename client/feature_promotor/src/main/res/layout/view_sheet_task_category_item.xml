@@ -15,5 +15,5 @@
         android:layout_height="wrap_content"
         android:textColor="@color/white"
         android:textSize="14sp"
-        tools:text="发布内容" />
+        tools:text="Publish Content" />
 </LinearLayout>

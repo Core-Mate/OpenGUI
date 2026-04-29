@@ -47,7 +47,7 @@
                     android:layout_marginStart="12dp"
                     android:layout_marginBottom="1.5dp"
                     android:fontFamily="sans-serif-medium"
-                    android:text="同步社交账号"
+                    android:text="Sync Social Accounts"
                     android:textColor="#111827"
                     android:textSize="15sp" />
             </LinearLayout>
@@ -82,7 +82,7 @@
                     android:layout_marginStart="12dp"
                     android:layout_marginBottom="1.5dp"
                     android:fontFamily="sans-serif-medium"
-                    android:text="同步社交账号"
+                    android:text="Sync Social Accounts"
                     android:textColor="#111827"
                     android:textSize="15sp" />
             </LinearLayout>

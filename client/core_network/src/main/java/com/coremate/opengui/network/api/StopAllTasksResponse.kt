@@ -10,7 +10,7 @@ data class StopAllTasksResponse(
 
 data class StopAllTasksData(
     @SerializedName("stoppedCount") val stoppedCount: Int,
-    @SerializedName("stoppedTasks") val stoppedTasks: List<String>, // 假设任务ID是字符串
+    @SerializedName("stoppedTasks") val stoppedTasks: List<String>, // Task IDs are strings.
     @SerializedName("failedCount") val failedCount: Int,
-    @SerializedName("failedTasks") val failedTasks: List<String> // 假设任务ID是字符串
+    @SerializedName("failedTasks") val failedTasks: List<String> // Task IDs are strings.
 )

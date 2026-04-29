@@ -19,14 +19,14 @@ sealed class AutomationEvent {
     object ScreenshotFail : AutomationEvent()
     object UpdateMyTask : AutomationEvent()
     object ImageUploadComplete : AutomationEvent()
-    object StreamChunkCompleted : AutomationEvent() // 流式聊天完成
-    object EventProcessingStart : AutomationEvent() // 事件处理开始
-    object EventProcessingDone : AutomationEvent() // 事件处理开始
-    object ErrorReturnToPromotorApp : AutomationEvent() // 事件处理开始
-    object EventLogout: AutomationEvent()//退出登录
-    object AccessibilityServiceWarningEvent: AutomationEvent()//退出登录
+    object StreamChunkCompleted : AutomationEvent() // Streaming chat completed.
+    object EventProcessingStart : AutomationEvent() // Event processing started.
+    object EventProcessingDone : AutomationEvent() // Event processing completed.
+    object ErrorReturnToPromotorApp : AutomationEvent() // Return to the app after an error.
+    object EventLogout: AutomationEvent() // Logout event.
+    object AccessibilityServiceWarningEvent: AutomationEvent() // Accessibility service warning.
 
-    /** 远程任务派发 — Server 通过 standby 通道下发 */
+    /** Remote task dispatch from the server over the standby channel. */
     data class RemoteDispatch(
         val executionId: Int,
         val taskId: Int,
@@ -35,8 +35,8 @@ sealed class AutomationEvent {
 }
 
 enum class StopReason {
-    COMPLETED,      // 任务正常完成
-    ERROR,          // 任务异常中断
-    USER_INTERRUPT, // 任务被用户主动中断
-    SERVICE_DESTROY // 服务销毁导致的任务停止
+    COMPLETED,      // Task completed normally.
+    ERROR,          // Task stopped because of an error.
+    USER_INTERRUPT, // Task was interrupted by the user.
+    SERVICE_DESTROY // Task stopped because the service was destroyed.
 }

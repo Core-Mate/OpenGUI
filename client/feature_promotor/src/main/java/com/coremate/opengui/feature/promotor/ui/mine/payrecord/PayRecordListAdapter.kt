@@ -11,7 +11,6 @@ private const val VIEW_TYPE_HEADER = 0
 private const val VIEW_TYPE_ENTRY = 1
 
 /**
- * 扁平化列表项：仅日期标题 或 单条消费记录，便于 RecyclerView 回收复用，避免在 bind 中循环 inflate。
  */
 sealed class PayRecordListItem {
     data class Header(val dateLabel: String, val totalPoints: Double) : PayRecordListItem()
@@ -78,7 +77,7 @@ class PayRecordListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
         fun bind(header: PayRecordListItem.Header) {
             tvDateLabel.text = header.dateLabel
-            tvDateTotal.text = "共 ${"%.1f".format(header.totalPoints)}积分"
+            tvDateTotal.text = "Total ${"%.1f".format(header.totalPoints)} Credits"
         }
     }
 
@@ -95,7 +94,7 @@ class PayRecordListAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             tvAppName.text = e.appName
             tvTaskTitle.text = e.taskTitle
             tvTimeRange.text = e.timeRange
-            tvPoints.text = "-${"%.1f".format(e.points)}积分"
+            tvPoints.text = "-${"%.1f".format(e.points)}Credits"
             dividerBottom.visibility = if (item.isLastInGroup) View.GONE else View.VISIBLE
             entryItemRoot.setBackgroundResource(
                 when {

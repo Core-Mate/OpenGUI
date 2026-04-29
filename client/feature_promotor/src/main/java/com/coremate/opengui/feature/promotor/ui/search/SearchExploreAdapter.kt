@@ -16,8 +16,6 @@ import com.coremate.opengui.network.api.task.TaskTemplatesResp
 import java.util.regex.Pattern
 
 /**
- * Explore 搜索列表 Adapter，与 Web SearchPage searchScope=explore 样式一致。
- * 卡片：标题（高亮）、次使用/成功率/预计时间、右上角 App 图标。
  */
 class SearchExploreAdapter(
     private val onTaskClick: (TaskTemplatesResp) -> Unit
@@ -56,12 +54,12 @@ class SearchExploreAdapter(
             onTaskClick: (TaskTemplatesResp) -> Unit
         ) {
             tvTitle.text = highlightKeyword(item.taskName, keyword)
-            tvUseCount.text = "${item.totalExecutions + 175}次使用"
+            tvUseCount.text = "${item.totalExecutions + 175} uses"
             val successRate = if (item.totalExecutions > 0) {
                 if (item.successCount > 0) ((item.successCount * 100) / item.totalExecutions).toInt()
                 else (75..98).random()
             } else 100
-            tvSuccessRate.text = "$successRate% 成功率"
+            tvSuccessRate.text = "$successRate% success rate"
             tvEstimatedTime.text = "~3 min"
 
             val appName = item.relatedPlatforms.firstOrNull() ?: ""
@@ -101,11 +99,11 @@ class SearchExploreAdapter(
 
         private fun getAppColor(appName: String): Int {
             val colorMap = mapOf(
-                "小红书" to "#FF2442",
                 "Xiaohongshu" to "#FF2442",
-                "抖音" to "#000000",
+                "Xiaohongshu" to "#FF2442",
+                "Douyin" to "#000000",
                 "TikTok" to "#000000",
-                "微信" to "#07C160",
+                "WeChat" to "#07C160",
                 "Twitter" to "#1DA1F2",
                 "Mailchimp" to "#FFE01B",
                 "LinkedIn" to "#0A66C2",

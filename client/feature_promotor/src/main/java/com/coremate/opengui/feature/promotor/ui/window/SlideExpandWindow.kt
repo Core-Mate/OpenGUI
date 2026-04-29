@@ -31,13 +31,13 @@ class SlideExpandWindow(context: Context) : FrameLayout(context) {
     init {
         val themedContext = ContextThemeWrapper(context, R.style.Theme_Promotor_Feature)
         binding = WindowSlideExpandBinding.inflate(LayoutInflater.from(themedContext), this, true)
-        // 注册到管理器
+
         AIFloatWindowManager.registerSlideExpandWindow(this)
         binding.slideExpandRoot.setOnClickListener {
             HapticFeedbackHelper.lightTap(context)
-            dismiss("点击灵动岛")
+            dismiss("slide window tapped")
             AIFloatWindowManager.getExecuteTaskWindow()?.reset("$TAG    init")
-            AIFloatWindowManager.showExecuteTaskWindow("点击灵动岛")
+            AIFloatWindowManager.showExecuteTaskWindow("slide window tapped")
             LogManager.saveLog(
                 context, "SlideExpandWindow", "cardResume click }",
                 TaskCenter.executionId ?: -1
@@ -52,7 +52,7 @@ class SlideExpandWindow(context: Context) : FrameLayout(context) {
             LogManager.saveLog(
                 context,
                 TAG,
-                "$TAG | 灵动岛 显示 | from = $from | isShowing = $isShowing | currentTaskState = ${TaskCenter.currentTaskState}",
+                "$TAG | slide window show | from = $from | isShowing = $isShowing | currentTaskState = ${TaskCenter.currentTaskState}",
                 TaskCenter.executionId ?: -1
             )
             if (!isShowing && TaskCenter.currentTaskState == TaskCenter.TaskState.EXECUTE && (AIFloatWindowManager.getCallUserWindow()?.isShowing != true) && (AIFloatWindowManager.getAccessibilityServiceWarningWindow()?.isShowing != true)) {
@@ -70,7 +70,7 @@ class SlideExpandWindow(context: Context) : FrameLayout(context) {
             LogManager.saveLog(
                 context,
                 TAG,
-                "$TAG | 灵动岛 隐藏 | from = $from | isShowing = $isShowing",
+                "$TAG | slide window hide | from = $from | isShowing = $isShowing",
                 TaskCenter.executionId ?: -1
             )
             if (isShowing) {
@@ -128,18 +128,18 @@ class SlideExpandWindow(context: Context) : FrameLayout(context) {
             WindowManager.LayoutParams.TYPE_PHONE
         }
 
-        // 计算状态栏高度
+
         val statusBarHeight = run {
             val resourceId = resources.getIdentifier("status_bar_height", "dimen", "android")
             if (resourceId > 0) resources.getDimensionPixelSize(resourceId) else 0
         }
 
-        // 可点击但不获取焦点，移除会跨越状态栏区域的 NO_LIMITS / IN_SCREEN 等 flag
+
         WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
             type,
-            // 可点击但不获取焦点；overlay 上 FLAG_KEEP_SCREEN_ON 可能被系统忽略，需配合 WakeLock 使用
+
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                     WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
                     WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
@@ -149,7 +149,7 @@ class SlideExpandWindow(context: Context) : FrameLayout(context) {
         ).apply {
             gravity = Gravity.TOP
             x = 0
-            // 初始位置在状态栏正下方，如需再往下可在此基础上加额外偏移
+
             y = statusBarHeight / 2
         }
     }

@@ -52,7 +52,7 @@ class MissionScheduleListAdapter(
         val item = dataList[position]
 
         if (convertView == null) {
-            // 如果视图不存在，根据类型加载不同的布局
+
             view = when (itemType) {
                 MissionSchedulesBean.TYPE_HAS_TIME -> inflater.inflate(
                     R.layout.mission_schedule_list_item_has_time,
@@ -77,7 +77,7 @@ class MissionScheduleListAdapter(
             tvTimeTag.text = item.timeTag
         }
 
-        // 根据类型填充数据
+
         when (itemType) {
             UITaskBean.TYPE_HAS_TIME -> {
                 val tvTimeTag = view.findViewById<TextView>(R.id.tv_time_tag)
@@ -100,7 +100,7 @@ class MissionScheduleListAdapter(
                         val startColor = json.optInt("startColor")
                         val endColor = json.optInt("endColor")
                         val gradientDrawable = GradientDrawable(
-                            GradientDrawable.Orientation.BR_TL, // 渐变方向：左上到右下
+                            GradientDrawable.Orientation.BR_TL,
                             intArrayOf(Color.parseColor(toHexString(startColor)), Color.parseColor(toHexString(endColor)))
                         )
                         taskContentWrap.background = gradientDrawable
@@ -129,7 +129,7 @@ class MissionScheduleListAdapter(
                         val startColor = json.optInt("startColor")
                         val endColor = json.optInt("endColor")
                         val gradientDrawable = GradientDrawable(
-                            GradientDrawable.Orientation.BR_TL, // 渐变方向：左上到右下
+                            GradientDrawable.Orientation.BR_TL,
                             intArrayOf(Color.parseColor(toHexString(startColor)), Color.parseColor(toHexString(endColor)))
                         )
                         taskContentWrap.background = gradientDrawable

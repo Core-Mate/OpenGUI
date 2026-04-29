@@ -1,26 +1,26 @@
-import { ChatAnthropic } from "@langchain/anthropic";
 import { Injectable, Logger } from "@nestjs/common";
 import { PrismaService } from "../../../prisma/prisma.service";
 import { AgentConfigProvider } from "../config/agent-config.provider";
+import { createConfiguredChatModel } from "../config/chat-model.factory";
 import { AgentName } from "../config/types";
 import type { MemorySource } from "./task-memory.service";
 
 /**
- * 来源类型对应的提取提示
+ * Extraction hints for each memory source.
  */
 const SOURCE_EXTRACTION_HINTS: Record<MemorySource, string> = {
 	feedback:
-		"这是用户在任务执行过程中提供的反馈。请重点提取用户的偏好、不满意的地方、期望的改进等。",
+		"This is user feedback provided during task execution. Focus on user preferences, dissatisfaction, and expected improvements.",
 	instruction:
-		"这是用户在继续执行任务时追加的指令。请重点提取用户的新需求、补充说明、调整方向等。",
+		"This is an additional instruction provided when resuming task execution. Focus on new requirements, added context, and direction changes.",
 	summary:
-		"这是任务执行完成后的总结。请重点提取执行过程中的经验教训、成功模式、可复用的策略等。",
+		"This is the summary after task execution. Focus on lessons learned, successful patterns, and reusable strategies.",
 };
 
 /**
- * 记忆提取服务
+ * Memory extraction service.
  *
- * 使用 ACTION_SUMMARIZER 配置的模型从原始内容中提取与任务执行相关的关键信息
+ * Uses the ACTION_SUMMARIZER model configuration to extract task-related memory.
  */
 @Injectable()
 export class MemoryExtractorService {
@@ -32,10 +32,10 @@ export class MemoryExtractorService {
 	) {}
 
 	/**
-	 * 从内容中提取关键记忆信息
+	 * Extract key memory from content.
 	 *
-	 * @param params 提取参数
-	 * @returns 提取后的关键信息字符串
+	 * @param params extraction parameters
+	 * @returns extracted key memory text
 	 */
 	async extractMemory(params: {
 		userInput: string;
@@ -50,61 +50,55 @@ export class MemoryExtractorService {
 		}
 
 		try {
-			// 通过 userId 获取用户地区
+			// Resolve user region by userId.
 			const user = await this.prismaService.users.findUnique({
 				where: { id: userId },
 				select: { region: true },
 			});
 			const userRegion = user?.region || "CN";
 
-			// 复用 ACTION_SUMMARIZER 的模型配置
+			// Reuse ACTION_SUMMARIZER model configuration.
 			const modelConfig = await this.configProvider.getModelConfig(
 				AgentName.ACTION_SUMMARIZER,
 				userRegion,
 			);
 
-			// 创建主模型
-			const primaryModel = new ChatAnthropic({
-				model: modelConfig.model,
-				apiKey: modelConfig.apiKey,
+			// Create the primary model.
+			const primaryModel = createConfiguredChatModel(modelConfig, {
 				temperature: modelConfig.temperature ?? 0.1,
-				clientOptions: {
-					baseURL: modelConfig.baseURL,
-					maxRetries: 2,
-					timeout: 30000,
-					authToken: null,
-				},
+				maxRetries: 2,
+				timeout: 30000,
 			});
 
 			const model = primaryModel;
 
 			const sourceHint = SOURCE_EXTRACTION_HINTS[source];
 
-			const systemPrompt = `你是一个专业的任务执行记忆提取助手。你的任务是从用户反馈、追加指令或执行总结中提取对未来任务执行有价值的关键信息，方便后续执行任务时可以借鉴这些经验。
+			const systemPrompt = `You are a task-execution memory extraction assistant. Extract key information from user feedback, additional instructions, or execution summaries that may help future runs of the same task.
 
-提取原则：
-1. 只提取与任务执行相关的信息，忽略无关内容
-2. 关注用户偏好、优化建议、下一步行动提示
-3. 信息要简洁精炼，便于后续快速参考
-4. 使用纯文本输出同一任务后续再次执行时可以借鉴的关键记忆，不要包含任何格式标记或无关内容`;
+Extraction principles:
+1. Extract only task-execution-related information and ignore unrelated content.
+2. Focus on user preferences, improvement suggestions, and next-action hints.
+3. Keep the information concise and easy to reference.
+4. Output plain text only. Do not include formatting markers or irrelevant content.`;
 
 			const userPrompt = `${sourceHint}
 
-## 用户原始任务
+## Original user task
 ${userInput}
 
-## 待提取内容
+## Content to extract from
 ${content}
 
 ---
-请根据上述内容，提取同一任务后续再次执行时可以借鉴的关键记忆（150字左右）。直接输出纯文本内容。`;
+Based on the content above, extract key memory that could help if the same task is run again. Keep it around 150 words and output plain text only.`;
 
 			const response = await model.invoke([
 				{ role: "system", content: systemPrompt },
 				{ role: "user", content: userPrompt },
 			]);
 
-			// 获取纯文本响应
+			// Get plain text response.
 			const extractedMemory =
 				typeof response.content === "string" ? response.content.trim() : "";
 
@@ -117,7 +111,7 @@ ${content}
 			return extractedMemory;
 		} catch (error) {
 			this.logger.warn(`Failed to extract memory: ${(error as Error).message}`);
-			// 提取失败时返回原始内容的摘要（截取前 300 字符）
+			// If extraction fails, fall back to the first 300 characters.
 			return content.length > 300 ? `${content.substring(0, 300)}...` : content;
 		}
 	}

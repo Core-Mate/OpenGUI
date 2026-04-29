@@ -50,12 +50,12 @@ class TaskHistoryFragment : BottomSheetDialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // 获取传递的参数
+
         arguments?.getInt(ARG_TASK_ID)?.let { id ->
             this.id = id
         }
         presenter = TaskHistoryPresenter(this)
-        //        任务历史列表
+
         binding.rvTaskHistoryList.isNestedScrollingEnabled = false
         taskHistoryListAdapter = TaskHistoryAdapter(fragmentManager)
         binding.rvTaskHistoryList.adapter = taskHistoryListAdapter
@@ -72,16 +72,16 @@ class TaskHistoryFragment : BottomSheetDialogFragment() {
                 outRect.top = 12.dpToPx(requireContext())
             }
         })
-        // 处理 RecyclerView 与 BottomSheet 的滑动冲突
+
         binding.rvTaskHistoryList.setOnTouchListener { v, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
-                    // 禁用 BottomSheet 的滑动
+
                     v.parent?.requestDisallowInterceptTouchEvent(true)
                 }
 
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    // 允许 BottomSheet 继续处理触摸事件
+
                     v.parent?.requestDisallowInterceptTouchEvent(false)
                 }
             }
@@ -134,7 +134,7 @@ class TaskHistoryFragment : BottomSheetDialogFragment() {
                     val behavior = BottomSheetBehavior.from<View?>(bottomSheet)
                     behavior.skipCollapsed = true
                     behavior.setState(BottomSheetBehavior.STATE_EXPANDED)
-                    // 禁止通过手指下滑关闭对话框
+
                     behavior.isDraggable = false
                 }
             }

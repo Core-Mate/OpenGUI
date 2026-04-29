@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- 第一层：边框背景（渐变） -->
+
     <item>
         <shape
             android:shape="rectangle">
@@ -21,8 +21,8 @@
 <!--        android:right="1.5dp"-->
 <!--        android:top="1.5dp">-->
 <!--        <shape android:shape="rectangle">-->
-<!--            <solid android:color="#FFFFFF" /> &lt;!&ndash; 内部背景色 &ndash;&gt;-->
-<!--            <corners android:radius="16dp" /> &lt;!&ndash; 比边框圆角小2dp &ndash;&gt;-->
+<!--            <solid android:color="#FFFFFF" /> &lt;!&ndash; Inner background color. &ndash;&gt;-->
+<!--            <corners android:radius="16dp" /> &lt;!&ndash; 2dp smaller than the border radius. &ndash;&gt;-->
 <!--        </shape>-->
 <!--    </item>-->
 

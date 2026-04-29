@@ -89,7 +89,7 @@ import { PrismaModule } from "./prisma/prisma.module";
 	controllers: [AppController],
 	providers: [
 		AppService,
-		// 注册全局 TraceId 拦截器
+
 		{
 			provide: APP_INTERCEPTOR,
 			useClass: TraceIdInterceptor,

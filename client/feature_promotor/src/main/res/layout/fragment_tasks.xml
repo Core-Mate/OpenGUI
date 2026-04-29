@@ -27,7 +27,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="OpenGUI定时任务"
+            android:text="OpenGUI Scheduled Tasks"
             android:textColor="#333333"
             android:textFontWeight="500"
             android:textSize="16sp"
