@@ -65,7 +65,7 @@ export class CommandParserService {
 		}
 
 
-		if (/^Task list/.test(trimmed)) {
+		if (/^(?:task\s+list|\u4efb\u52a1\u5217\u8868)$/i.test(trimmed)) {
 			return { type: CommandType.LIST_TASKS, rawText: trimmed };
 		}
 

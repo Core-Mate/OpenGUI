@@ -56,6 +56,8 @@ import {
 } from "./pending-timeout.processor";
 import { EXECUTION_EVENTS } from "../../common/events/execution-events";
 
+const WS_RECOVERY_GRACE_MS = 2 * 60 * 1000;
+
 @Injectable()
 export class TaskExecutionService implements OnModuleInit {
 	private readonly logger = new Logger(TaskExecutionService.name);
@@ -117,7 +119,7 @@ export class TaskExecutionService implements OnModuleInit {
 		const timer = setTimeout(() => {
 			this.disconnectedExecutionTimers.delete(executionId);
 			void this.failExecutionIfStillDisconnected(executionId);
-		}, 15000);
+		}, WS_RECOVERY_GRACE_MS);
 
 		this.disconnectedExecutionTimers.set(executionId, timer);
 	}
@@ -158,7 +160,8 @@ export class TaskExecutionService implements OnModuleInit {
 				);
 			}
 
-				const message = "Phone-side execution connection disconnected. The task was stopped automatically. Reopen the execution page on the phone, then run it again.";
+			const message =
+				"Phone-side execution connection disconnected. The task was stopped automatically. Reopen the execution page on the phone, then run it again.";
 			const updateResult = await this.prismaService.task_execution.updateMany({
 				where: {
 					id: executionId,

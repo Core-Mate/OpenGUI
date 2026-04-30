@@ -175,27 +175,12 @@ flowchart LR
 - **Android standby connection**: `client/core_network/src/main/java/com/coremate/opengui/network/websocket/StandbySocketManager.kt`
 - **Android execution path**: `client/core_accessibility/src/main/java/com/coremate/opengui/accessibility/GestureService.kt`
 
-## Current Scope and Limitations
-
-OpenGUI is already runnable from this repository, but it is still evolving as a source-available mobile operator framework.
-
-Current constraints:
-
-- Android is the active client target in this repository
-- some backend modules remain stubs in the public release, such as `credits`, `knowledge`, and `tos`
-- production deployment, observability, and multi-device orchestration are still moving forward
-- runtime quality still depends on app UI complexity, model quality, and device permission stability
-- there are two Chinese README files in the repo today; `README.zh-CN.md` is the current one
-
-One important source-available build behavior is already in the Android app: `SplashActivity` bypasses login and opens `HomeActivity` directly. For local runs, the backend task APIs also default to `userId = 1`, so the old OTP-first path is no longer the primary getting-started flow.
-
 ## Documentation
 
 - [skills/open-gui-bootstrap/SKILL.md](./skills/open-gui-bootstrap/SKILL.md)
 - [docs/get-started.md](./docs/get-started.md)
 - [server/apps/backend/README.md](./server/apps/backend/README.md)
 - [client/README.md](./client/README.md)
-- [PUBLIC_RELEASE_PLAN.md](./PUBLIC_RELEASE_PLAN.md)
 - [CONTRIBUTING.md](./CONTRIBUTING.md)
 - [SECURITY.md](./SECURITY.md)
 - [CLAUDE.md](./CLAUDE.md)
