@@ -2,7 +2,7 @@
 set -e
 
 # ============================================
-# OpenGUI Server — 快速启动脚本
+# OpenGUI Server — quick start script
 # ============================================
 
 cd "$(dirname "$0")"
@@ -17,25 +17,25 @@ warn()  { echo -e "${YELLOW}[!]${NC} $1"; }
 error() { echo -e "${RED}[✗]${NC} $1"; exit 1; }
 
 # --------------------------------------------------
-# 1. 检查前置依赖
+# 1. Check prerequisites
 # --------------------------------------------------
-command -v node >/dev/null 2>&1 || error "需要 Node.js 22+，请先安装"
-command -v pnpm >/dev/null 2>&1 || error "需要 pnpm，运行: npm install -g pnpm"
-command -v docker >/dev/null 2>&1 || error "需要 Docker，请先安装"
+command -v node >/dev/null 2>&1 || error "Node.js 22+ is required. Please install it first."
+command -v pnpm >/dev/null 2>&1 || error "pnpm is required. Run: npm install -g pnpm"
+command -v docker >/dev/null 2>&1 || error "Docker is required. Please install it first."
 
 NODE_VER=$(node -v | sed 's/v//' | cut -d. -f1)
 if [ "$NODE_VER" -lt 22 ]; then
-  error "Node.js 版本需要 >= 22，当前: $(node -v)"
+  error "Node.js version must be >= 22. Current: $(node -v)"
 fi
 info "Node.js $(node -v) / pnpm $(pnpm -v)"
 
 # --------------------------------------------------
-# 2. 启动 PostgreSQL + Redis (docker run)
+# 2. Start PostgreSQL + Redis (docker run)
 # --------------------------------------------------
 if docker ps --format '{{.Names}}' | grep -q "^opengui-postgres$"; then
-  info "PostgreSQL 已在运行"
+  info "PostgreSQL is already running"
 else
-  warn "启动 PostgreSQL ..."
+  warn "Starting PostgreSQL ..."
   docker rm -f opengui-postgres 2>/dev/null || true
   docker run -d \
     --name opengui-postgres \
@@ -45,37 +45,37 @@ else
     -e POSTGRES_DB=opengui \
     -v opengui-pgdata:/var/lib/postgresql/data \
     postgres:16-alpine >/dev/null
-  echo -n "    等待 PostgreSQL 就绪 "
+  echo -n "    Waiting for PostgreSQL "
   for i in $(seq 1 30); do
     if docker exec opengui-postgres pg_isready -U opengui >/dev/null 2>&1; then
       echo ""
-      info "PostgreSQL 就绪"
+      info "PostgreSQL is ready"
       break
     fi
     echo -n "."
     sleep 1
     if [ "$i" -eq 30 ]; then
       echo ""
-      error "PostgreSQL 启动超时"
+      error "PostgreSQL startup timed out"
     fi
   done
 fi
 
 if docker ps --format '{{.Names}}' | grep -q "^opengui-redis$"; then
-  info "Redis 已在运行"
+  info "Redis is already running"
 else
-  warn "启动 Redis ..."
+  warn "Starting Redis ..."
   docker rm -f opengui-redis 2>/dev/null || true
   docker run -d \
     --name opengui-redis \
     -p 6379:6379 \
     -v opengui-redisdata:/data \
     redis:7-alpine >/dev/null
-  info "Redis 已启动"
+  info "Redis started"
 fi
 
 # --------------------------------------------------
-# 3. 环境变量
+# 3. Environment variables
 # --------------------------------------------------
 ENV_FILE=apps/backend/.env
 ENV_EXAMPLE=apps/backend/.env.example
@@ -83,85 +83,122 @@ ENV_EXAMPLE=apps/backend/.env.example
 if [ ! -f "$ENV_FILE" ]; then
   if [ -f "$ENV_EXAMPLE" ]; then
     cp "$ENV_EXAMPLE" "$ENV_FILE"
-    warn ".env 已从 .env.example 创建，请编辑填入 API Key："
-    warn "  文件位置: $ENV_FILE"
+    warn ".env was created from .env.example. Please edit it and add your API keys:"
+    warn "  File: $ENV_FILE"
     warn "  CLAUDE_API_KEY, VLM_API_KEY, ANTHROPIC_API_KEY"
-    warn "编辑完成后重新运行此脚本"
+    warn "Run this script again after editing the file."
     exit 0
   else
-    error "缺少 $ENV_EXAMPLE 文件"
+    error "Missing $ENV_EXAMPLE"
   fi
 fi
 
 set -a; source "$ENV_FILE" 2>/dev/null || true; set +a
 
 if [ -z "$CLAUDE_API_KEY" ]; then
-  warn "CLAUDE_API_KEY 未设置，请编辑 .env"
+  warn "CLAUDE_API_KEY is not set. Please edit .env."
 fi
 
-info ".env 已加载"
+info ".env loaded"
 
 # --------------------------------------------------
-# 4. 安装依赖
+# 4. Install dependencies
 # --------------------------------------------------
 if [ ! -d node_modules ]; then
-  warn "安装依赖（首次较慢）..."
+  warn "Installing dependencies. This can take a while on the first run ..."
   pnpm install
 else
-  info "依赖已安装"
+  info "Dependencies are already installed"
 fi
 
 # --------------------------------------------------
-# 5. 生成 Prisma Client
+# 5. Generate Prisma Client
 # --------------------------------------------------
 if [ ! -d packages/database/generated ]; then
-  warn "生成 Prisma Client ..."
+  warn "Generating Prisma Client ..."
   pnpm --filter @repo/db db:generate
 else
-  info "Prisma Client 已生成"
+  info "Prisma Client already generated"
 fi
 
 # --------------------------------------------------
-# 6. 同步数据库 Schema
+# 6. Sync database schema
 # --------------------------------------------------
 TABLE_EXISTS=$(docker exec opengui-postgres psql -U opengui -d opengui -tAc \
   "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'users');" 2>/dev/null || echo "f")
 
 if [ "$TABLE_EXISTS" != "t" ]; then
-  warn "初始化数据库 Schema ..."
+  warn "Initializing database schema ..."
   pnpm --filter @repo/db exec prisma db push --accept-data-loss
-  info "数据库 Schema 已同步"
+  info "Database schema synced"
 
-  warn "导入 Agent 配置种子数据 ..."
+  warn "Importing Agent configuration seed data ..."
   docker exec -i opengui-postgres psql -U opengui -d opengui \
     < packages/database/prisma/seed/system_prompt_config.sql
-  info "Agent 配置已导入"
+  info "Agent configuration imported"
 
-  warn "创建默认用户 ..."
+  warn "Creating default user ..."
   docker exec opengui-postgres psql -U opengui -d opengui -c "
     INSERT INTO users (id, name, email, \"emailVerified\", \"createdAt\", \"updatedAt\", role, tenant_id, is_deleted, is_active, region, finish_onboarding)
     VALUES (1, 'OpenGUI User', 'user@opengui.local', true, NOW(), NOW(), 'user', 0, false, true, 'CN', true)
     ON CONFLICT (id) DO NOTHING;
   "
-  info "默认用户已创建"
+  info "Default user created"
 else
-  info "数据库已初始化"
+  info "Database already initialized"
 fi
 
+warn "Syncing default client app mappings ..."
+docker exec opengui-postgres psql -U opengui -d opengui -c "
+  INSERT INTO app_config (config_key, config_value, description, is_active, is_deleted, created_at, updated_at)
+  VALUES (
+    'supportApp',
+    '[
+      {\"appName\":\"browser\",\"package\":\"com.heytap.browser\"},
+      {\"appName\":\"\\u6d4f\\u89c8\\u5668\",\"package\":\"com.heytap.browser\"},
+      {\"appName\":\"chrome\",\"package\":\"com.android.chrome\"},
+      {\"appName\":\"google chrome\",\"package\":\"com.android.chrome\"},
+      {\"appName\":\"\\u8c37\\u6b4c\\u6d4f\\u89c8\\u5668\",\"package\":\"com.android.chrome\"},
+      {\"appName\":\"bilibili\",\"package\":\"tv.danmaku.bili\"},
+      {\"appName\":\"bilbil\",\"package\":\"tv.danmaku.bili\"},
+      {\"appName\":\"bili\",\"package\":\"tv.danmaku.bili\"},
+      {\"appName\":\"b\\u7ad9\",\"package\":\"tv.danmaku.bili\"},
+      {\"appName\":\"\\u54d4\\u54e9\\u54d4\\u54e9\",\"package\":\"tv.danmaku.bili\"},
+      {\"appName\":\"wechat\",\"package\":\"com.tencent.mm\"},
+      {\"appName\":\"\\u5fae\\u4fe1\",\"package\":\"com.tencent.mm\"},
+      {\"appName\":\"douyin\",\"package\":\"com.ss.android.ugc.aweme\"},
+      {\"appName\":\"tiktok\",\"package\":\"com.ss.android.ugc.aweme\"},
+      {\"appName\":\"\\u6296\\u97f3\",\"package\":\"com.ss.android.ugc.aweme\"}
+    ]'::jsonb,
+    'Client app launch aliases',
+    true,
+    false,
+    NOW(),
+    NOW()
+  )
+  ON CONFLICT (config_key) DO UPDATE SET
+    config_value = EXCLUDED.config_value,
+    description = EXCLUDED.description,
+    is_active = true,
+    is_deleted = false,
+    updated_at = NOW();
+"
+info "Default client app mappings synced"
+
 # --------------------------------------------------
-# 7. 构建共享包
+# 7. Build shared packages
 # --------------------------------------------------
 if [ ! -d packages/database/dist ]; then
-  warn "构建 @repo/db ..."
+  warn "Building @repo/db ..."
   pnpm --filter @repo/db build
 else
-  info "@repo/db 已构建"
+  info "@repo/db already built"
 fi
 
 # --------------------------------------------------
-# 8. 启动开发服务器
+# 8. Start development server
 # --------------------------------------------------
-info "启动 OpenGUI Server ..."
+info "Starting OpenGUI Server ..."
 echo ""
 echo "  API:  http://localhost:${PORT:-7777}/api"
 echo "  Docs: http://localhost:${PORT:-7777}/docs"

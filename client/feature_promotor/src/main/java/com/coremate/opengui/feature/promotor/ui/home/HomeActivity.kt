@@ -64,23 +64,23 @@ class HomeActivity : BaseBindingActivity<ActivityHomeBinding>(ActivityHomeBindin
             }.onSuccess {
                 LogManager.saveLog(
                     applicationContext, "MainActivity",
-                    "MainActivity | onCreate | app 启动，先停止该设备下所有任务，停止结果 code = ${it.code()}  body = ${it.body()}",
+                    "MainActivity | onCreate | app started, stop all tasks on this device first, stop result code = ${it.code()}  body = ${it.body()}",
                     TaskCenter.executionId ?: -1
                 )
                 val eventParams = mutableMapOf<String, Any>(
-                    "URL_REQ" to "MainActivity | onCreate | app 启动，先停止该设备下所有任务，停止结果 code = ${it.code()}  body = ${it.body()}"
+                    "URL_REQ" to "MainActivity | onCreate | app started, stop all tasks on this device first, stop result code = ${it.code()}  body = ${it.body()}"
                 )
                 StatisticsManager.instance.onUploadEvent(StatisticEvent.URL_REQUEST, eventParams)
             }.onFailure {
                 it.printStackTrace()
                 LogManager.saveLog(
                     applicationContext, "MainActivity",
-                    "MainActivity | onCreate | app 启动，先停止该设备下所有任务，停止失败，${it.message}",
+                    "MainActivity | onCreate | app started, stop all tasks on this device first, stop failed，${it.message}",
                     TaskCenter.executionId ?: -1
                 )
                 StatisticsManager.instance.onUploadException(
                     StatisticCustomError.API_ERR,
-                    it.message ?: "取消任务接口异常"
+                    it.message ?: "cancel task API error"
                 )
             }
         }
@@ -88,7 +88,7 @@ class HomeActivity : BaseBindingActivity<ActivityHomeBinding>(ActivityHomeBindin
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun initView() {
-        // 启动待命服务，等待远程任务派发
+
         StandbyForegroundService.start(this)
 
         val executeTaskWindow = ExecuteTaskWindow(this)
@@ -116,7 +116,7 @@ class HomeActivity : BaseBindingActivity<ActivityHomeBinding>(ActivityHomeBindin
             AutomationEventBus.events.collectLatest { event ->
                 if (event is AutomationEvent.ReturnToPromotorApp) {
                     returnToApp()
-                    // 执行完成后重连待命
+
                     StandbyForegroundService.standbyManager?.reconnect()
                 }
                 if (event is AutomationEvent.ErrorReturnToPromotorApp) {
@@ -142,20 +142,18 @@ class HomeActivity : BaseBindingActivity<ActivityHomeBinding>(ActivityHomeBindin
     }
 
     /**
-     * 处理远程任务派发：设置 TaskCenter 状态，连接执行 WS。
-     * Server 已创建 execution（PENDING），手机只需连 WS 发 execution:ready。
      */
     private fun handleRemoteDispatch(event: AutomationEvent.RemoteDispatch) {
         LogManager.saveLog(applicationContext, "HomeActivity",
             "Remote dispatch: execution=${event.executionId}, task=${event.taskName}", -1)
 
-        // 设置 TaskCenter（和手动点击执行时一样）
-        TaskCenter.reset(this, "远程执行")
+
+        TaskCenter.reset(this, "Remote execution")
         TaskCenter.taskId = event.taskId
         TaskCenter.taskTitle = event.taskName
         TaskCenter.executionId = event.executionId
 
-        // 确保 actionHandler 存在（和 PromptExecutionActivity.initParam 一样创建）
+
         if (MessageController.getActionHandler() == null) {
             val imageUploader = ImageUploaderImpl("", ServerConstant.getURL())
             val clickFeedbackView = ClickFeedbackView(applicationContext)
@@ -169,11 +167,11 @@ class HomeActivity : BaseBindingActivity<ActivityHomeBinding>(ActivityHomeBindin
             )
         }
 
-        // 连接执行 WS（复用 MessageController 的现有流程）
+
         val execId = event.executionId.toLong()
         MessageController.connectExecutionSocket(execId, MessageController.getActionHandler()!!)
 
-        // 断开 standby 连接（执行期间不需要）
+
         StandbyForegroundService.standbyManager?.disconnect()
     }
 

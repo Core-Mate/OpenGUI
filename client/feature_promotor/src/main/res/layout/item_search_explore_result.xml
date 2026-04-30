@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Explore 结果卡片：与 Web 一致 - 标题、usageCount/successRate/estimatedTime、右上角 App 图标 -->
+
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -24,9 +24,9 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         android:layout_marginEnd="16dp"
-        tools:text="任务标题" />
+        tools:text="Task Title" />
 
-    <!-- Task Stats: 次使用、成功率、预计时间 -->
+
     <LinearLayout
         android:id="@+id/stats_row"
         android:layout_width="0dp"
@@ -58,7 +58,7 @@
                 android:textColor="#9CA3AF"
                 android:textSize="13sp"
                 android:fontFamily="sans-serif-medium"
-                tools:text="1250次使用" />
+                tools:text="1250 uses" />
         </LinearLayout>
         <LinearLayout
             android:layout_width="wrap_content"
@@ -79,7 +79,7 @@
                 android:textColor="#9CA3AF"
                 android:textSize="13sp"
                 android:fontFamily="sans-serif-medium"
-                tools:text="98% 成功率" />
+                tools:text="98% success rate" />
         </LinearLayout>
         <LinearLayout
             android:layout_width="wrap_content"
@@ -103,7 +103,7 @@
         </LinearLayout>
     </LinearLayout>
 
-    <!-- App Icon - Top Right (Explore)，背景色在代码中按 getAppColor 设置 -->
+
     <FrameLayout
         android:id="@+id/app_icon_wrapper"
         android:layout_width="40dp"
@@ -118,6 +118,6 @@
             android:textColor="@android:color/white"
             android:textSize="13sp"
             android:textStyle="bold"
-            tools:text="小红书" />
+            tools:text="Xiaohongshu" />
     </FrameLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

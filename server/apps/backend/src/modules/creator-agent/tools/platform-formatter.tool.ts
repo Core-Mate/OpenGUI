@@ -4,14 +4,12 @@ import { ContentPlatform } from "../types";
 
 /**
  * Platform Formatter Tool
- * 平台格式化工具 - 根据目标平台调整内容格式
  */
 @Injectable()
 export class PlatformFormatterToolService {
 	private readonly logger = new Logger(PlatformFormatterToolService.name);
 
 	/**
-	 * 平台限制配置
 	 */
 	private readonly platformLimits: Record<
 		ContentPlatform,
@@ -27,10 +25,10 @@ export class PlatformFormatterToolService {
 		[ContentPlatform.WECHAT_ARTICLE]: {
 			maxLength: 20000,
 			allowImages: true,
-			allowLinks: false, // 公众号外链有限制
+			allowLinks: false,
 			allowHashtags: false,
 			allowMentions: false,
-			formatNotes: "支持富文本，建议使用分段、小标题、引用等格式",
+				formatNotes: "Supports rich text; use sections, subheadings, and quotes when helpful",
 		},
 		[ContentPlatform.WECHAT_COMMENT]: {
 			maxLength: 600,
@@ -38,7 +36,7 @@ export class PlatformFormatterToolService {
 			allowLinks: false,
 			allowHashtags: false,
 			allowMentions: true,
-			formatNotes: "纯文本，简洁明了",
+				formatNotes: "Plain text; keep it concise and clear",
 		},
 		[ContentPlatform.TWITTER_POST]: {
 			maxLength: 280,
@@ -46,7 +44,7 @@ export class PlatformFormatterToolService {
 			allowLinks: true,
 			allowHashtags: true,
 			allowMentions: true,
-			formatNotes: "简短有力，善用 hashtags 和 @mentions",
+				formatNotes: "Short and punchy; use hashtags and @mentions well",
 		},
 		[ContentPlatform.TWITTER_REPLY]: {
 			maxLength: 280,
@@ -54,7 +52,7 @@ export class PlatformFormatterToolService {
 			allowLinks: true,
 			allowHashtags: true,
 			allowMentions: true,
-			formatNotes: "回复要有针对性，保持对话感",
+				formatNotes: "Targeted reply with a conversational tone",
 		},
 		[ContentPlatform.REDDIT_POST]: {
 			maxLength: 40000,
@@ -62,7 +60,7 @@ export class PlatformFormatterToolService {
 			allowLinks: true,
 			allowHashtags: false,
 			allowMentions: true,
-			formatNotes: "支持 Markdown，标题要吸引人",
+				formatNotes: "Supports Markdown; use an engaging title",
 		},
 		[ContentPlatform.REDDIT_COMMENT]: {
 			maxLength: 10000,
@@ -70,7 +68,7 @@ export class PlatformFormatterToolService {
 			allowLinks: true,
 			allowHashtags: false,
 			allowMentions: true,
-			formatNotes: "支持 Markdown，建议有理有据",
+				formatNotes: "Supports Markdown; keep it well-reasoned",
 		},
 		[ContentPlatform.DIRECT_MESSAGE]: {
 			maxLength: 2000,
@@ -78,7 +76,7 @@ export class PlatformFormatterToolService {
 			allowLinks: true,
 			allowHashtags: false,
 			allowMentions: false,
-			formatNotes: "私密对话，语气友好自然",
+				formatNotes: "Private conversation; keep the tone friendly and natural",
 		},
 		[ContentPlatform.SOCIAL_COMMENT]: {
 			maxLength: 500,
@@ -86,20 +84,19 @@ export class PlatformFormatterToolService {
 			allowLinks: false,
 			allowHashtags: true,
 			allowMentions: true,
-			formatNotes: "通用社媒评论格式",
+				formatNotes: "General social-media comment format",
 		},
 	};
 
 	/**
-	 * 获取工具定义 (用于 MCP Server)
 	 */
 	getToolDefinition() {
 		return {
-			name: "format_for_platform",
-			description:
-				"根据目标平台格式化内容。自动调整长度、格式和风格以适应平台要求。",
-			inputSchema: z.object({
-				content: z.string().describe("要格式化的内容"),
+				name: "format_for_platform",
+				description:
+					"Format content for the target platform. Automatically adjust length, format, and style for platform requirements.",
+				inputSchema: z.object({
+					content: z.string().describe("Content to format"),
 				platform: z
 					.enum([
 						"wechat_article",
@@ -111,23 +108,22 @@ export class PlatformFormatterToolService {
 						"direct_message",
 						"social_comment",
 					])
-					.describe("目标平台"),
+						.describe("Target platform"),
 				preserveLinks: z
 					.boolean()
 					.optional()
 					.default(true)
-					.describe("是否保留链接"),
+					.describe("Whether to keep links"),
 				addHashtags: z
 					.array(z.string())
 					.optional()
-					.describe("要添加的 hashtags"),
+						.describe("Hashtags to add"),
 			}),
 			handler: this.format.bind(this),
 		};
 	}
 
 	/**
-	 * 格式化内容
 	 */
 	async format(args: {
 		content: string;
@@ -153,7 +149,7 @@ export class PlatformFormatterToolService {
 				content: [
 					{
 						type: "text",
-						text: `不支持的平台: ${platform}`,
+							text: `Unsupported platform: ${platform}`,
 					},
 				],
 				isError: true,
@@ -165,24 +161,24 @@ export class PlatformFormatterToolService {
 		try {
 			let formatted = content;
 
-			// 处理链接
+
 			if (!limits.allowLinks && !preserveLinks) {
 				formatted = this.removeLinks(formatted);
 			}
 
-			// 处理 hashtags
+
 			if (!limits.allowHashtags) {
 				formatted = this.removeHashtags(formatted);
 			} else if (addHashtags && addHashtags.length > 0) {
 				formatted = this.addHashtags(formatted, addHashtags);
 			}
 
-			// 处理长度
+
 			if (formatted.length > limits.maxLength) {
 				formatted = this.truncateContent(formatted, limits.maxLength);
 			}
 
-			// 生成格式化报告
+
 			const report = this.generateReport(
 				formatted,
 				platformKey,
@@ -204,7 +200,7 @@ export class PlatformFormatterToolService {
 				content: [
 					{
 						type: "text",
-						text: `格式化失败: ${error instanceof Error ? error.message : "未知错误"}`,
+							text: `Formatting failed: ${error instanceof Error ? error.message : "unknown error"}`,
 					},
 				],
 				isError: true,
@@ -213,28 +209,24 @@ export class PlatformFormatterToolService {
 	}
 
 	/**
-	 * 获取平台限制信息
 	 */
 	getPlatformLimits(platform: ContentPlatform) {
 		return this.platformLimits[platform];
 	}
 
 	/**
-	 * 移除链接
 	 */
 	private removeLinks(content: string): string {
-		return content.replace(/https?:\/\/[^\s]+/g, "[链接]");
+			return content.replace(/https?:\/\/[^\s]+/g, "[link]");
 	}
 
 	/**
-	 * 移除 hashtags
 	 */
 	private removeHashtags(content: string): string {
 		return content.replace(/#\w+/g, "").replace(/\s+/g, " ").trim();
 	}
 
 	/**
-	 * 添加 hashtags
 	 */
 	private addHashtags(content: string, hashtags: string[]): string {
 		const tags = hashtags.map((t) => (t.startsWith("#") ? t : `#${t}`));
@@ -242,14 +234,13 @@ export class PlatformFormatterToolService {
 	}
 
 	/**
-	 * 截断内容
 	 */
 	private truncateContent(content: string, maxLength: number): string {
 		if (content.length <= maxLength) {
 			return content;
 		}
 
-		// 尝试在句子边界截断
+
 		const truncated = content.substring(0, maxLength - 3);
 		const lastPeriod = Math.max(
 			truncated.lastIndexOf("。"),
@@ -266,7 +257,6 @@ export class PlatformFormatterToolService {
 	}
 
 	/**
-	 * 生成格式化报告
 	 */
 	private generateReport(
 		formatted: string,
@@ -281,15 +271,15 @@ export class PlatformFormatterToolService {
 			withinLimit: formatted.length <= limits.maxLength,
 		};
 
-		let report = `## 格式化结果\n\n`;
-		report += `**目标平台**: ${platform}\n`;
-		report += `**原始长度**: ${stats.originalLength} 字符\n`;
-		report += `**格式化后**: ${stats.formattedLength} 字符\n`;
-		report += `**平台限制**: ${stats.maxAllowed} 字符\n`;
-		report += `**状态**: ${stats.withinLimit ? "✅ 符合要求" : "⚠️ 超出限制"}\n\n`;
-		report += `**格式说明**: ${limits.formatNotes}\n\n`;
+			let report = `## Formatting Result\n\n`;
+			report += `**Target platform**: ${platform}\n`;
+			report += `**Original length**: ${stats.originalLength} characters\n`;
+			report += `**Formatted length**: ${stats.formattedLength} characters\n`;
+			report += `**Platform limit**: ${stats.maxAllowed} characters\n`;
+			report += `**Status**: ${stats.withinLimit ? "✅ Within limit" : "⚠️ Over limit"}\n\n`;
+			report += `**Format notes**: ${limits.formatNotes}\n\n`;
 		report += `---\n\n`;
-		report += `### 格式化内容\n\n${formatted}`;
+			report += `### Formatted Content\n\n${formatted}`;
 
 		return report;
 	}

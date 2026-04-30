@@ -1,10 +1,7 @@
 /**
- * Skill 模块类型定义
  */
 
 /**
- * Skill 关联的 Node 类型枚举
- * 与数据库 skillnodetype 枚举对应（统一使用下划线格式）
  */
 export enum SkillNodeType {
 	PLAN_SUPERVISOR = "plan_supervisor",
@@ -15,8 +12,6 @@ export enum SkillNodeType {
 }
 
 /**
- * 数据库 skillnodetype 枚举类型
- * 与 SkillNodeType 值完全一致（统一使用下划线格式）
  */
 export type DbSkillNodeType = SkillNodeType;
 
@@ -39,21 +34,20 @@ export interface SkillDTO {
 }
 
 /**
- * 创建 Skill DTO
+ * Create Skill DTO
  */
 export interface CreateSkillDTO {
 	name: string;
 	displayName: string;
 	description?: string;
 	version?: string;
-	tenantId?: number; // 默认 -1（全局）
+	tenantId?: number;
 	nodeTypes: SkillNodeType[];
 	content: string;
 	region?: string;
 }
 
 /**
- * 更新 Skill DTO
  */
 export interface UpdateSkillDTO {
 	displayName?: string;
@@ -66,7 +60,6 @@ export interface UpdateSkillDTO {
 }
 
 /**
- * Skill 列表查询参数
  */
 export interface SkillListParams {
 	page?: number;
@@ -79,7 +72,6 @@ export interface SkillListParams {
 }
 
 /**
- * Skill 列表响应
  */
 export interface SkillListResponse {
 	skills: SkillDTO[];
@@ -90,30 +82,24 @@ export interface SkillListResponse {
 }
 
 /**
- * SkillNodeType 枚举转数据库枚举值
- * 现在格式完全一致，直接返回
  */
 export function toDbSkillNodeType(nodeType: SkillNodeType): DbSkillNodeType {
 	return nodeType;
 }
 
 /**
- * 数据库枚举值转 SkillNodeType 枚举
- * 现在格式完全一致，直接转换类型
  */
 export function fromDbSkillNodeType(dbNodeType: string): SkillNodeType {
 	return dbNodeType as SkillNodeType;
 }
 
 /**
- * 批量转换数据库枚举值数组
  */
 export function fromDbSkillNodeTypes(dbNodeTypes: string[]): SkillNodeType[] {
 	return dbNodeTypes.map(fromDbSkillNodeType);
 }
 
 /**
- * 批量转换 SkillNodeType 枚举数组
  */
 export function toDbSkillNodeTypes(nodeTypes: SkillNodeType[]): DbSkillNodeType[] {
 	return nodeTypes.map(toDbSkillNodeType);

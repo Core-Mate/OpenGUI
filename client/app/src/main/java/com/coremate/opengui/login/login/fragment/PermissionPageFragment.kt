@@ -23,14 +23,14 @@ class PermissionPageFragment : Fragment() {
     private var _binding: FragmentPermissionPageBinding? = null
     private val binding get() = _binding!!
 
-    /// data - 对齐前端 AccessibilityPermissionPage 的 PermissionStatus
+
     private var accessibilityEnabled = false
     private var overlayEnabled = false
     private var checking = false
     private var showSkipToast = false
     private var skipConfirmed = false
 
-    /// listeners - 对齐前端 onBack, onComplete, onSkip
+
     private var onBackListener: (() -> Unit)? = null
     private var onCompleteListener: (() -> Unit)? = null
     private var onSkipListener: (() -> Unit)? = null
@@ -47,7 +47,7 @@ class PermissionPageFragment : Fragment() {
         onSkipListener = listener
     }
 
-    /// 兼容原有命名
+
     fun setOnNextPageListener(listener: () -> Unit) {
         onCompleteListener = listener
     }
@@ -69,7 +69,7 @@ class PermissionPageFragment : Fragment() {
         binding.buttonBack.setOnClickListener { onBackListener?.invoke() }
 
         binding.buttonSkip.setOnClickListener { handleSkipPress() }
-        binding.buttonSkip.text = if (skipConfirmed) "仍要跳过" else "以后再说"
+        binding.buttonSkip.text = if (skipConfirmed) "Skip Anyway" else "Maybe later"
 
         binding.permissionAccessibility.setOnClickListener {
             if (!accessibilityEnabled) openAccessibilitySettings()
@@ -95,14 +95,14 @@ class PermissionPageFragment : Fragment() {
         } else {
             showSkipToast = true
             skipConfirmed = true
-            binding.buttonSkip.text = "仍要跳过"
+            binding.buttonSkip.text = "Skip Anyway"
             binding.buttonSkip.setTextColor(
                 ContextCompat.getColor(
                     requireContext(),
                     android.R.color.holo_red_dark
                 )
             )
-            Toast.makeText(requireContext(), "需要开启权限才能继续使用", Toast.LENGTH_LONG).show()
+            Toast.makeText(requireContext(), "Enable the required permissions to continue.", Toast.LENGTH_LONG).show()
             Handler(Looper.getMainLooper()).postDelayed({ showSkipToast = false }, 2500)
         }
     }
@@ -151,7 +151,7 @@ class PermissionPageFragment : Fragment() {
         val totalCount = 2
         val allEnabled = enabledCount == totalCount
 
-        // 权限项：已开启显示勾选，未开启显示箭头
+
         val checkRes = R.drawable.icon_check
         val arrowRes = R.drawable.icon_arrow_right
         binding.flAccessibility.setBackgroundResource(if (accessibilityEnabled) R.drawable.icon_bg_green else R.drawable.icon_bg_gray)
@@ -163,7 +163,7 @@ class PermissionPageFragment : Fragment() {
         binding.checkOverlay.setImageResource(if (overlayEnabled) checkRes else arrowRes)
         binding.checkOverlay.visibility = View.VISIBLE
 
-        // 进度指示：已开启用绿色圆点（用 indicator_active），未开启用灰色（indicator_dot）
+
         binding.indicator1.setBackgroundResource(
             if (accessibilityEnabled) R.drawable.indicator_green_active
             else R.drawable.indicator_inactive
@@ -172,15 +172,15 @@ class PermissionPageFragment : Fragment() {
             if (overlayEnabled) R.drawable.indicator_green_active
             else R.drawable.indicator_inactive
         )
-        binding.permissionCount.text = "$enabledCount/$totalCount 已开启"
+        binding.permissionCount.text = "$enabledCount/$totalCount Enabled"
 
-        // 底部按钮文案与状态
+
         binding.buttonContinue.isEnabled = !checking
         binding.buttonContinue.text = when {
-            checking -> "检测中..."
-            allEnabled -> "完成设置，继续"
-            enabledCount == 0 -> "去设置中开启"
-            else -> "继续开启 ($enabledCount/$totalCount)"
+            checking -> "Checking..."
+            allEnabled -> "Settings Complete, Continue"
+            enabledCount == 0 -> "Open Settings"
+            else -> "Continue Setup ($enabledCount/$totalCount)"
         }
 
 

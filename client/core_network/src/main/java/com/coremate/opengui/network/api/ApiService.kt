@@ -51,7 +51,7 @@ interface ApiService {
         @Query("device_id") deviceId: String,
         @Query("page") page: Int,
         @Query("pageSize") pageSize: Int
-    ): Response<ChatHistoryResponse> // 使用我们定义的数据模型作为返回类型
+    ): Response<ChatHistoryResponse>
 
     @GET("chat/agent-messages")
     suspend fun getAgentMessages(
@@ -60,15 +60,15 @@ interface ApiService {
         @Query("pageSize") pageSize: Int
     ): Response<AgentMessageResponse>
 
-    // 暂停任务接口
+
     @POST("task/{taskId}/pause")
     suspend fun pauseTask(@Path("taskId") taskId: Long): Response<TaskControlResponse>
 
-    // 恢复任务接口
+
     @POST("task/{taskId}/resume")
     suspend fun resumeTask(@Path("taskId") taskId: Long): Response<TaskControlResponse>
 
-    // 停止任务接口
+
     @POST("task/{taskId}/stop")
     suspend fun stopTask(@Path("taskId") taskId: Long): Response<TaskControlResponse>
 
@@ -79,7 +79,7 @@ interface ApiService {
     @POST("new-agent/abort-all")
     suspend fun abortAllTask(@Body requestBody: AbortAllTaskRequest): Response<TaskControlResponse>
 
-    // 停止设备上所有任务接口
+
     @POST("task/device/{deviceId}/stop-all")
     suspend fun stopAllDeviceTasks(@Path("deviceId") deviceId: String): Response<StopAllTasksResponse>
 
@@ -209,27 +209,27 @@ interface ApiService {
 
 
     //    -------------------------
-    //    请求验证码
+
     @POST("/api/user-auth/send-otp")
     suspend fun requestVerificationCode(
         @Body body: RequestVerificationCode
     ): Response<VerificationCodeResp>
 
-    //    验证码登录（自动注册）
+
     @POST("/api/user-auth/verify-otp")
     suspend fun verifyCode(
         @Body body: VerifyCodeRequestBean
     ): Response<VerifyCodeResp>
 
-    //    获取 onboarding 状态
+
     @GET("/api/user-auth/onboarding-status")
     suspend fun getOnboardingStatus(): Response<OnboardingStatusResp>
 
-    //    完成 onboarding
+
     @PUT("/api/users/profile/onboarding-complete")
     suspend fun completeOnboarding(): Response<Any>
 
-    //积分余额
+
     @GET("/api/user/balance")
     suspend fun getUserBalance(
     ): Response<MyBalanceRespItem>

@@ -4,7 +4,7 @@
     android:viewportWidth="24"
     android:viewportHeight="24">
 
-    <!-- 右上圆角矩形 rect x=8 y=8 w=14 h=14 rx=2 -->
+
     <path
         android:fillColor="@android:color/transparent"
         android:strokeColor="#6B7280"
@@ -23,7 +23,7 @@
             a2 2 0 0 1 2 -2
         " />
 
-    <!-- 左下路径 -->
+
     <path
         android:fillColor="@android:color/transparent"
         android:strokeColor="#6B7280"

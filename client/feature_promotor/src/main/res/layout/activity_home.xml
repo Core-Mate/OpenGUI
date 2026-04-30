@@ -33,7 +33,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="添加任务"
+            android:text="Add task"
             android:textColor="@color/white"
             android:textSize="15sp" />
     </LinearLayout>

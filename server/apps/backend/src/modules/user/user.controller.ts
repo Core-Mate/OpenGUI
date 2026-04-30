@@ -29,7 +29,7 @@ import {
 
 const DEFAULT_USER_ID = 1;
 
-@ApiTags("用户管理")
+@ApiTags("User Management")
 @Controller("users")
 export class UserController {
 	constructor(
@@ -40,17 +40,16 @@ export class UserController {
 	}
 
 	/**
-	 * 提交用户信息收集
 	 */
 	@Post("profile/onboarding")
 	@HttpCode(HttpStatus.OK)
 	@ApiOperation({
-		summary: "用户信息收集",
-		description: "收集首次登录用户的基本信息（行业、目标人群、产品介绍、服务地区）",
+		summary: "Collect user information",
+		description: "Collect first-login user information, including industry, target audience, product description, and service region",
 	})
 	@ApiResponse({
 		status: HttpStatus.OK,
-		description: "信息保存成功",
+		description: "Information saved",
 		type: OnboardingResponseDto,
 	})
 	async submitOnboarding(
@@ -62,17 +61,16 @@ export class UserController {
 	}
 
 	/**
-	 * 完成引导流程
 	 */
 	@Put("profile/onboarding-complete")
 	@HttpCode(HttpStatus.OK)
 	@ApiOperation({
-		summary: "完成引导",
-		description: "标记用户已完成引导流程，将 is_active 设置为 true",
+		summary: "Complete onboarding",
+		description: "Mark onboarding as completed and set is_active to true",
 	})
 	@ApiResponse({
 		status: HttpStatus.OK,
-		description: "引导完成",
+		description: "Onboarding completed",
 		type: OnboardingResponseDto,
 	})
 	async completeOnboarding(): Promise<OnboardingResponseDto> {
@@ -82,16 +80,16 @@ export class UserController {
 	}
 
 	/**
-	 * 获取用户 Onboarding 信息
+	 * Get user onboarding information
 	 */
 	@Get("profile/onboarding")
 	@ApiOperation({
-		summary: "获取用户 Onboarding 信息",
-		description: "获取用户的 onboarding 信息和完成状态",
+		summary: "Get user onboarding information",
+		description: "Get the user onboarding information and completion status",
 	})
 	@ApiResponse({
 		status: HttpStatus.OK,
-		description: "获取成功",
+		description: "Success",
 		type: UserProfileResponseDto,
 	})
 	async getOnboarding(): Promise<UserProfileResponseDto> {
@@ -101,16 +99,15 @@ export class UserController {
 	}
 
 	/**
-	 * 获取用户执行偏好
 	 */
 	@Get("execution-preference")
 	@ApiOperation({
-		summary: "获取执行偏好",
-		description: "获取用户的执行偏好设置",
+		summary: "Get execution preferences",
+		description: "Get user execution preference settings",
 	})
 	@ApiResponse({
 		status: HttpStatus.OK,
-		description: "获取成功",
+		description: "Success",
 		type: ExecutionPreferenceResponseDto,
 	})
 	async getExecutionPreference(): Promise<ExecutionPreferenceResponseDto> {
@@ -120,17 +117,16 @@ export class UserController {
 	}
 
 	/**
-	 * 创建用户执行偏好
 	 */
 	@Post("execution-preference")
 	@HttpCode(HttpStatus.OK)
 	@ApiOperation({
-		summary: "创建执行偏好",
-		description: "创建用户的执行偏好设置",
+		summary: "Create execution preferences",
+		description: "Create user execution preference settings",
 	})
 	@ApiResponse({
 		status: HttpStatus.OK,
-		description: "创建成功",
+		description: "Created",
 		type: ExecutionPreferenceOperationResponseDto,
 	})
 	async createExecutionPreference(
@@ -142,17 +138,16 @@ export class UserController {
 	}
 
 	/**
-	 * 修改用户执行偏好
 	 */
 	@Put("execution-preference")
 	@HttpCode(HttpStatus.OK)
 	@ApiOperation({
-		summary: "修改执行偏好",
-		description: "修改用户的执行偏好设置（不存在则创建）",
+		summary: "Update execution preferences",
+		description: "Update user execution preferences, or create them if missing",
 	})
 	@ApiResponse({
 		status: HttpStatus.OK,
-		description: "修改成功",
+		description: "Updated",
 		type: ExecutionPreferenceOperationResponseDto,
 	})
 	async updateExecutionPreference(
@@ -164,17 +159,16 @@ export class UserController {
 	}
 
 	/**
-	 * 清空用户执行偏好
 	 */
 	@Delete("execution-preference")
 	@HttpCode(HttpStatus.OK)
 	@ApiOperation({
-		summary: "清空执行偏好",
-		description: "清空用户的执行偏好设置（不删除记录，仅将所有字段置空）",
+		summary: "Clear execution preferences",
+		description: "Clear user execution preferences without deleting the record",
 	})
 	@ApiResponse({
 		status: HttpStatus.OK,
-		description: "清空成功",
+		description: "Cleared",
 		type: ExecutionPreferenceOperationResponseDto,
 	})
 	async clearExecutionPreference(): Promise<ExecutionPreferenceOperationResponseDto> {

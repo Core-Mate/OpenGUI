@@ -1,5 +1,4 @@
 /**
- * Skill 模块导出
  */
 
 export * from "./skill.types";

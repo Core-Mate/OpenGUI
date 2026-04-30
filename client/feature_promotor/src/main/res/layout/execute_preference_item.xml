@@ -34,7 +34,7 @@
                 android:textColor="@color/task_detail_primary_text"
                 android:textSize="17sp"
                 android:textStyle="bold"
-                tools:text="行业" />
+                tools:text="Industry" />
 
             <ImageView
                 android:id="@+id/img_control"
@@ -60,7 +60,7 @@
                 android:lineSpacingMultiplier="1.25"
                 android:textColor="@color/execute_preference_content_text"
                 android:textSize="15sp"
-                tools:text="医疗美容机构销售" />
+                tools:text="Medical Aesthetics Sales" />
         </FrameLayout>
     </LinearLayout>
 </com.lihang.ShadowLayout>

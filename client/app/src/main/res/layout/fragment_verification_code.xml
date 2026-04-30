@@ -14,7 +14,7 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
-    <!-- Header：与前端一致 48dp 圆角返回按钮 -->
+
     <LinearLayout
         android:id="@+id/titleBar"
         android:layout_width="match_parent"
@@ -32,7 +32,7 @@
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:background="@drawable/icon_back2"
-            android:contentDescription="返回"
+            android:contentDescription="Back"
             android:padding="0dp"
             android:scaleType="center" />
     </LinearLayout>
@@ -51,7 +51,7 @@
             android:id="@+id/tv1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="输入验证码"
+            android:text="Enter verification code"
             android:textColor="#111827"
             android:textSize="32sp"
             android:textStyle="bold"
@@ -98,7 +98,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/phoneInputLayout"
-            tools:text="我们已向 13800138000 发送验证码" />
+            tools:text="We sent a verification code to 13800138000" />
 
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/bt_request_code"
@@ -107,7 +107,7 @@
             android:layout_marginTop="40dp"
             android:background="@drawable/login_v_bt_background"
             android:clickable="false"
-            android:text="重新发送（60s）"
+            android:text="Resend (60s)"
             android:textColor="#9CA3AF"
             android:textSize="17sp"
             android:textStyle="bold"

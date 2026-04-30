@@ -7,8 +7,6 @@ import com.coremate.opengui.R
 import com.coremate.opengui.login.login.fragment.LoginPageFragment
 
 /**
- * 登录后引导页 — 承载 LoginPageFragment（10步产品引导 + 权限申请）
- * 完成后跳转到 UserGuideActivity（目标选择）
  */
 class IntroGuideActivity : AppCompatActivity() {
 
@@ -22,7 +20,7 @@ class IntroGuideActivity : AppCompatActivity() {
                 .commit()
         }
 
-        // 每次 onCreate 都重新绑定监听（包括 process death 恢复场景）
+
         supportFragmentManager.executePendingTransactions()
         val fragment = supportFragmentManager.findFragmentById(R.id.fragment_container)
         if (fragment is LoginPageFragment) {

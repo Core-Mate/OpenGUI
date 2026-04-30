@@ -30,14 +30,14 @@ class AccessibilityServiceWarningWindow(context: Context) : FrameLayout(context)
         )
         binding.cardGo.setOnClickListener {
             AIFloatWindowManager.getSlideExpandWindow()?.updateBackground(true)
-            AIFloatWindowManager.getSlideExpandWindow()?.updateContent("任务暂停中，点击恢复")
+            AIFloatWindowManager.getSlideExpandWindow()?.updateContent("Task paused. Tap to resume.")
             AIFloatWindowManager.getExecuteTaskWindow()?.setPauseTaskStatus()
             dismiss()
             val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             context.startActivity(intent)
         }
-        // 注册到管理器
+
         AIFloatWindowManager.registerAccessibilityServiceWarning(this)
     }
 
@@ -52,7 +52,7 @@ class AccessibilityServiceWarningWindow(context: Context) : FrameLayout(context)
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.MATCH_PARENT,
             type,
-            // 可点击但不获取焦点
+
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                     WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
                     WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or

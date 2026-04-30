@@ -4,7 +4,7 @@ import android.content.Context
 import java.io.File
 
 /**
- * Stub PushManager for open-source version.
+ * Stub PushManager for source-available version.
  * Push notifications (UMeng) are disabled.
  */
 class PushManager {
@@ -20,7 +20,7 @@ class PushManager {
     }
 
     fun registerPush(context: Context, callback: PushFileCallback) {
-        // Push notifications disabled in open-source version
+        // Push notifications disabled in source-available version
     }
 
     fun startActiveStatistics(context: Context) {}

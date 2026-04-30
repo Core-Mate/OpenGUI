@@ -26,7 +26,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginLeft="5dp"
-            android:text="任务完成"
+            android:text="Task complete"
             android:textColor="#9CA3AF"
             android:textSize="13sp"
             android:textStyle="bold" />
@@ -54,5 +54,5 @@
         android:textColor="#4B5563"
         android:textSize="14sp"
         android:textStyle="bold"
-        tools:text="执行成功" />
+        tools:text="Execution Succeeded" />
 </LinearLayout>

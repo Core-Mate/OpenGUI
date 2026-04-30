@@ -46,7 +46,7 @@
                         android:textColor="#111827"
                         android:textSize="18sp"
                         android:textStyle="bold"
-                        tools:text="任务标题" />
+                        tools:text="Task Title" />
                 </LinearLayout>
 
                 <ImageView
@@ -78,7 +78,7 @@
                     android:fontFamily="sans-serif-medium"
                     android:textColor="#9CA3AF"
                     android:textSize="12sp"
-                    tools:text="2026-02-03 创建" />
+                    tools:text="2026-02-03 Create" />
 
                 <LinearLayout
                     android:layout_width="wrap_content"

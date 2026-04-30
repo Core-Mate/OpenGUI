@@ -58,7 +58,7 @@ public class DotsAnimationView extends View {
         float spacing = dpToPx(DOT_SPACING_DP);
         float totalWidth = dpToPx(DOT_DIAMETER_DP) * 3 + spacing * 2;
 
-        // 计算起始位置使圆点居中
+
         float startX = (getWidth() - totalWidth) / 2 + dotRadius;
         float centerY = getHeight() / 2f;
 

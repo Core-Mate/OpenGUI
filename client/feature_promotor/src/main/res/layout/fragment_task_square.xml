@@ -6,7 +6,7 @@
     android:background="@drawable/white_color_top_corner_24"
     android:orientation="vertical">
 
-    <!-- 标题 -->
+    <!-- Title -->
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="58dp"
@@ -17,7 +17,7 @@
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
             android:layout_marginBottom="16dp"
-            android:text="选择推荐任务"
+            android:text="Choose a recommended task"
             android:textColor="#0B1120"
             android:textSize="16sp"
             android:textStyle="bold" />
@@ -37,7 +37,7 @@
         android:layout_height="1dp"
         android:background="@color/grid_line_color" />
 
-    <!--    搜索-->
+    <!--    Search-->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/cl_search_bg"
         android:layout_width="match_parent"
@@ -52,7 +52,7 @@
             android:layout_height="44dp"
             android:layout_marginEnd="8dp"
             android:background="@null"
-            android:hint="搜索任务..."
+            android:hint="Search tasks..."
             android:maxLines="1"
             android:imeOptions="actionSearch"
             android:paddingStart="48dp"
@@ -73,7 +73,7 @@
             android:src="@drawable/icon_close"
             android:tint="#9CA3AF"
             android:visibility="gone"
-            android:contentDescription="清除搜索"
+            android:contentDescription="Clear search"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
@@ -95,7 +95,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
-        android:text="任务分类"
+        android:text="Task categories"
         android:textColor="#000000"
         android:textFontWeight="600"
         android:textSize="15sp"

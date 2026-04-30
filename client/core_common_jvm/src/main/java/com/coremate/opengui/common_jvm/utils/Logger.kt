@@ -5,5 +5,5 @@ interface Logger {
     fun info(tag: String, message: String)
     fun warn(tag: String, message: String)
     fun error(tag: String, message: String, throwable: Throwable? = null)
-    // ... 其他日志方法
+
 }

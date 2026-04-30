@@ -40,7 +40,7 @@
                 android:textColor="#FFFFFF"
                 android:textFontWeight="500"
                 android:textSize="15dp"
-                tool:text="评论点赞" />
+                tool:text="Like comments" />
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 
@@ -48,7 +48,7 @@
         android:id="@+id/tv_executing"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="执行中"
+        android:text="Running"
         android:textColor="#F15B3C"
         android:textFontWeight="500"
         android:textSize="11dp"

@@ -4,7 +4,7 @@
 	"description": "",
 	"author": "",
 	"private": true,
-	"license": "Apache-2.0",
+	"license": "BUSL-1.1",
 	"scripts": {
 		"build": "nest build",
 		"dev": "nest start --watch",

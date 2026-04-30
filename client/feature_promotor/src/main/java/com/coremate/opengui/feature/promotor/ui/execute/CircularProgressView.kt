@@ -16,10 +16,6 @@ import android.view.View
 import kotlin.math.PI
 
 /**
- * 与 Web ExecutionOverlay SVG 一致：
- * 1. 外圈旋转光弧（exec-orbit）：dash 约 1/4 圆，渐变透明蓝→紫 0.35→透明蓝，3s 旋转一圈
- * 2. 背景灰环：#E5E7EB stroke-width 5 opacity 0.5
- * 3. 进度弧：linearGradient #2E58FF→#6366F1，stroke-width 5，stroke-linecap round，从顶部顺时针
  */
 class CircularProgressView @JvmOverloads constructor(
     context: Context,
@@ -41,12 +37,10 @@ class CircularProgressView @JvmOverloads constructor(
     }
     private val rectF = RectF()
 
-    /** 旋转光弧当前角度（度） */
     private var orbitRotation = 0f
     private var orbitAnimator: ValueAnimator? = null
     private var progressAnimator: ValueAnimator? = null
 
-    /** 实际绘制用的进度值（动画驱动） */
     private var displayProgress: Float = 0f
 
     var progress: Float = 0f
@@ -57,7 +51,6 @@ class CircularProgressView @JvmOverloads constructor(
             animateProgress(target)
         }
 
-    /** 进度动画结束回调 */
     var onProgressAnimationEnd: (() -> Unit)? = null
 
     private fun animateProgress(target: Float) {
@@ -88,7 +81,6 @@ class CircularProgressView @JvmOverloads constructor(
     private val sizePx: Float
         get() = width.coerceAtMost(height).toFloat()
 
-    /** 与 Web 一致：100px 下 r=47.5, stroke 5 → 比例 r = (size - 5) / 2 */
     private val strokeWidthProgress: Float
         get() = 5f * resources.displayMetrics.density
 
@@ -136,7 +128,7 @@ class CircularProgressView @JvmOverloads constructor(
         rectF.set(cx - r, cy - r, cx + r, cy + r)
         val circumference = (2 * PI * r).toFloat()
 
-        // 1. 外圈旋转光弧（未完成时）：stroke-width 7, dasharray ≈ 1/4 圆
+
         if (!isComplete) {
             orbitPaint.strokeWidth = strokeWidthOrbit
             orbitPaint.shader = LinearGradient(
@@ -161,16 +153,16 @@ class CircularProgressView @JvmOverloads constructor(
             orbitPaint.pathEffect = null
         }
 
-        // 2. 背景灰环：#E5E7EB stroke-width 5 opacity 0.5
+
         bgPaint.color = 0x80E5E7EB.toInt()
         bgPaint.strokeWidth = strokeWidthProgress
         canvas.drawCircle(cx, cy, r, bgPaint)
 
-        // 3. 进度弧：从 -90°（顶部）顺时针，stroke-linecap round
+
         val sweep = 360f * (displayProgress / 100f)
         if (sweep > 0f) {
             progressPaint.strokeWidth = strokeWidthProgress
-            // 渐变：progressGradient (#2E58FF → #6366F1) 或 completeGradient (#4ade80 → #10b981)
+
             progressPaint.shader = if (isComplete) {
                 LinearGradient(
                     rectF.left, cy,

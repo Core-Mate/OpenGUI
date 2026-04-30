@@ -6,11 +6,8 @@ import { AppLogger } from "../log";
 import type { ExecutionSocket } from "./types";
 
 /**
- * WebSocket 认证中间件（开源精简版 — 无认证）
  *
- * 仅验证 executionId 的有效性和 execution 状态，不校验用户身份。
  *
- * 客户端连接示例：
  * ```javascript
  * const socket = io('ws://host:port', {
  *   auth: {
@@ -30,12 +27,11 @@ export class WsAuthMiddleware {
 	}
 
 	/**
-	 * 返回 Socket.IO 中间件函数
 	 */
 	createAuthMiddleware() {
 		return async (socket: Socket, next: (err?: Error) => void) => {
 			try {
-				// 1. 提取并验证 executionId
+
 				const executionIdRaw = socket.handshake.auth?.executionId;
 				if (!executionIdRaw) {
 					this.logger.warn(
@@ -52,7 +48,7 @@ export class WsAuthMiddleware {
 					return next(new Error("Invalid executionId"));
 				}
 
-				// 2. 验证 execution 存在
+
 				const execution =
 					await this.prismaService.task_execution.findUnique({
 						where: { id: executionId },
@@ -66,7 +62,7 @@ export class WsAuthMiddleware {
 					return next(new Error("Execution not found"));
 				}
 
-				// 3. 验证 execution 处于可连接状态
+
 				const connectableStatuses = ["PENDING", "RUNNING", "SUSPENDED", "USER_PAUSED", "SUMMARIZING"];
 				if (!connectableStatuses.includes(execution.execution_status)) {
 					this.logger.warn(
@@ -75,7 +71,7 @@ export class WsAuthMiddleware {
 					return next(new Error(`Execution is in ${execution.execution_status} status`));
 				}
 
-				// 4. 挂载信息到 socket
+
 				const execSocket = socket as ExecutionSocket;
 				execSocket.userId = "1";
 				execSocket.executionId = executionId;

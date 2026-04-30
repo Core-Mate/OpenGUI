@@ -12,18 +12,17 @@ import {
     VLM_AGENT_DEFAULTS,
 } from "../../state/executor-state.types";
 import {ErrorSeverity} from "../../utils/error-classification";
+import {
+    buildExecutionConnectionLostMessage,
+    isExecutionConnectionLost,
+} from "../../utils/execution-connection";
 import {computePHash} from "../../utils/phash";
 
 const logger = new Logger("SenseNode");
 
 /**
- * 创建 sense 感知节点
  *
- * GUI-only: 请求截图 → 生成签名 URL → 构造消息
  *
- * @param executionGateway - 执行网关，用于发送截图请求
- * @param tosService - TOS 服务，用于生成签名 URL
- * @returns sense 节点函数
  */
 export function createSenseNode(
     executionGateway: ExecutionGateway,
@@ -33,7 +32,7 @@ export function createSenseNode(
         state: AgentState,
         config?: RunnableConfig,
     ): Promise<Partial<AgentState>> => {
-        // 检查是否已被 abort
+
         if (config?.signal?.aborted) {
             throw new Error(
                 (config.signal as any).reason || "Aborted",
@@ -57,10 +56,10 @@ export function createSenseNode(
                 tosService,
             );
 
-            // 计算 sense 指标
+
             const senseLatency = Date.now() - senseStart;
 
-            // 将 metrics 合并到 result
+
             const existingExecutor = (result as any).executor || {};
             (result as any).executor = {
                 ...existingExecutor,
@@ -73,7 +72,7 @@ export function createSenseNode(
 
             return result;
         } catch (error: any) {
-            // 如果是 abort 错误，重新抛出让图停止执行
+
             if (
                 error.name === "AbortError" ||
                 error.message?.includes("abort") ||
@@ -85,14 +84,18 @@ export function createSenseNode(
 
             const senseLatency = Date.now() - senseStart;
             logger.error(`Sense node failed: ${error.message}`, error.stack);
+            const connectionLost = isExecutionConnectionLost(error);
+	            const errorMessage = connectionLost
+	                ? buildExecutionConnectionLostMessage(executionId)
+	                : `Sense failed: ${error.message}`;
             return {
                 executor: {
                     status: "error",
-                    errorMessage: `感知失败: ${error.message}`,
+                    errorMessage,
                     lastError: {
                         severity: ErrorSeverity.FATAL,
-                        code: "SENSE_FAILED",
-                        message: `感知失败: ${error.message}`,
+                        code: connectionLost ? "EXECUTION_CONNECTION_LOST" : "SENSE_FAILED",
+                        message: errorMessage,
                     },
                     loopCount: state.executor.loopCount + 1,
                     executionMetrics: {
@@ -106,7 +109,7 @@ export function createSenseNode(
 }
 
 // ============================================================
-// GUI 通道处理（截图）
+
 // ============================================================
 
 async function handleGuiChannel(
@@ -122,7 +125,7 @@ async function handleGuiChannel(
     );
 
     if (!resp.success || !resp.screenshotUri) {
-        throw new Error("截图请求失败");
+	        throw new Error("Screenshot request failed");
     }
 
     return await takeScreenshotAndReturn(
@@ -135,7 +138,7 @@ async function handleGuiChannel(
 }
 
 // ============================================================
-// 截图辅助：生成签名 URL + 构造消息 + 返回状态
+
 // ============================================================
 
 async function takeScreenshotAndReturn(
@@ -152,7 +155,7 @@ async function takeScreenshotAndReturn(
         phash?: string;
     },
 ): Promise<Partial<AgentState>> {
-    // 如果已有截图响应则直接使用，否则请求截图
+
     const resp =
         existingResp ??
         (await (async () => {
@@ -162,22 +165,22 @@ async function takeScreenshotAndReturn(
                 `Screenshot request took ${Date.now() - startTime}ms for execution ${executionId}`,
             );
             if (!r.success || !r.screenshotUri) {
-                throw new Error("截图请求失败");
+	                throw new Error("Screenshot request failed");
             }
             return r;
         })());
 
-    // 将截图转为 base64 data URL
+
     const imgResult = await tosService.getImageAsBase64(resp.screenshotUri);
     if (!imgResult.success || !imgResult.base64) {
-        throw new Error("截图读取失败");
+        throw new Error("Failed to read screenshot");
     }
     const ext = resp.screenshotUri.endsWith(".webp") ? "webp" : resp.screenshotUri.endsWith(".jpg") ? "jpeg" : "png";
     const screenshotDataUrl = `data:image/${ext};base64,${imgResult.base64}`;
     logger.log(`Screenshot taken successfully: ${resp.screenshotUri}`);
 
-    // 计算 pHash（用于 anomaly-detect 截图相似度检测）
-    // 优先使用客户端计算的 pHash，fallback 到服务端从 buffer 计算
+
+
     let currentScreenshotHash = "";
     if (resp.phash && /^[01]{64}$/.test(resp.phash)) {
         currentScreenshotHash = resp.phash;
@@ -190,7 +193,7 @@ async function takeScreenshotAndReturn(
         }
     }
 
-    // 创建包含截图的 HumanMessage — 格式与 screenshot.node.ts 完全一致
+
     const screenshotMessage = new HumanMessage({
         content: [
             {
@@ -199,7 +202,7 @@ async function takeScreenshotAndReturn(
             },
             {
                 type: "text",
-                text: `当前正在运行的应用：${resp.currentAppName}`,
+                text: `Current running app: ${resp.currentAppName}`,
             },
         ],
         additional_kwargs: {

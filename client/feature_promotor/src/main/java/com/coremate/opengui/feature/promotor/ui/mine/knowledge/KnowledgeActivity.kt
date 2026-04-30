@@ -24,13 +24,13 @@ class KnowledgeActivity :
         ActivityResultContracts.GetContent()
     ) { uri ->
         uri?.let {
-            // 处理选中的文件
-            // TODO: 在这里处理文件上传逻辑
+
+
         }
     }
 
     override fun initView() {
-        binding.titlebar.setTitle("知识库").setLeftIconClickListener {
+        binding.titlebar.setTitle("Knowledge Base").setLeftIconClickListener {
             finish()
         }
     }
@@ -45,11 +45,11 @@ class KnowledgeActivity :
     }
 
     private fun checkStoragePermissionAndOpenFilePicker() {
-        // Android 13+ (API 33+) 不需要READ_EXTERNAL_STORAGE权限，直接打开文件选择器
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             openFilePicker()
         } else {
-            // Android 12及以下需要检查READ_EXTERNAL_STORAGE权限
+
             val permission = Manifest.permission.READ_EXTERNAL_STORAGE
             if (ContextCompat.checkSelfPermission(
                     this,

@@ -29,7 +29,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
-/** 与 Web NewUserGuidePage 一致的样式与动效：选择场景引导页 */
 class UserGuideActivity :
     BaseBindingActivity<ActivityUserGuideBinding>(ActivityUserGuideBinding::inflate) {
 
@@ -49,19 +48,19 @@ class UserGuideActivity :
     private data class LayoutPos(val x: Int, val y: Int, val rotate: Int)
 
     private val goals = listOf(
-        Goal("self-media", "自媒体起号", R.drawable.ic_guide_megaphone, "#059669", "#ECFDF5"),
+        Goal("self-media", "Creator Growth", R.drawable.ic_guide_megaphone, "#059669", "#ECFDF5"),
         Goal(
             "comment-convert",
-            "评论获客",
+            "Comment Lead Generation",
             R.drawable.ic_guide_message_circle,
             "#D97706",
             "#FFFBEB"
         ),
-        Goal("reputation", "口碑维护", R.drawable.ic_guide_star, "#7C3AED", "#F5F3FF"),
-        Goal("online-flyer", "在线传单", R.drawable.ic_guide_file_text, "#2563EB", "#EFF6FF"),
-        Goal("competitor", "竞品比价", R.drawable.ic_guide_search, "#DB2777", "#FDF2F8"),
-        Goal("network", "人脉激活", R.drawable.ic_guide_users, "#0891B2", "#ECFEFF"),
-        Goal("precise-acquire", "精准获客", R.drawable.ic_guide_target, "#DC2626", "#FEF2F2")
+        Goal("reputation", "Reputation Management", R.drawable.ic_guide_star, "#7C3AED", "#F5F3FF"),
+        Goal("online-flyer", "Online Flyer", R.drawable.ic_guide_file_text, "#2563EB", "#EFF6FF"),
+        Goal("competitor", "Competitor Price Check", R.drawable.ic_guide_search, "#DB2777", "#FDF2F8"),
+        Goal("network", "Network Activation", R.drawable.ic_guide_users, "#0891B2", "#ECFEFF"),
+        Goal("precise-acquire", "Targeted Lead Generation", R.drawable.ic_guide_target, "#DC2626", "#FEF2F2")
     )
 
     private val layoutPositions = listOf(
@@ -98,10 +97,9 @@ class UserGuideActivity :
     }
 
     /**
-     * 调用后端接口标记 onboarding 完成，然后跳转到主页
      */
     private fun completeOnboardingAndNavigate() {
-        // 先本地标记完成，防止 API 失败后重复进入引导流程
+
         MMKV.defaultMMKV().encode("finishOnboarding", true)
         coroutineScope.launch(Dispatchers.IO) {
             runCatching {
@@ -118,13 +116,13 @@ class UserGuideActivity :
     }
 
     override fun initView() {
-        // 清除「跳过」主题默认背景/前景，避免出现多余背景色
+
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             binding.btnSkip.foreground = null
         }
 
-        // 初始状态：header 与 bottom 先隐藏，用于入场动画
+
         binding.headerLayout.alpha = 0f
         binding.bottomSection.alpha = 0f
         binding.bottomSection.translationY = AMScreenUtils.dp2px(20f).toFloat()
@@ -136,7 +134,7 @@ class UserGuideActivity :
             .setInterpolator(AccelerateDecelerateInterpolator())
             .start()
 
-        // 等 pills 容器测量完成后添加 pill 并执行 dropIn
+
         binding.pillsContainer.post {
             addPills()
             startPillsDropIn()
@@ -299,7 +297,6 @@ class UserGuideActivity :
         binding.btnContinue.isEnabled = selectedIds.isNotEmpty()
     }
 
-    /** dropIn: 0.6s cubic-bezier(0.22, 1, 0.36, 1)，与 Web 一致 */
     private fun startPillsDropIn() {
         val density = resources.displayMetrics.density
         val dropInInterpolator = PathInterpolator(0.22f, 1f, 0.36f, 1f)

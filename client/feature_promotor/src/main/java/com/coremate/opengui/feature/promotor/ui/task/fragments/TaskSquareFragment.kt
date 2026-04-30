@@ -43,7 +43,6 @@ class TaskSquareFragment : BottomSheetDialogFragment(), TaskSheetListAdapterList
     private var taskListAdapter: TaskSheetListAdapter? = null
     private lateinit var binding: FragmentTaskSquareBinding
     private lateinit var presenter: TaskSquarePresenter
-    /** 全部任务数据，用于搜索过滤后恢复 */
     private var allTaskList: List<TaskTemplatesResp> = emptyList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -72,7 +71,7 @@ class TaskSquareFragment : BottomSheetDialogFragment(), TaskSheetListAdapterList
             }
         }
 
-        // 搜索：按标题模糊匹配
+
         binding.etSearchContent.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
@@ -96,14 +95,14 @@ class TaskSquareFragment : BottomSheetDialogFragment(), TaskSheetListAdapterList
             }
         }
 
-        // 清除：清空输入并恢复全部列表
+
         binding.imgSearchClear.setOnClickListener {
             binding.etSearchContent.setText("")
             binding.imgSearchClear.visibility = View.GONE
             taskListAdapter?.setData(allTaskList)
         }
 
-//        任务分类
+//        Task categories
         taskCategoryListAdapter = TaskSheetCategoryListAdapter()
         binding.rvTaskCategoryList.adapter = taskCategoryListAdapter
         binding.rvTaskCategoryList.layoutManager =
@@ -120,7 +119,7 @@ class TaskSquareFragment : BottomSheetDialogFragment(), TaskSheetListAdapterList
             }
         })
 
-        //        任务列表
+
         binding.rvTaskList.isNestedScrollingEnabled = false
         taskListAdapter = TaskSheetListAdapter(fragmentManager)
         taskListAdapter?.listener = this
@@ -139,16 +138,16 @@ class TaskSquareFragment : BottomSheetDialogFragment(), TaskSheetListAdapterList
             }
         })
 
-        // 处理 RecyclerView 与 BottomSheet 的滑动冲突
+
         binding.rvTaskList.setOnTouchListener { v, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
-                    // 禁用 BottomSheet 的滑动
+
                     v.parent?.requestDisallowInterceptTouchEvent(true)
                 }
 
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    // 允许 BottomSheet 继续处理触摸事件
+
                     v.parent?.requestDisallowInterceptTouchEvent(false)
                 }
             }
@@ -203,7 +202,7 @@ class TaskSquareFragment : BottomSheetDialogFragment(), TaskSheetListAdapterList
                     val behavior = BottomSheetBehavior.from<View?>(bottomSheet)
                     behavior.skipCollapsed = true
                     behavior.setState(BottomSheetBehavior.STATE_EXPANDED)
-                    // 禁止通过手指下滑关闭对话框
+
                     behavior.isDraggable = false
                 }
             }
@@ -222,7 +221,6 @@ class TaskSquareFragment : BottomSheetDialogFragment(), TaskSheetListAdapterList
         }
     }
 
-    /** 按标题模糊匹配并更新列表 */
     private fun applySearchFilter(query: String) {
         if (query.isEmpty()) {
             taskListAdapter?.setData(allTaskList)
@@ -247,10 +245,10 @@ class TaskSquareFragment : BottomSheetDialogFragment(), TaskSheetListAdapterList
 
     fun initTaskData() {
         val data: MutableList<TaskCategoryBean> = mutableListOf()
-        val bean3 = TaskCategoryBean(true, R.drawable.icon_reply, "评论回复")
-        val bean4 = TaskCategoryBean(false, R.drawable.icon_messages, "消息互动")
-        val bean1 = TaskCategoryBean(false, R.drawable.icon_pic, "发布内容")
-        val bean2 = TaskCategoryBean(false, R.drawable.icon_film, "行业调研")
+        val bean3 = TaskCategoryBean(true, R.drawable.icon_reply, "Comment Replies")
+        val bean4 = TaskCategoryBean(false, R.drawable.icon_messages, "Message Engagement")
+        val bean1 = TaskCategoryBean(false, R.drawable.icon_pic, "Publish Content")
+        val bean2 = TaskCategoryBean(false, R.drawable.icon_film, "Industry Research")
         data.add(bean3)
         data.add(bean4)
         data.add(bean1)

@@ -21,7 +21,7 @@ import {
 		PrismaModule,
 		LogModule,
 		BullModule.registerQueue({ name: PENDING_TIMEOUT_QUEUE }),
-		forwardRef(() => GraphAgentModule), // GraphRunnerService 提供者
+		forwardRef(() => GraphAgentModule),
 		CreditsModule,
 	],
 	controllers: [

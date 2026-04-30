@@ -14,7 +14,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:searchActionInPage="true"
-        app:title="我的任务" />
+        app:title="My Tasks" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_task_list"

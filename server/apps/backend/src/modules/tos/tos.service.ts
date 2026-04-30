@@ -20,7 +20,7 @@ export interface GetImageResult {
 const UPLOADS_DIR = process.env.LOCAL_UPLOADS_DIR || "./uploads";
 
 /**
- * Local filesystem storage service (open-source stub for TosService).
+ * Local filesystem storage service (source-available stub for TosService).
  * Replaces Volcengine TOS + Aliyun OSS with local file storage.
  */
 @Injectable()

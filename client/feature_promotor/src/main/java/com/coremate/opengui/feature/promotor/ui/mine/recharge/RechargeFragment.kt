@@ -22,8 +22,6 @@ import com.coremate.opengui.feature.promotor.databinding.FragmentRechargeBinding
 import com.coremate.opengui.feature.promotor.ui.mine.recharge.adapter.RechargePlanAdapter
 
 /**
- * 订阅套餐弹窗，与 Web 端 BuyPointsSheet 一致。
- * 套餐列表由 RecyclerView + Adapter 数据驱动，支持后续接入后端返回数据。
  */
 class RechargeFragment : BottomSheetDialogFragment() {
 
@@ -57,7 +55,7 @@ class RechargeFragment : BottomSheetDialogFragment() {
             if (!isProcessing) dismiss()
         }
 
-        binding.tvCurrentPoints.text = "${currentPoints}积分"
+        binding.tvCurrentPoints.text = "${currentPoints}Credits"
 
         planAdapter = RechargePlanAdapter(
             plans = emptyList(),
@@ -77,7 +75,7 @@ class RechargeFragment : BottomSheetDialogFragment() {
             if (isProcessing) return@setOnClickListener
             val selected = planAdapter?.getSelectedPlan() ?: return@setOnClickListener
             isProcessing = true
-            binding.btnSubscribe.text = "处理中..."
+            binding.btnSubscribe.text = "Processing..."
             binding.btnSubscribe.isEnabled = false
             binding.btnSubscribe.postDelayed({
                 isProcessing = false
@@ -92,15 +90,14 @@ class RechargeFragment : BottomSheetDialogFragment() {
         applyAgreementLinkColor()
     }
 
-    /** “每分钟消耗约2积分” 用黑色 */
     private fun applyPointsHintBlack() {
         val root = binding.root as? android.view.ViewGroup ?: return
         if (root.childCount <= 3) return
         val pointsLayout = root.getChildAt(3) as? android.view.ViewGroup ?: return
         if (pointsLayout.childCount <= 1) return
         val tv = pointsLayout.getChildAt(1) as? TextView ?: return
-        val full = "每分钟消耗约2积分，实际消耗取决于任务复杂度。积分用于 AI 计算和云资源调用，当月有效。"
-        val prefix = "每分钟消耗约2积分"
+        val full = "Uses about 2 credits per minute. Actual usage depends on task complexity. Credits cover AI compute and cloud resources and are valid for the current month."
+        val prefix = "Uses about 2 credits per minute"
         val ssb = SpannableStringBuilder(full)
         ssb.setSpan(
             ForegroundColorSpan(Color.BLACK),
@@ -111,14 +108,13 @@ class RechargeFragment : BottomSheetDialogFragment() {
         tv.text = ssb
     }
 
-    /** 《用户协议》《隐私政策》颜色 #2E58FF */
     private fun applyAgreementLinkColor() {
 
         val tv = binding.tvProtocol
-        val full = "订阅即表示同意《用户协议》和《隐私政策》"
+        val full = "By subscribing, you agree to the User Agreement and Privacy Policy."
         val blue = 0xFF2E58FF.toInt()
-        val s1 = "《用户协议》"
-        val s2 = "《隐私政策》"
+        val s1 = "User Agreement"
+        val s2 = "Privacy Policy"
         val ssb = SpannableStringBuilder(full)
         val i1 = full.indexOf(s1)
         val i2 = full.indexOf(s2)
@@ -129,11 +125,10 @@ class RechargeFragment : BottomSheetDialogFragment() {
 
     private fun updateSubscribeButtonText() {
         val selected = planAdapter?.getSelectedPlan()
-        binding.btnSubscribe.text = if (selected != null) "¥${selected.price}/月 立即订阅" else "立即订阅"
+        binding.btnSubscribe.text = if (selected != null) "¥${selected.price}/month Subscribe Now" else "Subscribe Now"
     }
 
     /**
-     * 设置套餐列表，可由后端返回后调用。未调用时使用默认写死数据。
      */
     fun setPlans(plans: List<SubscriptionPlan>) {
         planAdapter?.setData(plans)
@@ -192,14 +187,13 @@ class RechargeFragment : BottomSheetDialogFragment() {
         }
 
         private val DEFAULT_PLANS = listOf(
-            SubscriptionPlan("plan_trial", "体验版", 29, 600, 0, false, "适合新用户体验"),
-            SubscriptionPlan("plan_standard", "标准版", 199, 4500, 8, true, "日常使用推荐"),
-            SubscriptionPlan("plan_premium", "高级版", 599, 15000, 17, false, "重度用户首选")
+            SubscriptionPlan("plan_trial", "Trial", 29, 600, 0, false, "Good for new users"),
+            SubscriptionPlan("plan_standard", "Standard", 199, 4500, 8, true, "Recommended for daily use"),
+            SubscriptionPlan("plan_premium", "Premium", 599, 15000, 17, false, "Best for heavy users")
         )
     }
 }
 
-/** 与 Web 端 SubscriptionPlan 对应的数据，可后续与后端 DTO 对齐 */
 data class SubscriptionPlan(
     val id: String,
     val name: String,

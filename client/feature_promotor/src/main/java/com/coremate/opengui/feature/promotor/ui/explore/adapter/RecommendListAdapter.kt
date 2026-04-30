@@ -50,7 +50,7 @@ class RecommendListAdapter() : RecyclerView.Adapter<RecommendListAdapter.Recomme
         val tvUseCount = itemView.findViewById<TextView>(R.id.template_usage)
         fun bindData(data: TaskTemplatesResp) {
             tvTitle.text = data.taskName
-            tvUseCount.text = "${data.totalExecutions + 175}次使用"
+            tvUseCount.text = "${data.totalExecutions + 175} uses"
 
         }
     }

@@ -11,11 +11,7 @@ import kotlinx.coroutines.flow.*
 import org.json.JSONObject
 
 /**
- * 待命 WebSocket 连接管理器
  *
- * App 启动后自动连接 Server /standby namespace，等待远程任务派发。
- * 收到 standby:dispatch 后回调 onDispatch，由调用方创建 ExecutionSocketManager 执行任务。
- * 执行完成后调用 reconnect() 重新进入待命。
  */
 class StandbySocketManager(
     private val appContext: Context,
@@ -30,7 +26,6 @@ class StandbySocketManager(
     private val _connectionState = MutableStateFlow(ConnectionState.DISCONNECTED)
     val connectionState: StateFlow<ConnectionState> = _connectionState.asStateFlow()
 
-    /** 收到任务派发事件 */
     data class DispatchPayload(
         val executionId: Int,
         val taskId: Int,
@@ -54,7 +49,7 @@ class StandbySocketManager(
             val opts = IO.Options().apply {
                 reconnection = true
                 transports = arrayOf("websocket", "polling")
-                reconnectionAttempts = Int.MAX_VALUE // 无限重连
+                reconnectionAttempts = Int.MAX_VALUE
                 reconnectionDelay = 1000L
                 reconnectionDelayMax = 30000L
                 timeout = 20000L
@@ -62,7 +57,7 @@ class StandbySocketManager(
                     "deviceId" to deviceId
                 )
             }
-            // 连接 /standby namespace
+
             socket = IO.socket("$serverUrl/standby", opts)
             setupListeners()
             _connectionState.value = ConnectionState.CONNECTING
@@ -85,7 +80,6 @@ class StandbySocketManager(
     }
 
     /**
-     * 任务执行完成后重新进入待命
      */
     fun reconnect() {
         disconnect()
@@ -97,7 +91,7 @@ class StandbySocketManager(
             _connectionState.value = ConnectionState.CONNECTED
             LogManager.saveLog(appContext, TAG, "Connected to standby, socketId=${socket?.id()}", -1)
 
-            // 注册设备
+
             socket?.emit(
                 SocketEvents.STANDBY_REGISTER,
                 JSONObject().apply {
@@ -106,7 +100,7 @@ class StandbySocketManager(
                 }
             )
 
-            // 启动心跳
+
             startHeartbeat()
         }
 
@@ -123,7 +117,7 @@ class StandbySocketManager(
             LogManager.saveLog(appContext, TAG, "Standby connect error: $error", -1)
         }
 
-        // 收到任务派发
+
         socket?.on(SocketEvents.STANDBY_DISPATCH) { args ->
             val data = args.getOrNull(0) as? JSONObject ?: return@on
             val payload = DispatchPayload(

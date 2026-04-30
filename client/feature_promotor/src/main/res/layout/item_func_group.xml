@@ -41,7 +41,7 @@
                     android:layout_marginLeft="8dp"
                     android:layout_marginBottom="1dp"
                     android:includeFontPadding="false"
-                    android:text="自定义功能"
+                    android:text="Custom Function"
                     android:textColor="@android:color/black"
                     android:textSize="16sp"
                     android:textStyle="bold" />

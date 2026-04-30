@@ -36,7 +36,7 @@ export class TaskService {
     constructor(private readonly prismaService: PrismaService) {}
 
     /**
-     * 创建任务
+     * Create task
      */
     async createTask(
         userId: number,
@@ -60,7 +60,6 @@ export class TaskService {
     }
 
     /**
-     * 获取任务列表（分页）
      */
     async getTaskList(
         userId: number,
@@ -70,7 +69,7 @@ export class TaskService {
         const pageSize = query.pageSize || 20
         const skip = (page - 1) * pageSize
 
-        // 构建查询条件
+
         const where: any = {
             user_id: userId,
             is_deleted: false,
@@ -98,7 +97,7 @@ export class TaskService {
             ]
         }
 
-        // 并行查询总数和数据
+
         const [total, tasks] = await Promise.all([
             this.prismaService.user_task.count({ where }),
             this.prismaService.user_task.findMany({
@@ -113,7 +112,7 @@ export class TaskService {
             }),
         ])
 
-        // 获取所有任务ID，查询最近的执行记录
+
         const taskIds = tasks.map((t) => t.id)
         const lastExecutions = await this.getLastExecutionsForTasks(taskIds)
 
@@ -133,7 +132,7 @@ export class TaskService {
     }
 
     /**
-     * 获取任务详情
+     * Get task details
      */
     async getTaskById(
         taskId: number,
@@ -154,7 +153,7 @@ export class TaskService {
             throw new ForbiddenException('No permission to access this task')
         }
 
-        // 单独查询最近的执行记录
+
         const lastExecutionRecord =
             await this.prismaService.task_execution.findFirst({
                 where: {
@@ -173,7 +172,7 @@ export class TaskService {
     }
 
     /**
-     * 获取模板任务列表
+     * Get template task list
      */
     async getTemplateTasks(): Promise<TaskResponseDto[]> {
         const tasks = await this.prismaService.user_task.findMany({
@@ -190,14 +189,14 @@ export class TaskService {
     }
 
     /**
-     * 更新任务
+     * Update task
      */
     async updateTask(
         taskId: number,
         userId: number,
         dto: UpdateTaskDto,
     ): Promise<TaskResponseDto> {
-        // 验证任务存在且属于用户
+
         const existingTask = await this.prismaService.user_task.findFirst({
             where: {
                 id: taskId,
@@ -241,7 +240,6 @@ export class TaskService {
     }
 
     /**
-     * 软删除任务
      */
     async deleteTask(taskId: number, userId: number): Promise<void> {
         const existingTask = await this.prismaService.user_task.findFirst({
@@ -271,7 +269,6 @@ export class TaskService {
     }
 
     /**
-     * 更新任务统计（执行完成后调用）
      */
     async updateTaskStats(taskId: number, success: boolean): Promise<void> {
         const updateData: any = {
@@ -296,12 +293,10 @@ export class TaskService {
     }
 
     /**
-     * 同步任务统计（根据 task_execution 表重新计算）
-     * 用于修复因竞态条件导致的统计不准确问题
      */
     async syncTaskStats(taskId: number): Promise<void> {
-        // 从 task_execution 表统计实际的执行数据
-        // 只统计状态为 FINISHED 的执行记录
+
+
         const stats = await this.prismaService.task_execution.groupBy({
             by: ['execution_result'],
             where: {
@@ -320,7 +315,7 @@ export class TaskService {
             const count = stat._count
             totalExecutions += count
 
-            // SUCCEED 和 CANCELLED 都算成功（与 completeExecution 逻辑一致）
+
             if (
                 stat.execution_result === ExecutionResult.SUCCEED ||
                 stat.execution_result === ExecutionResult.CANCELLED
@@ -347,7 +342,6 @@ export class TaskService {
     }
 
     /**
-     * 批量同步所有任务的统计数据
      */
     async syncAllTaskStats(): Promise<{ synced: number }> {
         const tasks = await this.prismaService.user_task.findMany({
@@ -364,7 +358,7 @@ export class TaskService {
     }
 
     /**
-     * 置顶/取消置顶任务
+     * Pin or unpin task
      */
     async pinTask(taskId: number, userId: number): Promise<TaskResponseDto> {
         const existingTask = await this.prismaService.user_task.findFirst({
@@ -400,7 +394,6 @@ export class TaskService {
     }
 
     /**
-     * 获取任务实体（供内部使用）
      */
     async getTaskEntity(taskId: number): Promise<TaskEntity | null> {
         const task = await this.prismaService.user_task.findFirst({
@@ -418,7 +411,6 @@ export class TaskService {
     }
 
     /**
-     * 映射实体到响应DTO
      */
     private mapEntityToResponse(
         entity: TaskEntity,
@@ -445,7 +437,6 @@ export class TaskService {
     }
 
     /**
-     * 映射Prisma执行记录到最近执行信息
      */
     private mapToLastExecutionInfo(execution: any): LastExecutionInfo {
         return {
@@ -457,7 +448,6 @@ export class TaskService {
     }
 
     /**
-     * 批量获取任务的最近执行记录
      */
     private async getLastExecutionsForTasks(
         taskIds: number[],
@@ -466,7 +456,7 @@ export class TaskService {
             return new Map()
         }
 
-        // 使用原生SQL获取每个task_id的最新执行记录
+
         const executions = await this.prismaService.$queryRaw<
             Array<{
                 id: number
@@ -496,15 +486,13 @@ export class TaskService {
         return result
     }
 
-    // ============= 模板任务管理方法 =============
+
 
     /**
-     * 系统用户 ID，用于模板任务
      */
     private readonly SYSTEM_USER_ID = 0
 
     /**
-     * 创建模板任务
      */
     async createTemplateTask(
         dto: CreateTemplateTaskDto,
@@ -528,7 +516,6 @@ export class TaskService {
     }
 
     /**
-     * 获取模板任务列表（分页）
      */
     async getTemplateTaskList(
         query: TemplateTaskQueryDto,
@@ -537,7 +524,7 @@ export class TaskService {
         const pageSize = query.pageSize || 20
         const skip = (page - 1) * pageSize
 
-        // 构建查询条件
+
         const where: any = {
             is_template: true,
             is_deleted: false,
@@ -565,7 +552,7 @@ export class TaskService {
             ]
         }
 
-        // 并行查询总数和数据
+
         const [total, tasks] = await Promise.all([
             this.prismaService.user_task.count({ where }),
             this.prismaService.user_task.findMany({
@@ -590,7 +577,6 @@ export class TaskService {
     }
 
     /**
-     * 获取单个模板任务详情
      */
     async getTemplateTaskById(taskId: number): Promise<TaskResponseDto> {
         const task = await this.prismaService.user_task.findFirst({
@@ -609,13 +595,12 @@ export class TaskService {
     }
 
     /**
-     * 更新模板任务
      */
     async updateTemplateTask(
         taskId: number,
         dto: UpdateTemplateTaskDto,
     ): Promise<TaskResponseDto> {
-        // 验证模板任务存在
+
         const existingTask = await this.prismaService.user_task.findFirst({
             where: {
                 id: taskId,
@@ -656,7 +641,6 @@ export class TaskService {
     }
 
     /**
-     * 删除模板任务（软删除）
      */
     async deleteTemplateTask(taskId: number): Promise<void> {
         const existingTask = await this.prismaService.user_task.findFirst({

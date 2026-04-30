@@ -626,7 +626,7 @@ model app_config {
   @@index([is_active], map: "idx_app_config_active")
 }
 
-// ========== 渠道管理 ==========
+// ========== Channel Management ==========
 
 enum channel_status {
   ACTIVE
@@ -695,7 +695,7 @@ model admin_credit_operation {
   @@index([created_at])
 }
 
-// ========== IM Channel 通知模块 ==========
+// ========== IM Channel Notification Module ==========
 
 enum im_channel_status {
   CONNECTED

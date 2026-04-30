@@ -104,11 +104,11 @@ class TaskEditDescFragment : BottomSheetDialogFragment() {
             isExpanded = !isExpanded
             
             if (isExpanded) {
-                // 展开状态：切换到 ADJUST_PAN 模式，键盘不推动布局
+
                 setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN)
                 binding.ivTrans.setImageResource(R.drawable.ic_no_expend)
                 
-                // 动画化 ll_root 的高度
+
                 animateRootHeight(
                     targetHeight = AMScreenUtils.screenHeight() - ImmersionBar.getStatusBarHeight(
                         this
@@ -116,11 +116,11 @@ class TaskEditDescFragment : BottomSheetDialogFragment() {
                     targetMargin = 0
                 )
             } else {
-                // 收缩状态：切换到 ADJUST_RESIZE 模式，键盘推动布局
+
                 setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
                 binding.ivTrans.setImageResource(R.drawable.ic_expend)
                 
-                // 动画化 ll_root 的高度
+
                 animateRootHeight(
                     targetHeight = (resources.displayMetrics.heightPixels * 0.4).toInt(),
                     targetMargin = AMScreenUtils.dp2px(50f)
@@ -132,7 +132,7 @@ class TaskEditDescFragment : BottomSheetDialogFragment() {
             if (TextUtils.isEmpty(binding.fullInputTask.text)) {
                 Toast.makeText(
                     context,
-                    "描述不能为空",
+                    "Description cannot be empty",
                     Toast.LENGTH_SHORT
                 )
                 return@setOnClickListener
@@ -158,13 +158,13 @@ class TaskEditDescFragment : BottomSheetDialogFragment() {
         if (binding.fullInputTask.text.toString().isNotEmpty() || isForceClose) {
             KeyboardUtil.closeKeyboard(binding.fullInputTask)
             val alertDialog = AlertDialog.Builder(requireContext())
-                .setTitle("放弃修改?")
-                .setMessage("当前内容尚未保存，确定要放弃吗？")
-                .setPositiveButton("确定") { dialog, _ ->
+                .setTitle("Discard changes?")
+                .setMessage("Current content is not saved. Discard changes?")
+                .setPositiveButton("Confirm") { dialog, _ ->
                     dialog.dismiss()
                     dismiss()
                 }
-                .setNegativeButton("取消") { dialog, _ ->
+                .setNegativeButton("Cancel") { dialog, _ ->
                     dialog.dismiss()
                 }
                 .create()
@@ -175,8 +175,6 @@ class TaskEditDescFragment : BottomSheetDialogFragment() {
 
 
     /**
-     * 动态设置软键盘模式
-     * @param mode 软键盘模式（ADJUST_PAN 或 ADJUST_RESIZE）
      */
     private fun setSoftInputMode(mode: Int) {
         dialog?.window?.setSoftInputMode(
@@ -185,41 +183,38 @@ class TaskEditDescFragment : BottomSheetDialogFragment() {
     }
     
     /**
-     * 动画化 ll_root 高度和输入框 margin 的变化
-     * @param targetHeight 目标高度（具体数值）
-     * @param targetMargin 输入框目标底部 margin
      */
     private fun animateRootHeight(
         targetHeight: Int,
         targetMargin: Int
     ) {
         val rootParams = binding.llRoot.layoutParams as LinearLayout.LayoutParams
-        val startHeight = binding.llRoot.height // 使用实际渲染高度
+        val startHeight = binding.llRoot.height
         val inputParams = binding.fullInputTask.layoutParams as FrameLayout.LayoutParams
         val startMargin = inputParams.bottomMargin
 
         val animator = ValueAnimator.ofFloat(0f, 1f).apply {
-            duration = 300 // 动画时长 300ms
-            interpolator = DecelerateInterpolator() // 减速插值器，让动画更自然
+            duration = 300
+            interpolator = DecelerateInterpolator()
 
             addUpdateListener { animation ->
                 val fraction = animation.animatedValue as Float
-                // 平滑过渡 ll_root 高度
+
                 val currentHeight = (startHeight + (targetHeight - startHeight) * fraction).toInt()
                 rootParams.height = currentHeight
                 binding.llRoot.layoutParams = rootParams
-                // 平滑过渡输入框 margin
+
                 val currentMargin = (startMargin + (targetMargin - startMargin) * fraction).toInt()
                 inputParams.bottomMargin = currentMargin
                 binding.fullInputTask.layoutParams = inputParams
             }
 
-            // 动画结束后的回调
+
             addListener(object : Animator.AnimatorListener {
                 override fun onAnimationStart(animation: Animator) {}
 
                 override fun onAnimationEnd(animation: Animator) {
-                    // 设置最终高度
+
                     rootParams.height = targetHeight
                     binding.llRoot.layoutParams = rootParams
 
@@ -241,7 +236,7 @@ class TaskEditDescFragment : BottomSheetDialogFragment() {
         val bottomSheet =
             dialog?.findViewById<FrameLayout>(com.google.android.material.R.id.design_bottom_sheet)
         if (bottomSheet != null) {
-            // BottomSheet 保持全屏高度
+
             val params = bottomSheet.layoutParams as CoordinatorLayout.LayoutParams
             params.width = FrameLayout.LayoutParams.MATCH_PARENT
             params.height = FrameLayout.LayoutParams.MATCH_PARENT
@@ -252,7 +247,7 @@ class TaskEditDescFragment : BottomSheetDialogFragment() {
             }
         }
         
-        // 设置 ll_root 的初始高度为 40%
+
         val rootParams = binding.llRoot.layoutParams as LinearLayout.LayoutParams
         rootParams.height = (resources.displayMetrics.heightPixels * 0.4).toInt()
         binding.llRoot.layoutParams = rootParams
@@ -260,7 +255,7 @@ class TaskEditDescFragment : BottomSheetDialogFragment() {
         if (dialog != null) {
             val window = dialog!!.window
             if (window != null) {
-                // 初始状态是收缩的，使用 ADJUST_RESIZE 让键盘推动布局
+
                 window.setSoftInputMode(
                     WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or
                             WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN
@@ -284,7 +279,7 @@ class TaskEditDescFragment : BottomSheetDialogFragment() {
                     val behavior = BottomSheetBehavior.from<View?>(bottomSheet)
                     behavior.skipCollapsed = true
                     behavior.setState(BottomSheetBehavior.STATE_EXPANDED)
-                    // 禁止通过手指下滑关闭对话框
+
                     behavior.isDraggable = false
                 }
             }

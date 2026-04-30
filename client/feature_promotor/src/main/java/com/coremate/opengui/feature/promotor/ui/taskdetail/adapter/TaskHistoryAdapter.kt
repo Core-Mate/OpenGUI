@@ -53,7 +53,7 @@ class TaskHistoryAdapter(private val fragmentManager: FragmentManager? = null) :
         private val tvContent: TextView = itemView.findViewById(R.id.tv_content)
 
         fun bindData(data: TaskHistoryRespItem, listener: TaskHistoryAdapterListener?) {
-            tvTaskDoneLabel.text = "任务完成"
+            tvTaskDoneLabel.text = "Task complete"
             val datePart = TimeUtils.getHistoryDatePart(data.startedAt)
             val duration = TimeUtils.getHistoryDuration(data.startedAt, data.finishedAt)
             tvTime.text = if (datePart.isNotEmpty() && duration.isNotEmpty()) {
@@ -64,7 +64,7 @@ class TaskHistoryAdapter(private val fragmentManager: FragmentManager? = null) :
                 ""
             }
 
-            tvContent.text = if ("SUCCEED" == data.executionResult) "执行成功"  else if ("CANCELLED" == data.executionResult) "取消执行" else "执行失败"
+            tvContent.text = if ("SUCCEED" == data.executionResult) "Execution Succeeded"  else if ("CANCELLED" == data.executionResult) "Execution Cancelled" else "Execution Failed"
 
             llRoot.setOnClickListener {
                 listener?.onClickItem(data, tvTime.text.toString())

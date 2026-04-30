@@ -14,7 +14,7 @@ public class LineHeightSpanImpl implements LineHeightSpan {
 
     @Override
     public void chooseHeight(CharSequence text, int start, int end, int spanstartv, int v, Paint.FontMetricsInt fm) {
-        // 计算新的行高
+
         final int originHeight = fm.descent - fm.ascent;
         if (originHeight <= 0) return;
 

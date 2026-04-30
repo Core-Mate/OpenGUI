@@ -50,7 +50,7 @@
                 android:id="@+id/title_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="欢迎回来"
+                android:text="Welcome back"
                 android:textColor="#111827"
                 android:textSize="36sp"
                 android:textStyle="bold" />
@@ -62,7 +62,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:layout_marginBottom="40dp"
-                android:text="登录您的账号"
+                android:text="Log in to your account"
                 android:textColor="#9CA3AF"
                 android:textSize="15sp" />
 
@@ -103,7 +103,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:background="@android:color/transparent"
-                    android:hint="手机号"
+                    android:hint="Phone number"
                     android:inputType="phone"
                     android:paddingStart="0dp"
                     android:paddingTop="8dp"
@@ -119,7 +119,7 @@
                 android:layout_height="1dp"
                 android:background="#E5E7EB" />
 
-            <!-- Invite Code Input - 仅在注册模式显示 -->
+
             <LinearLayout
                 android:id="@+id/invite_code_container"
                 android:layout_width="match_parent"
@@ -133,7 +133,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="@null"
-                    android:hint="请输入邀请码"
+                    android:hint="Enter invitation code"
                     android:inputType="text"
                     android:paddingStart="0dp"
                     android:paddingTop="8dp"
@@ -158,7 +158,7 @@
                 android:background="@drawable/button_submit_bg"
                 android:gravity="center"
                 android:stateListAnimator="@null"
-                android:text="发送验证码"
+                android:text="Send code"
                 android:textColor="#FFFFFF"
                 android:textSize="17sp"
                 android:textStyle="bold" />
@@ -176,7 +176,7 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:background="@android:color/transparent"
-                    android:text="新用户注册"
+                    android:text="Create account"
                     android:textColor="@color/color_primary"
                     android:textSize="15sp" />
             </FrameLayout>

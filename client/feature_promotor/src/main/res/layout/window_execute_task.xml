@@ -65,7 +65,7 @@
                     android:ellipsize="end"
                     android:maxLines="1"
                     android:textColor="#000000"
-                    tools:text="任务执行中任务执行中任务执行中任务执行中任务执行中任务执行中任务执行中..." />
+                    tools:text="Task runningTask runningTask runningTask runningTask runningTask runningTask running..." />
 
                 <LinearLayout
                     android:layout_width="wrap_content"
@@ -113,7 +113,7 @@
                     android:layout_gravity="center_vertical"
                     android:layout_marginStart="16dp"
                     android:layout_weight="1"
-                    android:text="是否确认结束任务？"
+                    android:text="Stop this task?"
                     android:textColor="#000000" />
 
                 <LinearLayout

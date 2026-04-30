@@ -60,7 +60,7 @@ object MessageController {
     private var messageList = ArrayList<UIMessageBean>()
     private const val PAGE_SIZE = 20
     private val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-    var messagePageFlow = MutableStateFlow(1)//1：消息列表页，-1：空消息页
+    var messagePageFlow = MutableStateFlow(1)
     private var actionHandler: ActionHandler? = null
 
     fun getActionHandler(): ActionHandler? = actionHandler
@@ -79,7 +79,7 @@ object MessageController {
     const val SSE_TYPE_TEXT_END = 7
     const val SSE_TYPE_FINISH = 9
 
-    //更新消息状态
+
     const val UPDATE_MSG_FINAL_STATE = 11
     const val SSE_TYPE_TOOL_CALL = 12
     private var context: Context? = null
@@ -131,7 +131,7 @@ object MessageController {
                         LogManager.saveLog(
                             context ?: return@collect,
                             TAG,
-                            "$TAG | agentEventFlow | 非当前消息(expected=${TaskCenter.executionId}, got=$taskExecutionId)，return",
+                            "$TAG | agentEventFlow | Not the current message(expected=${TaskCenter.executionId}, got=$taskExecutionId)，return",
                             TaskCenter.executionId ?: -1
                         )
                         return@collect
@@ -274,7 +274,7 @@ object MessageController {
                                     val pressHomeAction = PressHomeAction()
                                     pressHomeAction.perform()
                                     AIFloatWindowManager.getExecuteTaskWindow()
-                                        ?.updateContent("任务执行中", "call_gui_agent")
+                                        ?.updateContent("Task running", "call_gui_agent")
                                     AIFloatWindowManager.getExecuteTaskWindow()
                                         ?.reset("call_gui_agent")
                                     AIFloatWindowManager.getExecuteTaskWindow()
@@ -308,14 +308,14 @@ object MessageController {
                                         }
 
 //                                        "plan_generator" -> {
-//                                            //plan finish 之后，检查一下socket连接
+
 //                                            SocketManager.connect("plan_generator - finish")
 //                                            val pressHomeAction = PressHomeAction()
 //                                            pressHomeAction.perform()
 //                                            AIFloatWindowManager.getExecuteTaskWindow()
 //                                                ?.setCurrentTaskState(TaskState.PLAYING)
 //                                            AIFloatWindowManager.getSlideExpandWindow()
-//                                                ?.updateContent("任务执行中")
+//                                                ?.updateContent("Task running")
 //                                            TaskCenter.currentTaskState =
 //                                                TaskCenter.TaskState.EXECUTE
 //                                            AIFloatWindowManager.getExecuteTaskWindow()
@@ -326,7 +326,7 @@ object MessageController {
                                             AIFloatWindowManager.getExecuteTaskWindow()
                                                 ?.setCurrentTaskState(TaskState.PLAYING)
                                             AIFloatWindowManager.getSlideExpandWindow()
-                                                ?.updateContent("任务执行中")
+                                                ?.updateContent("Task running")
                                             TaskCenter.currentTaskState =
                                                 TaskCenter.TaskState.EXECUTE
 //                                            AIFloatWindowManager.getExecuteTaskWindow()
@@ -435,7 +435,7 @@ object MessageController {
     }
 
     fun sendMessage(tag: String) {
-        // 防重入：快速双击不会创建两个 execution
+
         if (!isSending.compareAndSet(false, true)) {
             Log.d(TAG, "sendMessage: already sending, skipping duplicate call")
             return
@@ -449,7 +449,7 @@ object MessageController {
                     LogManager.saveLog(
                         ctx,
                         "MessageController",
-                        "MessageController | sendMessage | executeTask 未发起：TaskCenter.taskId == null",
+                        "MessageController | sendMessage | executeTask was not started: TaskCenter.taskId == null",
                         TaskCenter.executionId ?: -1
                     )
                     cleanupSocket()
@@ -459,7 +459,7 @@ object MessageController {
                 LogManager.saveLog(
                     ctx,
                     "MessageController",
-                    "MessageController | sendMessage | 消息发送 |id = ${TaskCenter.taskId} | prompt = ${TaskCenter.taskTitle}",
+                    "MessageController | sendMessage | message sent |id = ${TaskCenter.taskId} | prompt = ${TaskCenter.taskTitle}",
                     TaskCenter.executionId ?: -1
                 )
                 runCatching {
@@ -483,7 +483,7 @@ object MessageController {
                         LogManager.saveLog(
                             ctx,
                             "MessageController",
-                            "MessageController | sendMessage | ${TaskCenter.taskTitle} 发送成功 |executionId = ${it?.body()?.executionId} ",
+                            "MessageController | sendMessage | ${TaskCenter.taskTitle} sent successfully |executionId = ${it?.body()?.executionId} ",
                             TaskCenter.executionId ?: -1
                         )
                     }
@@ -492,11 +492,11 @@ object MessageController {
                     LogManager.saveLog(
                         ctx,
                         "MessageController",
-                        "MessageController | sendMessage | ${TaskCenter.taskTitle} 发送失败 | message = ${it.message} | localizedMessage = ${it.localizedMessage}",
+                        "MessageController | sendMessage | ${TaskCenter.taskTitle} send failed | message = ${it.message} | localizedMessage = ${it.localizedMessage}",
                         TaskCenter.executionId ?: -1
                     )
                     StatisticsManager.instance.onUploadException(
-                        StatisticCustomError.API_ERR, it.message ?: "发送消息接口异常"
+                        StatisticCustomError.API_ERR, it.message ?: "message send API error"
                     )
                 }
             } finally {
@@ -512,7 +512,7 @@ object MessageController {
     fun connectExecutionSocket(executionId: Long, actionHandler: ActionHandler) {
         val serverUrl = ServerConstant.getURL()
         val currentToken = token ?: ""
-        // 先取消旧的事件收集 job，防止旧 job 收集到新 manager 的事件
+
         agentEventCollectionJob?.cancel()
         agentEventCollectionJob = null
         lifecycleCollectionJob?.cancel()
@@ -552,7 +552,7 @@ object MessageController {
                 apiService?.newResumeTask(ResumeTaskReq(message), TaskCenter.executionId)
             }.onSuccess {
                 Log.d("TAG", "resumeTask: ------->${Gson().toJson(it?.body())}")
-                // 检查 HTTP 响应是否成功，4xx/5xx 不应触发 socket 重连
+
                 if (it?.isSuccessful != true) {
                     Log.w("TAG", "resumeTask: HTTP error ${it?.code()}")
                     return@onSuccess
@@ -574,7 +574,7 @@ object MessageController {
     }
 
     fun stopAutomationTask(from: String, onComplete: (() -> Unit)? = null) {
-        // 捕获当前 executionId，防止异步回调中新任务已启动导致清理错误的 socket
+
         val targetExecId = TaskCenter.executionId?.toLong()
         coroutineScope.launch(Dispatchers.IO) {
             val ctx = context
@@ -589,12 +589,12 @@ object MessageController {
                     LogManager.saveLog(
                         ctx,
                         "MessageController",
-                        "MessageController | stopAutomationTask | 取消已发起(异步)，from = $from, code = ${it?.code()}  body = ${it?.body()}",
+                        "MessageController | stopAutomationTask | cancel started (async)，from = $from, code = ${it?.code()}  body = ${it?.body()}",
                         TaskCenter.executionId ?: -1
                     )
                 }
                 val eventParams = mutableMapOf<String, Any>(
-                    "URL_REQ" to "MessageController | stopAutomationTask | 取消已发起(异步)，from = $from, code = ${it?.code()}  body = ${it?.body()}"
+                    "URL_REQ" to "MessageController | stopAutomationTask | cancel started (async)，from = $from, code = ${it?.code()}  body = ${it?.body()}"
                 )
                 StatisticsManager.instance.onUploadEvent(StatisticEvent.URL_REQUEST, eventParams)
                 AIFloatWindowManager.dismissAllWindow()
@@ -609,12 +609,12 @@ object MessageController {
                     LogManager.saveLog(
                         ctx,
                         "MessageController",
-                        "MessageController | stopAutomationTask | 停止任务接口调用失败，${it.message}",
+                        "MessageController | stopAutomationTask | stop task API call failed，${it.message}",
                         TaskCenter.executionId ?: -1
                     )
                 }
                 StatisticsManager.instance.onUploadException(
-                    StatisticCustomError.API_ERR, it.message ?: "取消任务接口异常"
+                    StatisticCustomError.API_ERR, it.message ?: "cancel task API error"
                 )
                 AIFloatWindowManager.dismissAllWindow()
                 _executionConnectState.value = false
@@ -622,7 +622,7 @@ object MessageController {
                 msg.what = UPDATE_MSG_FINAL_STATE
                 msg.obj = FinalStateEnum.INTERRUPT
                 handler.sendMessage(msg)
-                // API 失败时才立即清理 socket（无法依赖 execution:finished 回收）
+
                 cleanupSocket(targetExecId)
             }
             onComplete?.invoke()
@@ -662,10 +662,10 @@ object MessageController {
             Log.d(TAG, "pingBaidu$result")
             val exitCode = process.waitFor()
             if (exitCode != 0) {
-                result.append("\nPing 异常退出，错误码: $exitCode")
+                result.append("\nPing exited abnormally, error code: $exitCode")
             }
         } catch (e: Exception) {
-            result.append("\n执行失败: ${e.message}")
+            result.append("\nExecution Failed: ${e.message}")
         }
         result.toString()
     }
@@ -684,7 +684,7 @@ object MessageController {
             LogManager.saveLog(
                 ctx,
                 "MessageController",
-                "MessageController | 关闭网络连接 | from = $from",
+                "MessageController | close network connection | from = $from",
                 TaskCenter.executionId ?: -1
             )
         }
@@ -704,7 +704,7 @@ object MessageController {
             LogManager.saveLog(
                 ctx,
                 "MessageController",
-                "MessageController | detachUI | 解除UI回调，保持Socket连接",
+                "MessageController | detachUI | detach UI callback and keep socket connected",
                 TaskCenter.executionId ?: -1
             )
         }
@@ -719,8 +719,6 @@ object MessageController {
     /**
      * Clean up socket and all collection jobs.
      *
-     * @param forExecutionId 如果指定，仅当当前 socket 属于该 execution 时才清理。
-     *   防止旧取消操作的回调误杀新任务的 socket（竞态保护）。
      */
     private fun cleanupSocket(forExecutionId: Long? = null) {
         val currentExecId = executionSocketManager?.executionId
@@ -853,15 +851,12 @@ object MessageController {
 
 
     /**
-     * 切换tab回调
-     * 主要用于定时任务执行时，切换至 ai TAB
      */
     interface TabCheckCallback {
         fun onCheck(tabIndex: Int)
     }
 
     /**
-     * 历史记录数据监听
      */
     interface OnHistoryDataListener {
         fun listener(dataList: ArrayList<UIMessageBean>)

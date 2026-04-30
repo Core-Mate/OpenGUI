@@ -16,7 +16,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
-            android:text="编辑任务名称"
+            android:text="Edit Task Name"
             android:textColor="@color/task_detail_primary_text"
             android:textSize="18sp"
             android:textStyle="bold" />
@@ -52,7 +52,7 @@
         android:layout_marginVertical="24dp"
         android:background="@drawable/bg_gray_circle"
         android:ellipsize="end"
-        android:hint="请输入标题..."
+        android:hint="Enter a title..."
         android:inputType="text"
         android:maxLines="1"
         android:minHeight="48dp"
@@ -77,7 +77,7 @@
             android:clickable="true"
             android:focusable="true"
             android:gravity="center"
-            android:text="取消"
+            android:text="Cancel"
             android:textColor="@color/task_detail_primary_text"
             android:textSize="17sp"
             android:textStyle="bold" />
@@ -92,7 +92,7 @@
             android:clickable="true"
             android:focusable="true"
             android:gravity="center"
-            android:text="保存"
+            android:text="Save"
             android:textColor="@android:color/white"
             android:textSize="17sp"
             android:textStyle="bold" />

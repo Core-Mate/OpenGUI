@@ -32,11 +32,8 @@ import { createSummarizerNode } from "./nodes/summarizer.node";
 import { AgentStateSchema } from "./state/state.types";
 
 /**
- * Mobile Agent Graph 服务
  *
- * 负责创建和管理 LangGraph 状态图
  *
- * 流程:
  * ```
  * START -> supervisor -> extract_todo
  *   |
@@ -47,9 +44,6 @@ import { AgentStateSchema } from "./state/state.types";
  *   +-- no todos -> fallback_extract -> executor -> supervisor (loop)
  * ```
  *
- * 配置获取方式:
- * - 节点在每次执行时从 AgentConfigProvider 动态获取最新配置
- * - 支持通过 Admin 后台实时更新配置
  */
 @Injectable()
 export class MobileAgentGraphService implements OnModuleInit {
@@ -77,7 +71,6 @@ export class MobileAgentGraphService implements OnModuleInit {
 	}
 
 	/**
-	 * 初始化状态图
 	 */
 	private async initializeGraph(): Promise<void> {
 		this.logger.log("Initializing Mobile Agent Graph...");
@@ -86,9 +79,9 @@ export class MobileAgentGraphService implements OnModuleInit {
 
 	private buildGraph() {
 		try {
-			// 创建节点
 
-			// Supervisor: 分析任务、流式生成计划、管理 Todo 列表
+
+
 			const supervisorNode = createSupervisorNode(
 				this.configProvider,
 				this.skillProvider,
@@ -98,28 +91,28 @@ export class MobileAgentGraphService implements OnModuleInit {
 				this.prismaService,
 			);
 
-			// Extract Todo: 从 DB 读取 Todo 列表，提取待执行任务
+
 			const extractTodoNode = createExtractTodoNode(
 				this.workingMemoryService,
 				this.skillProvider,
 			);
 
-			// Fallback Extract: 当 Supervisor 未创建 Todo 时，用 Haiku 提取子任务
+
 			const fallbackExtractNode = createFallbackExtractNode(
 				this.configProvider,
 				this.workingMemoryService,
 				this.skillProvider,
 			);
 
-			// 获取 Checkpointer（提前获取，子图也需要使用）
+
 			const checkpointer =
 				this.checkpointerService.getCheckpointer();
 
-			// Executor: 使用编译后的子图，传入相同的 checkpointer
+
 			const executorSubgraph =
 				this.executorGraphService.getCompiledGraph(checkpointer);
 
-			// Summarizer: 生成最终总结（流式输出并更新数据库）
+
 			const summarizerNode = createSummarizerNode(
 				this.configProvider,
 				this.workingMemoryToolService,
@@ -129,25 +122,25 @@ export class MobileAgentGraphService implements OnModuleInit {
 				this.billingService,
 			);
 
-			// 创建状态图（使用统一状态）
+
 			const graph = new StateGraph(AgentStateSchema)
-				// 添加节点
+
 				.addNode(NODE_NAMES.SUPERVISOR, supervisorNode)
 				.addNode(NODE_NAMES.EXTRACT_TODO, extractTodoNode)
 				.addNode(
 					NODE_NAMES.FALLBACK_EXTRACT,
 					fallbackExtractNode,
 				)
-				// 直接添加编译后的 executor 子图
+
 				.addNode(NODE_NAMES.EXECUTOR, executorSubgraph)
 				.addNode(NODE_NAMES.SUMMARIZER, summarizerNode)
 
-				// 添加边
+
 
 				// START -> supervisor
 				.addEdge(START, NODE_NAMES.SUPERVISOR)
 
-				// supervisor -> extract_todo | summarizer（错误时跳转 summarizer）
+
 				.addConditionalEdges(
 					NODE_NAMES.SUPERVISOR,
 					routeAfterSupervisor,
@@ -161,7 +154,7 @@ export class MobileAgentGraphService implements OnModuleInit {
 					ROUTING_PATHS.EXTRACT_TODO,
 				)
 
-				// fallback_extract -> executor (固定边)
+
 				.addEdge(
 					NODE_NAMES.FALLBACK_EXTRACT,
 					NODE_NAMES.EXECUTOR,
@@ -177,7 +170,7 @@ export class MobileAgentGraphService implements OnModuleInit {
 				// summarizer -> END
 				.addEdge(NODE_NAMES.SUMMARIZER, END);
 
-			// 获取 PostgresStore 实例（用于跨线程长期记忆）
+
 			const store = this.postgresStoreService.getStore();
 
 			this.logger.log(

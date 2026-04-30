@@ -175,27 +175,12 @@ flowchart LR
 - **设备待命连接**：`client/core_network/src/main/java/com/coremate/opengui/network/websocket/StandbySocketManager.kt`
 - **Android 执行链路**：`client/core_accessibility/src/main/java/com/coremate/opengui/accessibility/GestureService.kt`
 
-## 当前范围与限制
-
-OpenGUI 现在已经可以直接从这个仓库跑起来，但它仍然处在持续演进阶段，定位更接近开源移动 operator framework。
-
-目前需要注意的边界包括：
-
-- 当前活跃客户端目标是 Android
-- 后端仍有一部分模块在公开版本中是 stub，例如 `credits`、`knowledge`、`tos`
-- 生产级部署、可观测性和多设备编排还在继续完善
-- 实际运行质量仍然依赖 App UI 复杂度、模型质量和设备权限状态
-- 仓库里现在有两个中文 README，当前版本以 `README.zh-CN.md` 为准
-
-还有一个和旧文档不同的点已经在代码里落地：`SplashActivity` 在开源版本里直接跳转到 `HomeActivity`，不再把登录放在首跑入口。后端任务控制器也默认使用 `userId = 1`，所以本地启动路径不再依赖早期的 OTP 登录流程。
-
 ## Documentation
 
 - [skills/open-gui-bootstrap/SKILL.md](./skills/open-gui-bootstrap/SKILL.md)
 - [docs/get-started.md](./docs/get-started.md)
 - [server/apps/backend/README.md](./server/apps/backend/README.md)
 - [client/README.md](./client/README.md)
-- [PUBLIC_RELEASE_PLAN.md](./PUBLIC_RELEASE_PLAN.md)
 - [CONTRIBUTING.md](./CONTRIBUTING.md)
 - [SECURITY.md](./SECURITY.md)
 - [CLAUDE.md](./CLAUDE.md)
@@ -212,6 +197,15 @@ OpenGUI 现在已经可以直接从这个仓库跑起来，但它仍然处在持
 
 ## License
 
-OpenGUI 采用 Apache 2.0 License。
+OpenGUI 采用 Business Source License 1.1 (BUSL-1.1)，源码可见。
+
+你可以复制、修改、分发源码，并用于非生产用途。生产使用、商业使用、托管服务、集成到商业产品中，都需要 Core-Mate 的单独商业授权。
+
+当前版本：
+
+- Change Date: 2030-04-29
+- Change License: Apache License, Version 2.0
+
+这代表源码公开 / source-available，但在 Change Date 前不是 OSI 批准的许可证。
 
 详见 [LICENSE](./LICENSE)。

@@ -1,6 +1,4 @@
 /**
- * 平台类型枚举
- * 与 Prisma schema 中的 platformtype 保持一致
  */
 export enum PlatformType {
     XIAOHONGSHU = 'XIAOHONGSHU',
@@ -12,7 +10,6 @@ export enum PlatformType {
 }
 
 /**
- * 任务类别枚举
  */
 export enum TaskCategory {
     CONTENT_PUBLISH = 'CONTENT_PUBLISH',
@@ -23,7 +20,6 @@ export enum TaskCategory {
 }
 
 /**
- * 执行模式枚举
  */
 export enum ExecutionMode {
     IMMEDIATE = 'IMMEDIATE',
@@ -32,11 +28,9 @@ export enum ExecutionMode {
 }
 
 /**
- * 执行状态枚举
  */
 export enum ExecutionStatus {
     INITIAL = 'INITIAL',
-    /** 等待客户端 WS 连接就绪后启动执行 */
     PENDING = 'PENDING',
     RUNNING = 'RUNNING',
     SUSPENDED = 'SUSPENDED',
@@ -46,7 +40,6 @@ export enum ExecutionStatus {
 }
 
 /**
- * 执行结果枚举
  */
 export enum ExecutionResult {
     SUCCEED = 'SUCCEED',

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 与 Web 一致：验证失败时输入框样式 bg-red-50 + ring-red-400 -->
+
 <shape xmlns:android="http://schemas.android.com/apk/res/android">
     <solid android:color="#FEE2E2"/>
     <corners android:radius="12dp"/>

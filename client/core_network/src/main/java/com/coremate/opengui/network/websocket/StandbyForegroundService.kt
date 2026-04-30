@@ -17,12 +17,8 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collectLatest
 
 /**
- * 待命前台服务
  *
- * 保持 StandbySocketManager 在后台运行，防止系统杀死 WebSocket 连接。
- * App 启动时由 HomeActivity 启动此服务。
  *
- * 当收到远程任务派发时，通过 AutomationEventBus 通知 App 层开始执行。
  */
 class StandbyForegroundService : Service() {
 
@@ -31,7 +27,6 @@ class StandbyForegroundService : Service() {
         private const val CHANNEL_ID = "standby_channel"
         private const val NOTIFICATION_ID = 3001
 
-        /** 全局 StandbySocketManager 引用，供 App 层访问 */
         var standbyManager: StandbySocketManager? = null
             private set
 
@@ -56,12 +51,12 @@ class StandbyForegroundService : Service() {
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
-        startForeground(NOTIFICATION_ID, buildNotification("等待远程任务..."))
+        startForeground(NOTIFICATION_ID, buildNotification("Waiting for remote tasks..."))
 
         standbyManager = StandbySocketManager(applicationContext)
         standbyManager?.connect()
 
-        // 监听 dispatch 事件，转发到 AutomationEventBus
+
         scope.launch {
             standbyManager?.dispatchFlow?.collectLatest { payload ->
                 LogManager.saveLog(applicationContext, TAG,
@@ -95,10 +90,10 @@ class StandbyForegroundService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "远程控制待命",
+                "Remote Control Standby",
                 NotificationManager.IMPORTANCE_LOW,
             ).apply {
-                description = "保持远程任务接收连接"
+                description = "Keeps the remote task connection alive"
             }
             val manager = getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(channel)

@@ -1,6 +1,6 @@
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- 背景 -->
+
     <item>
         <shape>
             <solid android:color="@color/white" />
@@ -11,7 +11,7 @@
         </shape>
     </item>
 
-    <!-- 右侧箭头 -->
+
     <item
         android:gravity="end|center_vertical"
         android:right="0dp">

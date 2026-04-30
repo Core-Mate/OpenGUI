@@ -60,33 +60,33 @@ class ActionExecutor(
                 "GestureService is not connected. Cannot perform action: $actionType",
                 TaskCenter.executionId ?: -1
             )
-            scope.launch(Dispatchers.Main) { // Toast 必须在主线程显示
-                Toast.makeText(context, "错误: 无障碍服务未连接，无法执行AI操作。", Toast.LENGTH_LONG)
+            scope.launch(Dispatchers.Main) {
+                Toast.makeText(context, "Error: Accessibility service is not connected. AI actions cannot run.", Toast.LENGTH_LONG)
                     .show()
             }
             return false
         }
 
         val statusMessage = when (actionType) {
-            "click" -> "点击坐标: (${inputs.startX}, ${inputs.startY})"
-            "long_press" -> "长按坐标: (${inputs.startX}, ${inputs.startY})"
-            "type" -> "输入内容: '${inputs.content?.take(10)}...'"
-            "scroll" -> "滚动方向: ${inputs.direction}"
-            "open_app" -> "打开应用: ${inputs.appName}"
-            "drag" -> "拖拽从 (${inputs.startX}, ${inputs.startY}) 到 (${inputs.endX}, ${inputs.endY})"
-            "press_home" -> "返回主屏幕"
-            "press_back" -> "返回上一页"
-            "finished" -> "任务完成: ${inputs.content}"
-            "call_user" -> "需要您介入，请手动操作后点击恢复。"
-            else -> "未知操作: $actionType"
+            "click" -> "Click point: (${inputs.startX}, ${inputs.startY})"
+            "long_press" -> "Long press point: (${inputs.startX}, ${inputs.startY})"
+            "type" -> "Typing: '${inputs.content?.take(10)}...'"
+            "scroll" -> "Scroll direction: ${inputs.direction}"
+            "open_app" -> "Open app: ${inputs.appName}"
+            "drag" -> "Drag from (${inputs.startX}, ${inputs.startY}) to (${inputs.endX}, ${inputs.endY})"
+            "press_home" -> "Go home"
+            "press_back" -> "Go back"
+            "finished" -> "Task complete: ${inputs.content}"
+            "call_user" -> "User intervention required. Please operate manually, then tap Resume."
+            else -> "Unknown action: $actionType"
         }
-        //记录上一个 click
+        // Track the previous click.
         lastActionIsClick = actionType === "click"
         lastClickSuccess = false
         scope.launch { AutomationEventBus.publish(AutomationEvent.StatusUpdate("AI: $statusMessage")) }
 
         var success = false
-        val statusBarHeight = gestureService.getStatusBarHeight() // 获取状态栏高度
+        val statusBarHeight = gestureService.getStatusBarHeight()
 
         when (actionType) {
             "click" -> {
@@ -301,7 +301,7 @@ class ActionExecutor(
                     scope.launch(Dispatchers.Main) {
                         Toast.makeText(
                             context,
-                            "错误: 应用'$appName'未找到，请联系管理员添加",
+                            "Error: App '$appName' was not found. Ask an administrator to add it.",
                             Toast.LENGTH_LONG
                         )
                             .show()
@@ -310,7 +310,7 @@ class ActionExecutor(
                     val openAppAction = OpenAppAction()
                     if (!lastActionIsClick || lastClickSuccess) {
                         success =
-                            openAppAction.perform(context, packageName) // <<< 使用映射后的 packageName
+                            openAppAction.perform(context, packageName)
                     }
                     if (success) {
                         LogManager.saveLog(
@@ -319,7 +319,7 @@ class ActionExecutor(
                             "Successfully initiated launch of app: '$appName' (packageName: $packageName)",
                             TaskCenter.executionId ?: -1
                         )
-                        scope.launch { AutomationEventBus.publish(AutomationEvent.StatusUpdate("AI: 已启动应用'$appName'")) }
+                        scope.launch { AutomationEventBus.publish(AutomationEvent.StatusUpdate("AI: Launched app '$appName'")) }
                     } else {
                         LogManager.saveLog(
                             context,
@@ -327,7 +327,7 @@ class ActionExecutor(
                             "Failed to launch app: '$appName' (packageName: $packageName). App might not be installed or launch intent is missing.",
                             TaskCenter.executionId ?: -1
                         )
-                        scope.launch { AutomationEventBus.publish(AutomationEvent.StatusUpdate("错误: 无法启动应用'$appName'")) }
+                        scope.launch { AutomationEventBus.publish(AutomationEvent.StatusUpdate("Error: Could not launch app '$appName'")) }
                     }
                 }
             }
@@ -418,7 +418,7 @@ class ActionExecutor(
                     "Action 'call_user' received. Publishing AutomationEvent.Paused.",
                     TaskCenter.executionId ?: -1
                 )
-                // 发布暂停事件
+
                 scope.launch { AutomationEventBus.publish(AutomationEvent.Paused) }
                 success = true
             }
@@ -443,7 +443,7 @@ class ActionExecutor(
                     context, "ActionExecutor", "Unknown action type: $actionType",
                     TaskCenter.executionId ?: -1
                 )
-                scope.launch { AutomationEventBus.publish(AutomationEvent.StatusUpdate("错误: 未知操作")) }
+                scope.launch { AutomationEventBus.publish(AutomationEvent.StatusUpdate("Error: unknown action")) }
                 return false
             }
         }
@@ -454,7 +454,7 @@ class ActionExecutor(
             TaskCenter.executionId ?: -1
         )
         if (!success && actionType != "finished") {
-            scope.launch { AutomationEventBus.publish(AutomationEvent.StatusUpdate("AI: '$statusMessage' 执行失败")) }
+            scope.launch { AutomationEventBus.publish(AutomationEvent.StatusUpdate("AI: '$statusMessage' failed")) }
         }
         return success
     }
@@ -472,7 +472,7 @@ class ActionExecutor(
 
         LogManager.saveLog(
             context, "ActionExecutor",
-            "无障碍服务正在尝试捕获屏幕截图 | 服务是否为空： ${GestureService.instance == null} | 开关是否开启：${
+            "Accessibility service is trying to capture a screenshot | service is null: ${GestureService.instance == null} | enabled: ${
                 isAccessibilityServiceEnabled(
                     context
                 )
@@ -499,11 +499,10 @@ class ActionExecutor(
             val width: Int = bitmap.width
             val height: Int = bitmap.height
 
-            // 计算新尺寸
+            // Calculate the resized image dimensions.
             val newWidth = width / 2
             val newHeight = height / 2
-            // 创建缩放后的 Bitmap
-            // filter 参数：true 表示开启双线性过滤（更平滑），false 表示最近邻插值（较模糊/锯齿）
+            // Create the scaled bitmap. The filter parameter enables smoother bilinear filtering.
             val scaledBitmap = Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
             val successCompress =
                 scaledBitmap.compress(
@@ -538,7 +537,7 @@ class ActionExecutor(
                 return null
             }
         } else {
-            Toast.makeText(context, "截图失败1", Toast.LENGTH_SHORT)
+            Toast.makeText(context, "Screenshot failed", Toast.LENGTH_SHORT)
                 .show()
             AutomationEventBus.publish(AutomationEvent.ScreenshotFail)
             LogManager.saveLog(

@@ -22,7 +22,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="添加任务"
+            android:text="Add task"
             android:textColor="#E5000000"
             android:textFontWeight="500"
             android:textSize="18dp"
@@ -65,7 +65,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="18dp"
                     android:layout_weight="1"
-                    android:text="选择时间"
+                    android:text="Choose time"
                     android:textColor="#000000"
                     android:textFontWeight="400"
                     android:textSize="15dp" />
@@ -84,7 +84,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="2dp"
             android:layout_marginTop="14dp"
-            android:text="选择任务"
+            android:text="Choose a task"
             android:textColor="#99000000"
             android:textFontWeight="400"
             android:textSize="12dp" />
@@ -111,7 +111,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="2dp"
             android:layout_marginTop="14dp"
-            android:text="选择任务卡颜色"
+            android:text="Task card color"
             android:textColor="#99000000"
             android:textFontWeight="400"
             android:textSize="12dp" />
@@ -155,7 +155,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:text="保存"
+                android:text="Save"
                 android:textColor="#000000"
                 android:textFontWeight="500"
                 android:textSize="15dp" />

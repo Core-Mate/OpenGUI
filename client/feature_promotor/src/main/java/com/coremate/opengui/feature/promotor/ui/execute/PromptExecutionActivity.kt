@@ -34,9 +34,9 @@ import kotlinx.coroutines.launch
 
 
 enum class ExecutionPhase(val index: Int, val title: String, val desc: String, val progress: Float) {
-    GENERATING_PLAN(0, "生成计划", "正在生成执行计划...", 25f),
-    LOADING_SKILL(1, "加载技能", "正在加载专属技能...", 50f),
-    PLANNING_PATH(2, "路径规划", "正在拆解执行步骤...", 75f),
+    GENERATING_PLAN(0, "Generating plan", "Generating execution plan...", 25f),
+    LOADING_SKILL(1, "Loading skills", "Loading dedicated skills...", 50f),
+    PLANNING_PATH(2, "Planning path", "Breaking down execution steps...", 75f),
 }
 
 class PromptExecutionActivity :
@@ -58,7 +58,7 @@ class PromptExecutionActivity :
                     launch(Dispatchers.Main) {
                         Toast.makeText(
                             this@PromptExecutionActivity,
-                            "截图失败，回到主页面",
+                            "Screenshot failed. Returning to the home page.",
                             Toast.LENGTH_SHORT
                         ).show()
                         finish()
@@ -84,11 +84,11 @@ class PromptExecutionActivity :
         binding.tvBottomJumping.visibility = View.GONE
         binding.tvCancelPrompt.visibility = View.GONE
         binding.cancelPromptContainer.visibility = View.VISIBLE
-        binding.tvPhaseTitle.text = "准备中"
-        binding.tvPhaseDesc.text = "正在连接服务..."
+        binding.tvPhaseTitle.text = "Preparing"
+        binding.tvPhaseDesc.text = "Connecting to service..."
         startCursorBlink()
 
-        // 在 UI 初始化完成后发送消息，确保事件到达时 UI 已就绪
+
         lifecycleScope.launch {
             MessageController.sendMessage()
             AIFloatWindowManager.resetExecuteWindow("$TAG initView")
@@ -149,7 +149,7 @@ class PromptExecutionActivity :
             stopTaskPlanDialog?.dismiss()
         }
         dialogView?.findViewById<TextView>(R.id.tv_confirm)?.setOnClickListener {
-            MessageController.stopAutomationTask("Plan 页取消") { runOnUiThread { finish() } }
+            MessageController.stopAutomationTask("Plan page cancel") { runOnUiThread { finish() } }
         }
         if (stopTaskPlanDialog == null){
             stopTaskPlanDialog = AlertDialog.Builder(this)
@@ -166,17 +166,17 @@ class PromptExecutionActivity :
 
     private fun showStopTaskConfirmDialog() {
         val dialog = AlertDialog.Builder(this)
-            .setTitle("确定取消？")
-            .setMessage("当前任务进度将丢失")
-            .setPositiveButton("确定取消") { _, _ ->
-                MessageController.stopAutomationTask("Plan 页取消") {
+            .setTitle("ConfirmCancel？")
+            .setMessage("Current task progress will be lost.")
+            .setPositiveButton("ConfirmCancel") { _, _ ->
+                MessageController.stopAutomationTask("Plan page cancel") {
                     runOnUiThread {
                         MessageController.cancelAndGotoSummarizer()
                         finish()
                     }
                 }
             }
-            .setNegativeButton("继续等待", null)
+            .setNegativeButton("Continue Waiting", null)
             .create()
 
         dialog.show()

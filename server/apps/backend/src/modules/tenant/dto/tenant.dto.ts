@@ -1,24 +1,24 @@
 import { ApiProperty } from "@nestjs/swagger";
 
 /**
- * 租户订阅状态响应 DTO
+ * Tenant subscription status response DTO
  */
 export class TenantSubscriptionStatusDto {
-	@ApiProperty({ description: "租户ID" })
+	@ApiProperty({ description: "Tenant ID" })
 	tenantId: number;
 
-	@ApiProperty({ description: "租户名称" })
+	@ApiProperty({ description: "Tenant name" })
 	tenantName: string;
 
-	@ApiProperty({ description: "是否激活" })
+	@ApiProperty({ description: "Whether active" })
 	isActive: boolean;
 
-	@ApiProperty({ description: "是否已过期" })
+	@ApiProperty({ description: "Whether expired" })
 	isExpired: boolean;
 
-	@ApiProperty({ description: "过期日期" })
+	@ApiProperty({ description: "Expiration date" })
 	expirationDate: Date;
 
-	@ApiProperty({ description: "剩余天数（过期为负数）" })
+	@ApiProperty({ description: "Days remaining; negative when expired" })
 	daysRemaining: number;
 }

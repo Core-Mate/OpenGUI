@@ -25,7 +25,7 @@ export class SkillController {
 	constructor(private readonly skillService: SkillService) {}
 
 	@Get()
-	@ApiOperation({ summary: "获取 Skill 列表" })
+	@ApiOperation({ summary: "Get Skill list" })
 	@ApiQuery({ name: "page", required: false, type: Number })
 	@ApiQuery({ name: "pageSize", required: false, type: Number })
 	@ApiQuery({ name: "nodeType", required: false, enum: SkillNodeType })
@@ -33,7 +33,7 @@ export class SkillController {
 	@ApiQuery({ name: "search", required: false, type: String })
 	@ApiQuery({ name: "region", required: false, type: String })
 	@ApiQuery({ name: "isActive", required: false, type: Boolean })
-	@ApiResponse({ status: 200, description: "成功获取 Skill 列表" })
+	@ApiResponse({ status: 200, description: "Skill list retrieved successfully" })
 	async getSkills(
 		@Query("page") page?: string,
 		@Query("pageSize") pageSize?: string,
@@ -66,9 +66,9 @@ export class SkillController {
 	}
 
 	@Get(":id")
-	@ApiOperation({ summary: "获取单个 Skill" })
-	@ApiResponse({ status: 200, description: "成功获取 Skill" })
-	@ApiResponse({ status: 404, description: "Skill 不存在" })
+	@ApiOperation({ summary: "Get one Skill" })
+	@ApiResponse({ status: 200, description: "Skill retrieved successfully" })
+	@ApiResponse({ status: 404, description: "Skill does not exist" })
 	async getSkill(@Param("id", ParseIntPipe) id: number) {
 		const skill = await this.skillService.findById(id);
 
@@ -83,12 +83,12 @@ export class SkillController {
 	}
 
 	@Post()
-	@ApiOperation({ summary: "创建 Skill" })
-	@ApiResponse({ status: 201, description: "成功创建 Skill" })
-	@ApiResponse({ status: 400, description: "参数错误" })
-	@ApiResponse({ status: 409, description: "Skill 名称已存在" })
+	@ApiOperation({ summary: "Create Skill" })
+	@ApiResponse({ status: 201, description: "Skill created successfully" })
+	@ApiResponse({ status: 400, description: "Invalid parameters" })
+	@ApiResponse({ status: 409, description: "Skill name already exists" })
 	async createSkill(@Body() data: CreateSkillDTO) {
-		// 验证必填字段
+		// Validate required fields.
 		if (!data.name || !data.displayName || !data.content || !data.nodeTypes) {
 			throw new HttpException(
 				"name, displayName, content, nodeTypes are required",
@@ -96,7 +96,7 @@ export class SkillController {
 			);
 		}
 
-		// 验证 nodeTypes 是否有效
+		// Validate nodeTypes.
 		if (!Array.isArray(data.nodeTypes) || data.nodeTypes.length === 0) {
 			throw new HttpException(
 				"nodeTypes must be a non-empty array",
@@ -129,14 +129,14 @@ export class SkillController {
 	}
 
 	@Patch(":id")
-	@ApiOperation({ summary: "更新 Skill" })
-	@ApiResponse({ status: 200, description: "成功更新 Skill" })
-	@ApiResponse({ status: 404, description: "Skill 不存在" })
+	@ApiOperation({ summary: "Update Skill" })
+	@ApiResponse({ status: 200, description: "Skill updated successfully" })
+	@ApiResponse({ status: 404, description: "Skill does not exist" })
 	async updateSkill(
 		@Param("id", ParseIntPipe) id: number,
 		@Body() data: UpdateSkillDTO,
 	) {
-		// 验证 nodeTypes 是否有效（如果提供了）
+		// Validate nodeTypes if provided.
 		if (data.nodeTypes) {
 			if (!Array.isArray(data.nodeTypes) || data.nodeTypes.length === 0) {
 				throw new HttpException(
@@ -171,9 +171,9 @@ export class SkillController {
 	}
 
 	@Delete(":id")
-	@ApiOperation({ summary: "删除 Skill" })
-	@ApiResponse({ status: 200, description: "成功删除 Skill" })
-	@ApiResponse({ status: 404, description: "Skill 不存在" })
+	@ApiOperation({ summary: "Delete Skill" })
+	@ApiResponse({ status: 200, description: "Skill deleted successfully" })
+	@ApiResponse({ status: 404, description: "Skill does not exist" })
 	async deleteSkill(@Param("id", ParseIntPipe) id: number) {
 		try {
 			await this.skillService.delete(id);
@@ -191,9 +191,9 @@ export class SkillController {
 	}
 
 	@Post(":id/toggle-active")
-	@ApiOperation({ summary: "切换 Skill 激活状态" })
-	@ApiResponse({ status: 200, description: "成功切换 Skill 激活状态" })
-	@ApiResponse({ status: 404, description: "Skill 不存在" })
+	@ApiOperation({ summary: "Toggle Skill active state" })
+	@ApiResponse({ status: 200, description: "Skill active state toggled successfully" })
+	@ApiResponse({ status: 404, description: "Skill does not exist" })
 	async toggleActive(@Param("id", ParseIntPipe) id: number) {
 		try {
 			const skill = await this.skillService.toggleActive(id);

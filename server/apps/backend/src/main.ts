@@ -10,15 +10,15 @@ async function bootstrap() {
 		bufferLogs: true,
 	});
 
-	// 将 AppLogger 设为全局日志器
+	// Register AppLogger as the global logger.
 	const appLogger = await app.resolve(AppLogger);
 	app.useLogger(appLogger);
 	app.flushLogs();
 
-	// 启用 CORS
+	// Enable CORS.
 	app.enableCors();
 
-	// 设置全局 API 前缀
+	// Set the global API prefix.
 	app.setGlobalPrefix("api");
 
 	app.useGlobalPipes(
@@ -36,7 +36,7 @@ async function bootstrap() {
 		)
 		.setVersion("1.0")
 		.addTag("tasks", "Task execution endpoints")
-		.addServer("http://localhost:7777", "本地环境")
+		.addServer("http://localhost:7777", "Local environment")
 		.build();
 
 	const document = SwaggerModule.createDocument(app, config);

@@ -1,24 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- 背景（可选） -->
+
     <item>
         <shape android:shape="rectangle">
-            <solid android:color="#FFFFFF" /> <!-- 背景色 -->
+            <solid android:color="#FFFFFF" /> <!-- Background color. -->
             <corners android:radius="8dp" />
         </shape>
     </item>
 
-    <!-- 渐变边框（关键部分） -->
+
     <item>
         <shape android:shape="rectangle">
             <stroke
                 android:width="2dp"
-                android:color="#00000000" /> <!-- 透明占位，实际用 gradient 覆盖 -->
+                android:color="#00000000" /> <!-- Transparent placeholder; actual fill is covered by gradient. -->
             <corners android:radius="8dp" />
         </shape>
     </item>
 
-    <!-- 用 gradient 绘制边框 -->
+
     <item
         android:bottom="1dp"
         android:left="1dp"

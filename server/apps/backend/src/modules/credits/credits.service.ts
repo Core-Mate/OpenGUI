@@ -5,7 +5,7 @@ export interface BalanceResponseDto {
 }
 
 /**
- * Stub CreditsService for open-source version.
+ * Stub CreditsService for source-available version.
  * Credits system is disabled - users always have unlimited balance.
  */
 @Injectable()

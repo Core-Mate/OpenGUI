@@ -10,10 +10,7 @@ import type {
 } from "../working-memory/working-memory.types";
 
 /**
- * Working Memory 工具服务
  *
- * 提供 LangChain 工具用于在 Agent 中管理工作记忆
- * 工具从 RunnableConfig.configurable.thread_id 获取会话隔离键
  */
 @Injectable()
 export class WorkingMemoryToolService {
@@ -22,8 +19,6 @@ export class WorkingMemoryToolService {
 	constructor(private readonly workingMemoryService: WorkingMemoryService) {}
 
 	/**
-	 * 创建所有工作记忆工具
-	 * 工具从 RunnableConfig.configurable.thread_id 获取 thread_id
 	 */
 	createTools() {
 		return [
@@ -34,7 +29,6 @@ export class WorkingMemoryToolService {
 	}
 
 	/**
-	 * 创建获取工作记忆工具
 	 */
 	public createGetTool() {
 		return tool(
@@ -44,7 +38,7 @@ export class WorkingMemoryToolService {
 					if (!threadId) {
 						return {
 							success: false,
-							error: "无法获取 thread_id，请确保在正确的会话上下文中调用",
+							error: "Unable to get thread_id. Ensure the tool is called in the correct session context.",
 						};
 					}
 
@@ -65,21 +59,20 @@ export class WorkingMemoryToolService {
 					);
 					return {
 						success: false,
-						error: `获取工作记忆失败: ${(error as Error).message}`,
+						error: `Failed to get working memory: ${(error as Error).message}`,
 					};
 				}
 			},
 			{
 				name: "get_working_memory",
 				description:
-					"获取当前会话的工作记忆内容。工作记忆用于存储重要的上下文信息、用户偏好、目标等。在需要回顾之前存储的信息时使用此工具。",
+					"Get the current session working memory. Working memory stores important context, user preferences, goals, and collected facts. Use this when reviewing previously stored information.",
 				schema: z.preprocess(() => ({}), z.object({})),
 			},
 		);
 	}
 
 	/**
-	 * 创建更新工作记忆工具
 	 */
 	private createUpdateTool() {
 		return tool(
@@ -92,7 +85,7 @@ export class WorkingMemoryToolService {
 					if (!threadId) {
 						return {
 							success: false,
-							error: "无法获取 thread_id，请确保在正确的会话上下文中调用",
+							error: "Unable to get thread_id. Ensure the tool is called in the correct session context.",
 						};
 					}
 
@@ -113,38 +106,37 @@ export class WorkingMemoryToolService {
 					);
 					return {
 						success: false,
-						error: `更新工作记忆失败: ${(error as Error).message}`,
+						error: `Failed to update working memory: ${(error as Error).message}`,
 					};
 				}
 			},
 			{
 				name: "update_working_memory",
-				description: `写入工作记忆内容。工作记忆用于记录执行过程中收集到的重要信息与关键素材。
+				description: `Write working memory content. Working memory records important information and key material collected during execution.
 
-使用场景举例：
-- 记录用户要求收集的素材和信息
-- 保存关键的决策或结论
-- 存储需要在后续对话中使用的信息
-- 存储后续任务执行时需要用到的素材（比如用户要求总结 Feed 流中的热点话题，则需要在 working memory中记录执行过程中收集的 Feed 话题内容，方便后续总结）
+Example use cases:
+- Record material and information the user asked to collect.
+- Save key decisions or conclusions.
+- Store information needed in later conversation turns.
+- Store material needed for later execution, such as feed topics collected while summarizing trending posts.
 
-更新模式：
-- append（默认）：将新内容追加到现有内容后，使用分隔符分隔
-- replace：完全替换现有内容，仅在需要重新组织全部内容时使用
+Update modes:
+- append (default): append new content after existing content with a separator.
+- replace: replace all existing content; use only when reorganizing the whole memory.
 
-格式：使用 Markdown 格式组织内容`,
+Format: organize content with Markdown.`,
 				schema: z.object({
-					content: z.string().describe("要存储的内容（Markdown 格式）"),
+					content: z.string().describe("Content to store in Markdown format"),
 					mode: z
 						.enum(["append", "replace"])
 						.default("append")
-						.describe("更新模式：append 追加内容，replace 替换内容"),
+						.describe("Update mode: append content or replace existing content"),
 				}),
 			},
 		);
 	}
 
 	/**
-	 * 创建清除工作记忆工具
 	 */
 	private createClearTool() {
 		return tool(
@@ -154,7 +146,7 @@ export class WorkingMemoryToolService {
 					if (!threadId) {
 						return {
 							success: false,
-							error: "无法获取 thread_id，请确保在正确的会话上下文中调用",
+							error: "Unable to get thread_id. Ensure the tool is called in the correct session context.",
 						};
 					}
 
@@ -169,27 +161,25 @@ export class WorkingMemoryToolService {
 					);
 					return {
 						success: false,
-						error: `清除工作记忆失败: ${(error as Error).message}`,
+						error: `Failed to clear working memory: ${(error as Error).message}`,
 					};
 				}
 			},
 			{
 				name: "clear_working_memory",
 				description:
-					"清除当前会话的所有工作记忆内容。仅在需要完全重置上下文时使用，此操作不可撤销。",
+					"Clear all working memory for the current session. Use only when a full context reset is needed. This action is irreversible.",
 				schema: z.preprocess(() => ({}), z.object({})),
 			},
 		);
 	}
 
 	/**
-	 * 从 RunnableConfig 中提取 thread_id
 	 *
 	 * @param config - LangChain RunnableConfig
-	 * @returns thread_id 或 undefined
 	 */
 	private extractThreadId(config: RunnableConfig): string | undefined {
-		// 尝试从 configurable.thread_id 获取（LangGraph 标准方式）
+
 		const threadId = (config?.configurable as Record<string, unknown>)
 			?.thread_id as string | undefined;
 

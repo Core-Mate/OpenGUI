@@ -12,6 +12,6 @@
         android:textColor="#66000000"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        tools:text="昨天 10:30" />
+        tools:text="Yesterday 10:30" />
 
 </LinearLayout>

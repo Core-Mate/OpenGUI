@@ -79,32 +79,32 @@ class MyTaskPresenter(val view: MyTaskFragment) {
     fun addCustomTask() {
         val list = ArrayList<CreateTaskReq>()
         val bean1 = CreateTaskReq(
-            "在小红书寻找租客",
-            "打开小红书，帮我找到在上海需要租房的人，筛选最新的帖子（找到例如租房交流、求租等），向下滚动前20页，确认发帖人的身份看到像是中介的忽略，如果是用户本人（比如主页没有其他房源，或者没有生活信息的）评论留言5条给不同的帖子，表示我这里有些不错的房子在租，符合需求，可以试试",
+            "Find tenants on Xiaohongshu",
+            "Open Xiaohongshu, find recent posts from people looking to rent in Shanghai, skip agents, and leave friendly comments on 5 different suitable posts saying I have some good rental options they can check out.",
             null,
             null
         )
         val bean2 = CreateTaskReq(
-            "在小红书帮我找潜在的健身学员",
-            "打开小红书，帮我找到在上海对健身有需求的人，给他们发私信说可以关注我，会定期推送一些健身私教课，找10个人",
+            "Find potential fitness students on Xiaohongshu",
+            "Open Xiaohongshu, find 10 people in Shanghai who may need fitness coaching, and send a short DM inviting them to follow me for regular personal training tips.",
             null,
             null
         )
         val bean3 = CreateTaskReq(
-            "回复飞书群消息",
-            "打开飞书，帮我在代码一行的全员群里看下有没有待回复消息，有的话回下消息，多说一些情况",
+            "Reply to Feishu group messages",
+            "Open Feishu, check the company group for messages that need a reply, and respond with useful context if needed.",
             null,
             null
         )
         val bean4 = CreateTaskReq(
-            "在微信邀约合作伙伴",
-            "打开微信，找到徐珍珍，发条消息说记得晚上约下孟总时间",
+            "Invite a partner on WeChat",
+            "Open WeChat, find Xu Zhenzhen, and send a message reminding them to schedule time with Meng tonight.",
             null,
             null
         )
         val bean5 = CreateTaskReq(
-            "在抖音找到合适的人推广APP",
-            "打开抖音，找到上海需要找搭子的人（比如搜索上海组队剧本杀之类），在内容下评论说可以看看“soul”这个产品，从用户角度暗示这个很好用，然后下滑继续找类似的内容，回复3个",
+            "Find suitable people on Douyin to promote the app",
+            "Open Douyin, search for Shanghai people looking for companions or groups, leave natural comments recommending Soul from a user perspective, and reply to 3 relevant posts.",
             null,
             null
         )

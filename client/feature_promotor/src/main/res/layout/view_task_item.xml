@@ -27,7 +27,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:lineHeight="20sp"
-            android:text="用豆包生成的海报发布小红书"
+            android:text="Post a Doubao-generated poster to Xiaohongshu"
             android:textColor="#111827"
             android:textSize="18sp"
             android:textStyle="bold" />
@@ -74,7 +74,7 @@
                 <ImageView
                     android:layout_width="13dp"
                     android:layout_height="13dp"
-                    android:contentDescription="使用次数"
+                    android:contentDescription="Usage Count"
                     android:src="@drawable/ic_user" />
 
                 <TextView
@@ -106,7 +106,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="4dp"
-                    android:text="87% 成功率"
+                    android:text="87% success rate"
                     android:textColor="#908A9A"
                     android:textFontWeight="500"
                     android:textSize="12dp" />

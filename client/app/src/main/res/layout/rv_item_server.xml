@@ -7,7 +7,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="思考中" />
+        android:text="Thinking" />
 
     <LinearLayout
         android:id="@+id/task_wrap"
@@ -18,5 +18,5 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="任务已经完成" />
+        android:text="Task completed" />
 </LinearLayout>

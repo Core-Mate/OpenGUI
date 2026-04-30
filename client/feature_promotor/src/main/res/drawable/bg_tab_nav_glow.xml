@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 外层炫彩光晕：与前端 linear-gradient(135deg, #3B82F6, #8B5CF6 33%, #06B6D4 66%, #3B82F6) -->
+
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
     <gradient

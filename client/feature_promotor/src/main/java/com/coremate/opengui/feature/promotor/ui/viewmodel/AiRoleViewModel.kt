@@ -34,7 +34,7 @@ class AiRoleViewModel(context: Context) : ViewModel() {
         "https://example.com/avatar.jpg",
         arrayListOf(1, 2),
         Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID),
-        "男",
+        "Male",
         ""
     )
 
@@ -50,7 +50,7 @@ class AiRoleViewModel(context: Context) : ViewModel() {
                 }
             }.onFailure {
                 it.printStackTrace()
-                AMToastUtils.showToast("网络加载失败")
+                AMToastUtils.showToast("Network loading failed")
             }
         }
     }
@@ -69,7 +69,7 @@ class AiRoleViewModel(context: Context) : ViewModel() {
                 }
             }.onFailure {
                 it.printStackTrace()
-                AMToastUtils.showToast("网络加载失败")
+                AMToastUtils.showToast("Network loading failed")
             }
         }
     }
@@ -89,7 +89,7 @@ class AiRoleViewModel(context: Context) : ViewModel() {
                 }
             }.onFailure {
                 it.printStackTrace()
-                AMToastUtils.showToast("网络加载失败")
+                AMToastUtils.showToast("Network loading failed")
             }
         }
     }
@@ -105,7 +105,7 @@ class AiRoleViewModel(context: Context) : ViewModel() {
                 val value = field.get(bean)
                 if (value == null || (value is String && value.isEmpty())) {
                     Log.d("TAG", "validateRequiredFields: ------>$field")
-                    return false // 必填字段为空
+                    return false // Required fields are empty
                 }
             }
         }
@@ -113,7 +113,7 @@ class AiRoleViewModel(context: Context) : ViewModel() {
     }
 
 
-    ///自定义功能使用
+
     var aiRoleByFuncLiveData = MutableLiveData<GetAIRoleBean?>()
     fun getAiRoleByCustomFunc() {
         viewModelScope.launch {
@@ -129,7 +129,7 @@ class AiRoleViewModel(context: Context) : ViewModel() {
             }.onFailure {
                 it.printStackTrace()
                 aiRoleByFuncLiveData.value = null
-                AMToastUtils.showToast("网络加载失败")
+                AMToastUtils.showToast("Network loading failed")
             }
         }
     }

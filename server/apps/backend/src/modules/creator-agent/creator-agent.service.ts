@@ -33,7 +33,6 @@ import type {
 
 /**
  * Creator Agent Service
- * 内容创作 Agent 服务 - 基于 Claude Agent SDK 的内容创作核心服务
  */
 @Injectable()
 export class CreatorAgentService implements OnModuleInit {
@@ -48,14 +47,13 @@ export class CreatorAgentService implements OnModuleInit {
 	) {}
 
 	/**
-	 * 模块初始化
 	 */
 	async onModuleInit() {
 		this.logger.log("Creator Agent Service initialized");
 	}
 
 	/**
-	 * 生成内容 (流式)
+	 * Generate content (streaming)
 	 */
 	async *generateContent(dto: CreateContentDto): AsyncGenerator<StreamMessage> {
 		const {
@@ -69,7 +67,7 @@ export class CreatorAgentService implements OnModuleInit {
 
 		this.logger.log(`Generating content for topic: "${topic}"`);
 
-		// 构建系统提示
+
 		const systemPrompt = buildSystemPrompt(
 			context.platform as ContentPlatform,
 			context.scenario as CreationScenario,
@@ -77,7 +75,7 @@ export class CreatorAgentService implements OnModuleInit {
 			instructions,
 		);
 
-		// 构建用户消息
+
 		const userMessage = buildUserMessage(topic, {
 			originalContent: context.originalContent,
 			comments: context.comments,
@@ -87,10 +85,10 @@ export class CreatorAgentService implements OnModuleInit {
 			maxLength,
 		});
 
-		// 发送进度消息
+
 		yield {
 			type: "progress",
-			content: "开始内容创作...",
+			content: "Starting content creation...",
 		};
 
 		try {
@@ -98,7 +96,7 @@ export class CreatorAgentService implements OnModuleInit {
 			let inputTokens = 0;
 			let outputTokens = 0;
 
-			// 执行 Agent 查询 (使用简单字符串 prompt)
+
 			for await (const message of query({
 				prompt: userMessage,
 				options: {
@@ -106,18 +104,18 @@ export class CreatorAgentService implements OnModuleInit {
 					maxTurns: needResearch ? 5 : 3,
 				},
 			})) {
-				// 处理系统初始化消息
+
 				if (message.type === "system" && message.subtype === "init") {
-					yield {
-						type: "progress",
-						content: "Agent 初始化完成",
+						yield {
+							type: "progress",
+							content: "Agent initialized",
 					};
 				}
 
-				// 处理 Assistant 消息
+
 				if (message.type === "assistant") {
 					const assistantMsg = message as SDKMessage & { type: "assistant" };
-					// 从 message 属性中提取文本内容
+
 					if ("message" in assistantMsg) {
 						const msgContent = (
 							assistantMsg as { message?: { content?: unknown } }
@@ -148,7 +146,7 @@ export class CreatorAgentService implements OnModuleInit {
 					}
 				}
 
-				// 处理最终结果
+
 				if (message.type === "result") {
 					const resultMsg = message as SDKResultMessage;
 					if (resultMsg.subtype === "success") {
@@ -174,14 +172,14 @@ export class CreatorAgentService implements OnModuleInit {
 							},
 						};
 					} else {
-						// 处理错误类型: error_during_execution, error_max_turns, etc.
+
 						const errorResult = resultMsg as {
 							subtype: string;
 							stop_reason?: string | null;
 						};
 						yield {
 							type: "error",
-							content: `创作失败: ${errorResult.stop_reason || errorResult.subtype}`,
+							content: `Content creation failed: ${errorResult.stop_reason || errorResult.subtype}`,
 						};
 					}
 				}
@@ -190,13 +188,12 @@ export class CreatorAgentService implements OnModuleInit {
 			this.logger.error("Content generation failed:", error);
 			yield {
 				type: "error",
-				content: `创作失败: ${error instanceof Error ? error.message : "未知错误"}`,
+				content: `Content creation failed: ${error instanceof Error ? error.message : "unknown error"}`,
 			};
 		}
 	}
 
 	/**
-	 * 生成内容 (非流式，返回完整结果)
 	 */
 	async generateContentSync(dto: CreateContentDto): Promise<ContentOutput> {
 		let finalContent = "";
@@ -229,40 +226,40 @@ export class CreatorAgentService implements OnModuleInit {
 		return {
 			content: finalContent,
 			wordCount,
-			readingTime: Math.ceil(wordCount / 300) * 60, // 假设每分钟 300 字
+			readingTime: Math.ceil(wordCount / 300) * 60,
 			metadata,
 		};
 	}
 
 	/**
-	 * 润色内容
+	 * Polish content
 	 */
 	async *polishContent(dto: PolishContentDto): AsyncGenerator<StreamMessage> {
 		const { content, platform, instructions, tone, language } = dto;
 
 		this.logger.log(`Polishing content for platform: ${platform}`);
 
-		const systemPrompt = `你是一位专业的内容润色专家。请根据目标平台要求优化以下内容。
+		const systemPrompt = `You are a professional content editor. Optimize the content for the target platform.
 
-## 目标平台
+## Target Platform
 ${platform}
 
-## 润色要求
-${instructions || "优化语言表达，提升可读性"}
+## Editing Requirements
+${instructions || "Improve clarity, readability, and expression."}
 
-## 语气要求
-${tone || "保持原有语气"}
+## Tone Requirements
+${tone || "Preserve the original tone."}
 
-## 语言
-${language || "保持原文语言"}
+## Language
+${language || "Preserve the original language."}
 
-请输出润色后的完整内容。`;
+Output the complete polished content only.`;
 
-		const userPrompt = `请润色以下内容:\n\n${content}`;
+		const userPrompt = `Polish the following content:\n\n${content}`;
 
 		yield {
 			type: "progress",
-			content: "开始润色...",
+			content: "Starting content polishing...",
 		};
 
 		try {
@@ -324,41 +321,41 @@ ${language || "保持原文语言"}
 			this.logger.error("Polish failed:", error);
 			yield {
 				type: "error",
-				content: `润色失败: ${error instanceof Error ? error.message : "未知错误"}`,
+				content: `Polishing failed: ${error instanceof Error ? error.message : "unknown error"}`,
 			};
 		}
 	}
 
 	/**
-	 * 研究主题
+	 * Research topic
 	 */
 	async *researchTopic(dto: ResearchContentDto): AsyncGenerator<StreamMessage> {
 		const { topic, platform, referenceUrls, maxSources } = dto;
 
 		this.logger.log(`Researching topic: "${topic}"`);
 
-		const systemPrompt = `你是一位专业的内容研究员。请针对给定主题进行深入研究，收集和整理相关资料。
+		const systemPrompt = `You are a professional content researcher. Research the given topic and organize relevant information.
 
-## 研究要求
-- 分析主题的关键方面
-- 提取关键信息和数据
-- 生成结构化的研究报告
+## Research Requirements
+- Analyze the key aspects of the topic.
+- Extract important information and data.
+- Produce a structured research report.
 
-${platform ? `## 目标平台\n${platform}` : ""}
+${platform ? `## Target Platform\n${platform}` : ""}
 
-请生成详细的研究报告。`;
+Generate a detailed research report.`;
 
-		let userContent = `请研究以下主题:\n\n${topic}`;
+		let userContent = `Research the following topic:\n\n${topic}`;
 		if (referenceUrls && referenceUrls.length > 0) {
-			userContent += `\n\n参考资料:\n${referenceUrls.join("\n")}`;
+			userContent += `\n\nReferences:\n${referenceUrls.join("\n")}`;
 		}
 		if (maxSources) {
-			userContent += `\n\n最多使用 ${maxSources} 个来源`;
+			userContent += `\n\nUse at most ${maxSources} sources`;
 		}
 
 		yield {
 			type: "progress",
-			content: "开始研究...",
+			content: "Starting research...",
 		};
 
 		try {
@@ -420,14 +417,12 @@ ${platform ? `## 目标平台\n${platform}` : ""}
 			this.logger.error("Research failed:", error);
 			yield {
 				type: "error",
-				content: `研究失败: ${error instanceof Error ? error.message : "未知错误"}`,
+				content: `Research failed: ${error instanceof Error ? error.message : "unknown error"}`,
 			};
 		}
 	}
 
 	/**
-	 * 从自然语言描述生成内容（完整链路，非流式）
-	 * 用于被 LangChain 工具调用，不涉及 SSE 或用户交互
 	 */
 	async generateFromDescription(
 		description: string,
@@ -453,7 +448,7 @@ ${platform ? `## 目标平台\n${platform}` : ""}
 			}
 		}
 
-		// 如果有 skillIds，查询 Skill 内容并拼入 systemPrompt
+
 		if (skillIds && skillIds.length > 0) {
 			const skills = await this.prisma.skill.findMany({
 				where: { id: { in: skillIds }, is_deleted: false },
@@ -508,39 +503,34 @@ ${platform ? `## 目标平台\n${platform}` : ""}
 		} catch (error) {
 			this.logger.error("generateFromDescription failed:", error);
 			throw new Error(
-				`内容创作失败: ${error instanceof Error ? error.message : "未知错误"}`,
+				`Content creation failed: ${error instanceof Error ? error.message : "unknown error"}`,
 			);
 		}
 	}
 
 	/**
-	 * 优化 Skill 内容
 	 *
-	 * 使用 includePartialMessages 实现真正的逐字流式输出。
-	 * 通过 stream_event 中的 content_block_start/content_block_delta 区分：
-	 * - thinking / thinking_delta → 思考过程，跳过不返回
-	 * - text / text_delta → 实际输出，逐块流式返回
 	 */
 	async *optimizeSkill(dto: OptimizeSkillDto): AsyncGenerator<StreamMessage> {
 		const { content } = dto;
 
 		this.logger.log("Optimizing skill content");
 
-		const systemPrompt = `你是一位 Claude Skill 优化专家。请根据以下最佳实践优化用户提供的 Skill 内容。
+		const systemPrompt = `You are a Claude Skill optimization expert. Improve the user's Skill according to the best practices below.
 
-## 优化目标
+## Optimization Goal
 
-将用户的 Skill 内容优化为符合 Claude 官方最佳实践的高质量 Skill。
+Turn the user's Skill into a high-quality Skill that follows Claude Skill best practices.
 
-## 核心原则（必须遵守）
+## Core Principles
 
-- **保留用户提供的所有具体细节**：用户写入的具体步骤、参数、配置、示例、约束条件等不得删减或简化。优化的重点是改善结构和表达，而非删减内容。
-- **不要过度精简**：最佳实践中的"简洁"是指去掉 Claude 已经知道的通识性解释（如"PDF 是什么"），而不是删除用户提供的领域专属细节、业务规则或操作指南。
-- **增强而非削减**：如果用户提供了详细的工作流步骤、验证规则、格式要求等，应保留并优化其组织结构，而不是将其缩减为笼统描述。
+- **Preserve all concrete user details**: Keep steps, parameters, configuration, examples, constraints, business rules, and validation requirements.
+- **Do not over-compress**: Concise means removing generic explanations Claude already knows, not deleting domain-specific details.
+- **Improve rather than reduce**: Preserve detailed workflows and reorganize them into clearer, more usable structure.
 
 ---
 
-## 最佳实践
+## Best Practices
 
 Learn how to write effective Skills that Claude can discover and use successfully.
 
@@ -1650,25 +1640,25 @@ Before sharing a Skill, verify:
 
 ---
 
-## 输出要求（严格遵守）
+## Output Requirements
 
-- **严禁**输出任何解释、分析、前言、总结或评论等和 Skill 无关的话
-- **严禁**输出 markdown 代码块包裹符（如 \`\`\`markdown ... \`\`\`）
-- 你必须直接输出 Skill 的内容，必须以 YAML frontmatter 的 \`---\` 开头
-- 直接输出优化后的完整 Skill 内容（纯 Markdown），不要包含任何额外文字
-- **必须使用中文输出**，包括 description 字段、所有说明文本和注释。仅保留代码、命令、技术术语等必须用英文的部分
+- Do not output explanations, analysis, prefaces, summaries, or comments outside the Skill.
+- Do not wrap the result in markdown code fences.
+- Output the Skill content directly. It must start with YAML frontmatter: \`---\`.
+- Output the complete optimized Skill as plain Markdown with no extra text.
+- Use clear English by default. Preserve any user-provided proper nouns, commands, code, examples, and quoted content exactly when needed.
 `;
 
-		const userPrompt = `请优化以下 Skill 内容。注意：直接输出优化后的 Skill，以 --- 开头，不要输出任何解释或代码块包裹。\n\n${content}`;
+		const userPrompt = `Optimize the following Skill content. Output only the optimized Skill, starting with ---. Do not include explanations or code fences.\n\n${content}`;
 
 		yield {
 			type: "progress",
-			content: "开始优化 Skill...",
+			content: "Starting Skill optimization...",
 		};
 
 		try {
 			let finalContent = "";
-			// 跟踪当前 content block 是否为 text 类型（非 thinking）
+
 			let currentBlockIsText = false;
 
 			for await (const message of query({
@@ -1679,7 +1669,7 @@ Before sharing a Skill, verify:
 					includePartialMessages: true,
 				},
 			})) {
-				// 处理流式事件：逐块输出文本，跳过 thinking
+
 				if (message.type === "stream_event") {
 					const event = (
 						message as {
@@ -1692,13 +1682,13 @@ Before sharing a Skill, verify:
 					).event;
 					if (!event) continue;
 
-					// content_block_start: 判断当前块类型
+
 					if (event.type === "content_block_start") {
 						const block = event.content_block as { type?: string } | undefined;
 						currentBlockIsText = block?.type === "text";
 					}
 
-					// content_block_delta: 仅转发 text_delta，跳过 thinking_delta
+
 					if (event.type === "content_block_delta" && currentBlockIsText) {
 						const delta = event.delta as
 							| { type?: string; text?: string }
@@ -1712,19 +1702,19 @@ Before sharing a Skill, verify:
 						}
 					}
 
-					// content_block_stop: 重置状态
+
 					if (event.type === "content_block_stop") {
 						currentBlockIsText = false;
 					}
 					continue;
 				}
 
-				// 跳过完整 assistant 消息（已通过 stream_event 逐块输出）
+
 				if (message.type === "assistant") {
 					continue;
 				}
 
-				// 处理最终结果
+
 				if (message.type === "result") {
 					const resultMsg = message as SDKResultMessage;
 					if (resultMsg.subtype === "success") {
@@ -1734,7 +1724,7 @@ Before sharing a Skill, verify:
 							usage?: { input_tokens?: number; output_tokens?: number };
 						};
 
-						// 优先使用流式累积的内容，result 作为兜底
+
 						if (!finalContent && successResult.result) {
 							finalContent = successResult.result;
 						}
@@ -1754,7 +1744,7 @@ Before sharing a Skill, verify:
 						};
 						yield {
 							type: "error",
-							content: `优化失败: ${errorResult.stop_reason || errorResult.subtype}`,
+							content: `Optimization failed: ${errorResult.stop_reason || errorResult.subtype}`,
 						};
 					}
 				}
@@ -1763,20 +1753,19 @@ Before sharing a Skill, verify:
 			this.logger.error("Skill optimization failed:", error);
 			yield {
 				type: "error",
-				content: `优化失败: ${error instanceof Error ? error.message : "未知错误"}`,
+				content: `Optimization failed: ${error instanceof Error ? error.message : "unknown error"}`,
 			};
 		}
 	}
 
 	/**
-	 * 统计字数 (支持中英文混合)
 	 */
 	private countWords(text: string): number {
-		// 移除空白字符
+
 		const cleanText = text.replace(/\s+/g, "");
-		// 中文字符计数
+
 		const chineseChars = (cleanText.match(/[\u4e00-\u9fff]/g) || []).length;
-		// 英文单词计数 (简单按空格分割)
+
 		const englishWords = text
 			.replace(/[\u4e00-\u9fff]/g, " ")
 			.split(/\s+/)

@@ -50,7 +50,6 @@ public class XMNotTableEntry extends MarkwonAdapter.Entry<Node, XMNotTableEntry.
 
     private final Map<Node, Spanned> cache = new HashMap<>();
     /**
-     * 和普通 RecyclerView 不同，MarkwonAdapter.Entry 的缓存是基于 Node 的，故特设此用于缓存每个 node 的游标位置
      */
     private final Map<Node, Pair<Integer, Integer>> cursorCache = new HashMap<>();
 
@@ -61,18 +60,18 @@ public class XMNotTableEntry extends MarkwonAdapter.Entry<Node, XMNotTableEntry.
             if (spanned == null) {
                 spanned = markwon.render(node);
                 cache.put(node, spanned);
-                cursorCache.put(node, Pair.create(-1, -1));//为每个 node 缓存游标
+                cursorCache.put(node, Pair.create(-1, -1));
             }
-            //markdown渲染
+
             markwon.setParsedMarkdown(holder.textView, spanned);
             
-            // 在 Markdown 渲染后，重新确保 breakStrategy 被应用
-            // 这是为了防止 Markwon 的渲染过程覆盖 breakStrategy 设置
+
+
             holder.textView.setBreakStrategy(LineBreaker.BREAK_STRATEGY_HIGH_QUALITY); // 2 = BREAK_STRATEGY_HIGH_QUALITY
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 holder.textView.setLineHeight(dp2px(holder.textView.getContext(),15f));
             }
-            // 长按、单击事件
+
             GestureDetector gd = new GestureDetector(holder.textView.getContext(), new GestureDetector.SimpleOnGestureListener() {
                 @Override
                 public void onLongPress(@NonNull MotionEvent e) {
@@ -86,7 +85,7 @@ public class XMNotTableEntry extends MarkwonAdapter.Entry<Node, XMNotTableEntry.
                     Pair<Integer, Integer> cursorPair = Pair.create(-1, -1);
                     cursorCache.put(node, cursorPair);
                     Spannable spannable = (Spannable) holder.textView.getText();
-                    //将之前的背景色去掉
+
                     BackgroundColorSpan[] spans = spannable.getSpans(0, holder.textView.length(), BackgroundColorSpan.class);
                     for (BackgroundColorSpan span : spans) {
                         spannable.removeSpan(span);
@@ -127,8 +126,8 @@ public class XMNotTableEntry extends MarkwonAdapter.Entry<Node, XMNotTableEntry.
             this.textView = textView;
             this.textView.setSpannableFactory(NoCopySpannableFactory.getInstance());
             
-            // 确保 breakStrategy 在代码中被显式设置，以覆盖任何可能的冲突设置
-            // 注意：breakStrategy 需要 API 21+，这里在 XML 中设置了备用方案
+
+
             this.textView.setBreakStrategy(LineBreaker.BREAK_STRATEGY_HIGH_QUALITY); // 2 = BREAK_STRATEGY_HIGH_QUALITY
         }
     }

@@ -73,9 +73,9 @@ Open the app and enable:
 - overlay permission
 - battery optimization exemption if needed
 
-## Current open-source behavior
+## Current Source-Available Build Behavior
 
-The Android app currently skips the old login gate in the open-source build and goes straight to `HomeActivity`.
+The Android app currently skips the old login gate in the source-available build and goes straight to `HomeActivity`.
 
 For local runs, the backend task controllers also default to `userId = 1`, so first-run setup no longer depends on the older OTP flow.
 

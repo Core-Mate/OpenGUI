@@ -13,7 +13,7 @@
         <item name="android:background">@drawable/time_picker_dialog_bg</item>
     </style>
 
-    <!-- 执行中 Overlay：透明窗口，与 Web ExecutionOverlay 一致 -->
+
     <style name="Theme.PromptExecution.Overlay" parent="Theme.Promotor.Feature">
         <item name="android:windowIsTranslucent">true</item>
         <item name="android:windowBackground">@android:color/transparent</item>

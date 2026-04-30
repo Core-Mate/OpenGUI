@@ -11,10 +11,10 @@ import { TenantService } from "./tenant.service";
 const DEFAULT_TENANT_ID = 0;
 
 /**
- * 租户控制器
- * 提供租户相关接口
+ * Tenant controller.
+ * Provides tenant-related APIs.
  */
-@ApiTags("租户")
+@ApiTags("Tenant")
 @Controller("tenant")
 export class TenantController {
 	constructor(
@@ -25,16 +25,17 @@ export class TenantController {
 	}
 
 	/**
-	 * 获取当前租户订阅状态
+	 * Get the current tenant subscription status.
 	 */
 	@Get("subscription")
 	@ApiOperation({
-		summary: "获取租户订阅状态",
-		description: "获取当前登录用户所属租户的订阅状态信息",
+		summary: "Get tenant subscription status",
+		description:
+			"Get subscription status for the tenant associated with the current user",
 	})
 	@ApiResponse({
 		status: HttpStatus.OK,
-		description: "租户订阅状态",
+		description: "Tenant subscription status",
 		type: TenantSubscriptionStatusDto,
 	})
 	async getSubscriptionStatus(): Promise<TenantSubscriptionStatusDto> {

@@ -102,16 +102,16 @@ public class InputCodeLayout extends RelativeLayout implements TextWatcher, View
 
         mEdtCode = new EditText(mContext);
         mEdtCode.setLayoutParams(params);
-        // 确保可以在触摸模式下获取焦点并接收输入
+
         mEdtCode.setFocusable(true);
         mEdtCode.setFocusableInTouchMode(true);
         mEdtCode.setCursorVisible(false);
-        // 确保支持数字输入
+
         mEdtCode.setInputType(EditorInfo.TYPE_CLASS_NUMBER);
         mEdtCode.setBackgroundResource(android.R.color.transparent);
         addView(mEdtCode);
         if (mEdtCode != null) {
-            // 使用 post 确保在布局完成后再请求焦点，避免过早请求导致焦点无效
+
             mEdtCode.post(new Runnable() {
                 @Override
                 public void run() {
@@ -137,7 +137,7 @@ public class InputCodeLayout extends RelativeLayout implements TextWatcher, View
         String input = s.toString();
         if (TextUtils.isEmpty(input)) return;
 
-        // 核心修改 1: 过滤掉非数字字符（针对含有特殊符号的粘贴内容）
+
         String cleanInput = input.replaceAll("[^0-9]", "");
         if (TextUtils.isEmpty(cleanInput)) {
             mEdtCode.removeTextChangedListener(this);
@@ -146,19 +146,18 @@ public class InputCodeLayout extends RelativeLayout implements TextWatcher, View
             return;
         }
 
-        // 核心修改 2: 暂时移除监听，防止清空操作导致死循环
+
         mEdtCode.removeTextChangedListener(this);
 
-        // 核心修改 3: 处理填充逻辑（支持单字和多字粘贴）
+
         fillCodes(cleanInput);
 
-        // 核心修改 4: 清空输入框并恢复监听
+
         mEdtCode.setText("");
         mEdtCode.addTextChangedListener(this);
     }
 
     /**
-     * 依次将字符填充到空的 TextView 中
      */
     private void fillCodes(String input) {
         if (mTextViews == null) return;
@@ -167,7 +166,7 @@ public class InputCodeLayout extends RelativeLayout implements TextWatcher, View
         for (char c : chars) {
             for (int i = 0; i < mTextViews.length; i++) {
                 TextView textView = mTextViews[i];
-                // 如果当前框是空的，则填入并移动焦点视觉
+
                 if (TextUtils.isEmpty(textView.getText().toString())) {
                     textView.setText(String.valueOf(c));
                     textView.setBackgroundResource(mUnFocusBackground);
@@ -176,11 +175,11 @@ public class InputCodeLayout extends RelativeLayout implements TextWatcher, View
                         mTextViews[i + 1].setBackgroundResource(mFocusBackground);
                     }
 
-                    // 检查是否输入完成
+
                     if (i == mTextViews.length - 1 && mOnInputCompleteCallback != null) {
                         mOnInputCompleteCallback.onInputCompleteListener(getCode());
                     }
-                    // 填入成功，跳出内循环处理下一个字符
+
                     break;
                 }
             }
@@ -197,7 +196,6 @@ public class InputCodeLayout extends RelativeLayout implements TextWatcher, View
     }
 
     /**
-     * 删除验证码逻辑优化：删除当前最后一个有内容的框，并把焦点视觉移回该框
      */
     private void deleteCode() {
         if (mTextViews == null) return;
@@ -206,7 +204,7 @@ public class InputCodeLayout extends RelativeLayout implements TextWatcher, View
             if (!TextUtils.isEmpty(textView.getText().toString())) {
                 textView.setText("");
                 textView.setBackgroundResource(mFocusBackground);
-                // 清除后面框的焦点状态（如果有的话）
+
                 if (i < mTextViews.length - 1) {
                     mTextViews[i + 1].setBackgroundResource(mUnFocusBackground);
                 }
@@ -315,7 +313,6 @@ public class InputCodeLayout extends RelativeLayout implements TextWatcher, View
             mContainer.setGravity(gravity);
     }
 
-    /** 设置验证失败状态：为 true 时所有格子使用错误背景色，为 false 时恢复正常 */
     public void setErrorState(boolean error) {
         if (mIsErrorState == error) return;
         mIsErrorState = error;

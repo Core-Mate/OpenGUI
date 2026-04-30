@@ -20,7 +20,7 @@
             android:layout_weight="1"
             android:textColor="@color/task_detail_label"
             android:textSize="15sp"
-            tools:text="1月24日" />
+            tools:text="Jan 24" />
 
         <TextView
             android:id="@+id/tv_date_total"
@@ -28,7 +28,7 @@
             android:layout_height="wrap_content"
             android:textColor="@color/task_detail_label"
             android:textSize="15sp"
-            tools:text="共 0.7积分" />
+            tools:text="Total 0.7 Credits" />
     </LinearLayout>
 
     <LinearLayout

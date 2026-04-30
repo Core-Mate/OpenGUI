@@ -5,7 +5,7 @@
     android:viewportHeight="24"
     android:tint="?attr/colorControlNormal">
 
-    <!-- 右上角箭头折线 -->
+
     <path
         android:fillColor="@android:color/transparent"
         android:strokeColor="@android:color/black"
@@ -14,7 +14,7 @@
         android:strokeLineJoin="round"
         android:pathData="M15,3 L21,3 L21,9" />
 
-    <!-- 左下角箭头折线 -->
+
     <path
         android:fillColor="@android:color/transparent"
         android:strokeColor="@android:color/black"
@@ -23,7 +23,7 @@
         android:strokeLineJoin="round"
         android:pathData="M9,21 L3,21 L3,15" />
 
-    <!-- 右上角箭头线 -->
+
     <path
         android:fillColor="@android:color/transparent"
         android:strokeColor="@android:color/black"
@@ -32,7 +32,7 @@
         android:strokeLineJoin="round"
         android:pathData="M21,3 L14,10" />
 
-    <!-- 左下角箭头线 -->
+
     <path
         android:fillColor="@android:color/transparent"
         android:strokeColor="@android:color/black"

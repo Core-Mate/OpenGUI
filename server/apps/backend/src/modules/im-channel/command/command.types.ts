@@ -1,5 +1,4 @@
 /**
- * 命令类型定义
  */
 export enum CommandType {
 	LIST_TASKS = "LIST_TASKS",
@@ -11,7 +10,6 @@ export enum CommandType {
 	RESUME = "RESUME",
 	DEVICES = "DEVICES",
 	HELP = "HELP",
-	/** 非命令文本（HITL 场景下作为用户回复） */
 	FREE_TEXT = "FREE_TEXT",
 }
 

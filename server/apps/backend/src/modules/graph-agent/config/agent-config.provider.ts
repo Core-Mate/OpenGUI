@@ -10,9 +10,7 @@ import {
 } from "./types";
 
 /**
- * Agent 配置提供者服务
  *
- * 负责从数据库获取 Agent 配置
  */
 @Injectable()
 export class AgentConfigProvider {
@@ -21,13 +19,7 @@ export class AgentConfigProvider {
 	constructor(private readonly configService: ConfigService) {}
 
 	/**
-	 * 获取指定 Agent 的 active 配置
-	 * 直接从数据库读取
 	 *
-	 * @param agentName Agent 名称
-	 * @param region 用户地区 (默认为 CN)
-	 * @returns Agent 配置 DTO
-	 * @throws Error 如果没有找到 active 配置
 	 */
 	private async getConfig(
 		agentName: AgentName,
@@ -52,14 +44,11 @@ export class AgentConfigProvider {
 	}
 
 	/**
-	 * 获取完整模型配置（模型配置 + System Prompt）
 	 *
-	 * API key、base URL、model name 从环境变量获取：
 	 * - executor-vlm: VLM_API_KEY, VLM_BASE_URL, VLM_MODEL
 	 * - action-summarizer: CLAUDE_API_KEY, CLAUDE_BASE_URL, CLAUDE_SMALL_MODEL
-	 * - 其他 Agent: CLAUDE_API_KEY, CLAUDE_BASE_URL, CLAUDE_MODEL
+	 * - Other Agent: CLAUDE_API_KEY, CLAUDE_BASE_URL, CLAUDE_MODEL
 	 *
-	 * system prompt、temperature 等从数据库读取。
 	 */
 	async getModelConfig(agentName: AgentName, region = "CN"): Promise<ModelConfig> {
 		const config = await this.getConfig(agentName, region);
@@ -108,7 +97,6 @@ export class AgentConfigProvider {
 	}
 
 	/**
-	 * 转换数据库记录为 DTO
 	 */
 	private toDTO(config: {
 		id: number;

@@ -35,7 +35,7 @@
                 android:textColor="#ffffff"
                 android:textSize="19sp"
                 android:maxLines="1"
-                tools:text="需要您接管需要您接管需要您接管需要" />
+                tools:text="User takeover required. User takeover required." />
 
             <TextView
                 android:id="@+id/tv_message"
@@ -47,7 +47,7 @@
                 android:layout_marginEnd="24dp"
                 android:textColor="#ffffff"
                 android:textSize="13sp"
-                tools:text="正在执行xxxxx正在执行xxxxx正在执行xxxxx正在执行xxxxx正在执行xxxxx正在执行xxxxx正在执行xxxxx正在执行xxxxx正在执行xxxxx正在执行xxxxx正在执行xxxxx正在执行xxxxx正在执行xxxxx正在执行xxxxx正在执行xxxxx正在执行xxxxx正在执行xxxxx" />
+                tools:text="Task is currently running." />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -65,7 +65,7 @@
                     android:layout_weight="1"
                     android:background="@drawable/call_user_take_over_bg"
                     android:gravity="center"
-                    android:text="接管"
+                    android:text="Take Over"
                     android:textColor="#1E1E1E" />
 
                 <TextView
@@ -74,7 +74,7 @@
                     android:layout_height="51dp"
                     android:background="@drawable/call_user_stop_bg"
                     android:gravity="center"
-                    android:text="停止"
+                    android:text="Stop"
                     android:textColor="#FF0000" />
             </LinearLayout>
         </LinearLayout>

@@ -31,7 +31,7 @@ class QaPairAdapter(private val qaList: MutableList<QaPair>) :
         holder.etQuestion.setText(qaPair.question)
         holder.etAnswer.setText(qaPair.answer)
 
-        // 防止 EditText 在 RecyclerView 复用时出现数据混乱
+
         holder.etQuestion.removeTextChangedListener(holder.etQuestion.tag as? TextWatcher)
         holder.etAnswer.removeTextChangedListener(holder.etAnswer.tag as? TextWatcher)
 
@@ -58,8 +58,8 @@ class QaPairAdapter(private val qaList: MutableList<QaPair>) :
 
     override fun getItemCount(): Int = qaList.size
 
-    // 获取所有问答对的方法，供 Fragment 调用
+
     fun getQaPairs(): List<QaPair> {
-        return qaList.toList() // 返回副本以防外部修改
+        return qaList.toList()
     }
 }

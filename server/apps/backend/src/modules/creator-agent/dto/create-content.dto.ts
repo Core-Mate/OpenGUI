@@ -19,142 +19,138 @@ import {
 } from "../types";
 
 /**
- * 创作上下文 DTO
  */
 export class CreationContextDto {
-	@ApiPropertyOptional({ description: "原帖/文章内容" })
+	@ApiPropertyOptional({ description: "Original post or article content" })
 	@IsOptional()
 	@IsString()
 	@MaxLength(50000)
 	originalContent?: string;
 
-	@ApiPropertyOptional({ description: "评论区讨论内容", type: [String] })
+	@ApiPropertyOptional({ description: "Comment discussion content", type: [String] })
 	@IsOptional()
 	@IsArray()
 	@IsString({ each: true })
 	comments?: string[];
 
-	@ApiProperty({ description: "目标平台", enum: ContentPlatform })
+	@ApiProperty({ description: "Target platform", enum: ContentPlatform })
 	@IsEnum(ContentPlatform)
 	platform: ContentPlatform;
 
-	@ApiProperty({ description: "创作场景", enum: CreationScenario })
+	@ApiProperty({ description: "Creation scenario", enum: CreationScenario })
 	@IsEnum(CreationScenario)
 	scenario: CreationScenario;
 
-	@ApiPropertyOptional({ description: "补充背景信息" })
+	@ApiPropertyOptional({ description: "Additional background information" })
 	@IsOptional()
 	@IsString()
 	@MaxLength(5000)
 	background?: string;
 
-	@ApiPropertyOptional({ description: "目标受众描述" })
+	@ApiPropertyOptional({ description: "Target audience description" })
 	@IsOptional()
 	@IsString()
 	@MaxLength(500)
 	targetAudience?: string;
 
-	@ApiPropertyOptional({ description: "期望的语气/风格", enum: ContentTone })
+	@ApiPropertyOptional({ description: "Desired tone or style", enum: ContentTone })
 	@IsOptional()
 	@IsEnum(ContentTone)
 	tone?: ContentTone;
 
-	@ApiPropertyOptional({ description: "语言", enum: ["zh", "en", "auto"] })
+	@ApiPropertyOptional({ description: "Language", enum: ["zh", "en", "auto"] })
 	@IsOptional()
 	@IsString()
 	language?: "zh" | "en" | "auto";
 }
 
 /**
- * 创建内容请求 DTO
  */
 export class CreateContentDto {
-	@ApiProperty({ description: "创作主题/需求描述" })
+	@ApiProperty({ description: "Creation topic or requirement description" })
 	@IsString()
 	@MaxLength(2000)
 	topic: string;
 
-	@ApiProperty({ description: "创作上下文", type: CreationContextDto })
+	@ApiProperty({ description: "Creation context", type: CreationContextDto })
 	@ValidateNested()
 	@Type(() => CreationContextDto)
 	context: CreationContextDto;
 
-	@ApiPropertyOptional({ description: "额外指令" })
+	@ApiPropertyOptional({ description: "Additional instructions" })
 	@IsOptional()
 	@IsString()
 	@MaxLength(2000)
 	instructions?: string;
 
-	@ApiPropertyOptional({ description: "参考资料URL列表", type: [String] })
+	@ApiPropertyOptional({ description: "Reference URL list", type: [String] })
 	@IsOptional()
 	@IsArray()
 	@IsString({ each: true })
 	referenceUrls?: string[];
 
-	@ApiPropertyOptional({ description: "最大字数限制", minimum: 50, maximum: 10000 })
+	@ApiPropertyOptional({ description: "Maximum word count", minimum: 50, maximum: 10000 })
 	@IsOptional()
 	@IsInt()
 	@Min(50)
 	@Max(10000)
 	maxLength?: number;
 
-	@ApiPropertyOptional({ description: "是否需要研究", default: false })
+	@ApiPropertyOptional({ description: "Whether research is needed", default: false })
 	@IsOptional()
 	@IsBoolean()
 	needResearch?: boolean;
 }
 
 /**
- * 润色内容请求 DTO
  */
 export class PolishContentDto {
-	@ApiProperty({ description: "原始内容" })
+	@ApiProperty({ description: "Original content" })
 	@IsString()
 	@MaxLength(50000)
 	content: string;
 
-	@ApiProperty({ description: "目标平台", enum: ContentPlatform })
+	@ApiProperty({ description: "Target platform", enum: ContentPlatform })
 	@IsEnum(ContentPlatform)
 	platform: ContentPlatform;
 
-	@ApiPropertyOptional({ description: "润色指令" })
+	@ApiPropertyOptional({ description: "Polishing instructions" })
 	@IsOptional()
 	@IsString()
 	@MaxLength(1000)
 	instructions?: string;
 
-	@ApiPropertyOptional({ description: "期望的语气", enum: ContentTone })
+	@ApiPropertyOptional({ description: "Desired tone", enum: ContentTone })
 	@IsOptional()
 	@IsEnum(ContentTone)
 	tone?: ContentTone;
 
-	@ApiPropertyOptional({ description: "语言", enum: ["zh", "en"] })
+	@ApiPropertyOptional({ description: "Language", enum: ["zh", "en"] })
 	@IsOptional()
 	@IsString()
 	language?: "zh" | "en";
 }
 
 /**
- * 研究请求 DTO
  */
 export class ResearchContentDto {
-	@ApiProperty({ description: "研究主题" })
+	@ApiProperty({ description: "Research topic" })
 	@IsString()
 	@MaxLength(500)
 	topic: string;
 
-	@ApiPropertyOptional({ description: "目标平台", enum: ContentPlatform })
+	@ApiPropertyOptional({ description: "Target platform", enum: ContentPlatform })
 	@IsOptional()
 	@IsEnum(ContentPlatform)
 	platform?: ContentPlatform;
 
-	@ApiPropertyOptional({ description: "参考资料URL列表", type: [String] })
+	@ApiPropertyOptional({ description: "Reference URL list", type: [String] })
 	@IsOptional()
 	@IsArray()
 	@IsString({ each: true })
 	referenceUrls?: string[];
 
-	@ApiPropertyOptional({ description: "最大研究来源数量", minimum: 1, maximum: 10 })
+	@ApiPropertyOptional({ description: "Maximum number of research sources", minimum: 1, maximum: 10 })
 	@IsOptional()
 	@IsInt()
 	@Min(1)

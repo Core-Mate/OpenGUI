@@ -1,7 +1,5 @@
 /**
- * Executor 执行指标
  *
- * 在各节点中逐步累加，exit 节点输出完整摘要
  */
 
 export interface ExecutionMetrics {
@@ -27,7 +25,6 @@ export const DEFAULT_EXECUTION_METRICS: ExecutionMetrics = {
 };
 
 /**
- * 逐字段累加合并指标
  */
 export function mergeMetrics(
 	current: ExecutionMetrics,

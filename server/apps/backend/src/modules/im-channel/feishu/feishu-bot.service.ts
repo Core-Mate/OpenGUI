@@ -4,10 +4,7 @@ import * as Lark from "@larksuiteoapi/node-sdk";
 import { AppLogger } from "../../../common/log";
 
 /**
- * 飞书 Bot 服务 — 基于官方 @larksuiteoapi/node-sdk
  *
- * 使用 WSClient 长连接模式接收消息（不需要公网 IP）。
- * 配置 FEISHU_APP_ID + FEISHU_APP_SECRET 即可启用。
  */
 @Injectable()
 export class FeishuBotService implements OnModuleInit, OnModuleDestroy {
@@ -17,7 +14,6 @@ export class FeishuBotService implements OnModuleInit, OnModuleDestroy {
 	private wsClient: Lark.WSClient | null = null;
 	private enabled = false;
 
-	/** 消息回调，由 ImChannelService 注册 */
 	onMessage: ((openId: string, text: string) => Promise<void>) | null = null;
 
 	constructor(
@@ -42,10 +38,10 @@ export class FeishuBotService implements OnModuleInit, OnModuleDestroy {
 			appSecret: this.appSecret,
 		};
 
-		// HTTP client — 用于发送消息
+
 		this.client = new Lark.Client(baseConfig);
 
-		// WebSocket client — 用于接收消息
+
 		this.wsClient = new Lark.WSClient({
 			...baseConfig,
 			loggerLevel: Lark.LoggerLevel.info,
@@ -64,7 +60,7 @@ export class FeishuBotService implements OnModuleInit, OnModuleDestroy {
 
 	onModuleDestroy() {
 		this.enabled = false;
-		// SDK 没有暴露显式的 close 方法，GC 会清理
+
 		this.client = null;
 		this.wsClient = null;
 	}
@@ -74,7 +70,6 @@ export class FeishuBotService implements OnModuleInit, OnModuleDestroy {
 	}
 
 	/**
-	 * 发送文本消息给飞书用户
 	 */
 	async sendMessage(openId: string, text: string): Promise<void> {
 		if (!this.client) return;
@@ -92,7 +87,7 @@ export class FeishuBotService implements OnModuleInit, OnModuleDestroy {
 		}
 	}
 
-	// ---- 内部实现 ----
+
 
 	private handleMessage(data: any) {
 		try {

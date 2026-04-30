@@ -170,17 +170,17 @@ class ExecutedTaskListAdapter(
             try {
                 this.presenter = presenter
                 tvTitle.text = data.taskName
-//                count.text = "已执行${data.totalExecutions}次"
+//                count.text = "Executed ${data.totalExecutions} times"
 //                if (data.totalExecutions == 0L) {
-//                    btReplay.text = "开始运行"
+//                    btReplay.text = "StartRun"
 //                } else {
-//                    btReplay.text = "重新执行"
+//                    btReplay.text = "Run Again"
 //                }
                 if (data.lastExecution != null && data.lastExecution?.finishedAt != null) {
                     tvLastExecuteTime.text =
                         TimeUtils.convertUtcToBeijing(data.lastExecution?.finishedAt)
                 } else {
-                    tvLastExecuteTime.text = "还没有执行过"
+                    tvLastExecuteTime.text = "Not run yet"
                 }
                 root.setOnClickListener {
                     val intent = Intent(tvTitle.context, TaskDetailActivity::class.java)
@@ -188,12 +188,12 @@ class ExecutedTaskListAdapter(
                     root.context.startActivity(intent)
                 }
                 refresh.setOnClickListener {
-                    val checkPermission = PermissionManager.checkPermission(refresh.context, "我的任务 - 列表 - 重新执行")
+                    val checkPermission = PermissionManager.checkPermission(refresh.context, "My Tasks - List - Run Again")
                     if (!checkPermission) {
                         PermissionManager.showRequestPermissionWindow(refresh.context)
                         return@setOnClickListener
                     }
-                    TaskCenter.reset(refresh.context,"我的任务 - 列表 - 重新执行")
+                    TaskCenter.reset(refresh.context,"My Tasks - List - Run Again")
                     TaskCenter.taskId = data.id
                     TaskCenter.taskTitle = data.taskName
                     TaskCenter.taskPrompt = data.taskDescription
@@ -218,7 +218,7 @@ class ExecutedTaskListAdapter(
             fragmentManager: FragmentManager?,
             adapter: ExecutedTaskListAdapter
         ) {
-            // 如果已经显示，先关闭
+
             if (menuPopupWindow != null && menuPopupWindow!!.isShowing) {
                 menuPopupWindow!!.dismiss()
                 return
@@ -227,7 +227,7 @@ class ExecutedTaskListAdapter(
             val popupView = inflater.inflate(R.layout.popup_task_menu, null)
 //            val tvEdit = popupView.findViewById<TextView>(R.id.tv_edit)
             val tvDelete = popupView.findViewById<LinearLayout>(R.id.action_delete)
-            // 删除功能
+
             tvDelete.setOnClickListener {
                 menuPopupWindow?.dismiss()
                 showDeleteConfirmDialog(data, adapter)
@@ -238,11 +238,11 @@ class ExecutedTaskListAdapter(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 true
             )
-            // 设置背景
+
             menuPopupWindow?.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
             menuPopupWindow?.isOutsideTouchable = true
             menuPopupWindow?.isFocusable = true
-            // 显示在 imgMenu 下方
+
             menuPopupWindow?.showAsDropDown(
                 anchorView,
                 AMScreenUtils.dp2px(-30f),
@@ -259,12 +259,12 @@ class ExecutedTaskListAdapter(
         ) {
             deleteConfirmDialog?.dismiss()
             deleteConfirmDialog = AlertDialog.Builder(itemView.context)
-                .setTitle("确认删除")
-                .setMessage("确定要删除该任务吗？")
-                .setNegativeButton("取消") { dialog, _ ->
+                .setTitle("ConfirmDelete")
+                .setMessage("Delete this task?")
+                .setNegativeButton("Cancel") { dialog, _ ->
                     dialog.dismiss()
                 }
-                .setPositiveButton("确认") { dialog, _ ->
+                .setPositiveButton("Confirm") { dialog, _ ->
                     presenter?.deleteTask(data.id, object : MyTaskPresenter.DeleteTaskCallback {
                         override fun callback(success: Boolean) {
                             if (success) {

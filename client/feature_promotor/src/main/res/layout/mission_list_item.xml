@@ -15,7 +15,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        tool:text="点赞短视频" />
+        tool:text="Like Short Videos" />
 
     <ImageView
         android:id="@+id/img_check"

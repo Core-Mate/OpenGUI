@@ -46,7 +46,7 @@
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintEnd_toStartOf="@id/task_progress"
                 app:layout_constraintHorizontal_bias="0.0"
-                tools:text="发布抖音作品" />
+                tools:text="Publish Douyin Post" />
 
             <TextView
                 android:id="@+id/task_progress"
@@ -65,7 +65,7 @@
             android:id="@+id/btn_remove_task"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:text="移除"
+            android:text="Remove"
             android:textColor="@color/remove_button_text_red"
             android:visibility="gone"
             android:paddingStart="12dp"

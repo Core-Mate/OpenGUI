@@ -50,9 +50,9 @@ class DebugActivity : AppCompatActivity() {
             qualityValue
         }
         binding.sbDebug.progress = quality
-        binding.tvQuality.text = "图片压缩质量：$quality"
+        binding.tvQuality.text = "Image Compression Quality：$quality"
 
-        binding.tvUploadLog.text = mmkv.decodeString("LastLogUrl", "最近没有上传日志")
+        binding.tvUploadLog.text = mmkv.decodeString("LastLogUrl", "No uploaded logs yet")
 
         binding.rgServerSwitch.setOnCheckedChangeListener { radioGroup, i ->
             when (i) {
@@ -69,8 +69,8 @@ class DebugActivity : AppCompatActivity() {
                 }
             }
             val alertDialog =
-                AlertDialog.Builder(this).setMessage("切换服务器需要退出重新登录")
-                    .setPositiveButton("确定", object : DialogInterface.OnClickListener {
+                AlertDialog.Builder(this).setMessage("Switching server requires signing out and signing in again.")
+                    .setPositiveButton("Confirm", object : DialogInterface.OnClickListener {
                         override fun onClick(dialog: DialogInterface?, which: Int) {
                             dialog?.dismiss()
                             val mmkv = MMKV.defaultMMKV()
@@ -108,7 +108,7 @@ class DebugActivity : AppCompatActivity() {
                     LogManager.saveLog(
                         this@DebugActivity,
                         "MeFragment",
-                        "MeFragment | initListener | $model 模型设置成功",
+                        "MeFragment | initListener | $model model setting saved",
                         TaskCenter.executionId?:-1
                     )
                     if (model == "mate-r1") {
@@ -122,10 +122,10 @@ class DebugActivity : AppCompatActivity() {
                     LogManager.saveLog(
                         this@DebugActivity,
                         "MeFragment",
-                        "MeFragment | initListener | $model 模型设置失败  | ${it.message}",
+                        "MeFragment | initListener | $model model setting failed  | ${it.message}",
                         TaskCenter.executionId?:-1
                     )
-                    Toast.makeText(this@DebugActivity, "模型设置出错", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@DebugActivity, "model setting error", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -135,7 +135,7 @@ class DebugActivity : AppCompatActivity() {
                 getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
             val clip = ClipData.newPlainText("Log", binding.tvUploadLog.text ?: "-1")
             clipboard.setPrimaryClip(clip)
-            Toast.makeText(this, "Log 连接已复制", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Log link copied", Toast.LENGTH_SHORT).show()
         }
 
 
@@ -153,7 +153,7 @@ class DebugActivity : AppCompatActivity() {
             val clip =
                 ClipData.newPlainText("PushDeviceToken", PushManager.instance.mDeviceToken ?: "-1")
             clipboard.setPrimaryClip(clip)
-            Toast.makeText(this, "Push Token 已复制", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Push token copied", Toast.LENGTH_SHORT).show()
         }
 
         binding.tvUserToken.setText(mmkv.decodeString("token"))
@@ -162,12 +162,12 @@ class DebugActivity : AppCompatActivity() {
                 getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
             val clip = ClipData.newPlainText("UserToken", mmkv.decodeString("token"))
             clipboard.setPrimaryClip(clip)
-            Toast.makeText(this, "User Token 已复制", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "User token copied", Toast.LENGTH_SHORT).show()
         }
 
         binding.sbDebug.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                binding.tvQuality.text = "图片压缩质量：$progress"
+                binding.tvQuality.text = "Image Compression Quality：$progress"
             }
 
             override fun onStartTrackingTouch(seekBar: SeekBar?) {

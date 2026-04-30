@@ -36,19 +36,19 @@ class CacheInterceptor(private val context: Context) : Interceptor {
         val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            // 对于 API 23 (Marshmallow) 及更高版本
-            val network = connectivityManager.activeNetwork ?: return false // 获取当前活跃网络
-            val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false // 获取网络能力
+
+            val network = connectivityManager.activeNetwork ?: return false
+            val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
 
             return capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
                     capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) ||
                     capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) ||
-                    capabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN) // 考虑 VPN 连接
+                    capabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN)
         } else {
-            // 对于旧版本 API
-            @Suppress("DEPRECATION") // 抑制对已弃用 API 的警告
+
+            @Suppress("DEPRECATION") // Suppress deprecated API warning.
             val activeNetworkInfo = connectivityManager.activeNetworkInfo
-            @Suppress("DEPRECATION") // 抑制对已弃用 API 的警告
+            @Suppress("DEPRECATION") // Suppress deprecated API warning.
             return activeNetworkInfo != null && activeNetworkInfo.isConnected
         }
     }

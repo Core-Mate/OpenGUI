@@ -2,10 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { CommandType, type ParsedCommand } from "./command.types";
 
 /**
- * 命令解析服务
  *
- * 将 IM 消息文本解析为结构化命令。
- * 支持 slash 命令和中文命令。
  */
 @Injectable()
 export class CommandParserService {
@@ -67,12 +64,12 @@ export class CommandParserService {
 			return { type: CommandType.HELP, rawText: trimmed };
 		}
 
-		// 中文命令
-		if (/^任务列表/.test(trimmed)) {
+
+		if (/^(?:task\s+list|\u4efb\u52a1\u5217\u8868)$/i.test(trimmed)) {
 			return { type: CommandType.LIST_TASKS, rawText: trimmed };
 		}
 
-		const cnRunMatch = trimmed.match(/^(?:执行|运行)\s*[:：]?\s*(\d+)/);
+		const cnRunMatch = trimmed.match(/^(?:\u6267\u884c|\u8fd0\u884c)\s*[:\uff1a]?\s*(\d+)/);
 		if (cnRunMatch) {
 			return {
 				type: CommandType.RUN_TASK,
@@ -81,7 +78,7 @@ export class CommandParserService {
 			};
 		}
 
-		const cnDoMatch = trimmed.match(/^做\s*[:：]?\s*(.+)/s);
+		const cnDoMatch = trimmed.match(/^\u505a\s*[:\uff1a]?\s*(.+)/s);
 		if (cnDoMatch) {
 			return {
 				type: CommandType.DO_TASK,
@@ -90,23 +87,23 @@ export class CommandParserService {
 			};
 		}
 
-		if (/^状态$/.test(trimmed)) {
+		if (/^\u72b6\u6001$/.test(trimmed)) {
 			return { type: CommandType.STATUS, rawText: trimmed };
 		}
-		if (/^取消$/.test(trimmed)) {
+		if (/^\u53d6\u6d88$/.test(trimmed)) {
 			return { type: CommandType.CANCEL, rawText: trimmed };
 		}
-		if (/^暂停$/.test(trimmed)) {
+		if (/^\u6682\u505c$/.test(trimmed)) {
 			return { type: CommandType.PAUSE, rawText: trimmed };
 		}
-		if (/^恢复$/.test(trimmed)) {
+		if (/^\u6062\u590d$/.test(trimmed)) {
 			return { type: CommandType.RESUME, rawText: trimmed };
 		}
-		if (/^帮助$/.test(trimmed)) {
+		if (/^\u5e2e\u52a9$/.test(trimmed)) {
 			return { type: CommandType.HELP, rawText: trimmed };
 		}
 
-		// 非命令文本
+
 		return { type: CommandType.FREE_TEXT, rawText: trimmed };
 	}
 }

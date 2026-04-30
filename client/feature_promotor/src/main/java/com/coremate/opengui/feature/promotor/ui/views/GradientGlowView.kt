@@ -34,7 +34,7 @@ class GradientGlowView @JvmOverloads constructor(
 
     init {
         setLayerType(LAYER_TYPE_SOFTWARE, null)
-        alpha = 0.5f // 整体透明度 50%
+        alpha = 0.5f
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -43,7 +43,7 @@ class GradientGlowView @JvmOverloads constructor(
         val w = width.toFloat()
         val h = height.toFloat()
 
-        // 根据动画偏移创建渐变
+
         val positions = floatArrayOf(0f, 0.33f, 0.66f, 1f)
         val colors = intArrayOf(
             Color.parseColor("#3B82F6"),
@@ -52,8 +52,8 @@ class GradientGlowView @JvmOverloads constructor(
             Color.parseColor("#3B82F6")
         )
 
-        // 动态改变渐变角度，模拟 CSS gradient-shift 动画
-        val angle = 135f + (gradientOffset * 90f) // 从 135° 到 315°
+
+        val angle = 135f + (gradientOffset * 90f)
         val radians = Math.toRadians(angle.toDouble())
 
         val startX = w / 2 + (w / 2 * Math.cos(radians)).toFloat()

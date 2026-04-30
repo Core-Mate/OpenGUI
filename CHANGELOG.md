@@ -2,7 +2,7 @@
 
 ## [0.1.0] - 2026-03-30
 
-### Initial open-source release
+### Initial source-available release
 
 **Server**
 - LangGraph-based AI agent orchestration (Coordinator → Planner → Executor → GUI → Reviewer → Summarizer)

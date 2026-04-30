@@ -61,7 +61,7 @@ class ExploreFragment : Fragment(), TaskListAdapterListener {
                 outRect.right = 4.dpToPx(requireContext())
             }
         })
-//        任务分类
+//        Task categories
         taskCategoryListAdapter = TaskCategoryListAdapter()
         binding.rvTaskCategoryList.adapter = taskCategoryListAdapter
         binding.rvTaskCategoryList.layoutManager =
@@ -77,7 +77,7 @@ class ExploreFragment : Fragment(), TaskListAdapterListener {
                 outRect.right = 12.dpToPx(requireContext())
             }
         })
-        //        任务列表
+
         binding.rvTaskList.isNestedScrollingEnabled = false
         taskListAdapter = TaskListAdapter(fragmentManager)
         taskListAdapter?.listener = this
@@ -133,10 +133,10 @@ class ExploreFragment : Fragment(), TaskListAdapterListener {
 
     fun initTaskData() {
         val data: MutableList<TaskCategoryBean> = mutableListOf()
-        val bean3 = TaskCategoryBean(true, R.drawable.ic_grid, "全部")
-        val bean4 = TaskCategoryBean(false, R.drawable.ic_share, "发布内容")
-        val bean1 = TaskCategoryBean(false, R.drawable.ic_video, "制作视频")
-        val bean2 = TaskCategoryBean(false, R.drawable.ic_message, "营销活动")
+        val bean3 = TaskCategoryBean(true, R.drawable.ic_grid, "All")
+        val bean4 = TaskCategoryBean(false, R.drawable.ic_share, "Publish Content")
+        val bean1 = TaskCategoryBean(false, R.drawable.ic_video, "Create Video")
+        val bean2 = TaskCategoryBean(false, R.drawable.ic_message, "Marketing Campaigns")
         data.add(bean3)
         data.add(bean4)
         data.add(bean1)

@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <!--  标题  -->
+    <!--  Title  -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="48dp"
@@ -25,7 +25,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="自定义功能"
+            android:text="Custom Function"
             android:textColor="@color/black"
             android:textSize="17sp"
             android:textStyle="bold"
@@ -36,7 +36,7 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- 功能名称   -->
+    <!-- Function Name   -->
     <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -52,7 +52,7 @@
             android:layout_height="56dp"
             android:layout_marginLeft="15dp"
             android:gravity="center"
-            android:text="功能名称"
+            android:text="Function Name"
             android:textColor="@color/black"
             android:textSize="14sp"
             android:textStyle="bold" />
@@ -74,7 +74,7 @@
                 android:layout_height="45dp"
                 android:background="@null"
                 android:gravity="top"
-                android:hint="请输入功能名称，例如：评论获客"
+                android:hint="Enter a function name, for example: comment lead generation"
                 android:maxLength="10"
                 android:maxLines="1"
                 android:paddingTop="15dp"
@@ -94,7 +94,7 @@
 
     </androidx.cardview.widget.CardView>
 
-    <!--  功能定义  -->
+    <!--  Function Definition  -->
     <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -110,7 +110,7 @@
             android:layout_height="56dp"
             android:layout_marginLeft="15dp"
             android:gravity="center"
-            android:text="功能定义"
+            android:text="Function Definition"
             android:textColor="@color/black"
             android:textSize="14sp"
             android:textStyle="bold" />
@@ -132,7 +132,7 @@
                 android:layout_height="80dp"
                 android:background="@null"
                 android:gravity="top"
-                android:hint="请输入功能定义，越详细越好，例如：这是一段功能定义的模板案例"
+                android:hint="Enter a detailed function definition. Example: define the workflow and expected result."
                 android:maxLength="300"
                 android:maxLines="3"
                 android:paddingTop="15dp"
@@ -152,7 +152,7 @@
 
     </androidx.cardview.widget.CardView>
 
-    <!--   创建 -->
+    <!--   Create -->
     <TextView
         android:id="@+id/tv_create"
         android:layout_width="match_parent"
@@ -161,13 +161,13 @@
         android:layout_marginTop="24dp"
         android:background="@drawable/shaper_radius_black_16"
         android:gravity="center"
-        android:text="创建功能"
+        android:text="Create Function"
         android:textColor="@color/white"
         android:textSize="14sp"
         android:visibility="gone"
         tools:visibility="visible" />
 
-    <!--  删除/执行  -->
+
     <LinearLayout
         android:id="@+id/ll_act"
         android:layout_width="match_parent"
@@ -183,7 +183,7 @@
             android:layout_height="50dp"
             android:background="@drawable/shaper_radius_gray_16"
             android:gravity="center"
-            android:text="删除"
+            android:text="Delete"
             android:textColor="@color/white"
             android:textSize="14sp" />
 
@@ -195,7 +195,7 @@
             android:layout_weight="1"
             android:background="@drawable/shaper_radius_black_16"
             android:gravity="center"
-            android:text="开始执行"
+            android:text="Start Execution"
             android:textColor="@color/white"
             android:textSize="14sp" />
     </LinearLayout>

@@ -1,11 +1,8 @@
 /**
- * Agent 配置类型定义
  *
  */
 
 /**
- * Agent 名称枚举
- * 与数据库 agentname 枚举对应
  */
 export enum AgentName {
 	EXECUTOR_VLM = "executor-vlm",
@@ -16,8 +13,6 @@ export enum AgentName {
 }
 
 /**
- * 数据库 agent_name 枚举类型
- * 使用 Prisma enum 名称（下划线格式），而非 @map 的数据库值
  */
 export type DbAgentName =
 	| "executor_vlm"
@@ -27,7 +22,6 @@ export type DbAgentName =
 	| "creator_agent";
 
 /**
- * Agent 配置 DTO
  */
 export interface AgentConfigDTO {
 	id: number;
@@ -35,7 +29,7 @@ export interface AgentConfigDTO {
 	configName: string;
 	description?: string | null;
 
-	// 模型配置
+
 	baseUrl?: string | null;
 	apiKey?: string | null;
 	modelName?: string | null;
@@ -47,10 +41,10 @@ export interface AgentConfigDTO {
 	// System Prompt
 	systemPrompt: string;
 
-	// 扩展配置
+
 	extra?: Record<string, unknown> | null;
 
-	// 地区配置
+
 	region: string;
 
 	isActive: boolean;
@@ -59,7 +53,6 @@ export interface AgentConfigDTO {
 }
 
 /**
- * 创建 Agent 配置 DTO
  */
 export interface CreateAgentConfigDTO {
 	agentName: AgentName;
@@ -78,7 +71,6 @@ export interface CreateAgentConfigDTO {
 }
 
 /**
- * 更新 Agent 配置 DTO
  */
 export interface UpdateAgentConfigDTO {
 	configName?: string;
@@ -95,8 +87,6 @@ export interface UpdateAgentConfigDTO {
 }
 
 /**
- * 模型配置接口
- * 用于传递给 LangChain 模型
  */
 export interface ModelConfig {
 	model: string;
@@ -110,7 +100,6 @@ export interface ModelConfig {
 }
 
 /**
- * Agent 配置列表查询参数
  */
 export interface AgentConfigListParams {
 	page?: number;
@@ -121,7 +110,6 @@ export interface AgentConfigListParams {
 }
 
 /**
- * Agent 配置列表响应
  */
 export interface AgentConfigListResponse {
 	configs: AgentConfigDTO[];
@@ -132,8 +120,6 @@ export interface AgentConfigListResponse {
 }
 
 /**
- * AgentName 枚举转数据库枚举值
- * 返回 Prisma enum 名称（下划线格式）
  */
 export function toDbAgentName(agentName: AgentName): DbAgentName {
 	const mapping: Record<AgentName, DbAgentName> = {
@@ -147,7 +133,6 @@ export function toDbAgentName(agentName: AgentName): DbAgentName {
 }
 
 /**
- * 数据库枚举值转 AgentName 枚举
  */
 export function fromDbAgentName(dbAgentName: string): AgentName {
 	const mapping: Record<string, AgentName> = {

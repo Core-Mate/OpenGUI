@@ -4,7 +4,7 @@ import { prisma } from '@repo/db'
 import { AppLogger } from 'src/common/log'
 import type { CheckUpdateResponseDto } from './dto/apk.dto'
 
-// APK 状态常量
+// APK status constants
 const APK_STATUS = {
     DELETED: -1,
     UNPUBLISHED: 0,
@@ -26,14 +26,14 @@ export class ApkService {
     }
 
     /**
-     * 生成 APK 公共下载 URL
+     * Generate public APK download URL
      */
     private getApkPublicUrl(apkUri: string): string {
         return `https://${this.apkBucketName}.${this.tosEndpoint}/${apkUri}`
     }
 
     /**
-     * 将数据库记录转换为 DTO
+     * Convert database record to DTO
      */
     private toApkDto(apk: {
         id: number
@@ -63,15 +63,14 @@ export class ApkService {
     }
 
     /**
-     * 检查更新
-     * @param type APK 类型
-     * @param currentVersion 当前客户端的 APK 版本号（可选，不传则返回最新版本）
-     * @returns 检查更新结果
+     * Check for updates
+     * @param type APK type
+     * @param currentVersion Current client APK version. Optional; returns the latest version when omitted.
      */
     async checkUpdate(type: string, currentVersion?: number): Promise<CheckUpdateResponseDto> {
-        this.logger.log(`检查更新，type: ${type}, currentVersion: ${currentVersion ?? 'none'}`)
+        this.logger.log(`Check for updates，type: ${type}, currentVersion: ${currentVersion ?? 'none'}`)
 
-        // 获取最新已发布的 APK（apk_version 最大 + status = 1）
+        // Get the latest published APK (max apk_version and status = 1)
         const latest = await prisma.coremate_apks.findFirst({
             where: {
                 apk_type: type,
@@ -80,19 +79,19 @@ export class ApkService {
             orderBy: { apk_version: 'desc' },
         })
 
-        // 没有找到已发布的 APK
+        // No published APK found
         if (!latest) {
-            this.logger.log('没有找到已发布的 APK')
+            this.logger.log('No published APK found')
             return { hasUpdate: false }
         }
 
-        // 如果传了 currentVersion 且已是最新版本，返回无更新
+
         if (currentVersion !== undefined && latest.apk_version <= currentVersion) {
-            this.logger.log(`无需更新，latest version: ${latest.apk_version}, currentVersion: ${currentVersion}`)
+            this.logger.log(`No update required，latest version: ${latest.apk_version}, currentVersion: ${currentVersion}`)
             return { hasUpdate: false }
         }
 
-        this.logger.log(`发现新版本，version: ${latest.apk_version}, id: ${latest.id}`)
+        this.logger.log(`New version found，version: ${latest.apk_version}, id: ${latest.id}`)
 
         return {
             hasUpdate: true,

@@ -27,7 +27,6 @@ export class DeviceLogService {
 	}
 
 	/**
-	 * 查询日志列表（分页）
 	 */
 	async queryDeviceLogs(
 		dto: QueryDeviceLogsDto,
@@ -41,7 +40,7 @@ export class DeviceLogService {
 			order = "desc",
 		} = dto;
 
-		// 构建查询条件
+
 		const where: any = {
 			is_deleted: false,
 		};
@@ -54,13 +53,13 @@ export class DeviceLogService {
 			where.log_status = { in: log_status };
 		}
 
-		// 查询总数
+
 		const total = await prisma.user_device_log.count({ where });
 
-		// 计算偏移量
+
 		const skip = (page - 1) * limit;
 
-		// 查询数据
+
 		const logs = await prisma.user_device_log.findMany({
 			where,
 			skip,
@@ -70,7 +69,7 @@ export class DeviceLogService {
 			},
 		});
 
-		// 查询用户信息
+
 		const userIds = logs.map((log) => log.user_id);
 		const users = (await prisma.users.findMany({
 			where: { id: { in: userIds } },
@@ -79,7 +78,7 @@ export class DeviceLogService {
 
 		const userMap = new Map(users.map((u) => [u.id, u]));
 
-		// 转换为 DTO
+
 		const data: DeviceLogDto[] = logs.map((log) => ({
 			id: log.id,
 			user_id: log.user_id,
@@ -92,11 +91,11 @@ export class DeviceLogService {
 			updated_at: log.updated_at,
 		}));
 
-		// 计算总页数
+
 		const total_pages = Math.ceil(total / limit);
 
 		this.logger.log(
-			`查询日志列表，total: ${total}, page: ${page}, limit: ${limit}`,
+			`Listed device logs, total: ${total}, page: ${page}, limit: ${limit}`,
 		);
 
 		return {
@@ -109,7 +108,7 @@ export class DeviceLogService {
 	}
 
 	/**
-	 * 获取单条日志详情
+	 * Get device log details
 	 */
 	async getDeviceLogDetail(id: number): Promise<DeviceLogDto> {
 		const log = await prisma.user_device_log.findUnique({
@@ -117,10 +116,10 @@ export class DeviceLogService {
 		});
 
 		if (!log || log.is_deleted) {
-			throw new NotFoundException(`日志记录不存在，ID: ${id}`);
+			throw new NotFoundException(`Log record not found，ID: ${id}`);
 		}
 
-		// 查询用户信息
+
 		const user = await prisma.users.findUnique({
 			where: { id: log.user_id },
 			select: { phoneNumber: true },
@@ -140,7 +139,6 @@ export class DeviceLogService {
 	}
 
 	/**
-	 * 获取日志文件的签名 URL
 	 */
 	async getSignedUrl(id: number): Promise<SignedUrlDto> {
 		const log = await prisma.user_device_log.findUnique({
@@ -150,47 +148,46 @@ export class DeviceLogService {
 		if (!log || log.is_deleted) {
 			return {
 				success: false,
-				error: "日志记录不存在",
+				error: "Log record not found",
 			};
 		}
 
 		if (!log.log_uri) {
 			return {
 				success: false,
-				error: "日志文件尚未上传",
+				error: "Log file has not been uploaded",
 			};
 		}
 
 		try {
-			// 调用 TosService 生成签名 URL
+
 			const signedUrl = await this.tosService.getOssSignedUrl(
 				log.log_uri,
 				3600,
 			);
 
-			this.logger.log(`生成签名 URL 成功，日志 ID: ${id}`);
+			this.logger.log(`Generated signed URL successfully, log ID: ${id}`);
 
 			return {
 				success: true,
 				url: signedUrl,
 			};
 		} catch (error) {
-			this.logger.error(`生成签名 URL 失败，日志 ID: ${id}`, {}, error.stack);
+			this.logger.error(`Failed to generate signed URL, log ID: ${id}`, {}, error.stack);
 			return {
 				success: false,
-				error: error.message || "生成签名 URL 失败",
+				error: error.message || "Failed to generate signed URL",
 			};
 		}
 	}
 
 	/**
-	 * 批量删除日志记录（软删除）
 	 */
 	async batchDelete(dto: BatchDeleteDto): Promise<BatchOperationResultDto> {
 		const { ids } = dto;
 
 		if (ids.length === 0) {
-			throw new BadRequestException("ID 列表不能为空");
+			throw new BadRequestException("ID list cannot be empty");
 		}
 
 		const failedDetails: Array<{ id: number; error: string }> = [];
@@ -205,7 +202,7 @@ export class DeviceLogService {
 				if (!log || log.is_deleted) {
 					failedDetails.push({
 						id,
-						error: "日志记录不存在或已删除",
+						error: "Log record not found or deleted",
 					});
 					continue;
 				}
@@ -219,13 +216,13 @@ export class DeviceLogService {
 				});
 
 				successCount++;
-				this.logger.log(`删除日志记录成功，ID: ${id}`);
+				this.logger.log(`Deleted log record successfully, ID: ${id}`);
 			} catch (error) {
 				failedDetails.push({
 					id,
-					error: error.message || "删除失败",
+					error: error.message || "Delete failed",
 				});
-				this.logger.error(`删除日志记录失败，ID: ${id}`, {}, error.stack);
+				this.logger.error(`Failed to delete log record, ID: ${id}`, {}, error.stack);
 			}
 		}
 
@@ -238,13 +235,13 @@ export class DeviceLogService {
 	}
 
 	/**
-	 * 批量重试推送（push disabled in open-source version — marks records as wait_upload）
+	 * Batch retry push notifications (push disabled in source-available version; marks records as wait_upload)
 	 */
 	async batchRetry(dto: BatchRetryDto): Promise<BatchOperationResultDto> {
 		const { ids } = dto;
 
 		if (ids.length === 0) {
-			throw new BadRequestException("ID 列表不能为空");
+			throw new BadRequestException("ID list cannot be empty");
 		}
 
 		const failedDetails: Array<{ id: number; error: string }> = [];
@@ -255,7 +252,7 @@ export class DeviceLogService {
 				const log = await prisma.user_device_log.findUnique({ where: { id } });
 
 				if (!log || log.is_deleted) {
-					failedDetails.push({ id, error: "日志记录不存在或已删除" });
+					failedDetails.push({ id, error: "Log record not found or deleted" });
 					continue;
 				}
 
@@ -266,8 +263,8 @@ export class DeviceLogService {
 
 				successCount++;
 			} catch (error) {
-				failedDetails.push({ id, error: error.message || "重试失败" });
-				this.logger.error(`重试失败，日志 ID: ${id}`, {}, error.stack);
+				failedDetails.push({ id, error: error.message || "Retry failed" });
+				this.logger.error(`Retry failed, log ID: ${id}`, {}, error.stack);
 			}
 		}
 

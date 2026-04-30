@@ -77,7 +77,7 @@ import { PrismaModule } from "./prisma/prisma.module";
 		// App config module (client-side configuration)
 		AppConfigModule,
 
-		// Credits management module (stub - billing disabled in open-source version)
+		// Credits management module (stub - billing disabled in source-available version)
 		CreditsModule,
 
 		// Creator Agent module (Claude Agent SDK based content creation)
@@ -89,7 +89,7 @@ import { PrismaModule } from "./prisma/prisma.module";
 	controllers: [AppController],
 	providers: [
 		AppService,
-		// 注册全局 TraceId 拦截器
+
 		{
 			provide: APP_INTERCEPTOR,
 			useClass: TraceIdInterceptor,

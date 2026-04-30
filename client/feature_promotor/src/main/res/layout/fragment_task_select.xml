@@ -9,7 +9,7 @@
     android:paddingEnd="16dp"
     android:paddingBottom="32dp">
 
-    <!-- 标题 -->
+    <!-- Title -->
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="58dp">
@@ -19,7 +19,7 @@
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
             android:layout_marginBottom="16dp"
-            android:text="选择添加方式"
+            android:text="Choose How to Add"
             android:textColor="#0B1120"
             android:textSize="16sp"
             android:textStyle="bold" />
@@ -35,7 +35,7 @@
     </RelativeLayout>
 
 
-    <!-- 从推荐中选择按钮-->
+
     <LinearLayout
         android:id="@+id/recommend_option"
         android:layout_width="match_parent"
@@ -49,7 +49,7 @@
         android:orientation="horizontal"
         android:padding="16dp">
 
-        <!-- 图标容器 -->
+
         <FrameLayout
             android:layout_width="48dp"
             android:layout_height="48dp"
@@ -63,7 +63,7 @@
                 android:src="@drawable/ic_compass" />
         </FrameLayout>
 
-        <!-- 文本容器 -->
+
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -75,7 +75,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="4dp"
-                android:text="从推荐中选择"
+                android:text="Choose from Recommendations"
                 android:textColor="#0B1120"
                 android:textSize="16sp"
                 android:textStyle="bold" />
@@ -83,13 +83,13 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="使用热门模板快速创建"
+                android:text="Create quickly from popular templates"
                 android:textColor="#64748B"
                 android:textSize="14sp" />
         </LinearLayout>
     </LinearLayout>
 
-    <!-- 自定义任务按钮 -->
+
     <LinearLayout
         android:id="@+id/custom_option"
         android:layout_width="match_parent"
@@ -102,7 +102,7 @@
         android:orientation="horizontal"
         android:padding="16dp">
 
-        <!-- 图标容器 -->
+
         <FrameLayout
             android:layout_width="48dp"
             android:layout_height="48dp"
@@ -116,7 +116,7 @@
                 android:src="@drawable/ic_edit" />
         </FrameLayout>
 
-        <!-- 文本容器 -->
+
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -128,7 +128,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="4dp"
-                android:text="自定义任务"
+                android:text="Custom task"
                 android:textColor="#0B1120"
                 android:textSize="16sp"
                 android:textStyle="bold" />
@@ -136,7 +136,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="手动配置执行指令"
+                android:text="Configure execution instructions manually"
                 android:textColor="#64748B"
                 android:textSize="14sp" />
         </LinearLayout>

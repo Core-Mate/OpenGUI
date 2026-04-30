@@ -81,34 +81,34 @@ class SoundWavesView @JvmOverloads constructor(
         val height = height.toFloat()
         val centerY = height / 2f
 
-        // 计算圆柱间距
+
         val totalCylindersWidth = cylinderCount * cylinderWidthPx
         val padding = (dpToPx(256f) - totalCylindersWidth) / (cylinderCount + 1)
 
-        // 绘制每个圆柱
+
         for (i in 0 until cylinderCount) {
             val left = (padding + i * (cylinderWidthPx + padding)).toFloat()
             val right = left + cylinderWidthPx
             val halfHeight = cylinderHeightsPx[i] / 2f
             val radius = cylinderWidthPx / 2f
 
-            // 计算顶部和底部位置（以中线为基准）
+
             val top = centerY - halfHeight
             val bottom = centerY + halfHeight
 
-            // 绘制圆柱主体
+
             Path().apply {
-                // 顶部半圆
+
                 moveTo(left, top + radius)
                 arcTo(RectF(left, top, right, top + 2 * radius), 180f, 180f)
 
-                // 右侧直线
+
                 lineTo(right, bottom - radius)
 
-                // 底部半圆
+
                 arcTo(RectF(left, bottom - 2 * radius, right, bottom), 0f, 180f)
 
-                // 左侧直线
+
                 lineTo(left, top + radius)
 
                 canvas.drawPath(this, cylinderPaint)

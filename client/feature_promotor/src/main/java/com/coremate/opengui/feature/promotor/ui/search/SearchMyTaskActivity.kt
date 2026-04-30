@@ -66,7 +66,7 @@ class SearchMyTaskActivity :
         setupResultsList()
         loadTasks()
         showHistoryOrHideContent()
-        // 自动弹出键盘
+
         binding.etSearchContent.postDelayed({
             binding.etSearchContent.requestFocus()
             (getSystemService(INPUT_METHOD_SERVICE) as? InputMethodManager)?.showSoftInput(
@@ -79,7 +79,7 @@ class SearchMyTaskActivity :
     override fun initEvent() {}
 
     private fun setupSearchBar() {
-        // 有内容时显示清除、显示「搜索」按钮（与 Web 一致）
+
         binding.etSearchContent.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
@@ -194,7 +194,6 @@ class SearchMyTaskActivity :
         }
     }
 
-    /** 与 Web 一致：按 title、fullDescription、appName 模糊匹配 */
     private fun applyFilter(query: String) {
         if (query.isEmpty()) {
             showHistoryOrHideContent()
@@ -281,7 +280,6 @@ class SearchMyTaskActivity :
             .apply()
     }
 
-    /** 与 Web 一致：点击任务或点击运行时把当前搜索词加入历史 */
     fun addSearchHistoryForCurrentQuery() {
         val term = binding.etSearchContent.text?.toString()?.trim() ?: return
         if (term.isNotEmpty()) addSearchHistory(term)
@@ -292,7 +290,7 @@ class SearchMyTaskActivity :
             PermissionManager.showRequestPermissionWindow(this)
             return
         }
-        TaskCenter.reset(this@SearchMyTaskActivity,"搜索我的任务 - 运行")
+        TaskCenter.reset(this@SearchMyTaskActivity,"SearchMy Tasks - Run")
         TaskCenter.taskId = task.id
         TaskCenter.taskTitle = task.taskName
         TaskCenter.taskPrompt = task.taskDescription

@@ -55,14 +55,14 @@ class SearchMyTaskAdapter(
             val lastRun = try {
                 item.lastExecution?.finishedAt?.let {
                     TimeUtils.convertUtcToBeijing(it)
-                } ?: "从未运行"
+                } ?: "Never run"
             } catch (e: Exception) {
-                "从未运行"
+                "Never run"
             }
             val createdAt = item.createdAt?.take(10) ?: ""
-            tvSubtitle.text = if (lastRun == "从未运行") {
-                if (createdAt.isNotEmpty()) "${appName.ifEmpty { "" } }${if (appName.isNotEmpty()) " • " else ""}${createdAt}创建"
-                else "还没有执行过"
+            tvSubtitle.text = if (lastRun == "Never run") {
+                if (createdAt.isNotEmpty()) "${appName.ifEmpty { "" } }${if (appName.isNotEmpty()) " • " else ""}${createdAt}Create"
+                else "Not run yet"
             } else {
                 "${appName.ifEmpty { "" } }${if (appName.isNotEmpty()) " • " else ""}$lastRun"
             }

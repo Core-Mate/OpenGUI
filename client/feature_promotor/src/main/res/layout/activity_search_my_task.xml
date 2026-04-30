@@ -11,7 +11,7 @@
         android:id="@+id/v_status"
         android:layout_width="match_parent"
         android:layout_height="20dp" />
-    <!-- Search Header: 与 Web 一致 - 返回 + 圆角输入框(左搜索图标+清除)+ 有内容时显示「搜索」 -->
+
     <LinearLayout
         android:id="@+id/search_container"
         android:layout_width="match_parent"
@@ -56,7 +56,7 @@
                 android:layout_marginEnd="16dp"
                 android:layout_weight="1"
                 android:background="@null"
-                android:hint="搜索任务..."
+                android:hint="Search tasks..."
                 android:imeOptions="actionSearch"
                 android:inputType="text"
                 android:maxLines="1"
@@ -87,7 +87,7 @@
             android:fontFamily="sans-serif-medium"
             android:paddingStart="8dp"
             android:paddingEnd="8dp"
-            android:text="搜索"
+            android:text="Search"
             android:textColor="#2E58FF"
             android:textSize="16sp"
             android:visibility="gone"
@@ -96,13 +96,13 @@
             app:layout_constraintTop_toTopOf="parent" />
     </LinearLayout>
 
-    <!-- 内容区：历史记录 / 结果列表 / 未找到 -->
+
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:paddingHorizontal="16dp">
 
-        <!-- 无关键词时：历史记录 -->
+
         <LinearLayout
             android:id="@+id/panel_history"
             android:layout_width="match_parent"
@@ -114,7 +114,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
-                android:text="历史记录"
+                android:text="History"
                 android:textColor="#111827"
                 android:textSize="18sp"
                 android:textStyle="bold" />
@@ -125,7 +125,7 @@
                 android:layout_height="wrap_content" />
         </LinearLayout>
 
-        <!-- 有关键词时：结果列表 -->
+
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rv_results"
             android:layout_width="match_parent"
@@ -133,7 +133,7 @@
             android:visibility="gone"
             tools:listitem="@layout/item_search_my_task_result" />
 
-        <!-- 有关键词且无结果：未找到相关任务 -->
+
         <LinearLayout
             android:id="@+id/panel_empty_result"
             android:layout_width="match_parent"
@@ -155,7 +155,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:fontFamily="sans-serif-medium"
-                android:text="未找到相关任务"
+                android:text="No matching tasks found"
                 android:textColor="#6B7280"
                 android:textSize="16sp" />
 
@@ -163,12 +163,12 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="试试其他关键词"
+                android:text="Try another keyword"
                 android:textColor="#9CA3AF"
                 android:textSize="14sp" />
         </LinearLayout>
 
-        <!-- 加载中 -->
+
         <LinearLayout
             android:id="@+id/panel_loading"
             android:layout_width="match_parent"
@@ -186,7 +186,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:text="搜索中..."
+                android:text="Searching..."
                 android:textColor="#9CA3AF"
                 android:textSize="14sp" />
         </LinearLayout>

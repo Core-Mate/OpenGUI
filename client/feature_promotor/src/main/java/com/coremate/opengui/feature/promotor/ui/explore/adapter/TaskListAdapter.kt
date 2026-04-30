@@ -54,13 +54,13 @@ class TaskListAdapter(private val fragmentManager: FragmentManager? = null) :
         val tvSuccessRate = itemView.findViewById<TextView>(R.id.tv_success_rate)
         fun bindData(data: TaskTemplatesResp) {
             tvTitle.text = data.taskName
-            tvUseCount.text = "${data.totalExecutions + 175}次使用"
+            tvUseCount.text = "${data.totalExecutions + 175} uses"
             val successRate = if (data.totalExecutions > 0) {
                 (75..98).random()
             } else {
                 100
             }
-            tvSuccessRate.text = "$successRate%成功率"
+            tvSuccessRate.text = "$successRate%success rate"
         }
     }
 

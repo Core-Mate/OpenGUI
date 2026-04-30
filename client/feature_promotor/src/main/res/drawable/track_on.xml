@@ -2,8 +2,8 @@
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
      android:shape="rectangle">
      <solid android:color="#BB00FF00" />
-     <!-- 这个是用来实现轨道高度小于圆钮高度的，值越大轨道越细-->
-     <!-- 同理，若thumb有stroke，track没有，可实现圆钮在轨道里的伪效果-->
+
+
      <stroke
      android:width="8dp"
      android:color="#00000000" />

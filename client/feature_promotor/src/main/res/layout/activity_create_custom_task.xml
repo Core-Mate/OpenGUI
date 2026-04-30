@@ -16,7 +16,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
-        android:text="任务标题"
+        android:text="Task Title"
         android:textColor="#000000"
         android:textSize="16sp" />
 
@@ -28,14 +28,14 @@
         android:layout_marginTop="16dp"
         android:textSize="15sp"
         android:layout_marginEnd="16dp"
-        android:hint="请简要描述任务标题" />
+        android:hint="Briefly describe the task title" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
-        android:text="任务描述"
+        android:text="Task Description"
         android:textColor="#000000"
         android:textSize="16sp" />
 
@@ -48,7 +48,7 @@
         android:layout_marginEnd="16dp"
         android:background="@null"
         android:gravity="start|top"
-        android:hint="请描述你的任务"
+        android:hint="Describe your task"
         android:lineHeight="22dp"
         android:paddingEnd="20dp"
         android:paddingBottom="20dp"
@@ -62,7 +62,7 @@
         android:layout_marginTop="16dp"
         android:layout_marginEnd="16dp"
         android:background="@drawable/edit_prompt_start_prompt_bg"
-        android:text="保存"
+        android:text="Save"
         android:textColor="#ffffff" />
 
 </LinearLayout>

@@ -16,7 +16,7 @@
             android:orientation="vertical"
             android:paddingTop="48dp">
 
-            <!-- 用户信息：Hi / 雅婷 + 签到 / 手机号 + 设置 -->
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -54,8 +54,8 @@
                             android:letterSpacing="-0.02"
                             android:textColor="#0B1120"
                             android:textSize="26sp"
-                            tools:text="雅婷" />
-                        <!--         签到               -->
+                            tools:text="Yating" />
+
                         <LinearLayout
                             android:id="@+id/ll_checkin"
                             android:layout_width="wrap_content"
@@ -109,7 +109,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginStart="4dp"
-                                android:text="已签"
+                                android:text="Checked in"
                                 android:textSize="11sp"
                                 android:textStyle="bold"
                                 android:textColor="#16A34A"/>
@@ -135,13 +135,13 @@
                     android:layout_width="40dp"
                     android:layout_height="40dp"
                     android:background="@drawable/bg_settings_button"
-                    android:contentDescription="设置"
+                    android:contentDescription="Settings"
                     android:padding="10dp"
                     android:scaleType="centerInside"
                     android:src="@drawable/ic_settings" />
             </LinearLayout>
 
-            <!-- 统计数据卡片 -->
+
             <com.lihang.ShadowLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -182,7 +182,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="sans-serif-medium"
-                            android:text="已完成任务"
+                            android:text="Completed tasks"
                             android:textColor="#94A3B8"
                             android:textSize="12sp" />
                     </LinearLayout>
@@ -214,7 +214,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="sans-serif-medium"
-                            android:text="累计节省"
+                            android:text="Time saved"
                             android:textColor="#94A3B8"
                             android:textSize="12sp" />
                     </LinearLayout>
@@ -246,7 +246,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="sans-serif-medium"
-                            android:text="成功率"
+                            android:text="success rate"
                             android:textColor="#94A3B8"
                             android:textSize="12sp" />
                     </LinearLayout>
@@ -264,14 +264,14 @@
                 app:hl_shadowOffsetX="0dp"
                 app:hl_shadowOffsetY="0dp"
                 app:hl_shadowSymmetry="true">
-                <!-- 菜单卡片 -->
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:elevation="2dp"
                     android:orientation="vertical">
 
-                    <!-- 积分余额行 -->
+
                     <LinearLayout
                         android:id="@+id/account_points_row"
                         android:layout_width="match_parent"
@@ -320,7 +320,7 @@
                                     android:layout_height="wrap_content"
                                     android:layout_marginStart="6dp"
                                     android:fontFamily="sans-serif-medium"
-                                    android:text="积分"
+                                    android:text="Credits"
                                     android:textColor="#64748B"
                                     android:textSize="14sp" />
                             </LinearLayout>
@@ -345,7 +345,7 @@
                                     android:layout_marginStart="4dp"
                                     android:textColor="#94A3B8"
                                     android:textSize="12sp"
-                                    tools:text="约可使用 0.0 小时" />
+                                    tools:text="About 0.0 hours available" />
                             </LinearLayout>
                         </LinearLayout>
 
@@ -359,7 +359,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:fontFamily="sans-serif-medium"
-                                android:text="充值"
+                                android:text="Top up"
                                 android:textColor="#2E58FF"
                                 android:textSize="14sp" />
 
@@ -379,7 +379,7 @@
                         android:layout_marginEnd="20dp"
                         android:background="#F1F5F9" />
 
-                    <!-- 执行偏好 -->
+                    <!-- Execution preferences -->
                     <include
                         android:id="@+id/account_menu_preference"
                         layout="@layout/item_account_menu" />
@@ -390,7 +390,7 @@
                         android:layout_marginStart="20dp"
                         android:layout_marginEnd="20dp"
                         android:background="#F1F5F9" />
-                    <!-- 知识库 -->
+                    <!-- Knowledge Base -->
                     <include
                         android:id="@+id/account_menu_knowledge"
                         layout="@layout/item_account_menu" />
@@ -401,7 +401,7 @@
                         android:layout_marginStart="20dp"
                         android:layout_marginEnd="20dp"
                         android:background="#F1F5F9" />
-                    <!-- 应用白名单（锁定） -->
+
                     <include
                         android:id="@+id/account_menu_whitelist"
                         layout="@layout/item_account_menu" />
@@ -412,7 +412,7 @@
                         android:layout_marginStart="20dp"
                         android:layout_marginEnd="20dp"
                         android:background="#F1F5F9" />
-                    <!-- 运行模式（锁定 + 值） -->
+
                     <include
                         android:id="@+id/account_menu_run_mode"
                         layout="@layout/item_account_menu" />
@@ -423,7 +423,7 @@
                         android:layout_marginStart="20dp"
                         android:layout_marginEnd="20dp"
                         android:background="#F1F5F9" />
-                    <!-- 消费记录 -->
+                    <!-- Consumption records -->
                     <include
                         android:id="@+id/account_menu_consumption"
                         layout="@layout/item_account_menu" />
@@ -441,14 +441,14 @@
                 app:hl_shadowOffsetX="0dp"
                 app:hl_shadowOffsetY="0dp"
                 app:hl_shadowSymmetry="true">
-                <!-- 菜单卡片 -->
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:elevation="2dp"
                     android:orientation="vertical">
 
-                    <!-- 退出登录 -->
+                    <!-- Log out -->
                     <LinearLayout
                         android:id="@+id/ll_logout"
                         android:layout_width="match_parent"
@@ -473,7 +473,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginLeft="8dp"
                             android:fontFamily="sans-serif-medium"
-                            android:text="退出登录"
+                            android:text="Log out"
                             android:textColor="#EF4444"
                             android:textSize="17sp" />
 

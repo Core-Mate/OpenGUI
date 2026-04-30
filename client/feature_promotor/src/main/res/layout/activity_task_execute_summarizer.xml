@@ -30,7 +30,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
-            android:text="我的任务"
+            android:text="My Tasks"
             android:textColor="#000000"
             android:textSize="17sp"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -64,7 +64,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="15dp"
-                android:text="任务描述"
+                android:text="Task Description"
                 android:textFontWeight="600"
                 android:textSize="19sp"
                 app:layout_constraintStart_toStartOf="parent"
@@ -110,7 +110,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="15dp"
-                android:text="最近执行结果"
+                android:text="Latest Execution Result"
                 android:textFontWeight="600"
                 android:textSize="19sp"
                 app:layout_constraintStart_toStartOf="parent"
@@ -159,7 +159,7 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:layout_marginTop="20dp"
-                    android:text="任务结果获取中，请稍候..." />
+                    android:text="Fetching task results. Please wait..." />
             </LinearLayout>
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.cardview.widget.CardView>
@@ -187,7 +187,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:text="重新执行"
+                android:text="Run Again"
                 android:textColor="#FFFFFF" />
         </androidx.cardview.widget.CardView>
     </RelativeLayout>

@@ -26,7 +26,7 @@ object RetrofitClient {
         val httpLoggingInterceptor = HttpLoggingInterceptor { msg ->
             if (BuildConfig.DEBUG) {
                 LogManager.saveLog(
-                    context = context,   // 或 context.applicationContext
+                    context = context,
                     tag = "OkHttp-Debug",
                     message = msg,
                     executionId = TaskCenter.executionId ?: -1

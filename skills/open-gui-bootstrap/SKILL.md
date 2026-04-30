@@ -185,9 +185,9 @@ At minimum, confirm:
 - device connection status is known
 - the remaining phone-side steps, if any, are explicit
 
-### 8. Keep current open-source behavior in mind
+### 8. Keep current source-available behavior in mind
 
-The open-source Android build currently skips the old login gate and opens `HomeActivity` directly.
+The source-available Android build currently skips the old login gate and opens `HomeActivity` directly.
 
 For local runs, backend task controllers also default to `userId = 1`, so do not send the user into an OTP-first flow unless they explicitly ask for the older auth path.
 

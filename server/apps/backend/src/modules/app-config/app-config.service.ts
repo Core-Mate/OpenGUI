@@ -9,7 +9,6 @@ export class AppConfigService {
     }
 
     /**
-     * 按 key 查询单个 active 配置
      */
     async getConfigByKey(key: string) {
         const config = await prisma.app_config.findFirst({
@@ -29,7 +28,6 @@ export class AppConfigService {
     }
 
     /**
-     * 获取所有 active 配置，返回 { key: value } 扁平 map
      */
     async getAllActiveConfigs(): Promise<Record<string, unknown>> {
         const configs = await prisma.app_config.findMany({

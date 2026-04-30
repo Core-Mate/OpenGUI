@@ -3,12 +3,16 @@ import { RunnableConfig } from "@langchain/core/runnables";
 import { Logger } from "@nestjs/common";
 import { ExecutionGateway, type ActionReqPayload } from "../../../../../common/ws";
 import { AgentState } from "../../state/executor-state.types";
+import type { ActionInputs, Coords } from "../../state/state.types";
 import { ErrorSeverity } from "../../utils/error-classification";
+import {
+	buildExecutionConnectionLostMessage,
+	isExecutionConnectionLost,
+} from "../../utils/execution-connection";
 
 const logger = new Logger("ExecuteActionNode");
 
 /**
- * 移动端操作类型
  */
 enum MobileActionType {
 	CLICK = "click",
@@ -24,11 +28,89 @@ enum MobileActionType {
 	WAIT = "wait",
 }
 
+const FALLBACK_SCREEN_WIDTH = 1080;
+const FALLBACK_SCREEN_HEIGHT = 1920;
+
+function hasCoords(coords?: Coords): coords is [number, number] {
+	return (
+		Array.isArray(coords) &&
+		coords.length === 2 &&
+		Number.isFinite(coords[0]) &&
+		Number.isFinite(coords[1])
+	);
+}
+
+function clampCoordinate(value: number, max: number): number {
+	const safeMax = Math.max(1, max);
+	return Math.round(Math.max(0, Math.min(value, safeMax - 1)));
+}
+
+function defaultScrollStart(
+	direction: string,
+	screenWidth: number,
+	screenHeight: number,
+): [number, number] {
+	const width = screenWidth > 0 ? screenWidth : FALLBACK_SCREEN_WIDTH;
+	const height = screenHeight > 0 ? screenHeight : FALLBACK_SCREEN_HEIGHT;
+	const normalizedDirection = direction.toLowerCase();
+
+	switch (normalizedDirection) {
+		case "down":
+			return [
+				clampCoordinate(width * 0.5, width),
+				clampCoordinate(height * 0.25, height),
+			];
+		case "left":
+			return [
+				clampCoordinate(width * 0.25, width),
+				clampCoordinate(height * 0.5, height),
+			];
+		case "right":
+			return [
+				clampCoordinate(width * 0.75, width),
+				clampCoordinate(height * 0.5, height),
+			];
+		case "up":
+		default:
+			return [
+				clampCoordinate(width * 0.5, width),
+				clampCoordinate(height * 0.75, height),
+			];
+	}
+}
+
+function buildActionParams(
+	actionType: string,
+	actionInputs: ActionInputs | undefined,
+	screenWidth: number,
+	screenHeight: number,
+) {
+	let startCoords = actionInputs?.start_coords;
+	const direction = actionInputs?.direction ?? "";
+
+	if (
+		actionType === MobileActionType.SCROLL &&
+		!hasCoords(startCoords)
+	) {
+		startCoords = defaultScrollStart(direction, screenWidth, screenHeight);
+		logger.debug(
+			`Using default scroll start coords: (${startCoords[0]}, ${startCoords[1]}), direction=${direction || "up"}`,
+		);
+	}
+
+	return {
+		start_x: startCoords?.[0] ?? 0,
+		start_y: startCoords?.[1] ?? 0,
+		end_x: actionInputs?.end_coords?.[0] ?? 0,
+		end_y: actionInputs?.end_coords?.[1] ?? 0,
+		content: actionInputs?.content ?? "",
+		direction,
+		app_name: actionInputs?.app_name ?? "",
+	};
+}
+
 /**
- * 创建执行动作节点
  *
- * @param executionGateway - 执行网关，用于发送操作请求
- * @returns 执行动作节点函数
  */
 export function createExecuteActionNode(
 	executionGateway: ExecutionGateway,
@@ -38,7 +120,7 @@ export function createExecuteActionNode(
 		const exec = state.executor;
 		const { parsedPrediction } = exec;
 
-		// 检查是否已被 abort
+
 		if (signal?.aborted) {
 			logger.log("Execution aborted, skipping action execution");
 			return {
@@ -52,7 +134,7 @@ export function createExecuteActionNode(
 			return {
 				executor: {
 					status: "error",
-					errorMessage: "无解析结果",
+					errorMessage: "No parsed action result",
 				},
 			} as Partial<AgentState>;
 		}
@@ -61,12 +143,12 @@ export function createExecuteActionNode(
 		logger.log(`Executing action: ${actionType}`);
 
 		try {
-			// 检查是否为有效的移动端操作类型
+
 			const validActionTypes = Object.values(MobileActionType) as string[];
 			if (!validActionTypes.includes(actionType)) {
 				logger.warn(`Unknown action type: ${actionType}`);
 				const errorMsg = new HumanMessage({
-					content: `未知操作类型: ${actionType}，请输出有效的动作类型`,
+					content: `Unknown action type: ${actionType}. Output one valid action type.`,
 					additional_kwargs: { created_at: new Date().toISOString() },
 				});
 				return {
@@ -75,7 +157,7 @@ export function createExecuteActionNode(
 						lastError: {
 							severity: ErrorSeverity.RECOVERABLE,
 							code: "UNKNOWN_ACTION_TYPE",
-							message: `未知操作类型: ${actionType}`,
+							message: `Unknown action type: ${actionType}`,
 						},
 						executionMetrics: { actionFailureCount: 1 },
 						sharedMessages: [errorMsg],
@@ -83,26 +165,23 @@ export function createExecuteActionNode(
 				} as Partial<AgentState>;
 			}
 
-			// 构建操作参数
-			const actionInputs = parsedPrediction.action_inputs;
-			const actionParams = {
-				start_x: actionInputs?.start_coords?.[0] ?? 0,
-				start_y: actionInputs?.start_coords?.[1] ?? 0,
-				end_x: actionInputs?.end_coords?.[0] ?? 0,
-				end_y: actionInputs?.end_coords?.[1] ?? 0,
-				content: actionInputs?.content ?? "",
-				direction: actionInputs?.direction ?? "",
-				app_name: actionInputs?.app_name ?? "",
-			};
 
-			// 构建请求 DTO
+			const actionInputs = parsedPrediction.action_inputs;
+			const actionParams = buildActionParams(
+				actionType,
+				actionInputs,
+				exec.screenWidth,
+				exec.screenHeight,
+			);
+
+
 			const actionReq: ActionReqPayload = {
 				executionId: state.taskExecutionId,
 				actionType: actionType,
 				actionInputs: actionParams,
 			};
 
-			// 执行操作（重试由 LangGraph retryPolicy 处理）
+
 			await executionGateway.sendActionReq(state.taskExecutionId, actionReq);
 
 			logger.log(`Action ${actionType} executed successfully`);
@@ -116,27 +195,46 @@ export function createExecuteActionNode(
 				},
 			} as Partial<AgentState>;
 		} catch (error: any) {
-			// 如果是 abort 错误，重新抛出让图停止执行
+
 			if (error.name === "AbortError" || error.message?.includes("abort")) {
 				logger.log("Execute action aborted, stopping execution");
 				throw error;
 			}
 
 			logger.error(`Execute action failed: ${error.message}`, error.stack);
-			// 返回错误状态，让 VLM 看到错误消息并决定是否重试
-			const errorMsg = new HumanMessage({
-				content: `执行操作${actionType}失败: ${error.message}`,
+
+			if (isExecutionConnectionLost(error)) {
+				const message = buildExecutionConnectionLostMessage(state.taskExecutionId);
+				return {
+					executor: {
+						status: "error",
+						errorMessage: message,
+						lastError: {
+							severity: ErrorSeverity.FATAL,
+							code: "EXECUTION_CONNECTION_LOST",
+							message,
+						},
+						executionMetrics: {
+							actionFailureCount: 1,
+						},
+					},
+				} as Partial<AgentState>;
+			}
+
+
+				const errorMsg = new HumanMessage({
+					content: `Failed to execute ${actionType}: ${error.message}`,
 				additional_kwargs: {
 					created_at: new Date().toISOString(),
 				},
 			});
 			return {
 				executor: {
-					status: "running", // 保持 running 让 VLM 有机会重试
+					status: "running", // Keep running so the VLM can retry.
 					lastError: {
 						severity: ErrorSeverity.RECOVERABLE,
 						code: "EXECUTE_FAILED",
-						message: `执行操作${actionType}失败: ${error.message}`,
+							message: `Failed to execute ${actionType}: ${error.message}`,
 					},
 					executionMetrics: {
 						actionFailureCount: 1,

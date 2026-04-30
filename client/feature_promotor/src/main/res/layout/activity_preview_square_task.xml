@@ -44,7 +44,7 @@
         android:enabled="false"
         android:gravity="center"
         android:maxLines="2"
-        android:text="用豆包生成的海报发布小红书"
+        android:text="Post a Doubao-generated poster to Xiaohongshu"
         android:textColor="#000000"
         android:textFontWeight="600"
         android:textSize="20sp"
@@ -97,7 +97,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="4dp"
                 android:layout_marginTop="4dp"
-                android:text="使用次数"
+                android:text="Usage Count"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/use_count_container" />
@@ -144,7 +144,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="4dp"
                 android:layout_marginTop="4dp"
-                android:text="成功率"
+                android:text="success rate"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/success_rate_container" />
@@ -181,7 +181,7 @@
                     app:layout_constraintBottom_toBottomOf="@id/img_execute_time"
                     app:layout_constraintStart_toEndOf="@id/img_execute_time"
                     app:layout_constraintTop_toTopOf="@id/img_execute_time"
-                    tools:text="8分钟" />
+                    tools:text="8 minutes" />
             </LinearLayout>
 
             <TextView
@@ -189,7 +189,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="4dp"
                 android:layout_marginTop="4dp"
-                android:text="运行时间"
+                android:text="Runtime"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/execute_time_container" />
@@ -208,7 +208,7 @@
         android:layout_weight="1"
         android:enabled="false"
         android:lineHeight="26dp"
-        android:text="设计一张小红书爆款风格海报，尺寸为3:4竖版（适配手机全屏浏览），整体色调明亮清新/元气撞色（二选一或自定义），视觉中心突出核心主题（需补充具体主题，如：AI工具推荐、跨境出行攻略、自由职业接单技巧、北京自驾路线），搭配简约可爱/高级质感的插画元素+醒目艺术字标题（标题控制在10字内，带emoji点缀），底部预留2-3行短句文案位（风格：口语化、干货感、带话题引导），画面留白充足不拥挤，字体层级清晰（标题粗体醒目，正文轻盈易读），整体风格符合小红书年轻女性/职场人审美（根据受众调整），可直接用于平台发布，吸引点击和收藏。"
+        android:text="Design a Xiaohongshu-style viral poster in a 3:4 vertical format. Use a bright fresh or energetic contrast color palette, make the core theme the visual focus, add simple cute or premium illustration elements, and include an eye-catching title under 10 words with optional emoji. Leave room for 2-3 short conversational copy lines at the bottom. Keep the layout airy, readable, and ready for publishing."
         android:textColor="#000000"
         android:textFontWeight="400"
         android:textSize="14sp" />
@@ -227,7 +227,7 @@
             android:layout_marginTop="16dp"
             android:background="@drawable/preview_prompt_save_bg"
             android:gravity="center"
-            android:text="收藏"
+            android:text="Save"
             android:textColor="#000000" />
 
         <TextView
@@ -240,7 +240,7 @@
             android:layout_weight="1"
             android:background="@drawable/edit_prompt_start_prompt_bg"
             android:gravity="center"
-            android:text="开始执行"
+            android:text="Start Execution"
             android:textColor="#ffffff" />
     </LinearLayout>
 </LinearLayout>

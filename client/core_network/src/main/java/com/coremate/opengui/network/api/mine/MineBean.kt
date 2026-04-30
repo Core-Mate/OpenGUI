@@ -3,20 +3,20 @@ package com.coremate.opengui.network.api.mine
 import com.google.gson.annotations.SerializedName
 
 data class MyBalanceRespItem (
-    val remaining: Long,            //当前可用积分
-    val totalPurchased: Long,       //累计充值积分
-    val totalUsed: Long,            //累计消费积分
-    val freeCredits: Long,          //赠送积分
-    var isCheckin:Boolean?,         //是否签到
+    val remaining: Long,
+    val totalPurchased: Long,
+    val totalUsed: Long,
+    val freeCredits: Long,
+    var isCheckin:Boolean?,
     @SerializedName("checkinCredit")
-    var checkinCredit:Long?         //签到可获得的积分
+    var checkinCredit:Long?
 )
 
 data class MyCheckinRespItem (
     @SerializedName("isCheckin")
-    var isCheckin:Boolean?,         //本次签到是否成功
+    var isCheckin:Boolean?,
     @SerializedName("getCredit")
-    var getCredit:Long?,            //本次签到获得的积分（失败返回0）
+    var getCredit:Long?,
     @SerializedName("remaining")
-    var remaining:Long?,            //当前剩余积分
+    var remaining:Long?,
 )

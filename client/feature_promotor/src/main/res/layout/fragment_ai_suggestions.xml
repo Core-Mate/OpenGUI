@@ -12,7 +12,7 @@
         android:id="@+id/tv_suggestions_title"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="你还可以这样命令"
+        android:text="Try these commands"
         android:textSize="16sp"
         android:textColor="#999999"
         android:paddingStart="24dp"

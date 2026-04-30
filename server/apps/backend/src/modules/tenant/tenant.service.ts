@@ -8,8 +8,6 @@ import { AppLogger } from "../../common/log";
 import type { TenantSubscriptionStatusDto } from "./dto/tenant.dto";
 
 /**
- * 租户服务
- * 处理租户验证、订阅状态查询等核心逻辑
  */
 @Injectable()
 export class TenantService {
@@ -18,14 +16,10 @@ export class TenantService {
 	}
 
 	/**
-	 * 验证用户所属租户状态
-	 * 检查租户是否存在、是否被删除、是否被禁用、是否过期
-	 * @param tenantId 租户 ID
-	 * @throws ForbiddenException 租户验证失败时抛出
 	 */
 	async validateUserTenant(tenantId: number): Promise<void> {
 		if (tenantId <= 0) {
-			throw new ForbiddenException("用户未关联有效租户");
+			throw new ForbiddenException("User is not linked to a valid tenant");
 		}
 
 		const tenant = await prisma.tenants.findFirst({
@@ -39,34 +33,31 @@ export class TenantService {
 		});
 
 		if (!tenant) {
-			throw new ForbiddenException("租户不存在");
+			throw new ForbiddenException("Tenant does not exist");
 		}
 
 		if (tenant.is_deleted) {
-			throw new ForbiddenException("租户已被删除");
+			throw new ForbiddenException("Tenant has been deleted");
 		}
 
 		if (!tenant.is_active) {
-			throw new ForbiddenException("租户已被禁用，请联系管理员");
+			throw new ForbiddenException("Tenant is disabled. Contact an administrator.");
 		}
 
 		if (tenant.expiration_date < new Date()) {
-			throw new ForbiddenException("租户已过期，请联系管理员续费");
+			throw new ForbiddenException("Tenant has expired. Contact an administrator to renew.");
 		}
 
 		this.logger.debug(`Tenant ${tenantId} validated successfully`);
 	}
 
 	/**
-	 * 获取租户订阅状态
-	 * @param tenantId 租户 ID
-	 * @returns 租户订阅状态信息
 	 */
 	async getTenantSubscriptionStatus(
 		tenantId: number,
 	): Promise<TenantSubscriptionStatusDto> {
 		if (tenantId <= 0) {
-			throw new ForbiddenException("用户未关联有效租户");
+			throw new ForbiddenException("User is not linked to a valid tenant");
 		}
 
 		const tenant = await prisma.tenants.findFirst({
@@ -81,11 +72,11 @@ export class TenantService {
 		});
 
 		if (!tenant) {
-			throw new NotFoundException("租户不存在");
+			throw new NotFoundException("Tenant does not exist");
 		}
 
 		if (tenant.is_deleted) {
-			throw new ForbiddenException("租户已被删除");
+			throw new ForbiddenException("Tenant has been deleted");
 		}
 
 		const now = new Date();

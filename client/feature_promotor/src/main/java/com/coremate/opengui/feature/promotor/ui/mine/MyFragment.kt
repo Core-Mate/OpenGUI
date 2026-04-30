@@ -25,10 +25,10 @@ class MyFragment : Fragment() {
     private var binding: FragmentMyBinding? = null
     private var presenter: MyPresenter? = null
 
-    // 签到状态管理
+
     private sealed class CheckinState {
         data class NotCheckedIn(val points: Long) : CheckinState()
-        data class Loading(val points: Long) : CheckinState()  // 保存积分值以便失败时恢复
+        data class Loading(val points: Long) : CheckinState()
         object CheckedIn : CheckinState()
     }
 
@@ -61,9 +61,9 @@ class MyFragment : Fragment() {
         binding.accountStatSaved.text = "4.2h"
         binding.accountStatRate.text = "99%"
         binding.accountPointsValue.text = "0"
-        binding.accountPointsHours.text = "约可使用 0.0 小时"
+        binding.accountPointsHours.text = "About 0.0 hours available"
 
-        // 签到点击事件
+
         binding.llCheckin.setOnClickListener {
             handleCheckinClick()
         }
@@ -79,7 +79,7 @@ class MyFragment : Fragment() {
         }
 
         binding.accountMenuPreference.apply {
-            accountMenuLabel.text = "执行偏好"
+            accountMenuLabel.text = "Execution preferences"
             accountMenuRoot.setOnClickListener {
                 val intent = Intent(context, ExecutePreferenceActivity::class.java)
                 startActivity(intent)
@@ -87,7 +87,7 @@ class MyFragment : Fragment() {
         }
 
         binding.accountMenuKnowledge.apply {
-            accountMenuLabel.text = "知识库"
+            accountMenuLabel.text = "Knowledge Base"
             accountMenuRoot.setOnClickListener {
                 val intent = Intent(context, KnowledgeActivity::class.java)
                 startActivity(intent)
@@ -95,15 +95,15 @@ class MyFragment : Fragment() {
         }
 
         binding.accountMenuWhitelist.apply {
-            accountMenuLabel.text = "应用白名单"
+            accountMenuLabel.text = "App allowlist"
             accountMenuLabel.setTextColor(Color.parseColor("#94A3B8"))
             accountMenuLock.visibility = View.VISIBLE
             accountMenuArrow.visibility = View.GONE
         }
 
         binding.accountMenuRunMode.apply {
-            accountMenuLabel.text = "运行模式"
-            accountMenuValue.text = "全自动模式"
+            accountMenuLabel.text = "Run mode"
+            accountMenuValue.text = "Fully automatic"
             accountMenuLabel.setTextColor(Color.parseColor("#94A3B8"))
             accountMenuLock.visibility = View.VISIBLE
             accountMenuArrow.visibility = View.GONE
@@ -116,7 +116,7 @@ class MyFragment : Fragment() {
         }
 
         binding.accountMenuConsumption.apply {
-            accountMenuLabel.text = "消费记录"
+            accountMenuLabel.text = "Consumption records"
             accountMenuRoot.setOnClickListener {
                 val intent = Intent(context, PayRecordActivity::class.java)
                 startActivity(intent)
@@ -129,8 +129,8 @@ class MyFragment : Fragment() {
         }
 
         binding.llLogout.setOnClickListener {
-            val alertDialog = AlertDialog.Builder(requireContext()).setMessage("确定退出登录?")
-                .setPositiveButton("确定", object : DialogInterface.OnClickListener {
+            val alertDialog = AlertDialog.Builder(requireContext()).setMessage("ConfirmLog out?")
+                .setPositiveButton("Confirm", object : DialogInterface.OnClickListener {
                     override fun onClick(dialog: DialogInterface?, which: Int) {
                         dialog?.dismiss()
 //                        MMKV.defaultMMKV().clearAll()
@@ -161,7 +161,7 @@ class MyFragment : Fragment() {
         requireActivity().runOnUiThread {
             binding?.accountPointsValue?.text = (data?.remaining ?: 0).toString()
 
-            // 更新签到状态
+
             checkinState = if (data?.isCheckin == true) {
                 CheckinState.CheckedIn
             } else {
@@ -171,18 +171,18 @@ class MyFragment : Fragment() {
         }
     }
 
-    // 签到点击处理
+
     private fun handleCheckinClick() {
         val currentState = checkinState
         if (currentState is CheckinState.NotCheckedIn) {
-            // 保存当前积分值，以便失败时恢复
+
             checkinState = CheckinState.Loading(currentState.points)
             updateCheckinUI()
             presenter?.onCheckin()
         }
     }
 
-    // 签到成功
+
     fun onCheckinSuc(data: MyCheckinRespItem?) {
         requireActivity().runOnUiThread {
             if (data?.isCheckin == true) {
@@ -195,10 +195,10 @@ class MyFragment : Fragment() {
         }
     }
 
-    // 签到失败
+
     fun onCheckinErr() {
         requireActivity().runOnUiThread {
-            // 恢复到未签到状态，保留原来的积分值
+
             val currentState = checkinState
             if (currentState is CheckinState.Loading) {
                 checkinState = CheckinState.NotCheckedIn(currentState.points)
@@ -207,12 +207,12 @@ class MyFragment : Fragment() {
         }
     }
 
-    // 统一的签到UI更新方法
+
     private fun updateCheckinUI() {
         binding?.apply {
             when (val state = checkinState) {
                 is CheckinState.NotCheckedIn -> {
-                    // 未签到状态
+
                     llCheckin.visibility = View.VISIBLE
                     llHasCheckin.visibility = View.GONE
                     accountCheckinIcon.visibility = View.VISIBLE
@@ -220,15 +220,15 @@ class MyFragment : Fragment() {
                 }
 
                 is CheckinState.Loading -> {
-                    // 签到中状态
+
                     llCheckin.visibility = View.VISIBLE
                     llHasCheckin.visibility = View.GONE
                     accountCheckinIcon.visibility = View.GONE
-                    accountCheckinText.text = "签到中"
+                    accountCheckinText.text = "Checking in"
                 }
 
                 is CheckinState.CheckedIn -> {
-                    // 已签到状态
+
                     llCheckin.visibility = View.GONE
                     llHasCheckin.visibility = View.VISIBLE
                 }

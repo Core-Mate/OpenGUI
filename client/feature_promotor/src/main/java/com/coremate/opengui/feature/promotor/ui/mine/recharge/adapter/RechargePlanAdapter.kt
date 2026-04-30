@@ -61,14 +61,14 @@ class RechargePlanAdapter(
             tagRecommend.visibility = if (plan.isRecommended) View.VISIBLE else View.GONE
             if (plan.discount > 0) {
                 tagDiscount.visibility = View.VISIBLE
-                tagDiscount.text = "省${plan.discount}%"
+                tagDiscount.text = "Save ${plan.discount}%"
             } else {
                 tagDiscount.visibility = View.GONE
             }
 
             tvPlanName.text = plan.name
             tvPlanPrice.text = "¥${plan.price}"
-            tvPlanCredits.text = "${plan.credits.toLong().toString().replace(Regex("\\B(?=(\\d{3})+(?!\\d))"), ",")}积分"
+            tvPlanCredits.text = "${plan.credits.toLong().toString().replace(Regex("\\B(?=(\\d{3})+(?!\\d))"), ",")}Credits"
             tvPlanDesc.text = plan.description
             tvPlanDesc.visibility = if (plan.description.isNotEmpty()) View.VISIBLE else View.GONE
 

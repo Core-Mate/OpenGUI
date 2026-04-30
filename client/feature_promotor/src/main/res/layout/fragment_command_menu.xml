@@ -10,7 +10,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="24dp"
         android:layout_marginTop="300dp"
-        android:text="你还可以这样命令"
+        android:text="Try these commands"
         android:textColor="#99000000"
         android:textSize="12dp" />
 
@@ -32,7 +32,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
-            android:text="帮我打开小红书" />
+            android:text="Open Xiaohongshu" />
     </LinearLayout>
 
     <LinearLayout
@@ -53,7 +53,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
-            android:text="帮我打开抖音" />
+            android:text="Open Douyin" />
     </LinearLayout>
 
     <LinearLayout
@@ -74,7 +74,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
-            android:text="帮我打开抖音" />
+            android:text="Open Douyin" />
     </LinearLayout>
 
     <LinearLayout
@@ -95,7 +95,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
-            android:text="帮我打开抖音" />
+            android:text="Open Douyin" />
     </LinearLayout>
 
     <ImageView

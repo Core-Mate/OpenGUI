@@ -24,7 +24,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:text="累计消耗"
+            android:text="Total Usage"
             android:textColor="@color/task_detail_label"
             android:textSize="15sp" />
     </LinearLayout>
@@ -34,7 +34,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:text="1.4 积分"
+        android:text="1.4 Credits"
         android:textColor="@color/task_detail_primary_text"
         android:textSize="28sp"
         android:textStyle="bold"
@@ -45,7 +45,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
-        android:text="共 3 次任务执行"
+        android:text="3 task executions"
         android:textColor="@color/task_detail_empty_hint"
         android:textSize="13sp" />
 </LinearLayout>

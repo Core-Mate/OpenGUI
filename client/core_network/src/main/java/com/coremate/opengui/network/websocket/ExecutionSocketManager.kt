@@ -168,7 +168,7 @@ class ExecutionSocketManager(
             _connectionState.value = ConnectionState.ERROR
             runtimeLogger.error(TAG, "Connect error exec=$executionId: ${error?.message}", error)
             Handler(Looper.getMainLooper()).post {
-                Toast.makeText(appContext, "网络连接失败，请检查网络设置", Toast.LENGTH_LONG).show()
+                Toast.makeText(appContext, "Network connection failed. Check network settings.", Toast.LENGTH_LONG).show()
             }
         }
 
@@ -369,7 +369,6 @@ class ExecutionSocketManager(
     }
 
     private val HEARTBEAT_INTERVAL_MS = 5000L
-    /** 连续多少次心跳无 ACK 视为连接已死，主动重连 */
     private val HEARTBEAT_MISS_THRESHOLD = 3
     private var consecutiveHeartbeatMisses = 0
 
@@ -383,7 +382,7 @@ class ExecutionSocketManager(
                 try {
                     val s = socket
                     if (s != null && s.connected()) {
-                        // 使用带 ACK 的 emit 检测连接活性
+
                         val ackReceived = java.util.concurrent.atomic.AtomicBoolean(false)
                         s.emit(SocketEvents.LEASE_HEARTBEAT,
                             arrayOf(JSONObject().put("executionId", executionId)),
@@ -395,7 +394,7 @@ class ExecutionSocketManager(
                                     "Heartbeat ACK ok, exec=$executionId", executionId.toInt())
                             }
                         )
-                        // 等待 ACK（最多 10 秒），收到后立即退出等待
+
                         withTimeoutOrNull(HEARTBEAT_ACK_TIMEOUT_MS) {
                             while (!ackReceived.get() && isActive) {
                                 delay(200)
@@ -405,7 +404,7 @@ class ExecutionSocketManager(
                             consecutiveHeartbeatMisses++
                             runtimeLogger.warn(TAG,
                                 "Heartbeat ACK missed ($consecutiveHeartbeatMisses/$HEARTBEAT_MISS_THRESHOLD), exec=$executionId")
-                            // 心跳失败时进行网络诊断
+
                             val pingBaiduResult = pingHost("www.baidu.com")
                             val pingServerResult = pingHost(ServerConstant.getURL())
                             LogManager.saveLog(appContext, TAG,
@@ -415,7 +414,7 @@ class ExecutionSocketManager(
                             if (consecutiveHeartbeatMisses >= HEARTBEAT_MISS_THRESHOLD) {
                                 runtimeLogger.warn(TAG,
                                     "Heartbeat dead, forcing reconnect for exec=$executionId")
-                                // 强制断开让 Socket.IO 自动重连
+
                                 s.disconnect()
                                 consecutiveHeartbeatMisses = 0
                             }
@@ -442,7 +441,6 @@ class ExecutionSocketManager(
     }
 
     /**
-     * Ping 指定主机，用于心跳失败时的网络诊断。
      */
     private suspend fun pingHost(url: String): String = withContext(Dispatchers.IO) {
         val result = StringBuilder()
@@ -455,10 +453,10 @@ class ExecutionSocketManager(
             }
             val exitCode = process.waitFor()
             if (exitCode != 0) {
-                result.append("\nPing 异常退出，错误码: $exitCode")
+                result.append("\nPing exited abnormally, error code: $exitCode")
             }
         } catch (e: Exception) {
-            result.append("\n执行失败: ${e.message}")
+            result.append("\nExecution Failed: ${e.message}")
         }
         result.toString()
     }
@@ -467,12 +465,12 @@ class ExecutionSocketManager(
         stopHeartbeat()
         val s = socket
         socket = null
-        // 先移除监听器，防止新事件进入；再断开 socket
+
         s?.off()
         s?.disconnect()
         _connectionState.value = ConnectionState.DISCONNECTED
         readySent = false
-        // 使用 cancelChildren 而非 cancel，让 in-flight ACK 协程有机会完成
+
         scope.coroutineContext[Job]?.cancelChildren()
         runtimeLogger.info(TAG, "Disconnected and cleaned up exec=$executionId")
     }

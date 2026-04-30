@@ -13,7 +13,7 @@ class PayRecordActivity :
     private var adapter: PayRecordListAdapter? = null
 
     override fun initView() {
-        binding.titlebar.setTitle("消费记录").setLeftIconClickListener {
+        binding.titlebar.setTitle("Consumption records").setLeftIconClickListener {
             finish()
         }
         binding.titlebar.getMoreBtn().visibility = View.INVISIBLE
@@ -29,24 +29,24 @@ class PayRecordActivity :
     }
 
     override fun initParam() {
-        // 写死数据，与 Web ConsumptionRecordPage MOCK_RECORDS 一致
+
         recordList.add(
             ConsumptionRecordByDate(
                 date = "2025-01-24",
-                dateLabel = "1月24日",
+                dateLabel = "Jan 24",
                 totalPoints = 0.7,
                 entries = listOf(
                     ConsumptionEntry(
                         id = "1",
                         appName = "Twitter/X",
-                        taskTitle = "推文批量定时发布",
+                        taskTitle = "Batch Scheduled Tweet Posting",
                         timeRange = "14:22 - 14:45",
                         points = 0.4
                     ),
                     ConsumptionEntry(
                         id = "2",
-                        appName = "小红书",
-                        taskTitle = "图文一键排版分发",
+                        appName = "Xiaohongshu",
+                        taskTitle = "One-click Article Layout and Distribution",
                         timeRange = "10:30 - 10:45",
                         points = 0.3
                     )
@@ -56,48 +56,48 @@ class PayRecordActivity :
         recordList.add(
             ConsumptionRecordByDate(
                 date = "2025-01-23",
-                dateLabel = "1月23日",
+                dateLabel = "1Month23Day",
                 totalPoints = 0.7,
                 entries = listOf(
                     ConsumptionEntry(
                         id = "3",
                         appName = "Mailchimp",
-                        taskTitle = "营销邮件批量发送",
+                        taskTitle = "Batch Marketing Email Sending",
                         timeRange = "09:00 - 09:42",
                         points = 0.7
                     ),
                     ConsumptionEntry(
                         id = "3",
                         appName = "Mailchimp",
-                        taskTitle = "营销邮件批量发送",
+                        taskTitle = "Batch Marketing Email Sending",
                         timeRange = "09:00 - 09:42",
                         points = 0.7
                     ),
                     ConsumptionEntry(
                         id = "3",
                         appName = "Mailchimp",
-                        taskTitle = "营销邮件批量发送",
+                        taskTitle = "Batch Marketing Email Sending",
                         timeRange = "09:00 - 09:42",
                         points = 0.7
                     ),
                     ConsumptionEntry(
                         id = "3",
                         appName = "Mailchimp",
-                        taskTitle = "营销邮件批量发送",
+                        taskTitle = "Batch Marketing Email Sending",
                         timeRange = "09:00 - 09:42",
                         points = 0.7
                     ),
                     ConsumptionEntry(
                         id = "3",
                         appName = "Mailchimp",
-                        taskTitle = "营销邮件批量发送",
+                        taskTitle = "Batch Marketing Email Sending",
                         timeRange = "09:00 - 09:42",
                         points = 0.7
                     ),
                     ConsumptionEntry(
                         id = "3",
                         appName = "Mailchimp",
-                        taskTitle = "营销邮件批量发送",
+                        taskTitle = "Batch Marketing Email Sending",
                         timeRange = "09:00 - 09:42",
                         points = 0.7
                     )

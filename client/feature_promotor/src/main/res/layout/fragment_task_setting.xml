@@ -29,7 +29,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:gravity="center"
-            android:text="任务设置"
+            android:text="Task settings"
             android:textColor="#E5000000"
             android:textFontWeight="500"
             android:textSize="18dp"
@@ -74,7 +74,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
                     android:layout_weight="1"
-                    android:text="操作指引"
+                    android:text="Operation guide"
                     android:textColor="#000000"
                     android:textFontWeight="500"
                     android:textSize="14dp" />
@@ -91,7 +91,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="这是一段操作指引这是一段操作指引操作指引这是一段操作指引这是一段操作指引这是一段操作指引这是一段操作指引这是一段操作指引这是一段操作指引"
+                android:text="This is an operation guide. Describe the steps, constraints, and expected result here."
                 android:textColor="#99000000"
                 android:textFontWeight="400"
                 android:textSize="14dp" />
@@ -121,7 +121,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="是否进行朋友圈点赞"
+                        android:text="Like Moments posts"
                         android:textColor="#000000"
                         android:textFontWeight="400"
                         android:textSize="15dp" />
@@ -153,7 +153,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="是否进行朋友圈评论"
+                        android:text="Comment on Moments posts"
                         android:textColor="#000000"
                         android:textFontWeight="400"
                         android:textSize="15dp" />
@@ -186,7 +186,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="评论字数选择"
+                    android:text="Comment length"
                     android:textColor="#99000000"
                     android:textFontWeight="400"
                     android:textSize="13dp" />
@@ -208,7 +208,7 @@
                         android:background="@drawable/task_setting_word_count_bt_bg"
                         android:button="@null"
                         android:textColor="@drawable/task_setting_word_count_bt_text"
-                        android:text="少字数"
+                        android:text="Short"
                         android:textFontWeight="400"
                         android:textSize="13dp" />
 
@@ -222,7 +222,7 @@
                         android:layout_weight="1"
                         android:button="@null"
                         android:checked="true"
-                        android:text="中等字数"
+                        android:text="Medium"
                         android:textColor="@drawable/task_setting_word_count_bt_text"
                         android:gravity="center"
                         android:textFontWeight="400"
@@ -237,7 +237,7 @@
                         android:background="@drawable/task_setting_word_count_bt_bg"
                         android:layout_height="36dp"
                         android:button="@null"
-                        android:text="多字数"
+                        android:text="Long"
                         android:textColor="@drawable/task_setting_word_count_bt_text"
                         android:gravity="center"
                         android:textFontWeight="400"
@@ -263,7 +263,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="触达次数（最多30次）"
+                    android:text="Reach count (max 30)"
                     android:textColor="#99000000"
                     android:textFontWeight="400"
                     android:textSize="13dp" />
@@ -288,7 +288,7 @@
                 android:layout_weight="1"
                 android:background="@drawable/task_setting_delete"
                 android:gravity="center"
-                android:text="删除任务"
+                android:text="Delete task"
                 android:textColor="#000000"
                 android:textFontWeight="400"
                 android:textSize="14dp" />
@@ -300,7 +300,7 @@
                 android:layout_weight="1"
                 android:background="@drawable/task_setting_start"
                 android:gravity="center"
-                android:text="开始任务"
+                android:text="Start task"
                 android:textColor="#ffffff"
                 android:textFontWeight="400"
                 android:textSize="14dp" />

@@ -19,7 +19,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="30dp"
-            android:text="手机无障碍服务出错了，请手动开启（如果是开启状态，请先关闭再重新打开）"
+            android:text="The accessibility service has an issue. Enable it manually. If it is already enabled, turn it off and on again."
             android:textColor="#ffffff"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"

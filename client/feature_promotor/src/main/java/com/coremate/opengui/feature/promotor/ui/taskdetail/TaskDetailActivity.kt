@@ -57,7 +57,7 @@ class TaskDetailActivity :
     }
 
     override fun initEvent() {
-        binding.titlebar.setTitle("任务详情").setLeftIconClickListener {
+        binding.titlebar.setTitle("Task Details").setLeftIconClickListener {
             finish()
         }.setRightIconClickListener {
             showTaskMoreMenu()
@@ -73,7 +73,7 @@ class TaskDetailActivity :
             showEditDescriptionDialog()
         }
         binding.llStart.setOnClickListener {
-            val checkPermission = PermissionManager.checkPermission(this, "TaskDetailActivity - 点击开始执行")
+            val checkPermission = PermissionManager.checkPermission(this, "TaskDetailActivity - start execution tapped")
             if (!checkPermission) {
                 PermissionManager.showRequestPermissionWindow(this)
                 return@setOnClickListener
@@ -89,7 +89,7 @@ class TaskDetailActivity :
                 )
                 return@setOnClickListener
             }
-            TaskCenter.reset(binding.llStart.context, "我的任务 - 列表 - 重新执行")
+            TaskCenter.reset(binding.llStart.context, "My Tasks - List - Run Again")
             TaskCenter.taskId = data?.id
             TaskCenter.taskTitle = currentTitle
             TaskCenter.taskPrompt = currentPrompt
@@ -112,7 +112,7 @@ class TaskDetailActivity :
         presenter?.getTaskHistory(data?.id, this)
     }
 
-    /// 更多
+
     private fun showTaskMoreMenu() {
         val bottomSheetDialog = TaskMoreFragment()
         bottomSheetDialog.show(
@@ -131,31 +131,31 @@ class TaskDetailActivity :
         val cm = getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
         if (cm != null && name.isNotEmpty()) {
             cm.setPrimaryClip(ClipData.newPlainText("task_name", name))
-            Toast.makeText(this, "已复制到剪贴板", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Copied to clipboard", Toast.LENGTH_SHORT).show()
         } else {
-            Toast.makeText(this, "复制失败", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Copy failed", Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun showDeleteConfirmDialog() {
         AlertDialog.Builder(this)
-            .setTitle("删除任务")
-            .setMessage("确定要删除该任务吗？")
-            .setPositiveButton("删除") { _, _ ->
+            .setTitle("Delete task")
+            .setMessage("Delete this task?")
+            .setPositiveButton("Delete") { _, _ ->
                 presenter?.deleteTask(data?.id) { success ->
                     if (success) {
-                        Toast.makeText(this, "已删除", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "Deleted", Toast.LENGTH_SHORT).show()
                         finish()
                     } else {
-                        Toast.makeText(this, "删除失败", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "Delete failed", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
-            .setNegativeButton("取消", null)
+            .setNegativeButton("Cancel", null)
             .show()
     }
 
-    ///编辑任务名称
+    ///Edit Task Name
     private fun showEditNameDialog() {
         val view = LayoutInflater.from(this).inflate(R.layout.dialog_edit_task_field, null)
         val tvTitle = view.findViewById<android.widget.TextView>(R.id.tv_dialog_title)
@@ -163,7 +163,7 @@ class TaskDetailActivity :
         val btnCancel = view.findViewById<android.widget.TextView>(R.id.btn_dialog_cancel)
         val flClose = view.findViewById<FrameLayout>(R.id.fl_close)
         val btnSave = view.findViewById<android.widget.TextView>(R.id.btn_dialog_save)
-        tvTitle.text = "编辑任务名称"
+        tvTitle.text = "Edit Task Name"
         etInput.setText(binding.tvTaskName.text)
         etInput.setSelection(etInput.text?.length ?: 0)
         etInput.inputType = InputType.TYPE_CLASS_TEXT
@@ -177,7 +177,7 @@ class TaskDetailActivity :
         btnSave.setOnClickListener {
             val newTitle = etInput.text.toString().trim()
             if (newTitle.isEmpty()) {
-                Toast.makeText(this, "名称不能为空", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Name cannot be empty", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
             dialog.dismiss()
@@ -188,10 +188,10 @@ class TaskDetailActivity :
                 if (resp != null) {
                     binding.tvTaskName.text = newTitle
                     originalTitle = newTitle
-                    Toast.makeText(this, "名称已更新", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Name updated", Toast.LENGTH_SHORT).show()
                     dialog.dismiss()
                 } else {
-                    Toast.makeText(this, "更新失败", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Update failed", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -199,7 +199,7 @@ class TaskDetailActivity :
     }
 
 
-    ///编辑任务描述
+    ///Edit task description
     private fun showEditDescriptionDialog() {
 
         val bottomSheetDialog =
@@ -218,9 +218,9 @@ class TaskDetailActivity :
                     if (resp != null) {
                         binding.tvTaskDescription.text = newPrompt
                         originalPrompt = newPrompt
-                        Toast.makeText(context, "描述已更新", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Description updated", Toast.LENGTH_SHORT).show()
                     } else {
-                        Toast.makeText(context, "更新失败", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Update failed", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
@@ -231,7 +231,7 @@ class TaskDetailActivity :
 //        val etInput = view.findViewById<android.widget.EditText>(R.id.et_dialog_input)
 //        val btnCancel = view.findViewById<android.widget.TextView>(R.id.btn_dialog_cancel)
 //        val btnSave = view.findViewById<android.widget.TextView>(R.id.btn_dialog_save)
-//        tvTitle.text = "编辑任务描述"
+//        tvTitle.text = "Edit task description"
 //        etInput.setText(binding.tvTaskDescription.text)
 //        etInput.setSelection(etInput.text?.length ?: 0)
 //        etInput.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
@@ -250,10 +250,10 @@ class TaskDetailActivity :
 //                if (resp != null) {
 //                    binding.tvTaskDescription.text = newPrompt
 //                    originalPrompt = newPrompt
-//                    Toast.makeText(this, "描述已更新", Toast.LENGTH_SHORT).show()
+//                    Toast.makeText(this, "Description updated", Toast.LENGTH_SHORT).show()
 //                    dialog.dismiss()
 //                } else {
-//                    Toast.makeText(this, "更新失败", Toast.LENGTH_SHORT).show()
+//                    Toast.makeText(this, "Update failed", Toast.LENGTH_SHORT).show()
 //                }
 //            }
 //        }
@@ -276,7 +276,7 @@ class TaskDetailActivity :
     fun updateTaskResult(result: Boolean, resp: TaskTemplatesResp?) {
         runOnUiThread {
             if (result && resp != null) {
-                TaskCenter.reset(this@TaskDetailActivity, "我的任务 - 任务详情 - 更新并执行")
+                TaskCenter.reset(this@TaskDetailActivity, "My Tasks - Task Details - Update and Run")
                 TaskCenter.taskId = resp.id
                 TaskCenter.taskTitle = resp.taskName
                 TaskCenter.taskPrompt = resp.taskDescription

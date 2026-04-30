@@ -21,11 +21,11 @@ data class ChatMessage(
     }
 
     enum class MessageType {
-        NORMAL, THINKING, LOADING // 普通消息，思考中消息
+        NORMAL, THINKING, LOADING
     }
 
-    //以下为新增，为兼容旧代码，上面部分暂不删除
+
     enum class MessageState {
-        NORMAL, THINKTING, THINK_DONE // 普通消息（用户发送的消息） 、思考中、思考完成
+        NORMAL, THINKTING, THINK_DONE
     }
 }

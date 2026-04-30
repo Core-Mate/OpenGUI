@@ -21,6 +21,6 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        tools:text="选项内容" />
+        tools:text="Option Content" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

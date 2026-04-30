@@ -17,18 +17,18 @@ class AISuggestionsFragment : Fragment() {
     private var _binding: FragmentAiSuggestionsBinding? = null
     private val binding get() = _binding!!
 
-    // 定义建议数据类
+
     data class Suggestion(val id: String, val text: String)
 
-    // Adapter 及其点击监听器接口
+
     interface OnSuggestionClickListener {
-        // 修改为只传递文本，不自动发送
+
         fun onSuggestionClick(suggestionText: String)
     }
 
     private var onSuggestionClickListener: OnSuggestionClickListener? = null
 
-    // 设置点击监听器的方法
+
     fun setOnSuggestionClickListener(listener: OnSuggestionClickListener) {
         this.onSuggestionClickListener = listener
     }
@@ -44,12 +44,12 @@ class AISuggestionsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // 初始化 RecyclerView
+
         val suggestionsAdapter = SuggestionsAdapter { suggestion ->
-            // 1. 通过接口回调，将建议文本传递给 AITaskFragment
+
             onSuggestionClickListener?.onSuggestionClick(suggestion.text)
-            // 2. 关闭建议页面
-            parentFragmentManager.popBackStack() // 或 remove 这个 Fragment
+
+            parentFragmentManager.popBackStack()
         }
 
         binding.rvSuggestionsList.apply {
@@ -57,19 +57,19 @@ class AISuggestionsFragment : Fragment() {
             adapter = suggestionsAdapter
         }
 
-        // 填充建议数据
+
         val suggestions = listOf(
-            Suggestion("1", "帮我打开今日头条"),
-            Suggestion("2", "给小红书账号发布一篇文章"),
-            Suggestion("3", "帮我打开闲鱼"),
-            Suggestion("4", "帮我打开微信"), // 示例
-            Suggestion("5", "查询天气预报")   // 示例
+            Suggestion("1", "Open Toutiao"),
+            Suggestion("2", "Publish an article to a Xiaohongshu account"),
+            Suggestion("3", "Open Xianyu"),
+            Suggestion("4", "Open WeChat"), // Example.
+            Suggestion("5", "Check the weather forecast")   // Example.
         )
         suggestionsAdapter.submitList(suggestions)
 
-        // 关闭按钮点击事件
+
         binding.btnCloseSuggestions.setOnClickListener {
-            parentFragmentManager.popBackStack() // 关闭当前 Fragment
+            parentFragmentManager.popBackStack()
         }
     }
 

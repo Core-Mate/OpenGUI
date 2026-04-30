@@ -5,7 +5,7 @@
     android:viewportHeight="24"
     android:tint="#9CA3AF">
 
-    <!-- 外圆 -->
+
     <path
         android:fillColor="@android:color/transparent"
         android:strokeColor="@android:color/black"
@@ -14,7 +14,7 @@
         android:strokeLineJoin="round"
         android:pathData="M12,2 A10,10 0 1,1 12,22 A10,10 0 1,1 12,2" />
 
-    <!-- 对勾 -->
+
     <path
         android:fillColor="@android:color/transparent"
         android:strokeColor="@android:color/black"

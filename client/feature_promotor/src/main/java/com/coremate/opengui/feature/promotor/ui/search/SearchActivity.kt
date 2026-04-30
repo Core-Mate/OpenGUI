@@ -28,8 +28,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 /**
- * Explore 搜索页，与 Web SearchPage searchScope=explore 一致。
- * 数据：getTaskTemplatesResp；无关键词时展示历史记录、调用App、热门关键词。
  */
 class SearchActivity :
     BaseBindingActivity<ActivitySearchBinding>(ActivitySearchBinding::inflate) {
@@ -41,17 +39,17 @@ class SearchActivity :
         private const val SHOW_HISTORY_COUNT = 3
 
         private val COMMON_APPS = listOf(
-            Triple("xiaohongshu", "小红书", 0xFFFF2442.toInt()),
-            Triple("douyin", "抖音", 0xFF000000.toInt()),
-            Triple("wechat", "微信", 0xFF07C160.toInt())
+            Triple("xiaohongshu", "Xiaohongshu", 0xFFFF2442.toInt()),
+            Triple("douyin", "Douyin", 0xFF000000.toInt()),
+            Triple("wechat", "WeChat", 0xFF07C160.toInt())
         )
         private val HOT_KEYWORDS = listOf(
-            "评论批量回复",
-            "多平台同步发布",
-            "群发消息",
-            "关键词触发回复",
-            "批量关注用户",
-            "自动点赞评论"
+            "Batch Comment Replies",
+            "Cross-platform Publishing",
+            "Bulk Messaging",
+            "Keyword-triggered Replies",
+            "Batch Follow Users",
+            "Auto-like Comments"
         )
     }
 

@@ -23,7 +23,7 @@
             android:paddingEnd="16dp"
             android:paddingBottom="24dp">
 
-            <!-- 标题 -->
+            <!-- Title -->
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
                 android:layout_height="104dp">
@@ -37,7 +37,7 @@
                     android:layout_marginBottom="12dp"
                     android:includeFontPadding="false"
                     android:paddingBottom="1dp"
-                    android:text="自定义任务"
+                    android:text="Custom task"
                     android:textColor="#0B1120"
                     android:textSize="28sp"
                     android:textStyle="bold"
@@ -60,7 +60,7 @@
                     android:id="@+id/tv_try"
                     android:layout_width="74dp"
                     android:layout_height="wrap_content"
-                    android:text="试试手气"
+                    android:text="Surprise me"
                     android:textColor="@color/color_primary"
                     android:textSize="14dp"
                     android:textStyle="bold"
@@ -69,7 +69,7 @@
                     app:layout_constraintTop_toTopOf="@id/title" />
             </androidx.constraintlayout.widget.ConstraintLayout>
 
-            <!-- 标题输入框（单行） -->
+
             <EditText
                 android:id="@+id/et_title"
                 android:layout_width="match_parent"
@@ -79,7 +79,7 @@
                 android:layout_marginEnd="8dp"
                 android:background="@drawable/bg_gray_corner_24"
                 android:ellipsize="end"
-                android:hint="请输入任务标题"
+                android:hint="Enter task title"
                 android:inputType="textCapSentences"
                 android:maxLines="1"
                 android:paddingHorizontal="16dp"
@@ -102,7 +102,7 @@
                     android:layout_height="match_parent"
                     android:background="@null"
                     android:gravity="top"
-                    android:hint="描述您希望 AI 执行的任务目标..."
+                    android:hint="Describe what you want AI to do..."
                     android:inputType="textMultiLine"
                     android:minLines="12"
                     android:padding="18dp"
@@ -129,7 +129,7 @@
                     android:layout_weight="1"
                     android:background="@drawable/bg_gray_circle"
                     android:gravity="center"
-                    android:text="取消"
+                    android:text="Cancel"
                     android:textColor="#111827"
                     android:textSize="16sp" />
 
@@ -144,7 +144,7 @@
                     android:layout_weight="1"
                     android:background="@drawable/bg_main_circle"
                     android:gravity="center"
-                    android:text="确认创建"
+                    android:text="Create"
                     android:textColor="#FFFFFF"
                     android:textSize="16sp" />
             </LinearLayout>

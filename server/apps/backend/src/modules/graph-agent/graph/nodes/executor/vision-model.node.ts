@@ -26,12 +26,10 @@ const logger = new Logger("VisionModelNode");
 export const IMAGE_REMOVED_PLACEHOLDER = "[image removed]";
 
 /**
- * 工具调用最大循环次数（防止无限循环）
  */
 const MAX_TOOL_CALL_ITERATIONS = 5;
 
 /**
- * 检查消息是否包含图片
  */
 export function isImageMessage(message: BaseMessage): boolean {
 	if (!Array.isArray(message.content)) return false;
@@ -42,7 +40,6 @@ export function isImageMessage(message: BaseMessage): boolean {
 }
 
 /**
- * 图片滑动窗口：保留最近 maxImages 张截图，其余替换为占位符
  */
 function trimImageMessages(
 	messages: BaseMessage[],
@@ -72,7 +69,6 @@ function trimImageMessages(
 }
 
 /**
- * 刷新图片消息：将本地存储的截图转为 base64 data URL
  */
 async function refreshImageUrls(
 	messages: BaseMessage[],
@@ -113,7 +109,6 @@ async function refreshImageUrls(
 }
 
 /**
- * 从 AIMessage content 中提取文本
  */
 function extractTextContent(content: unknown): string {
 	if (typeof content === "string") return content;
@@ -133,12 +128,7 @@ function extractTextContent(content: unknown): string {
 }
 
 /**
- * 构建 VLM 调用消息
  *
- * 从共享 sharedMessages 构建 VLM 专用的消息列表：
- * 1. 图片窗口：保留最近 VLM_IMAGE_WINDOW_SIZE 张截图，其余替换为占位符
- * 2. 过滤占位符消息（节省 token）
- * 3. 消息窗口：保留最近 VLM_MODEL_WINDOW_SIZE 条非占位消息
  * 4. prepend SystemMessage
  */
 function buildVlmCallMessages(
@@ -147,10 +137,10 @@ function buildVlmCallMessages(
 ): BaseMessage[] {
 	const { VLM_IMAGE_WINDOW_SIZE, VLM_MODEL_WINDOW_SIZE } = VLM_AGENT_DEFAULTS;
 
-	// 1. 图片窗口裁剪
+
 	const trimmed = trimImageMessages(sharedMessages, VLM_IMAGE_WINDOW_SIZE);
 
-	// 2. 过滤占位符消息
+
 	const nonPlaceholder = trimmed.filter((msg) => {
 		if (msg.type === "human" && typeof msg.content === "string") {
 			return msg.content !== IMAGE_REMOVED_PLACEHOLDER;
@@ -158,7 +148,7 @@ function buildVlmCallMessages(
 		return true;
 	});
 
-	// 3. 消息窗口裁剪
+
 	const windowed =
 		nonPlaceholder.length > VLM_MODEL_WINDOW_SIZE
 			? nonPlaceholder.slice(-VLM_MODEL_WINDOW_SIZE)
@@ -169,10 +159,7 @@ function buildVlmCallMessages(
 }
 
 /**
- * 创建 VLM 模型节点
  *
- * 从共享 sharedMessages 构建调用消息，支持 Working Memory 工具调用。
- * messages 不含 SystemMessage，调用时 prepend VLM 专用的 SystemMessage。
  */
 export function createVisionModelNode(
 	configProvider: AgentConfigProvider,
@@ -201,7 +188,7 @@ export function createVisionModelNode(
 		logger.log(`Vision model processing, loop ${exec.loopCount}`);
 
 		try {
-			// === 余额前置拦截 ===
+
 			const balance = await billingService.getBalance(state.userId);
 			if (balance.remaining <= 0) {
 				logger.warn(`Insufficient balance (${balance.remaining}), suspending before VLM call`);
@@ -210,7 +197,7 @@ export function createVisionModelNode(
 						where: { id: state.taskExecutionId },
 						data: {
 							execution_status: "SUSPENDED",
-							status_message: "积分不足，请充值后再试",
+								status_message: "Insufficient credits. Please recharge and try again.",
 							updated_at: new Date(),
 						},
 					});
@@ -220,7 +207,7 @@ export function createVisionModelNode(
 				interrupt("insufficient_balance");
 			}
 
-			// 获取模型配置
+
 			const modelConfig = await configProvider.getModelConfig(
 				AgentName.EXECUTOR_VLM,
 				state.userRegion,
@@ -246,10 +233,10 @@ export function createVisionModelNode(
 				},
 			});
 
-			// 创建工具列表
+
 			const tools: StructuredToolInterface[] = [
 				...workingMemoryToolService.createTools(),
-				// todo: 临时删除试试
+
 				// createCallUserTool(),
 			];
 
@@ -274,23 +261,23 @@ export function createVisionModelNode(
 
 			const startTime = Date.now();
 
-			// 条件刷新图片 URL（fork/resume 场景 TOS 签名可能过期）
+
 			let messages = exec.sharedMessages;
 			if (exec.needRefreshImageUrls) {
 				messages = await refreshImageUrls(messages, tosService);
 			}
 
-			// 构建 VLM 调用消息
+
 			let callMessages = buildVlmCallMessages(messages, exec.guiSystemPrompt);
 
-			// 注入任务执行异常提醒
+
 			let shouldResetRemind = false;
 			if (exec.needRemind && exec.remindReason) {
 				const instruction = state.executorInput?.instruction || "";
 				const remindMessage = new HumanMessage(
-					`当前任务执行可能陷入死循环或者偏离目标。\n具体执行异常：${exec.remindReason}\n原始任务：${instruction}\n请根据原始任务目标检查你是否偏离任务目标或者陷入死循环`,
+					`The current task may be stuck in a loop or drifting from the goal.\nExecution anomaly: ${exec.remindReason}\nOriginal task: ${instruction}\nCheck whether the execution is drifting from the original goal or stuck in a loop.`,
 				);
-				// 插入到最后一条消息之前
+
 				callMessages = [
 					...callMessages.slice(0, -1),
 					remindMessage,
@@ -304,7 +291,7 @@ export function createVisionModelNode(
 				`Invoking VLM: ${callMessages.length} messages${shouldResetRemind ? " (with reminder)" : ""}`,
 			);
 
-			// 调用模型（支持工具调用循环）
+
 			let response = await model.invoke(callMessages, config);
 			let totalTokens = response.usage_metadata?.total_tokens || 0;
 			let iterations = 0;
@@ -406,13 +393,13 @@ export function createVisionModelNode(
 			logger.debug("vlm response:", JSON.stringify(response), "\n");
 			let prediction = extractTextContent(response.content);
 
-			// 如果 call_user 工具被调用，构造合成 prediction
+
 			if (callUserContent !== null) {
 				prediction = buildCallUserPrediction(callUserContent);
 				logger.log("Synthetic call_user prediction generated");
 			}
 
-			// 提取 reasoning summary (豆包模型特有)
+
 			const reasoning = response.additional_kwargs?.reasoning as
 				| { summary?: Array<{ type: string; text: string }> }
 				| undefined;
@@ -427,7 +414,7 @@ export function createVisionModelNode(
 				logger.log("Using reasoning summary as prediction (content was empty)");
 			}
 
-			// 空响应重试
+
 			if (!prediction.trim()) {
 				logger.warn(`VLM returned empty prediction at loop ${exec.loopCount}, retrying`);
 				const retryMessages = iterations > 0 ? conversationMessages : callMessages;
@@ -469,7 +456,7 @@ export function createVisionModelNode(
 			);
 			logger.log(`VLM prediction: ${prediction.substring(0, 200)}...`);
 
-			// 返回结果：仅 append AIMessage 到共享 sharedMessages
+
 			return {
 				executor: {
 					currentPrediction: prediction,
@@ -513,11 +500,11 @@ export function createVisionModelNode(
 			return {
 				executor: {
 					status: "error",
-					errorMessage: `VLM 调用失败: ${err.message}`,
+						errorMessage: `VLM call failed: ${err.message}`,
 					lastError: {
 						severity: ErrorSeverity.FATAL,
 						code: "VLM_FAILED",
-						message: `VLM 调用失败: ${err.message}`,
+							message: `VLM call failed: ${err.message}`,
 					},
 				},
 			} as Partial<AgentState>;
@@ -526,7 +513,6 @@ export function createVisionModelNode(
 }
 
 /**
- * VLM 模型配置接口 (保留用于向后兼容)
  */
 export interface VLMConfig {
 	model: string;

@@ -49,24 +49,24 @@ class TaskCustomFragment :
     private val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     var listener: TaskCustomFragmentListener? = null
 
-    // 标记当前是否是展开状态
+
     private var isExpanded = false
 
     val RANDOM_TASKS = listOf(
-        "帮我整理一份最近一周人工智能领域的重大新闻摘要，并以表格形式呈现。",
-        "自动监控我关注的 B 站 UP 主，一旦有新视频发布就帮我总结视频的核心观点。",
-        "每天下午 5 点检查我的待办清单，如果有未完成的任务，请帮我规划明天的执行顺序。",
-        "分析最近小红书上关于“极简生活”的热门笔记，提取出 5 个高频关键词。",
-        "抓取 GitHub Trending 榜单上前 3 名的仓库，简要描述它们的功能和技术栈。",
-        "监控指定城市的空气质量，如果指数超过 100，发邮件提醒我带口罩并关闭窗户。",
-        "搜索并汇总全网关于 Apple Vision Pro 的三条深度测评，对比优缺点。",
-        "帮我起 5 个吸引人的短视频标题，主题是：程序员的居家办公生活。",
-        "搜索最近一个月上海最值得去的 3 个艺术展，并列出地址和门票价格。",
-        "每隔 3 小时自动抓取一次 BTC 价格，如果涨幅超过 5% 立即通过 Webhook 通知我。"
+        "Summarize major AI news from the past week and present it in a table.",
+        "Monitor followed Bilibili creators and summarize the key points when a new video is published.",
+        "Check my todo list at 5 PM every day and plan tomorrow's execution order for unfinished tasks.",
+        "Analyze recent popular Xiaohongshu notes about minimalist living and extract 5 high-frequency keywords.",
+        "Fetch the top 3 GitHub Trending repositories and briefly describe their functions and tech stacks.",
+        "Monitor air quality in a specified city and email me to wear a mask and close windows if the index exceeds 100.",
+        "Search and summarize three in-depth Apple Vision Pro reviews, comparing pros and cons.",
+        "Create 5 catchy short-video titles about a programmer working from home.",
+        "Search for the 3 best art exhibitions in Shanghai this month and list their addresses and ticket prices.",
+        "Fetch the BTC price every 3 hours and notify me through a webhook if it rises more than 5%."
     )
 
     override fun initView() {
-        // 进入页面后，标题输入框自动获取焦点并弹出键盘
+
         binding.etTitle.requestFocus()
         binding.etTitle.postDelayed({ KeyboardUtil.openKeyboard(this@TaskCustomFragment, binding.etTitle) }, 300)
     }
@@ -100,9 +100,9 @@ class TaskCustomFragment :
             binding.fullInputTask.setText(randomTask)
         }
 
-        // 点击内容输入框：
-        // - 如果当前焦点不在内容输入框，则切换焦点并弹出键盘
-        // - 如果当前焦点已在内容输入框，则仅隐藏键盘
+
+
+
         binding.fullInputTask.setOnClickListener {
             if (!binding.fullInputTask.hasFocus()) {
                 binding.fullInputTask.requestFocus()
@@ -142,7 +142,7 @@ class TaskCustomFragment :
             if (titleText.isEmpty()) {
                 Toast.makeText(
                     this,
-                    "标题不能为空",
+                    "Title cannot be empty",
                     Toast.LENGTH_SHORT
                 ).show()
                 return@setOnClickListener
@@ -150,7 +150,7 @@ class TaskCustomFragment :
             if (descText.isEmpty()) {
                 Toast.makeText(
                     this,
-                    "描述不能为空",
+                    "Description cannot be empty",
                     Toast.LENGTH_SHORT
                 ).show()
                 return@setOnClickListener
@@ -172,7 +172,7 @@ class TaskCustomFragment :
                     binding.flLoading.visibility = View.INVISIBLE
                     if (it?.code() == 201 || it?.code() == 200) {
                         launch(Dispatchers.Main) {
-                            AMToastUtils.showToast("任务创建成功")
+                            AMToastUtils.showToast("Task created")
                             listener?.onCreateTaskSuc()
                             finish()
                         }
@@ -205,13 +205,13 @@ class TaskCustomFragment :
         if (binding.fullInputTask.text.toString().isNotEmpty() || isForceClose) {
             KeyboardUtil.closeKeyboard(binding.fullInputTask)
             val alertDialog = AlertDialog.Builder(this)
-                .setTitle("放弃创建?")
-                .setMessage("当前内容尚未保存，确定要放弃吗？")
-                .setPositiveButton("确定") { dialog, _ ->
+                .setTitle("Discard task?")
+                .setMessage("Current content is not saved. Discard changes?")
+                .setPositiveButton("Confirm") { dialog, _ ->
                     dialog.dismiss()
                     finish()
                 }
-                .setNegativeButton("取消") { dialog, _ ->
+                .setNegativeButton("Cancel") { dialog, _ ->
                     dialog.dismiss()
                 }
                 .create()
@@ -221,8 +221,6 @@ class TaskCustomFragment :
     }
 
     /**
-     * 动态设置软键盘模式
-     * @param mode 软键盘模式（ADJUST_PAN 或 ADJUST_RESIZE）
      */
     private fun setSoftInputMode(mode: Int) {
 //        dialog?.window?.setSoftInputMode(
@@ -231,41 +229,38 @@ class TaskCustomFragment :
     }
 
     /**
-     * 动画化 ll_root 高度和输入框 margin 的变化
-     * @param targetHeight 目标高度（具体数值）
-     * @param targetMargin 输入框目标底部 margin
      */
     private fun animateRootHeight(
         targetHeight: Int,
         targetMargin: Int
     ) {
         val rootParams = binding.llRoot.layoutParams as LinearLayout.LayoutParams
-        val startHeight = binding.llRoot.height // 使用实际渲染高度
+        val startHeight = binding.llRoot.height
         val inputParams = binding.fullInputTask.layoutParams as FrameLayout.LayoutParams
         val startMargin = inputParams.bottomMargin
 
         val animator = ValueAnimator.ofFloat(0f, 1f).apply {
-            duration = 300 // 动画时长 300ms
-            interpolator = DecelerateInterpolator() // 减速插值器，让动画更自然
+            duration = 300
+            interpolator = DecelerateInterpolator()
 
             addUpdateListener { animation ->
                 val fraction = animation.animatedValue as Float
-                // 平滑过渡 ll_root 高度
+
                 val currentHeight = (startHeight + (targetHeight - startHeight) * fraction).toInt()
                 rootParams.height = currentHeight
                 binding.llRoot.layoutParams = rootParams
-                // 平滑过渡输入框 margin
+
                 val currentMargin = (startMargin + (targetMargin - startMargin) * fraction).toInt()
                 inputParams.bottomMargin = currentMargin
                 binding.fullInputTask.layoutParams = inputParams
             }
 
-            // 动画结束后的回调
+
             addListener(object : Animator.AnimatorListener {
                 override fun onAnimationStart(animation: Animator) {}
 
                 override fun onAnimationEnd(animation: Animator) {
-                    // 设置最终高度
+
                     rootParams.height = targetHeight
                     binding.llRoot.layoutParams = rootParams
 

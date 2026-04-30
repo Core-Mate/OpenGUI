@@ -7,8 +7,8 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    
-    <!-- 进度弹窗相关颜色 -->
+
+
     <color name="color_primary">#2E58FF</color>
     <color name="text_primary">#FF000000</color>
     <color name="text_secondary">#66000000</color>

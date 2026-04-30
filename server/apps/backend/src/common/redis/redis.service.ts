@@ -3,14 +3,7 @@ import Redis from 'ioredis'
 import { AppLogger } from '../log'
 
 /**
- * Redis服务
- * 提供Redis连接管理和基础操作方法
  *
- * 环境变量配置：
- * - REDIS_HOST: Redis主机地址 (默认: localhost)
- * - REDIS_PORT: Redis端口 (默认: 6379)
- * - REDIS_PASSWORD: Redis密码 (可选)
- * - REDIS_DB: Redis数据库 (默认: 0)
  */
 @Injectable()
 export class RedisService implements OnModuleInit, OnModuleDestroy {
@@ -29,7 +22,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
 
     /**
-     * 建立Redis连接
      */
     private async connect(): Promise<void> {
         try {
@@ -64,18 +56,18 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
             this.redisClient.on('ready', async () => {
                 this.logger.log('Redis client is ready')
 
-                // 检查 Redis 驱逐策略（BullMQ 要求 noeviction）
+
                 try {
                     const result = await this.redisClient.config('GET', 'maxmemory-policy')
                     const policy = Array.isArray(result) ? result[1] : null
                     if (policy && policy !== 'noeviction') {
                         this.logger.warn(
-                            `[Redis] 当前驱逐策略为 "${policy}"，BullMQ 要求 "noeviction"。` +
-                            `请执行: redis-cli CONFIG SET maxmemory-policy noeviction`,
+                            `[Redis] Current eviction policy is "${policy}", but BullMQ requires "noeviction". ` +
+                            `Run: redis-cli CONFIG SET maxmemory-policy noeviction`,
                         )
                     }
                 } catch {
-                    // 部分托管 Redis 禁用 CONFIG 命令
+
                 }
             })
 
@@ -99,7 +91,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
 
     /**
-     * 断开Redis连接
      */
     private async disconnect(): Promise<void> {
         if (this.redisClient) {
@@ -117,8 +108,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
 
     /**
-     * 获取Redis客户端实例
-     * 注意：直接使用client时需要注意错误处理
      */
     getClient(): Redis {
         if (!this.redisClient) {
@@ -128,7 +117,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
 
     /**
-     * 检查Redis连接状态
      */
     async ping(): Promise<boolean> {
         try {
@@ -144,10 +132,9 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         }
     }
 
-    // ==================== 基础字符串操作 ====================
+
 
     /**
-     * 设置键值对
      */
     async set(key: string, value: string, ttl?: number): Promise<void> {
         try {
@@ -167,7 +154,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
 
     /**
-     * 获取键值
      */
     async get(key: string): Promise<string | null> {
         try {
@@ -183,7 +169,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
 
     /**
-     * 删除键
      */
     async del(key: string): Promise<number> {
         try {
@@ -199,7 +184,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
 
     /**
-     * 检查键是否存在
      */
     async exists(key: string): Promise<boolean> {
         try {
@@ -216,7 +200,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
 
     /**
-     * 设置键的过期时间
      */
     async expire(key: string, seconds: number): Promise<boolean> {
         try {
@@ -233,7 +216,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
 
     /**
-     * 获取键的TTL
      */
     async ttl(key: string): Promise<number> {
         try {
@@ -248,10 +230,9 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         }
     }
 
-    // ==================== Hash操作 ====================
+
 
     /**
-     * 设置Hash字段
      */
     async hset(key: string, field: string, value: string): Promise<number> {
         try {
@@ -267,7 +248,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
 
     /**
-     * 批量设置Hash字段
      */
     async hmset(
         key: string,
@@ -290,7 +270,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
 
     /**
-     * 获取Hash字段值
      */
     async hget(key: string, field: string): Promise<string | null> {
         try {
@@ -306,7 +285,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
 
     /**
-     * 获取Hash所有字段和值
      */
     async hgetall(key: string): Promise<Record<string, string>> {
         try {
@@ -322,7 +300,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
 
     /**
-     * 删除Hash字段
      */
     async hdel(key: string, ...fields: string[]): Promise<number> {
         try {
@@ -338,7 +315,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
 
     /**
-     * 检查Hash字段是否存在
      */
     async hexists(key: string, field: string): Promise<boolean> {
         try {
@@ -355,7 +331,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
 
     /**
-     * 获取Hash字段数量
      */
     async hlen(key: string): Promise<number> {
         try {
@@ -370,10 +345,9 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         }
     }
 
-    // ==================== List操作 ====================
+
 
     /**
-     * 左端推入列表
      */
     async lpush(key: string, ...elements: string[]): Promise<number> {
         try {
@@ -389,7 +363,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
 
     /**
-     * 右端推入列表
      */
     async rpush(key: string, ...elements: string[]): Promise<number> {
         try {
@@ -405,7 +378,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
 
     /**
-     * 左端弹出列表
      */
     async lpop(key: string): Promise<string | null> {
         try {
@@ -421,7 +393,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
 
     /**
-     * 右端弹出列表
      */
     async rpop(key: string): Promise<string | null> {
         try {
@@ -437,7 +408,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
 
     /**
-     * 获取列表长度
      */
     async llen(key: string): Promise<number> {
         try {
@@ -453,7 +423,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
 
     /**
-     * 获取列表范围
      */
     async lrange(key: string, start: number, stop: number): Promise<string[]> {
         try {
@@ -468,10 +437,9 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         }
     }
 
-    // ==================== Set操作 ====================
+
 
     /**
-     * 添加集合成员
      */
     async sadd(key: string, ...members: string[]): Promise<number> {
         try {
@@ -487,7 +455,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
 
     /**
-     * 移除集合成员
      */
     async srem(key: string, ...members: string[]): Promise<number> {
         try {
@@ -503,7 +470,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
 
     /**
-     * 检查集合成员是否存在
      */
     async sismember(key: string, member: string): Promise<boolean> {
         try {
@@ -520,7 +486,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
 
     /**
-     * 获取集合所有成员
      */
     async smembers(key: string): Promise<string[]> {
         try {
@@ -536,7 +501,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
 
     /**
-     * 获取集合成员数量
      */
     async scard(key: string): Promise<number> {
         try {
@@ -551,10 +515,9 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         }
     }
 
-    // ==================== 高级操作 ====================
+
 
     /**
-     * 执行事务
      */
     async multi(
         commands: Array<{ command: string; args: any[] }>,
@@ -578,7 +541,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
 
     /**
-     * 管道操作
      */
     async pipeline(
         commands: Array<{ command: string; args: any[] }>,
@@ -602,7 +564,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
 
     /**
-     * 获取数据库大小
      */
     async dbsize(): Promise<number> {
         try {
@@ -618,7 +579,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
 
     /**
-     * 刷新数据库
      */
     async flushdb(): Promise<'OK'> {
         try {

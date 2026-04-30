@@ -32,18 +32,18 @@ class GuidePageFragment : Fragment() {
     private val onboardingPages = listOf(
         OnboardingItem(
             R.drawable.onboarding_3,
-            "自动调用应用",
-            "系统自动唤醒应用,实现跨软件的无缝协作与全自动流程。"
+            "Open apps automatically",
+            "OpenGUI can wake apps automatically for seamless cross-app workflows."
         ),
         OnboardingItem(
             R.drawable.onboarding_1,
-            "丰富的预设任务",
-            "内置多种场景化的标准化任务库,支持快速调用与灵活配置"
+            "Rich Preset Tasks",
+            "Built-in standardized task templates for multiple scenarios, with quick launch and flexible configuration."
         ),
         OnboardingItem(
             R.drawable.onboarding_2,
-            "保护数据和隐私",
-            "采用深度加密技术与权限隔离机制,严密守护您的核心数据。"
+            "Protect Data and Privacy",
+            "Uses encryption and permission isolation to protect your core data."
         )
     )
 

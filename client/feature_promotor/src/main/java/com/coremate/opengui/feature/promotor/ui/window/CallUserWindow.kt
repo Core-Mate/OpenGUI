@@ -30,7 +30,7 @@ class CallUserWindow(context: Context) : FrameLayout(context) {
             HapticFeedbackHelper.click(context)
             LogManager.saveLog(context,"CallUserWindow","btTakeOver click ", TaskCenter.executionId?:-1)
             dismiss()
-            AIFloatWindowManager.showSlideExpandWindow(false,"点击接管按钮，显示灵动岛")
+            AIFloatWindowManager.showSlideExpandWindow(false,"takeover button tapped, show slide window")
         }
         binding.btStop.setOnClickListener {
             HapticFeedbackHelper.confirm(context)
@@ -38,7 +38,7 @@ class CallUserWindow(context: Context) : FrameLayout(context) {
             dismiss()
             MessageController.cancelAndGotoSummarizer()
         }
-        // 注册到管理器
+
         AIFloatWindowManager.registerCallUserWindow(this)
     }
 
@@ -53,7 +53,7 @@ class CallUserWindow(context: Context) : FrameLayout(context) {
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.MATCH_PARENT,
             type,
-            // 可点击但不获取焦点
+
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                     WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
                     WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
@@ -70,12 +70,12 @@ class CallUserWindow(context: Context) : FrameLayout(context) {
     fun show(message: String?) {
         if (!isShowing) {
             binding.tvTitle.text = TaskCenter.taskTitle
-            binding.tvMessage.text = message ?: "需要接管"
+            binding.tvMessage.text = message ?: "Takeover required"
             windowManager.addView(this, layoutParamsForShow)
             isShowing = true
             AIFloatWindowManager.getExecuteTaskWindow()?.setPauseTaskStatus()
             AIFloatWindowManager.getSlideExpandWindow()?.updateBackground(true)
-            AIFloatWindowManager.getSlideExpandWindow()?.updateContent("任务已暂停，点击恢复")
+            AIFloatWindowManager.getSlideExpandWindow()?.updateContent("Task paused. Tap to resume.")
         }
     }
 

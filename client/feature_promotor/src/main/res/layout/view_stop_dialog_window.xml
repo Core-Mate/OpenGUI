@@ -30,7 +30,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
                 android:layout_marginTop="16dp"
-                android:text="OpenGUI 提醒你"
+                android:text="OpenGUI reminder"
                 android:textColor="#000000"
                 android:textFontWeight="800"
                 android:textSize="15dp" />
@@ -40,7 +40,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
                 android:layout_marginTop="8dp"
-                android:text="任务正在执行中，确定要终止任务吗？"
+                android:text="A task is running. Are you sure you want to stop it?"
                 android:textFontWeight="600"
                 android:textSize="15dp" />
 
@@ -58,7 +58,7 @@
                     android:layout_marginEnd="8dp"
                     android:background="@drawable/stop_task_dialog_cancel_bg"
                     android:gravity="center"
-                    android:text="取消"
+                    android:text="Cancel"
                     android:textColor="#000000" />
 
                 <TextView
@@ -68,7 +68,7 @@
                     android:layout_marginStart="8dp"
                     android:background="@drawable/stop_task_dialog_confirm_bg"
                     android:gravity="center"
-                    android:text="确定"
+                    android:text="Confirm"
                     android:textColor="#ffffff" />
             </LinearLayout>
         </LinearLayout>

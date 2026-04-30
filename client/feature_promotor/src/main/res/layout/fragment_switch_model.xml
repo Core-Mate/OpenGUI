@@ -19,7 +19,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
-        android:text="模型切换"
+        android:text="Model Switching"
         android:textColor="#000000"
         android:textSize="18dp"
         app:layout_constraintEnd_toEndOf="parent"
@@ -45,7 +45,7 @@
             android:background="@drawable/switch_model_bg"
             android:paddingLeft="20dp"
             android:paddingStart="20dp"
-            android:text="主力模型" />
+            android:text="Primary Model" />
 
         <RadioButton
             style="@style/SwitchModelRadioStyle"
@@ -55,7 +55,7 @@
             android:background="@drawable/switch_model_bg"
             android:paddingLeft="20dp"
             android:paddingStart="20dp"
-            android:text="医疗美容机构销售1" />
+            android:text="Medical Aesthetics Sales 1" />
 
         <RadioButton
             style="@style/SwitchModelRadioStyle"
@@ -65,7 +65,7 @@
             android:background="@drawable/switch_model_bg"
             android:paddingLeft="20dp"
             android:paddingStart="20dp"
-            android:text="医疗美容机构销售2" />
+            android:text="Medical Aesthetics Sales 2" />
 
     </RadioGroup>
 
@@ -78,7 +78,7 @@
         android:layout_marginBottom="41dp"
         android:background="@drawable/bg_switch_moel_submit"
         android:gravity="center"
-        android:text="确定"
+        android:text="Confirm"
         android:textColor="#FFFFFF"
         android:textSize="15sp"
         app:layout_constraintBottom_toBottomOf="parent"

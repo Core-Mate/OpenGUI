@@ -14,7 +14,7 @@ import {
 import { clearCompletedSummaries } from "./graph/nodes/executor/post-execute.node";
 
 /**
- * 任务执行输入
+ * Task execution input.
  */
 export interface ExecuteTaskInput {
   userId: number;
@@ -22,30 +22,30 @@ export interface ExecuteTaskInput {
   taskExecutionId: number;
   userInput: string;
   knowledgeBaseId?: number;
-  /** 用户地区 (CN/US) */
+  /** User region (CN/US). */
   userRegion: string;
-  /** 用户所属租户 ID */
+  /** User tenant ID. */
   tenantId: number;
 }
 
 /**
- * 任务执行结果
+ * Task execution result.
  */
 export interface ExecuteTaskResult {
   success: boolean;
   hitl_reason?: string;
-  /** 中断类型：call_user = 需要用户操作, insufficient_balance = 余额不足 */
+  /** Interrupt type: call_user means user action is required; insufficient_balance means credits are insufficient. */
   hitl_type?: "call_user" | "insufficient_balance";
   summary?: string;
   error?: string;
-  /** 标识任务是否被取消（abort） */
+  /** Whether the task was cancelled through abort. */
   cancelled?: boolean;
-  /** abort 来源：'cancel' = 用户取消, 'pause' = 用户暂停, 'lease_expired' = 租约过期 */
+  /** Abort source: cancel = user cancelled, pause = user paused, lease_expired = lease expired. */
   abortReason?: "cancel" | "pause" | "lease_expired";
 }
 
 /**
- * 取消执行结果
+ * Cancel execution result.
  */
 export interface CancelExecutionResult {
   success: boolean;
@@ -54,22 +54,22 @@ export interface CancelExecutionResult {
 }
 
 /**
- * 用户响应类型
+ * User response type.
  */
 export interface CallUserResponse {
-  /** 用户反馈信息 */
+  /** User feedback. */
   feedback?: string;
 }
 
 /**
- * Fork 执行输入
+ * Fork execution input.
  */
 export interface ForkExecutionInput {
   userId: number;
   taskId: number;
-  taskExecutionId: number; // 新执行 ID
-  originExecutionId: number; // 原执行 ID
-  instruction?: string; // 用户追加指令（可选，不传则直接继续执行）
+  taskExecutionId: number; // New execution ID.
+  originExecutionId: number; // Original execution ID.
+  instruction?: string; // Additional user instruction; continue directly when omitted.
   userRegion: string;
   tenantId: number;
 }
@@ -78,14 +78,14 @@ export interface ForkExecutionInput {
 export class GraphRunnerService {
   private readonly logger = new Logger(GraphRunnerService.name);
   private readonly activeExecutions = new Map<number, AbortController>();
-  private readonly threadIdMap = new Map<number, string>(); // taskExecutionId -> threadId
-  private readonly leaseMonitors = new Map<number, NodeJS.Timeout>(); // taskExecutionId -> monitor timer
+  private readonly threadIdMap = new Map<number, string>(); // taskExecutionId -> threadId.
+  private readonly leaseMonitors = new Map<number, NodeJS.Timeout>(); // taskExecutionId -> monitor timer.
   private readonly abortReasons = new Map<
     number,
     "cancel" | "pause" | "lease_expired"
-  >(); // taskExecutionId -> abort reason
+  >(); // taskExecutionId -> abort reason.
 
-  /** 租约检查间隔（毫秒），建议为 TTL 的 1/3 */
+  /** Lease check interval in milliseconds; roughly one third of the TTL is recommended. */
   private readonly LEASE_CHECK_INTERVAL_MS = 3000;
 
   constructor(
@@ -97,7 +97,7 @@ export class GraphRunnerService {
   ) {}
 
   /**
-   * 检查本实例是否持有某个执行
+   * Check whether this instance owns an execution.
    */
   hasExecution(taskExecutionId: number): boolean {
     return (
@@ -107,8 +107,8 @@ export class GraphRunnerService {
   }
 
   /**
-   * 预注册执行，使 cancelExecution 能在 setImmediate 回调前找到它。
-   * 如果已有 AbortController 则不覆盖。
+   * Pre-register an execution so cancelExecution can find it before the
+   * setImmediate callback runs. Existing AbortController instances are kept.
    */
   preRegisterExecution(taskExecutionId: number): AbortController {
     const existing = this.activeExecutions.get(taskExecutionId);
@@ -119,7 +119,7 @@ export class GraphRunnerService {
   }
 
   /**
-   * 检测是否是 abort 错误（任务被取消）
+   * Detect whether an error came from aborting the task.
    */
   private isAbortError(error: Error): boolean {
     return (
@@ -130,8 +130,8 @@ export class GraphRunnerService {
   }
 
   /**
-   * 从 interrupt 结果中提取中断信息
-   * LangGraph 的 interrupt(value) 将值存储在 result[INTERRUPT][0].value
+   * Extract interrupt info from the result.
+   * LangGraph interrupt(value) stores the value at result[INTERRUPT][0].value.
    */
   private extractInterruptInfo(result: any): {
     hitl_reason: string;
@@ -140,7 +140,7 @@ export class GraphRunnerService {
     const interruptValue = result?.[INTERRUPT]?.[0]?.value;
     const hitl_reason = typeof interruptValue === "string"
       ? interruptValue
-      : "需要用户介入";
+	      : "User intervention is required";
     const hitl_type = hitl_reason === "insufficient_balance"
       ? "insufficient_balance" as const
       : "call_user" as const;
@@ -148,7 +148,7 @@ export class GraphRunnerService {
   }
 
   /**
-   * 同步执行任务
+   * Execute a task synchronously.
    */
   async executeTask(input: ExecuteTaskInput): Promise<ExecuteTaskResult> {
     const { userId, taskId, taskExecutionId, userInput, userRegion, tenantId } =
@@ -162,10 +162,10 @@ export class GraphRunnerService {
 
     const abortController = this.activeExecutions.get(taskExecutionId) ?? new AbortController();
     this.activeExecutions.set(taskExecutionId, abortController);
-    // 存储 threadId 映射，以便后续恢复/取消时使用
+    // Store the threadId mapping for later resume/cancel operations.
     this.threadIdMap.set(taskExecutionId, threadId);
 
-    // 如果在预注册后、executeTask 前已被取消，立即返回
+    // If the execution was cancelled after pre-registration and before executeTask, return immediately.
     if (abortController.signal.aborted) {
       const reason = this.abortReasons.get(taskExecutionId) || "cancel";
       this.activeExecutions.delete(taskExecutionId);
@@ -173,7 +173,7 @@ export class GraphRunnerService {
       return { success: false, cancelled: true, abortReason: reason };
     }
 
-    // 启动租约监控
+    // Start lease monitoring.
     this.startLeaseMonitor(taskExecutionId, abortController);
 
     const initialState: Partial<AgentState> = {
@@ -200,24 +200,24 @@ export class GraphRunnerService {
           callbacks: [tokenHandler],
         });
 
-      // 停止租约监控
+      // Stop lease monitoring.
       this.stopLeaseMonitor(taskExecutionId);
 
-      // 写入 token 使用统计
+      // Persist token usage.
       const tokenUsage = tokenHandler.getResult();
       if (tokenUsage.total_tokens > 0) {
         await this.updateTokenUsage(taskExecutionId, tokenUsage);
       }
 
       if (isInterrupted(result)) {
-        // interrupt 时保留映射，以便后续恢复
-        // 但移除 activeExecutions，因为当前执行已暂停
+        // Keep the mapping on interrupt for later resume, but remove the
+        // active execution because the current run is suspended.
         this.activeExecutions.delete(taskExecutionId);
         this.abortReasons.delete(taskExecutionId);
         return { success: true, ...this.extractInterruptInfo(result) };
       }
 
-      // 正常完成，清理映射
+      // Normal completion: clean mappings.
       this.activeExecutions.delete(taskExecutionId);
       this.threadIdMap.delete(taskExecutionId);
       this.abortReasons.delete(taskExecutionId);
@@ -228,19 +228,19 @@ export class GraphRunnerService {
         summary: result.finalSummary || undefined,
       };
     } catch (error) {
-      // 停止租约监控
+      // Stop lease monitoring.
       this.stopLeaseMonitor(taskExecutionId);
 
-      // 即使失败也写入已收集到的 token 统计
+      // Persist any token usage collected before failure.
       const tokenUsage = tokenHandler.getResult();
       if (tokenUsage.total_tokens > 0) {
         await this.updateTokenUsage(taskExecutionId, tokenUsage);
       }
 
-      // 失败时清理映射
+      // Clean mappings after failure.
       this.activeExecutions.delete(taskExecutionId);
 
-      // 检测是否是 abort 错误（任务被取消）
+      // Detect abort errors, which mean the task was cancelled.
       if (this.isAbortError(error as Error)) {
         const reason = this.abortReasons.get(taskExecutionId);
         this.abortReasons.delete(taskExecutionId);
@@ -249,7 +249,7 @@ export class GraphRunnerService {
         );
 
         if (reason === "pause") {
-          // 暂停时保留 threadIdMap，以便后续恢复或取消时能找到执行
+          // Keep threadIdMap on pause so resume/cancel can still find the execution.
           this.logger.log(
             `Execution ${taskExecutionId} paused, keeping threadIdMap for resume/cancel`,
           );
@@ -266,7 +266,7 @@ export class GraphRunnerService {
         };
       }
 
-      // 非 abort 错误，完全清理
+      // Non-abort errors get a full cleanup.
       this.threadIdMap.delete(taskExecutionId);
       this.abortReasons.delete(taskExecutionId);
       clearCompletedSummaries(taskExecutionId);
@@ -283,13 +283,13 @@ export class GraphRunnerService {
   }
 
   /**
-   * 取消任务执行
+   * Cancel task execution.
    *
-   * @param taskExecutionId 执行 ID
-   * @param userId 用户 ID
-   * @param taskId 任务 ID
-   * @param skipSummary 是否跳过生成总结（启动新任务触发的取消应跳过）
-   * @returns 取消结果，包含 summary（如果生成了）
+   * @param taskExecutionId Execution ID.
+   * @param userId User ID
+   * @param taskId Task ID.
+   * @param skipSummary Whether to skip summary generation; cancels triggered by starting a new task should skip it.
+   * @returns Cancel result with a summary when generated.
    */
   async cancelExecution(
     taskExecutionId: number,
@@ -302,7 +302,7 @@ export class GraphRunnerService {
       this.logger.warn(
         `Thread ID not found for taskExecutionId: ${taskExecutionId}`,
       );
-      // 尝试使用默认格式
+      // Try the default thread format.
       const fallbackThreadId = taskId
         ? `task-${taskId}-exec-${taskExecutionId}`
         : undefined;
@@ -319,17 +319,17 @@ export class GraphRunnerService {
   }
 
   /**
-   * 执行取消操作
+   * Execute the cancellation flow.
    *
-   * 取消流程：
-   * 1. 如果有 AbortController（执行中），触发 abort 信号中断当前执行
-   * 2. 如果没有 AbortController（SUSPENDED 状态），跳过 abort 步骤
-   * 3. 检查是否进入过 executor 子图，如果没有进入过则跳过 summarizer
-   * 4. 如果 skipSummary=false 且进入过 executor，使用 Command 跳转到 summarizer 生成总结
+   * Cancellation flow:
+   * 1. Abort the current execution when an AbortController exists.
+   * 2. Skip abort when there is no AbortController, which means the execution is suspended.
+   * 3. Check whether the executor subgraph was entered; skip summarizer if not.
+   * 4. When skipSummary=false and executor was entered, jump to summarizer with Command.
    *
-   * @param threadId 线程 ID
-   * @param taskExecutionId 执行 ID
-   * @param skipSummary 是否跳过生成总结
+   * @param threadId Thread ID.
+   * @param taskExecutionId Execution ID.
+   * @param skipSummary Whether to skip summary generation.
    */
   private async doCancelExecution(
     threadId: string,
@@ -342,24 +342,24 @@ export class GraphRunnerService {
       `Cancelling execution ${taskExecutionId}, skipSummary=${skipSummary}`,
     );
 
-    // Step 1: 如果有 AbortController（正在运行），先 abort
+    // Step 1: Abort first when an AbortController exists.
     if (abortController) {
-      // 仅在未设置 reason 时才覆写，防止暂停后立即取消时丢失原始 "pause" reason
+      // Set the reason only when missing, so a cancel immediately after pause does not overwrite "pause".
       if (!this.abortReasons.has(taskExecutionId)) {
         this.abortReasons.set(taskExecutionId, "cancel");
       }
       abortController.abort();
-      // 轮询等待图处理 abort 并保存 checkpoint，最多 3 秒
+      // Poll for up to 3 seconds while the graph handles abort and saves the checkpoint.
       for (let i = 0; i < 15; i++) {
         await new Promise((resolve) => setTimeout(resolve, 200));
         if (!this.activeExecutions.has(taskExecutionId)) break;
       }
     } else {
-      // AbortController 不存在说明执行已暂停（SUSPENDED）
+      // Missing AbortController means the execution is suspended.
       this.logger.log(`Execution ${taskExecutionId} is suspended`);
     }
 
-    // 如果跳过总结，直接清理并返回
+    // If summary is skipped, clean up and return directly.
     if (skipSummary) {
       this.activeExecutions.delete(taskExecutionId);
       this.threadIdMap.delete(taskExecutionId);
@@ -370,7 +370,7 @@ export class GraphRunnerService {
     }
 
     try {
-      // Step 2: 检查是否进入过 executor 子图
+      // Step 2: Check whether the executor subgraph was entered.
       this.logger.log(
         `[CANCEL] Checking executorEntered for ${taskExecutionId}, threadId=${threadId}`,
       );
@@ -381,7 +381,7 @@ export class GraphRunnerService {
         });
       const executorEntered = stateSnapshot?.values?.executorEntered ?? false;
 
-      // 如果没有进入过 executor，跳过 summarizer
+      // Skip summarizer when executor was never entered.
       if (!executorEntered) {
         this.logger.log(
           `Execution ${taskExecutionId} cancelled (executor not entered, skip summarizer)`,
@@ -397,7 +397,7 @@ export class GraphRunnerService {
         `[CANCEL] executorEntered=true for ${taskExecutionId}, invoking summarizer`,
       );
 
-      // Step 3: 使用 Command 跳转到 summarizer 生成总结
+      // Step 3: Jump to summarizer with Command to generate the summary.
       const summarizerAbort = new AbortController();
       const summarizerTimeout = setTimeout(() => summarizerAbort.abort(), 55_000);
       const tokenHandler = new TokenUsageCallbackHandler();
@@ -411,7 +411,7 @@ export class GraphRunnerService {
           {
             configurable: {
               thread_id: threadId,
-              // 首 token 回调：收到 LLM 首个响应后取消超时，让流式输出自然完成
+              // First-token callback: clear the timeout after the LLM starts responding.
               onFirstToken: () => clearTimeout(summarizerTimeout),
             },
             recursionLimit: 100,
@@ -427,13 +427,13 @@ export class GraphRunnerService {
         `[CANCEL] Summarizer completed for ${taskExecutionId}, summary=${result?.finalSummary ? "present" : "empty"}`,
       );
 
-      // 写入 token 使用统计
+      // Persist token usage.
       const tokenUsage = tokenHandler.getResult();
       if (tokenUsage.total_tokens > 0) {
         await this.updateTokenUsage(taskExecutionId, tokenUsage);
       }
 
-      // 清理
+      // Cleanup.
       this.activeExecutions.delete(taskExecutionId);
       this.threadIdMap.delete(taskExecutionId);
       clearCompletedSummaries(taskExecutionId);
@@ -446,7 +446,7 @@ export class GraphRunnerService {
     } catch (error) {
       const err = error as Error;
 
-      // Summarizer 超时：优雅降级，返回 success + 兜底摘要
+      // Summarizer timeout: degrade gracefully with a fallback summary.
       if (this.isAbortError(err)) {
         this.logger.warn(
           `Cancel summarizer timed out for execution ${taskExecutionId}, using fallback`,
@@ -455,7 +455,7 @@ export class GraphRunnerService {
         this.threadIdMap.delete(taskExecutionId);
         this.abortReasons.delete(taskExecutionId);
         clearCompletedSummaries(taskExecutionId);
-        return { success: true, summary: "任务已取消（总结生成超时）" };
+	        return { success: true, summary: "Task cancelled; summary generation timed out" };
       }
 
       this.logger.error(
@@ -471,9 +471,9 @@ export class GraphRunnerService {
   }
 
   /**
-   * 暂停任务执行
+   * Pause task execution.
    *
-   * 使用 abortController 中止当前执行流，checkpoint 会自动保存
+   * Use AbortController to stop the current execution stream; checkpoints are saved automatically.
    */
   async pauseExecution(
     taskExecutionId: number
@@ -492,19 +492,19 @@ export class GraphRunnerService {
       `[PAUSE] Pausing execution ${taskExecutionId}, threadId: ${threadId}`,
     );
 
-    // 先停止租约监控（防止 monitor 回调覆写 abortReason）
+    // Stop lease monitoring first so the monitor cannot overwrite abortReason.
     this.stopLeaseMonitor(taskExecutionId);
 
-    // 设置 abort 原因：用户暂停
+    // Set abort reason to user pause.
     this.abortReasons.set(taskExecutionId, "pause");
 
-    // 中止当前执行
+    // Abort current execution.
     abortController.abort();
 
-    // 等待一小段时间让图处理 abort 并保存 checkpoint
+    // Give the graph a short moment to handle abort and save the checkpoint.
     await new Promise((resolve) => setTimeout(resolve, 500));
 
-    // 移除 activeExecutions，保留 threadId 映射以便恢复
+    // Remove activeExecutions but keep threadId mapping for resume.
     this.activeExecutions.delete(taskExecutionId);
 
     this.logger.log(`Execution ${taskExecutionId} paused`);
@@ -512,9 +512,9 @@ export class GraphRunnerService {
   }
 
   /**
-   * 从暂停状态恢复执行
+   * Resume execution from pause.
    *
-   * 使用 null 作为输入从 checkpoint 继续执行
+   * Use null input to continue from the checkpoint.
    */
   async resumeFromPause(
     taskId: number,
@@ -528,7 +528,7 @@ export class GraphRunnerService {
       this.logger.warn(
         `Thread ID not found for taskExecutionId: ${taskExecutionId}`,
       );
-      // 尝试使用默认格式
+      // Try the default thread format.
       const fallbackThreadId = `task-${taskId}-exec-${taskExecutionId}`;
       return this.doResumeFromPause(
         fallbackThreadId,
@@ -543,8 +543,8 @@ export class GraphRunnerService {
   }
 
   /**
-   * 执行从暂停恢复操作
-   * 注意：状态更新由调用方 (task-execution.service) 负责
+   * Execute resume-from-pause.
+   * Note: the caller (task-execution.service) owns status updates.
    */
   private async doResumeFromPause(
     threadId: string,
@@ -558,20 +558,20 @@ export class GraphRunnerService {
       `[RESUME FROM PAUSE] Starting resume for execution ${taskExecutionId} with threadId: ${threadId}`,
     );
 
-    // 复用未 abort 的预注册 controller（保留 cancel 信号），否则创建新的（防止复用暂停时已 abort 的旧实例）
+    // Reuse a pre-registered controller that was not aborted; otherwise create a new one.
     const existing = this.activeExecutions.get(taskExecutionId);
     const abortController = (existing && !existing.signal.aborted) ? existing : new AbortController();
     this.activeExecutions.set(taskExecutionId, abortController);
 
-    // 重建租约（暂停期间租约可能已过期）
+    // Recreate the lease because it may have expired during pause.
     if (userId != null && taskId != null) {
       await this.leaseService.createLease(taskExecutionId, userId, taskId);
     }
 
-    // 启动租约监控
+    // Start lease monitoring.
     this.startLeaseMonitor(taskExecutionId, abortController);
 
-    // 暂停期间 TOS 签名 URL 可能过期，设置刷新标志
+    // TOS signed URLs may expire during pause, so request URL refresh.
     try {
       await this.graphService.getMobileAgentGraph().updateState(
         { configurable: { thread_id: threadId } },
@@ -583,7 +583,7 @@ export class GraphRunnerService {
       );
     }
 
-    // 注入用户暂停后补充的指令到 executor graph state
+    // Inject the user's additional pause-resume instruction into executor graph state.
     const trimmedFeedback = feedback?.trim();
     if (trimmedFeedback) {
       try {
@@ -591,13 +591,13 @@ export class GraphRunnerService {
         const config = { configurable: { thread_id: threadId } };
 
         const feedbackMsg = new HumanMessage({
-          content: `用户暂停后补充指令：${trimmedFeedback}`,
+	          content: `Additional instruction after user pause: ${trimmedFeedback}`,
           additional_kwargs: {
             created_at: new Date().toISOString(),
           },
         });
 
-        // 注入到共享 sharedMessages
+        // Inject into sharedMessages.
         await graph.updateState(config, {
           executor: {
             sharedMessages: [feedbackMsg],
@@ -617,7 +617,7 @@ export class GraphRunnerService {
     const tokenHandler = new TokenUsageCallbackHandler();
 
     try {
-      // 使用 null 从 checkpoint 继续执行
+      // Continue from the checkpoint with null input.
       const result = await this.graphService
         .getMobileAgentGraph()
         .invoke(null, {
@@ -627,26 +627,26 @@ export class GraphRunnerService {
           callbacks: [tokenHandler],
         });
 
-      // 停止租约监控
+      // Stop lease monitoring.
       this.stopLeaseMonitor(taskExecutionId);
 
-      // 写入 token 使用统计
+      // Persist token usage.
       const tokenUsage = tokenHandler.getResult();
       if (tokenUsage.total_tokens > 0) {
         await this.updateTokenUsage(taskExecutionId, tokenUsage);
       }
 
-      // 清理映射
+      // Clean mappings.
       this.activeExecutions.delete(taskExecutionId);
       this.abortReasons.delete(taskExecutionId);
 
-      // 检查是否被中断（HITL）
+      // Check whether execution was interrupted for HITL.
       if (isInterrupted(result)) {
-        // interrupt 时保留 threadIdMap，以便后续恢复（与 executeTask 一致）
+        // Keep threadIdMap on interrupt for later resume, same as executeTask.
         return { success: true, ...this.extractInterruptInfo(result) };
       }
 
-      // 正常完成，清理所有映射
+      // Normal completion: clean all mappings.
       this.threadIdMap.delete(taskExecutionId);
       clearCompletedSummaries(taskExecutionId);
 
@@ -655,10 +655,10 @@ export class GraphRunnerService {
         summary: result.finalSummary || undefined,
       };
     } catch (error) {
-      // 停止租约监控
+      // Stop lease monitoring.
       this.stopLeaseMonitor(taskExecutionId);
 
-      // 即使失败也写入已收集到的 token 统计
+      // Persist any token usage collected before failure.
       const tokenUsage = tokenHandler.getResult();
       if (tokenUsage.total_tokens > 0) {
         await this.updateTokenUsage(taskExecutionId, tokenUsage);
@@ -666,7 +666,7 @@ export class GraphRunnerService {
 
       this.activeExecutions.delete(taskExecutionId);
 
-      // 检测是否是 abort 错误（任务被取消）
+      // Detect abort errors, which mean the task was cancelled.
       if (this.isAbortError(error as Error)) {
         const reason = this.abortReasons.get(taskExecutionId);
         this.abortReasons.delete(taskExecutionId);
@@ -701,8 +701,8 @@ export class GraphRunnerService {
   }
 
   /**
-   * 恢复被中断的任务执行（HITL）
-   * 当用户完成高危操作后调用此方法继续执行
+   * Resume an interrupted HITL execution.
+   * Call this after the user finishes the required high-risk/manual action.
    */
   async resumeExecution(
     taskId: number,
@@ -715,7 +715,7 @@ export class GraphRunnerService {
       this.logger.warn(
         `Thread ID not found for taskExecutionId: ${taskExecutionId}`,
       );
-      // 尝试使用默认格式
+      // Try the default thread format.
       const fallbackThreadId = `task-${taskId}-exec-${taskExecutionId}`;
       this.logger.log(`Using fallback threadId: ${fallbackThreadId}`);
       return this.doResumeExecution(
@@ -729,8 +729,8 @@ export class GraphRunnerService {
   }
 
   /**
-   * 执行恢复操作 (HITL)
-   * 注意：状态更新由调用方 (task-execution.service) 负责
+   * Execute HITL resume.
+   * Note: the caller (task-execution.service) owns status updates.
    */
   private async doResumeExecution(
     threadId: string,
@@ -742,18 +742,18 @@ export class GraphRunnerService {
       `Resuming execution ${taskExecutionId} with response: ${JSON.stringify(response)}`,
     );
 
-    // 复用未 abort 的预注册 controller（保留 cancel 信号），否则创建新的
+    // Reuse a pre-registered controller that was not aborted; otherwise create a new one.
     const existing = this.activeExecutions.get(taskExecutionId);
     const abortController = (existing && !existing.signal.aborted) ? existing : new AbortController();
     this.activeExecutions.set(taskExecutionId, abortController);
 
-    // 启动租约监控
+    // Start lease monitoring.
     this.startLeaseMonitor(taskExecutionId, abortController);
 
     const tokenHandler = new TokenUsageCallbackHandler();
 
     try {
-      // 使用 Command 恢复执行
+      // Resume execution with Command.
       const result = await this.graphService
         .getMobileAgentGraph()
         .invoke(new Command({ resume: response }), {
@@ -763,26 +763,26 @@ export class GraphRunnerService {
           callbacks: [tokenHandler],
         });
 
-      // 停止租约监控
+      // Stop lease monitoring.
       this.stopLeaseMonitor(taskExecutionId);
 
-      // 写入 token 使用统计
+      // Persist token usage.
       const tokenUsage = tokenHandler.getResult();
       if (tokenUsage.total_tokens > 0) {
         await this.updateTokenUsage(taskExecutionId, tokenUsage);
       }
 
-      // 清理 activeExecutions（执行已暂停/完成，不需要 AbortController）
+      // Clean activeExecutions; suspended/completed executions no longer need an AbortController.
       this.activeExecutions.delete(taskExecutionId);
       this.abortReasons.delete(taskExecutionId);
 
-      // 检查是否再次被中断（HITL）
+      // Check whether the execution was interrupted again for HITL.
       if (isInterrupted(result)) {
-        // 中断时保留 threadIdMap，以便后续恢复/取消能找到执行（与 executeTask 一致）
+        // Keep threadIdMap on interrupt so resume/cancel can find the execution, same as executeTask.
         return { success: true, ...this.extractInterruptInfo(result) };
       }
 
-      // 正常完成，清理所有映射
+      // Normal completion: clean all mappings.
       this.threadIdMap.delete(taskExecutionId);
       clearCompletedSummaries(taskExecutionId);
 
@@ -791,10 +791,10 @@ export class GraphRunnerService {
         summary: result.finalSummary || undefined,
       };
     } catch (error) {
-      // 停止租约监控
+      // Stop lease monitoring.
       this.stopLeaseMonitor(taskExecutionId);
 
-      // 即使失败也写入已收集到的 token 统计
+      // Persist any token usage collected before failure.
       const tokenUsage = tokenHandler.getResult();
       if (tokenUsage.total_tokens > 0) {
         await this.updateTokenUsage(taskExecutionId, tokenUsage);
@@ -802,7 +802,7 @@ export class GraphRunnerService {
 
       this.activeExecutions.delete(taskExecutionId);
 
-      // 检测是否是 abort 错误（任务被取消）
+      // Detect abort errors, which mean the task was cancelled.
       if (this.isAbortError(error as Error)) {
         const reason = this.abortReasons.get(taskExecutionId);
         this.abortReasons.delete(taskExecutionId);
@@ -837,15 +837,16 @@ export class GraphRunnerService {
   }
 
   /**
-   * Fork 执行
+   * Fork execution.
    *
-   * 基于已终止的执行创建新的执行，复制原有对话历史，从 plan_supervisor 节点继续执行。
-   * 核心步骤：
-   * 1. 获取原 thread 状态
-   * 2. 清理重置控制字段（finalSummary, planTodoComplete 等）
-   * 3. 追加新指令作为 HumanMessage 到 plannerMessages
-   * 4. 使用 updateState 跳转到 plan_supervisor 节点
-   * 5. 执行 graph
+   * Create a new execution from a terminated one, copy conversation history,
+   * and continue from the plan_supervisor node.
+   * Main steps:
+   * 1. Read the original thread state.
+   * 2. Clear reset-control fields such as finalSummary and planTodoComplete.
+   * 3. Append the new instruction as a HumanMessage to plannerMessages.
+   * 4. Use updateState to jump to plan_supervisor.
+   * 5. Run the graph.
    */
   async forkExecution(input: ForkExecutionInput): Promise<ExecuteTaskResult> {
     const {
@@ -859,10 +860,10 @@ export class GraphRunnerService {
     } = input;
     setExecutionId(taskExecutionId);
 
-    // 用户是否提供了追加指令
+    // Whether the user provided an additional instruction.
     const hasUserInstruction = !!rawInstruction?.trim();
 
-    // 构建原 threadId 和新 threadId
+    // Build original and new thread IDs.
     const originThreadId = `task-${taskId}-exec-${originExecutionId}`;
     const newThreadId = `task-${taskId}-exec-${taskExecutionId}`;
 
@@ -873,7 +874,7 @@ export class GraphRunnerService {
     const tokenHandler = new TokenUsageCallbackHandler();
 
     try {
-      // 1. 获取原 thread 状态
+      // 1. Read original thread state.
       const originSnapshot = await this.graphService
         .getMobileAgentGraph()
         .getState({
@@ -892,7 +893,7 @@ export class GraphRunnerService {
 
       const originState = originSnapshot.values as AgentState;
 
-			// 1.5 兜底：当 originState 关键字段缺失时，从 user_task 读取原始指令
+			// 1.5 Fallback: read the original instruction from user_task when key fields are missing.
 			let taskInstruction: string | undefined;
 			if (!originState.userInput || !originState.executorInput?.instruction) {
 				const task = await this.prismaService.user_task.findUnique({
@@ -908,19 +909,19 @@ export class GraphRunnerService {
 				}
 			}
 
-			// userInput 兜底链：originState.userInput → task_description → rawInstruction
+			// userInput fallback chain: originState.userInput -> task_description -> rawInstruction.
 			const effectiveUserInput =
 				originState.userInput ||
 				taskInstruction ||
 				rawInstruction ||
-				"请继续执行任务";
+					"Please continue executing the task";
 
-			// 拼接用户追加指令（仅当用户提供时才拼接）
+			// Append the additional user instruction only when provided.
 			const appendedUserInput = hasUserInstruction
-				? `${effectiveUserInput}\n\n---\n\n用户追加指令：${rawInstruction}`
+					? `${effectiveUserInput}\n\n---\n\nAdditional user instruction: ${rawInstruction}`
 				: effectiveUserInput;
 
-			// 1.6 复制原 thread 的 working_memory 到新 thread（单次 upsert）
+			// 1.6 Copy working_memory from the original thread to the new thread.
 			const originMemory =
 				await this.workingMemoryService.getFullWorkingMemory(originThreadId);
 			if (originMemory.content || originMemory.todos || originMemory.template) {
@@ -933,7 +934,7 @@ export class GraphRunnerService {
 				);
 			}
 
-			// 2. 构建 baseForkedState（三种情况的公共字段）
+			// 2. Build baseForkedState with fields shared by all branches.
 			const baseForkedState: Partial<AgentState> = {
 				userId,
 				taskId,
@@ -942,12 +943,12 @@ export class GraphRunnerService {
 				taskExecutionId,
 				originExecutionId,
 				startTime: Date.now(),
-				// 保留原状态（带兜底）
+				// Keep original state with fallbacks.
 				userInput: effectiveUserInput,
 				planDocument: originState.planDocument,
 				actionSummaryList: originState.actionSummaryList || [],
 				executorEntered: originState.executorEntered,
-				// executorInput 始终提供有效值，防止 undefined 传播
+				// Always provide a valid executorInput to avoid undefined propagation.
 				executorInput: {
 					instruction:
 						originState.executorInput?.instruction ||
@@ -968,20 +969,20 @@ export class GraphRunnerService {
 					completionTokens: 0,
 					totalTokens: 0,
 				},
-				// 重置控制字段
+				// Reset control fields.
 				planTodoComplete: false,
 				isCancelled: false,
 				isPaused: false,
 			};
 
-			// 3. 判断 fork 起始节点（以用户是否提供 feedback 为分支条件）
+			// 3. Pick the fork start node based on whether the user provided feedback.
 			let asNode: string;
 			let forkedState: Partial<AgentState>;
 
 			if (hasUserInstruction) {
-				// Case A: 有用户 feedback → supervisor 重新规划（executor 从零开始）
-				// supervisor 通过 plannerMessages 历史看到用户追加指令，
-				// 通过 executorOutput 了解上次执行结果，重新评估并更新 todo 列表
+				// Case A: user feedback exists -> supervisor replans and executor starts fresh.
+				// Supervisor sees the additional instruction through plannerMessages,
+				// reads the previous result from executorOutput, then reevaluates and updates todos.
 				asNode = "supervisor";
 				forkedState = {
 					...baseForkedState,
@@ -989,24 +990,24 @@ export class GraphRunnerService {
 					plannerMessages: [
 						...(originState.plannerMessages || []),
 						new HumanMessage({
-							content: `用户追加指令：${rawInstruction}`,
+								content: `Additional user instruction: ${rawInstruction}`,
 							additional_kwargs: {
 								created_at: new Date().toISOString(),
 							},
 						}),
 					],
 					messages: originState.messages || [],
-					// 不设 forkResume → executor entry 走正常入口，_reset: true，VLM 从零开始
+					// Leave forkResume unset so executor entry uses normal entry, _reset=true, and VLM starts fresh.
 				};
 			} else {
-				// Case B: 无 feedback → 检查 todos 决定继续方式
+				// Case B: no feedback -> inspect todos to decide how to continue.
 				const todos = await this.workingMemoryService.getTodos(newThreadId);
 				const hasPendingTodos = todos?.some(
 					(t) => t.status === "in_progress" || t.status === "pending",
 				);
 
 				if (hasPendingTodos && originState.executor?.sharedMessages?.length > 0) {
-					// 有待执行 todo + 有共享消息历史 → fork resume，继续 executor
+					// Pending todo plus shared message history -> fork resume and continue executor.
 					asNode = "extract_todo";
 					forkedState = {
 						...baseForkedState,
@@ -1019,7 +1020,7 @@ export class GraphRunnerService {
 						},
 					};
 				} else if (hasPendingTodos) {
-					// 有待执行 todo 但无 VLM 历史 → extract_todo 正常提取
+					// Pending todo without VLM history -> run extract_todo normally.
 					asNode = "extract_todo";
 					forkedState = {
 						...baseForkedState,
@@ -1027,7 +1028,7 @@ export class GraphRunnerService {
 						messages: originState.messages || [],
 					};
 				} else {
-					// 无 todo / 全部完成 → supervisor 重新规划
+					// No todo or all todos completed -> supervisor replans.
 					asNode = "supervisor";
 					forkedState = {
 						...baseForkedState,
@@ -1038,7 +1039,7 @@ export class GraphRunnerService {
 				}
 			}
 
-			// 4. 使用 updateState 初始化新 thread
+			// 4. Initialize the new thread with updateState.
 			await this.graphService
 				.getMobileAgentGraph()
 				.updateState(
@@ -1051,16 +1052,16 @@ export class GraphRunnerService {
 				`[FORK] State initialized for new thread ${newThreadId}, starting from ${asNode} (hasInstruction=${hasUserInstruction}, forkResume=${!!forkedState.forkResume})`,
 			);
 
-      // 5. 复用未 abort 的预注册 controller（保留 cancel 信号），否则创建新的
+      // 5. Reuse a pre-registered controller that was not aborted; otherwise create a new one.
       const existingAc = this.activeExecutions.get(taskExecutionId);
       const abortController = (existingAc && !existingAc.signal.aborted) ? existingAc : new AbortController();
       this.activeExecutions.set(taskExecutionId, abortController);
       this.threadIdMap.set(taskExecutionId, newThreadId);
       this.startLeaseMonitor(taskExecutionId, abortController);
 
-      // 6. 从新 thread 继续执行
+      // 6. Continue from the new thread.
       const result = await this.graphService.getMobileAgentGraph().invoke(
-        null, // 使用 null 从 checkpoint 继续
+        null, // Continue from the checkpoint.
         {
           configurable: { thread_id: newThreadId },
           recursionLimit: 5000,
@@ -1069,24 +1070,24 @@ export class GraphRunnerService {
         },
       );
 
-      // 7. 停止租约监控
+      // 7. Stop lease monitoring.
       this.stopLeaseMonitor(taskExecutionId);
 
-      // 写入 token 使用统计
+      // Persist token usage.
       const tokenUsage = tokenHandler.getResult();
       if (tokenUsage.total_tokens > 0) {
         await this.updateTokenUsage(taskExecutionId, tokenUsage);
       }
 
-      // 8. 处理结果
+      // 8. Handle result.
       if (isInterrupted(result)) {
-        // interrupt 时保留映射，以便后续恢复
+        // Keep mappings on interrupt for later resume.
         this.activeExecutions.delete(taskExecutionId);
         this.abortReasons.delete(taskExecutionId);
         return { success: true, ...this.extractInterruptInfo(result) };
       }
 
-      // 正常完成，清理映射
+      // Normal completion: clean mappings.
       this.activeExecutions.delete(taskExecutionId);
       this.threadIdMap.delete(taskExecutionId);
       this.abortReasons.delete(taskExecutionId);
@@ -1097,19 +1098,19 @@ export class GraphRunnerService {
         summary: result.finalSummary || undefined,
       };
     } catch (error) {
-      // 停止租约监控
+      // Stop lease monitoring.
       this.stopLeaseMonitor(taskExecutionId);
 
-      // 即使失败也写入已收集到的 token 统计
+      // Persist any token usage collected before failure.
       const tokenUsage = tokenHandler.getResult();
       if (tokenUsage.total_tokens > 0) {
         await this.updateTokenUsage(taskExecutionId, tokenUsage);
       }
 
-      // 失败时清理映射
+      // Clean mappings after failure.
       this.activeExecutions.delete(taskExecutionId);
 
-      // 检测是否是 abort 错误（任务被取消）
+      // Detect abort errors, which mean the task was cancelled.
       if (this.isAbortError(error as Error)) {
         const reason = this.abortReasons.get(taskExecutionId);
         this.abortReasons.delete(taskExecutionId);
@@ -1118,7 +1119,7 @@ export class GraphRunnerService {
         );
 
         if (reason === "pause") {
-          // 暂停时保留 threadIdMap，以便后续恢复或取消时能找到执行
+          // Keep threadIdMap on pause so resume/cancel can still find the execution.
           this.logger.log(
             `[FORK] Execution ${taskExecutionId} paused, keeping threadIdMap for resume/cancel`,
           );
@@ -1135,7 +1136,7 @@ export class GraphRunnerService {
         };
       }
 
-      // 非 abort 错误，完全清理
+      // Non-abort errors get a full cleanup.
       this.threadIdMap.delete(taskExecutionId);
       this.abortReasons.delete(taskExecutionId);
       clearCompletedSummaries(taskExecutionId);
@@ -1151,10 +1152,10 @@ export class GraphRunnerService {
     }
   }
 
-  // ============= Token 使用统计 =============
+  // ============= Token Usage =============
 
   /**
-   * 更新 token_usage（增量合并，支持 resume/fork 场景累加）
+   * Update token_usage by merging increments across resume/fork flows.
    */
   private async updateTokenUsage(
     taskExecutionId: number,
@@ -1168,7 +1169,7 @@ export class GraphRunnerService {
 
       let finalUsage: TokenUsageResult = newUsage;
 
-      // 如果有旧值（resume/fork 场景），合并
+      // Merge with existing values for resume/fork flows.
       if (existing?.token_usage && typeof existing.token_usage === "object") {
         const handler = new TokenUsageCallbackHandler();
         handler.merge(existing.token_usage as TokenUsageResult);
@@ -1194,24 +1195,24 @@ export class GraphRunnerService {
     }
   }
 
-  // ============= 租约监控 =============
+  // ============= Lease Monitoring =============
 
   /**
-   * 启动租约监控
+   * Start lease monitoring.
    *
-   * 定期检查租约是否有效，如果租约过期则触发 AbortController 终止任务。
-   * 这样可以在客户端杀掉进程后，及时终止任务执行，节省 token。
+   * Periodically check whether the lease is valid. If it expires, abort the task.
+   * This stops execution promptly after the client process is killed and saves tokens.
    */
   private startLeaseMonitor(
     taskExecutionId: number,
     abortController: AbortController,
   ): void {
-    // 清理已有的监控（如果有）
+    // Clear any existing monitor first.
     this.stopLeaseMonitor(taskExecutionId);
 
-    // 连续失效计数 — 避免因单次检测瞬时失效就中止任务
-    // 要求连续 2 次（约 6s）检测到 lease 不存在才中止
-    // 给重连后的心跳一个重建 lease 的窗口
+    // Consecutive failure count prevents aborting on a single transient miss.
+    // Require two consecutive misses, roughly 6 seconds, before aborting.
+    // This leaves a short window for heartbeat lease recreation after reconnect.
     let consecutiveFailures = 0;
     const ABORT_THRESHOLD = 2;
 
@@ -1226,17 +1227,17 @@ export class GraphRunnerService {
               `[LEASE MONITOR] Lease expired for execution ${taskExecutionId} (${consecutiveFailures} consecutive checks), aborting task`,
             );
 
-            // 仅在尚未设置 abortReason 时写入（防止覆写 "pause"）
+            // Set abortReason only when missing so "pause" is not overwritten.
             if (!this.abortReasons.has(taskExecutionId)) {
               this.abortReasons.set(taskExecutionId, "lease_expired");
             }
 
-            // 仅在尚未 abort 时触发
+            // Abort only once.
             if (!abortController.signal.aborted) {
               abortController.abort();
             }
 
-            // 停止监控
+            // Stop monitoring.
             this.stopLeaseMonitor(taskExecutionId);
           } else {
             this.logger.warn(
@@ -1250,7 +1251,7 @@ export class GraphRunnerService {
         this.logger.error(
           `[LEASE MONITOR] Error checking lease for execution ${taskExecutionId}: ${(error as Error).message}`,
         );
-        // 检查出错时不终止任务，继续监控
+        // Do not terminate the task on monitor errors; keep monitoring.
       }
     }, this.LEASE_CHECK_INTERVAL_MS);
 
@@ -1261,7 +1262,7 @@ export class GraphRunnerService {
   }
 
   /**
-   * 停止租约监控
+   * Stop lease monitoring.
    */
   private stopLeaseMonitor(taskExecutionId: number): void {
     const monitor = this.leaseMonitors.get(taskExecutionId);

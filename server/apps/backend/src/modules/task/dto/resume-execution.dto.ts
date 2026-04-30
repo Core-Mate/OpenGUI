@@ -2,12 +2,12 @@ import { ApiProperty } from '@nestjs/swagger'
 import { IsBoolean, IsOptional, IsString } from 'class-validator'
 
 /**
- * 恢复执行请求 DTO
- * 用于从暂停状态恢复，或从 HITL 中断恢复
+ * Resume execution request DTO.
+ * Used to resume from pause or HITL interruption.
  */
 export class ResumeExecutionDto {
     @ApiProperty({
-        description: '用户反馈信息',
+	        description: 'User feedback',
         required: false,
     })
     @IsOptional()

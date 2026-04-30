@@ -18,38 +18,38 @@ import java.io.IOException
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
 
-// 定义后端上传接口的响应体数据类
+// Response body from the backend upload endpoint.
 data class UploadBackendResponse(val success: Boolean, val key: String?, val error: String?)
 
 /**
- * 真实的 ImageUploader 实现，将图片数据上传到您后端提供的 /tos/upload 接口。
+ * ImageUploader implementation that uploads image bytes to the backend /tos/upload endpoint.
  */
 class ImageUploaderImpl(private val token: String, private val baseUrl: String) :
-    ImageUploader { // 构造函数需要baseUrl
+    ImageUploader {
 
     private val client = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.SECONDS) // 连接超时
-        .readTimeout(30, TimeUnit.SECONDS)    // 读取超时
-        .writeTimeout(30, TimeUnit.SECONDS)   // 写入超时
-        .callTimeout(60, TimeUnit.SECONDS)    // 完整调用超时（OkHttp 4.0+）
+        .connectTimeout(30, TimeUnit.SECONDS) // Connect timeout.
+        .readTimeout(30, TimeUnit.SECONDS)    // Read timeout.
+        .writeTimeout(30, TimeUnit.SECONDS)   // Write timeout.
+        .callTimeout(60, TimeUnit.SECONDS)    // Full call timeout (OkHttp 4.0+).
         .addInterceptor(HeaderInterceptor(token))
         .build()
     private val gson = Gson()
 
     override suspend fun uploadImage(context: Context, imageData: ByteArray, fileName: String?): String? {
         val finalFileName = fileName ?: "screenshot_${System.currentTimeMillis()}.webp"
-        val requestUrl = "$baseUrl/api/tos/upload" // 拼接完整的上传 URL
+        val requestUrl = "$baseUrl/api/tos/upload" // Full upload URL.
         LogManager.saveLog(context,"ImageUploaderImpl",
             "Attempting to upload image to backend: $requestUrl for file: $finalFileName    Image data size: ${imageData.size} bytes",
             TaskCenter.executionId?:-1)
         return suspendCancellableCoroutine { continuation ->
-            // 构建请求体：MultipartBody 来模拟 FormData
+            // Build a multipart request body that matches browser FormData.
             val requestBody = MultipartBody.Builder()
-                .setType(MultipartBody.FORM) // 对应 FormData 类型
+                .setType(MultipartBody.FORM)
                 .addFormDataPart(
-                    "file", // 对应前端 `formData.append('file', newImg.file)` 中的 'file' 键
-                    finalFileName, // 文件名
-                    imageData.toRequestBody("image/webp".toMediaTypeOrNull()) // 图片数据和媒体类型
+                    "file",
+                    finalFileName,
+                    imageData.toRequestBody("image/webp".toMediaTypeOrNull())
                 )
                 .build()
 
@@ -101,12 +101,12 @@ class ImageUploaderImpl(private val token: String, private val baseUrl: String) 
                 }
             })
 
-            // 处理协程取消
+            // Handle coroutine cancellation.
             continuation.invokeOnCancellation { throwable ->
                 LogManager.saveLog(context,"ImageUploaderImpl",
                     "Image upload to backend was cancelled: ${throwable?.message}",
                     TaskCenter.executionId?:-1)
-                // 对于 OkHttp，取消协程通常会自动取消 Call，无需额外处理
+                // OkHttp calls are usually cancelled automatically with the coroutine.
             }
         }
     }

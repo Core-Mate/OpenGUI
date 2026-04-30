@@ -12,7 +12,7 @@
         android:orientation="vertical"
         android:paddingVertical="8dp">
 
-        <!--    开始/继续    -->
+        <!--    Start/Continue    -->
         <LinearLayout
             android:id="@+id/ll_control"
             android:layout_width="55dp"
@@ -46,13 +46,13 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="继续"
+                android:text="Continue"
                 android:textColor="@color/text_primary"
                 android:textSize="12sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <!--     结束   -->
+        <!--     End   -->
         <LinearLayout
             android:id="@+id/ll_stop"
             android:layout_width="55dp"
@@ -86,7 +86,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="结束"
+                android:text="End"
                 android:textColor="@color/text_primary"
                 android:textSize="12sp"
                 android:textStyle="bold" />

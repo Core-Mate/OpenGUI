@@ -8,7 +8,7 @@
     android:orientation="vertical"
     android:paddingTop="44dp">
 
-    <!-- 标题栏 -->
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -30,13 +30,13 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginStart="4dp"
-            android:text="设置"
+            android:text="Settings"
             android:textColor="#111827"
             android:textSize="20sp"
             android:textStyle="bold" />
     </LinearLayout>
 
-    <!-- 服务器地址 -->
+    <!-- Server URL -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -50,7 +50,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="服务器地址"
+            android:text="Server URL"
             android:textColor="#111827"
             android:textSize="14sp"
             android:textStyle="bold" />
@@ -59,7 +59,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="模拟器使用 http://10.0.2.2:7777\n真机使用电脑局域网 IP，如 http://192.168.1.100:7777"
+            android:text="Emulator: http://10.0.2.2:7777\nPhysical device: use your computer LAN IP, for example http://192.168.1.100:7777"
             android:textColor="#9CA3AF"
             android:textSize="12sp" />
 
@@ -84,12 +84,12 @@
             android:layout_height="48dp"
             android:layout_marginTop="12dp"
             android:background="@drawable/add_task_gradient"
-            android:text="保存"
+            android:text="Save"
             android:textColor="#ffffff"
             android:textSize="14sp" />
     </LinearLayout>
 
-    <!-- 底部版本号 -->
+
     <View
         android:layout_width="match_parent"
         android:layout_height="0dp"

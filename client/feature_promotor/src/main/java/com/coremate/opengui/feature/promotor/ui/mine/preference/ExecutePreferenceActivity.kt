@@ -26,7 +26,7 @@ class ExecutePreferenceActivity :
     var adapter: ExecutePreferenceListAdapter? = null
 
     override fun initView() {
-        binding.titlebar.setTitle("执行偏好").setLeftIconClickListener {
+        binding.titlebar.setTitle("Execution preferences").setLeftIconClickListener {
             finish()
         }.setRightIconClickListener {
             showMenuPopupWindow(binding.titlebar.getMoreBtn())
@@ -64,7 +64,7 @@ class ExecutePreferenceActivity :
     private fun showMenuPopupWindow(
         anchorView: View
     ) {
-        // 如果已经显示，先关闭
+
         if (menuPopupWindow != null && menuPopupWindow!!.isShowing) {
             menuPopupWindow!!.dismiss()
             return
@@ -78,24 +78,24 @@ class ExecutePreferenceActivity :
             ViewGroup.LayoutParams.WRAP_CONTENT,
             true
         )
-        // 设置背景
+
         menuPopupWindow?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         menuPopupWindow?.isOutsideTouchable = true
         menuPopupWindow?.isFocusable = true
-        // 显示在 imgMenu 下方
+
         menuPopupWindow?.showAsDropDown(anchorView, AMScreenUtils.dp2px(-70f), 0, Gravity.CENTER)
     }
 
     override fun initParam() {
-        val bean1 = ExecutePreferenceItemData(1, "行业", "医疗美容机构销售", true)
-        val bean2 = ExecutePreferenceItemData(2, "目标人群", "目标人群", true)
-        val bean3 = ExecutePreferenceItemData(3, "目标地区", "目标地区", true)
-        val bean4 = ExecutePreferenceItemData(4, "商品/服务摘要", "商品/服务摘要", true)
-        val bean5 = ExecutePreferenceItemData(5, "语气", "语气。", false)
-        val bean6 = ExecutePreferenceItemData(6, "价格", "价格", false)
-        val bean7 = ExecutePreferenceItemData(7, "商品优势", "商品优势", false)
-        val bean8 = ExecutePreferenceItemData(8, "积极度", "积极度", false)
-        val bean9 = ExecutePreferenceItemData(9, "商品/服务摘要", "商品/服务摘要", false)
+        val bean1 = ExecutePreferenceItemData(1, "Industry", "Medical Aesthetics Sales", true)
+        val bean2 = ExecutePreferenceItemData(2, "Target Audience", "Target Audience", true)
+        val bean3 = ExecutePreferenceItemData(3, "Target Region", "Target Region", true)
+        val bean4 = ExecutePreferenceItemData(4, "Product/Service Summary", "Product/Service Summary", true)
+        val bean5 = ExecutePreferenceItemData(5, "Tone", "Tone", false)
+        val bean6 = ExecutePreferenceItemData(6, "Price", "Price", false)
+        val bean7 = ExecutePreferenceItemData(7, "Product Strengths", "Product Strengths", false)
+        val bean8 = ExecutePreferenceItemData(8, "Engagement Level", "Engagement Level", false)
+        val bean9 = ExecutePreferenceItemData(9, "Product/Service Summary", "Product/Service Summary", false)
         this.dataList.add(bean1)
         this.dataList.add(bean2)
         this.dataList.add(bean3)

@@ -37,17 +37,17 @@ fun TextView.setMultiGradientText(
 }
 
 fun EditText.setEditable(isEditable: Boolean) {
-    // 1. 设置是否启用（影响视觉灰度）
+
     isEnabled = isEditable
 
-    // 2. 设置是否可以获取焦点
+
     isFocusable = isEditable
     isFocusableInTouchMode = isEditable
 
-    // 3. 设置光标是否可见
+
     isCursorVisible = isEditable
 
-    // 4. (可选) 如果禁用，强制关闭软键盘
+
     if (!isEditable) {
         val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         imm.hideSoftInputFromWindow(windowToken, 0)
@@ -82,7 +82,6 @@ fun Activity.observeKeyboardChange(onChange: (isShowing: Boolean) -> Unit) {
 
 
 /**
- * 在 Activity 中隐藏软键盘
  */
 fun Activity.hideKeyboard() {
     val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
@@ -97,14 +96,13 @@ fun Activity.showKeyboard(view: View) {
 }
 
 /**
- * 在 Fragment 中隐藏软键盘
  */
 fun Fragment.hideKeyboard() {
     view?.let { activity?.hideKeyboard() }
 }
 
 fun Context.calculateDuration(start: String?, end: String?): String? {
-    // UTC 格式解析器
+
     val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
         timeZone = TimeZone.getTimeZone("UTC")
     }
@@ -122,9 +120,9 @@ fun Context.calculateDuration(start: String?, end: String?): String? {
         val diffSec = diffMs / 1000
 
         when {
-            diffSec < 60 -> "${diffSec}秒"
-            diffSec < 3600 -> "${diffSec / 60}分${diffSec % 60}秒"
-            else -> "${diffSec / 3600}小时${(diffSec % 3600) / 60}分"
+            diffSec < 60 -> "${diffSec} sec"
+            diffSec < 3600 -> "${diffSec / 60} min ${diffSec % 60} sec"
+            else -> "${diffSec / 3600} hr ${(diffSec % 3600) / 60} min"
         }
     } catch (e: Exception) {
         null

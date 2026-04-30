@@ -11,11 +11,7 @@ import {
 const logger = new Logger("ScreenshotNode");
 
 /**
- * 创建截图节点
  *
- * @param executionGateway - 执行网关，用于发送截图请求
- * @param tosService - TOS 服务，用于生成公开 URL
- * @returns 截图节点函数
  */
 export function createScreenshotNode(
 	executionGateway: ExecutionGateway,
@@ -27,7 +23,7 @@ export function createScreenshotNode(
 	): Promise<Partial<AgentState>> => {
 		const signal = config?.signal;
 
-		// 检查是否已被 abort
+
 		if (signal?.aborted) {
 			logger.log("Execution aborted, skipping screenshot");
 			return {
@@ -40,26 +36,26 @@ export function createScreenshotNode(
 		logger.log(`Taking screenshot for user ${state.userId}`);
 
 		try {
-			// 发送截图请求（重试由 LangGraph retryPolicy 处理）
+
 			const startTime = Date.now();
 			const resp = await executionGateway.sendScreenshotReq(state.taskExecutionId);
 			logger.log(`Screenshot request took ${Date.now() - startTime}ms for user ${state.userId}`);
 
-			if (!resp.success || !resp.screenshotUri) {
-				throw new Error("截图请求失败");
-			}
+				if (!resp.success || !resp.screenshotUri) {
+					throw new Error("Screenshot request failed");
+				}
 
-			// 将截图转为 base64 data URL 供 VLM 访问
+
 			const imgResult = await tosService.getImageAsBase64(resp.screenshotUri);
-			if (!imgResult.success || !imgResult.base64) {
-				throw new Error("截图读取失败");
-			}
+				if (!imgResult.success || !imgResult.base64) {
+					throw new Error("Failed to read screenshot");
+				}
 			const ext = resp.screenshotUri.endsWith(".webp") ? "webp" : resp.screenshotUri.endsWith(".jpg") ? "jpeg" : "png";
 			const screenshotUrl = `data:image/${ext};base64,${imgResult.base64}`;
 			logger.log(`Screenshot taken successfully: ${resp.screenshotUri}`);
 
-			// 创建包含截图的 HumanMessage，模拟 GUIAgent.ts 的消息拼接
-			// 使用多模态消息格式：文本占位符 + 图片 URL
+
+
 			const screenshotMessage = new HumanMessage({
 				content: [
 					{
@@ -68,7 +64,7 @@ export function createScreenshotNode(
 					},
 					{
 						type: "text",
-						text: `当前正在运行的应用：${resp.currentAppName}`,
+							text: `Current running app: ${resp.currentAppName}`,
 					},
 				],
 				additional_kwargs: {
@@ -89,7 +85,7 @@ export function createScreenshotNode(
 				},
 			};
 		} catch (error: any) {
-			// 如果是 abort 错误，重新抛出让图停止执行
+
 			if (error.name === "AbortError" || error.message?.includes("abort")) {
 				logger.log("Screenshot aborted, stopping execution");
 				throw error;
@@ -97,10 +93,10 @@ export function createScreenshotNode(
 
 			logger.error(`Screenshot failed: ${error.message}`, error.stack);
 			return {
-				executor: {
-					status: "error",
-					errorMessage: `截图失败: ${error.message}`,
-				},
+					executor: {
+						status: "error",
+						errorMessage: `Screenshot failed: ${error.message}`,
+					},
 			} as Partial<AgentState>;
 		}
 	};

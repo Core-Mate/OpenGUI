@@ -2,6 +2,6 @@
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
     <solid android:color="#F0FFFFFF" />
-    <!-- 90% 不透明度的白色，让下面的光晕透出来 -->
+
     <corners android:radius="16dp" />
 </shape>

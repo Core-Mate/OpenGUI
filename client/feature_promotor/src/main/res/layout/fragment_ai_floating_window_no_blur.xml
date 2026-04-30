@@ -26,7 +26,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="@android:color/transparent"
-            android:text="思考中..."
+            android:text="Thinking..."
             android:textColor="@android:color/black"
             android:textSize="13sp" />
 
@@ -43,7 +43,7 @@
                 android:background="@android:color/transparent"
                 android:textColor="@android:color/black"
                 android:textSize="13sp"
-                tools:text="嗯，用户让打开小红书并发布三条评论，首先我需要先退出OpenGUI AI APP，回到主屏幕，其次我需要找到小红书APP并打开它，然后打开评论区，发布三条评论。" />
+                tools:text="The user asked me to open Xiaohongshu and post three comments. I should first leave OpenGUI, return to the home screen, open Xiaohongshu, go to the comment section, and post three comments." />
         </ScrollView>
     </LinearLayout>
 

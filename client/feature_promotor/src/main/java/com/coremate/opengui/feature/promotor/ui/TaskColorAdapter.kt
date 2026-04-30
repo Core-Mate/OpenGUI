@@ -41,7 +41,7 @@ class TaskColorAdapter(
         private val innerCircle: View = itemView.findViewById(R.id.inner_circle)
 
         fun bind(colors: IntArray, selected: Boolean) {
-            // 设置内层渐变圆
+
             val drawable = GradientDrawable(
                 GradientDrawable.Orientation.LEFT_RIGHT,
                 colors
@@ -49,7 +49,7 @@ class TaskColorAdapter(
             drawable.shape = GradientDrawable.OVAL
             innerCircle.background = drawable
 
-            // 选中显示同心圆描边，未选中隐藏
+
             val visibility = if (selected) View.VISIBLE else View.GONE
             ringBlack.visibility = visibility
             ringWhite.visibility = visibility

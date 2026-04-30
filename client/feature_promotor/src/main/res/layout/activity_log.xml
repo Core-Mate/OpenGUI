@@ -16,7 +16,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        tools:text="当前一共有xx条日志，时间范围 xxx - xxx" />
+        tools:text="There are xx logs in total. Time range: xxx - xxx" />
 
     <View
         android:layout_width="match_parent"
@@ -27,7 +27,7 @@
         android:id="@+id/tv_time_range"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="时间范围"
+        android:text="Time Range"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tv_desc" />
@@ -46,7 +46,7 @@
             android:id="@+id/bt_set_time_range"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="选择日志时间范围" />
+            android:text="Select Log Time Range" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -57,7 +57,7 @@
             android:id="@+id/bt_one_hour"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="一小时内" />
+            android:text="Within 1 Hour" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -68,7 +68,7 @@
             android:id="@+id/bt_three_hour"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="三小时内" />
+            android:text="Within 3 Hours" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -79,14 +79,14 @@
             android:id="@+id/bt_five_hour"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="五小时内" />
+            android:text="Within 5 Hours" />
 
         <Button
             android:id="@+id/accessibility_log"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textColor="@color/red"
-            android:text="无障碍日志专用"/>
+            android:text="Accessibility Logs Only"/>
     </LinearLayout>
 
     <View
@@ -98,7 +98,7 @@
         android:id="@+id/bt_share_file"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="分享文件"
+        android:text="Share File"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/time_range_container" />
@@ -107,7 +107,7 @@
         android:id="@+id/bt_save_file"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="如果分享不成功，可以尝试保存到本地再分享"
+        android:text="If sharing fails, save locally and share again."
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/bt_share_file" />

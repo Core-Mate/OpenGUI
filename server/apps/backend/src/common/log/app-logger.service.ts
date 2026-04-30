@@ -1,7 +1,7 @@
 import { Injectable, LoggerService, Scope } from '@nestjs/common'
 import { getExecutionId, getTraceId } from './trace-id.interceptor'
 
-// 跳过 NestJS 框架启动噪音日志
+
 const MUTED_CONTEXTS = new Set([
     'InstanceLoader',
     'RoutesResolver',
@@ -9,7 +9,7 @@ const MUTED_CONTEXTS = new Set([
     'NestFactory',
 ])
 
-// ANSI 颜色码
+
 const COLORS: Record<string, string> = {
     INFO: '\x1b[32m',
     ERROR: '\x1b[31m',
@@ -21,7 +21,6 @@ const DIM = '\x1b[2m'
 const RESET = '\x1b[0m'
 
 /**
- * 从可变参数中提取 context、metadata、stack
  */
 function extractParams(params: any[]): { context?: string; metadata?: Record<string, any>; stack?: string } {
     if (params.length === 0) return {}
@@ -40,8 +39,6 @@ function extractParams(params: any[]): { context?: string; metadata?: Record<str
 }
 
 /**
- * 简洁日志输出
- * 格式: HH:mm:ss LEVEL [Context] Message
  */
 @Injectable({ scope: Scope.TRANSIENT })
 export class AppLogger implements LoggerService {

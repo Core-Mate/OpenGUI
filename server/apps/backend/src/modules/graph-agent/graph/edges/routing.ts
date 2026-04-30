@@ -1,14 +1,14 @@
 import { Logger } from "@nestjs/common";
 import { AgentState } from "../state/state.types";
+import { isExecutionConnectionLostMessage } from "../utils/execution-connection";
 
 const logger = new Logger("GraphRouting");
 
 // ============================================================================
-// 节点名称常量
+
 // ============================================================================
 
 /**
- * 节点名称常量
  */
 export const NODE_NAMES = {
 	SUPERVISOR: "supervisor",
@@ -19,14 +19,11 @@ export const NODE_NAMES = {
 } as const;
 
 // ============================================================================
-// 路由函数
+
 // ============================================================================
 
 /**
- * supervisor 后的路由决策
  *
- * - supervisorError=true → summarizer（LLM 调用失败，生成补救总结）
- * - else → extract_todo（正常流程）
  */
 export function routeAfterSupervisor(
 	state: AgentState,
@@ -42,12 +39,8 @@ export function routeAfterSupervisor(
 }
 
 /**
- * extract_todo 后的路由决策
  *
  * - isCancelled → summarizer
- * - planTodoComplete=true → summarizer（所有任务完成）
- * - todoFound=true → executor（找到待执行 todo）
- * - else → fallback_extract（没有 todo，使用 Haiku 兜底提取）
  */
 export function routeAfterExtractTodo(
 	state: AgentState,
@@ -79,10 +72,8 @@ export function routeAfterExtractTodo(
 }
 
 /**
- * Executor 执行后的路由决策
  *
  * - isCancelled=true → summarizer
- * - else → supervisor（返回评估执行结果）
  */
 export function routeAfterExecutor(
 	state: AgentState,
@@ -96,6 +87,16 @@ export function routeAfterExecutor(
 		return NODE_NAMES.SUMMARIZER;
 	}
 
+	if (
+		isExecutionConnectionLostMessage(state.executorOutput?.fail_reason) ||
+		isExecutionConnectionLostMessage(state.executor?.errorMessage)
+	) {
+		logger.log(
+			"Routing to summarizer: execution socket disconnected, stopping retry loop",
+		);
+		return NODE_NAMES.SUMMARIZER;
+	}
+
 	logger.log(
 		"Routing to supervisor: returning execution result for evaluation",
 	);
@@ -103,11 +104,10 @@ export function routeAfterExecutor(
 }
 
 // ============================================================================
-// 路由路径常量
+
 // ============================================================================
 
 /**
- * 条件边映射类型
  */
 export const ROUTING_PATHS = {
 	SUPERVISOR: {

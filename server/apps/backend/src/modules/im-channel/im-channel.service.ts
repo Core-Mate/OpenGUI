@@ -19,15 +19,10 @@ import { CommandType } from "./command/command.types";
 import { DEFAULT_USER_ID } from "./im-channel.constants";
 
 /**
- * IM 频道核心服务
  *
- * 负责：
- * 1. 接收 IM 消息（飞书/Telegram）→ 解析命令 → 分发执行
- * 2. 监听执行事件（SUSPENDED/FINISHED/PHASE_CHANGED/ACTION_THOUGHT）→ 回传 IM
  */
 @Injectable()
 export class ImChannelService implements OnModuleInit {
-	/** 当前活跃的 executionId → 用户信息（用于结果回传） */
 	private readonly activeExecutions = new Map<
 		number,
 		{ userId: string; platform: "feishu" | "telegram"; taskName: string; startedAt: number }
@@ -60,7 +55,7 @@ export class ImChannelService implements OnModuleInit {
 	}
 
 	// ============================================================
-	// 入站消息处理
+
 	// ============================================================
 
 	private async handleMessage(userId: string, text: string, platform: "feishu" | "telegram"): Promise<void> {
@@ -103,29 +98,29 @@ export class ImChannelService implements OnModuleInit {
 			this.logger.error(
 				`Command handler error: ${(e as Error).message}`,
 			);
-			await this.reply(userId, `❌ 处理失败: ${(e as Error).message}`, platform);
+			await this.reply(userId, `❌ Processing failed: ${(e as Error).message}`, platform);
 		}
 	}
 
 	// ============================================================
-	// 命令处理
+
 	// ============================================================
 
 	private async handleHelp(userId: string, platform: "feishu" | "telegram") {
 		await this.reply(
 			userId,
 			[
-				"📱 OpenGUI 远程控制",
+				"📱 OpenGUI Remote Control",
 				"",
-				"/tasks — 查看任务列表",
-				"/run <ID> — 按 ID 执行已有任务",
-				"/do <描述> — 新建任务并立即执行",
-				"/status — 查看当前执行进度",
-				"/cancel — 取消当前执行",
-				"/pause — 暂停当前执行",
-				"/resume — 恢复暂停的执行",
-				"/devices — 查看在线设备",
-				"/help — 查看此帮助",
+				"/tasks — View task list",
+				"/run <ID> — Run an existing task by ID",
+					"/do <description> — Create and run a new task",
+				"/status — View current execution status",
+				"/cancel — Cancel current execution",
+				"/pause — Pause current execution",
+				"/resume — Resume paused execution",
+				"/devices — View online devices",
+				"/help — View this help",
 			].join("\n"),
 			platform,
 		);
@@ -138,30 +133,30 @@ export class ImChannelService implements OnModuleInit {
 		});
 
 		if (!result.items.length) {
-			await this.reply(userId, "暂无任务。发送 /do <描述> 新建任务", platform);
+			await this.reply(userId, "No tasks yet. Send /do <description> to create one.", platform);
 			return;
 		}
 
-		const lines = ["📋 任务列表", ""];
+		const lines = ["📋 Task list", ""];
 		for (const task of result.items) {
 			lines.push(
-				`#${task.id}  ${task.taskName} (成功 ${task.successCount}/${task.totalExecutions})`,
+				`#${task.id}  ${task.taskName} (success ${task.successCount}/${task.totalExecutions})`,
 			);
 		}
-		lines.push("", "发送 /run <ID> 执行");
+		lines.push("", "Send /run <ID> to execute");
 		await this.reply(userId, lines.join("\n"), platform);
 	}
 
 	private async handleRunTask(userId: string, taskId: number, platform: "feishu" | "telegram") {
 		const device = this.standbySocketService.getOnlineDevice();
 		if (!device) {
-			await this.reply(userId, "❌ 没有在线设备。请先在工作手机上启动 App。", platform);
+			await this.reply(userId, "❌ No online device. Start the app on the work phone first.", platform);
 			return;
 		}
 
 		const task = await this.taskService.getTaskById(taskId, DEFAULT_USER_ID);
 		if (!task) {
-			await this.reply(userId, `❌ 未找到 ID 为 ${taskId} 的任务\n发送 /tasks 查看列表`, platform);
+				await this.reply(userId, `❌ No task found with ID ${taskId}\nSend /tasks to view the list`, platform);
 			return;
 		}
 
@@ -171,7 +166,7 @@ export class ImChannelService implements OnModuleInit {
 	private async handleDoTask(userId: string, description: string, platform: "feishu" | "telegram") {
 		const device = this.standbySocketService.getOnlineDevice();
 		if (!device) {
-			await this.reply(userId, "❌ 没有在线设备。请先在工作手机上启动 App。", platform);
+			await this.reply(userId, "❌ No online device. Start the app on the work phone first.", platform);
 			return;
 		}
 
@@ -184,23 +179,23 @@ export class ImChannelService implements OnModuleInit {
 			taskDescription: description,
 		});
 
-		await this.reply(userId, `📝 已创建任务: ${name}`, platform);
+		await this.reply(userId, `📝 Created task: ${name}`, platform);
 		await this.dispatchExecution(userId, task.id, name, device, platform);
 	}
 
 	private async handleStatus(userId: string, platform: "feishu" | "telegram") {
 		if (this.activeExecutions.size === 0) {
-			await this.reply(userId, "当前没有执行中的任务", platform);
+			await this.reply(userId, "No active execution", platform);
 			return;
 		}
 
-		const lines = ["📊 执行状态", ""];
+		const lines = ["📊 Execution status", ""];
 		for (const [execId, info] of this.activeExecutions) {
 			const elapsed = Math.floor((Date.now() - info.startedAt) / 1000);
 			const min = Math.floor(elapsed / 60);
 			const sec = elapsed % 60;
-			lines.push(`任务: ${info.taskName} (ID: ${execId})`);
-			lines.push(`运行时间: ${min}分${sec}秒`);
+			lines.push(`Task: ${info.taskName} (ID: ${execId})`);
+			lines.push(`Runtime: ${min}m ${sec}s`);
 		}
 		await this.reply(userId, lines.join("\n"), platform);
 	}
@@ -208,43 +203,43 @@ export class ImChannelService implements OnModuleInit {
 	private async handleCancel(userId: string, platform: "feishu" | "telegram") {
 		const execId = this.getFirstActiveExecutionId();
 		if (!execId) {
-			await this.reply(userId, "当前没有执行中的任务", platform);
+			await this.reply(userId, "No active execution", platform);
 			return;
 		}
 		await this.taskExecutionService.cancelExecution(execId, DEFAULT_USER_ID);
-		await this.reply(userId, "⏹ 已取消", platform);
+		await this.reply(userId, "⏹ Cancelled", platform);
 	}
 
 	private async handlePause(userId: string, platform: "feishu" | "telegram") {
 		const execId = this.getFirstActiveExecutionId();
 		if (!execId) {
-			await this.reply(userId, "当前没有执行中的任务", platform);
+			await this.reply(userId, "No active execution", platform);
 			return;
 		}
 		await this.taskExecutionService.pauseExecution(execId, DEFAULT_USER_ID);
-		await this.reply(userId, "⏸ 已暂停。/resume 恢复，/cancel 取消", platform);
+		await this.reply(userId, "⏸ Paused. Use /resume to resume or /cancel to cancel.", platform);
 	}
 
 	private async handleResume(userId: string, feedback: string | undefined, platform: "feishu" | "telegram") {
 		const execId = this.getFirstActiveExecutionId();
 		if (!execId) {
-			await this.reply(userId, "当前没有可恢复的任务", platform);
+			await this.reply(userId, "No resumable task", platform);
 			return;
 		}
 		await this.taskExecutionService.resumeExecution(
 			execId,
 			DEFAULT_USER_ID,
 		);
-		await this.reply(userId, "▶️ 已恢复执行", platform);
+		await this.reply(userId, "▶️ Execution resumed", platform);
 	}
 
 	private async handleDevices(userId: string, platform: "feishu" | "telegram") {
 		const devices = this.standbySocketService.getOnlineDevices();
 		if (devices.length === 0) {
-			await this.reply(userId, "没有在线设备", platform);
+			await this.reply(userId, "No online devices", platform);
 			return;
 		}
-		const lines = ["📱 在线设备", ""];
+		const lines = ["📱 Online Devices", ""];
 		for (const d of devices) {
 			lines.push(`• ${d.deviceName || d.deviceId}`);
 		}
@@ -259,15 +254,15 @@ export class ImChannelService implements OnModuleInit {
 				DEFAULT_USER_ID,
 				{ feedback: text },
 			);
-			await this.reply(userId, "▶️ 已收到回复，继续执行...", platform);
+			await this.reply(userId, "▶️ Reply received. Continuing execution...", platform);
 			return;
 		}
 
-		await this.reply(userId, "发送 /help 查看可用命令", platform);
+		await this.reply(userId, "Send /help to view available commands", platform);
 	}
 
 	// ============================================================
-	// 执行事件监听
+
 	// ============================================================
 
 	@OnEvent(EXECUTION_EVENTS.SUSPENDED)
@@ -278,11 +273,11 @@ export class ImChannelService implements OnModuleInit {
 		await this.reply(
 			info.userId,
 			[
-				"🔔 任务需要你的帮助",
+				"🔔 Task needs your help",
 				"",
-				event.reason || "请检查手机屏幕",
+				event.reason || "Check the phone screen",
 				"",
-				"直接回复文字即可继续，或发送 /cancel 取消。",
+				"Reply with text to continue, or send /cancel to cancel.",
 			].join("\n"),
 			info.platform,
 		);
@@ -304,23 +299,23 @@ export class ImChannelService implements OnModuleInit {
 		switch (event.result) {
 			case "SUCCEED":
 				text = [
-					`✅ 任务完成: ${info.taskName}`,
+					`✅ Task completed: ${info.taskName}`,
 					"",
 					event.summary || "",
-					`用时 ${min}分${sec}秒`,
+					`Duration ${min}m ${sec}s`,
 				]
 					.filter(Boolean)
 					.join("\n");
 				break;
 			case "CANCELLED":
-				text = `⚠️ 任务已取消: ${info.taskName}`;
+				text = `⚠️ Task cancelled: ${info.taskName}`;
 				break;
 			default:
 				text = [
-					`❌ 任务失败: ${info.taskName}`,
+					`❌ Task failed: ${info.taskName}`,
 					"",
-					event.errorMessage ? `原因: ${event.errorMessage}` : "",
-					`用时 ${min}分${sec}秒`,
+					event.errorMessage ? `Reason: ${event.errorMessage}` : "",
+					`Duration ${min}m ${sec}s`,
 				]
 					.filter(Boolean)
 					.join("\n");
@@ -329,7 +324,6 @@ export class ImChannelService implements OnModuleInit {
 		await this.reply(info.userId, text, info.platform);
 	}
 
-	/** 节流：每个 execution 最后一次 action thought 推送时间 */
 	private lastActionThoughtTime = new Map<number, number>();
 
 	@OnEvent(EXECUTION_EVENTS.PHASE_CHANGED)
@@ -338,9 +332,9 @@ export class ImChannelService implements OnModuleInit {
 		if (!info) return;
 
 		const phaseNames: Record<string, string> = {
-			plan_supervisor: "📋 规划中...",
-			executor: "⚡ 执行中",
-			summarizer: "📝 总结中...",
+			plan_supervisor: "📋 Planning...",
+			executor: "⚡ Executing",
+			summarizer: "📝 Summarizing...",
 		};
 		const label = phaseNames[event.phase];
 		if (label) {
@@ -362,7 +356,7 @@ export class ImChannelService implements OnModuleInit {
 	}
 
 	// ============================================================
-	// 内部方法
+
 	// ============================================================
 
 	private async dispatchExecution(
@@ -387,7 +381,7 @@ export class ImChannelService implements OnModuleInit {
 
 		await this.reply(
 			userId,
-			`▶️ 开始执行: ${taskName}\n设备: ${device.deviceName || device.deviceId}`,
+			`▶️ Starting execution: ${taskName}\nDevice: ${device.deviceName || device.deviceId}`,
 			platform,
 		);
 

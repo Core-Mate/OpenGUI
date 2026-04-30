@@ -16,7 +16,7 @@ open class VerticalSpacingItemDecoration(private val spacing: Int) : RecyclerVie
         super.getItemOffsets(outRect, view, parent, state)
 
         val spacingPx = dpToPx(spacing, parent.context)
-        // 设置左、上、右、下四个方向的间距（这里统一设置为spacingPx的值）
+
         outRect.left = spacingPx
         outRect.right = spacingPx
         outRect.top = spacingPx
