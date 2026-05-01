@@ -83,9 +83,11 @@ ENV_EXAMPLE=apps/backend/.env.example
 if [ ! -f "$ENV_FILE" ]; then
   if [ -f "$ENV_EXAMPLE" ]; then
     cp "$ENV_EXAMPLE" "$ENV_FILE"
-    warn ".env was created from .env.example. Please edit it and add your API keys:"
+    warn ".env was created from .env.example. Please edit it and add the required model configuration:"
     warn "  File: $ENV_FILE"
-    warn "  CLAUDE_API_KEY, VLM_API_KEY, ANTHROPIC_API_KEY"
+    warn "  Required: CLAUDE_API_KEY, CLAUDE_MODEL, CLAUDE_SMALL_MODEL, VLM_API_KEY, VLM_MODEL"
+    warn "  Optional: CLAUDE_BASE_URL, VLM_BASE_URL for OpenAI-compatible gateways"
+    warn "  Optional: ANTHROPIC_API_KEY only for Creator Agent SDK features"
     warn "Run this script again after editing the file."
     exit 0
   else
@@ -95,8 +97,30 @@ fi
 
 set -a; source "$ENV_FILE" 2>/dev/null || true; set +a
 
-if [ -z "$CLAUDE_API_KEY" ]; then
-  warn "CLAUDE_API_KEY is not set. Please edit .env."
+REQUIRED_MODEL_VARS=(
+  CLAUDE_API_KEY
+  CLAUDE_MODEL
+  CLAUDE_SMALL_MODEL
+  VLM_API_KEY
+  VLM_MODEL
+)
+
+MISSING_MODEL_VARS=()
+for var_name in "${REQUIRED_MODEL_VARS[@]}"; do
+  if [ -z "${!var_name}" ]; then
+    MISSING_MODEL_VARS+=("$var_name")
+  fi
+done
+
+if [ "${#MISSING_MODEL_VARS[@]}" -gt 0 ]; then
+  warn "Missing required model configuration in $ENV_FILE:"
+  for var_name in "${MISSING_MODEL_VARS[@]}"; do
+    warn "  $var_name"
+  done
+  warn "Fill these values and run ./start.sh again."
+  warn "If text and vision use the same provider, fill both CLAUDE_* and VLM_* explicitly."
+  warn "ANTHROPIC_API_KEY is optional unless you use Creator Agent SDK features."
+  exit 1
 fi
 
 info ".env loaded"
