@@ -85,7 +85,7 @@ if [ ! -f "$ENV_FILE" ]; then
     cp "$ENV_EXAMPLE" "$ENV_FILE"
     warn ".env was created from .env.example. Please edit it and add your API keys:"
     warn "  File: $ENV_FILE"
-    warn "  CLAUDE_API_KEY, VLM_API_KEY, ANTHROPIC_API_KEY"
+    warn "  VLM_API_KEY, VLM_BASE_URL, VLM_MODEL"
     warn "Run this script again after editing the file."
     exit 0
   else
@@ -95,8 +95,16 @@ fi
 
 set -a; source "$ENV_FILE" 2>/dev/null || true; set +a
 
-if [ -z "$CLAUDE_API_KEY" ]; then
-  warn "CLAUDE_API_KEY is not set. Please edit .env."
+if [ -z "$VLM_API_KEY" ]; then
+  warn "VLM_API_KEY is not set. Please edit .env."
+fi
+
+if [ -z "$VLM_MODEL" ]; then
+  warn "VLM_MODEL is not set. Please edit .env."
+fi
+
+if [ -z "$VLM_BASE_URL" ]; then
+  warn "VLM_BASE_URL is not set. Please edit .env."
 fi
 
 info ".env loaded"
