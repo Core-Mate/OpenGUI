@@ -57,7 +57,7 @@ info "Install completed"
 # --------------------------------------------------
 # 5. Launch app
 # --------------------------------------------------
-PACKAGE="com.haomai.promotor"
+PACKAGE="com.coremate.opengui"
 adb shell am start -n "$PACKAGE/.login.SplashActivity" >/dev/null 2>&1
 info "App launched"
 

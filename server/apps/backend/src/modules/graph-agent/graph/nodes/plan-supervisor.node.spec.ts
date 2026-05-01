@@ -1,22 +1,23 @@
 /**
  * Plan Supervisor 结构化输出集成测试
  *
- * 验证 ChatAnthropic + createAgent + providerStrategy 能否拿到 structuredResponse
+ * 验证 ChatOpenAI + createAgent + providerStrategy 能否拿到 structuredResponse
  * 使用真实模型调用，mock 数据尽量简化
  *
  * 运行：pnpm test -- plan-supervisor.node.spec
  */
 
-import { ChatAnthropic } from "@langchain/anthropic";
 import { HumanMessage } from "@langchain/core/messages";
 import { tool } from "@langchain/core/tools";
+import { ChatOpenAI } from "@langchain/openai";
 import { createAgent, providerStrategy } from "langchain";
 import { z } from "zod";
 
 // ====== API 配置（与 plan-supervisor.node.ts 保持一致）======
-const API_KEY = process.env.CLAUDE_API_KEY ?? "test-api-key-placeholder";
-const BASE_URL = process.env.CLAUDE_BASE_URL ?? "https://ai-gateway.vercel.sh";
-const MODEL = process.env.CLAUDE_MODEL ?? "anthropic/claude-sonnet-4.6";
+const API_KEY = process.env.VLM_API_KEY ?? "test-api-key-placeholder";
+const BASE_URL =
+	process.env.VLM_BASE_URL ?? "https://dashscope.aliyuncs.com/compatible-mode/v1";
+const MODEL = process.env.VLM_MODEL ?? "qwen3.6-plus";
 // =============================================================
 
 const SupervisorOutputSchema = z.object({
@@ -72,18 +73,17 @@ const mockLoadSkill = tool(
 	},
 );
 
-describe("PlanSupervisor - ChatAnthropic 结构化输出集成测试", () => {
-	let model: ChatAnthropic;
+describe("PlanSupervisor - ChatOpenAI 结构化输出集成测试", () => {
+	let model: ChatOpenAI;
 
 	beforeAll(() => {
-		model = new ChatAnthropic({
+		model = new ChatOpenAI({
 			model: MODEL,
 			apiKey: API_KEY,
-			clientOptions: {
+			maxRetries: 2,
+			timeout: 120000,
+			configuration: {
 				baseURL: BASE_URL,
-				maxRetries: 2,
-				timeout: 120000,
-				authToken: null,
 			},
 		});
 	});

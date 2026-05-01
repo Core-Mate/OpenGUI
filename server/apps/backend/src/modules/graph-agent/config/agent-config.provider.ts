@@ -45,42 +45,31 @@ export class AgentConfigProvider {
 
 	/**
 	 *
-	 * - executor-vlm: VLM_API_KEY, VLM_BASE_URL, VLM_MODEL
-	 * - action-summarizer: CLAUDE_API_KEY, CLAUDE_BASE_URL, CLAUDE_SMALL_MODEL
-	 * - Other Agent: CLAUDE_API_KEY, CLAUDE_BASE_URL, CLAUDE_MODEL
+	 * All graph agents use the same OpenAI-compatible model config:
+	 * - VLM_API_KEY
+	 * - VLM_BASE_URL
+	 * - VLM_MODEL
 	 *
 	 */
 	async getModelConfig(agentName: AgentName, region = "CN"): Promise<ModelConfig> {
 		const config = await this.getConfig(agentName, region);
 
-		const isVLM = agentName === AgentName.EXECUTOR_VLM;
-		const isSmall = agentName === AgentName.ACTION_SUMMARIZER;
+		const apiKey = this.configService.get<string>("VLM_API_KEY");
+		const baseURL = this.configService.get<string>("VLM_BASE_URL");
+		const model = this.configService.get<string>("VLM_MODEL");
 
-		const apiKey = isVLM
-			? this.configService.get<string>("VLM_API_KEY")
-			: this.configService.get<string>("CLAUDE_API_KEY");
-		const baseURL = isVLM
-			? this.configService.get<string>("VLM_BASE_URL")
-			: this.configService.get<string>("CLAUDE_BASE_URL");
-		const envModel = isVLM
-			? this.configService.get<string>("VLM_MODEL")
-			: isSmall
-				? this.configService.get<string>("CLAUDE_SMALL_MODEL")
-				: this.configService.get<string>("CLAUDE_MODEL");
-
-		const model = envModel;
 
 		if (!apiKey) {
 			throw new Error(
 				`API key not configured for agent: ${agentName}. ` +
-					`Set ${isVLM ? "VLM_API_KEY" : "CLAUDE_API_KEY"} in .env`,
+					"Set VLM_API_KEY in .env",
 			);
 		}
 
 		if (!model) {
 			throw new Error(
 				`Model not configured for agent: ${agentName}. ` +
-					`Set ${isVLM ? "VLM_MODEL" : "CLAUDE_MODEL"} in .env`,
+					"Set VLM_MODEL in .env",
 			);
 		}
 
@@ -88,7 +77,7 @@ export class AgentConfigProvider {
 			model,
 			apiKey,
 			baseURL: baseURL || undefined,
-			fallbackModel: config.fallbackModel ?? undefined,
+			fallbackModel: model,
 			temperature: config.temperature ?? undefined,
 			maxTokens: config.maxTokens ?? undefined,
 			topP: config.topP ?? undefined,
