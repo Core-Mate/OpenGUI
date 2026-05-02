@@ -4,11 +4,11 @@ import com.coremate.opengui.automation.base.context.AMContext
 
 open class AMCompRepository {
 
-    //初始坐标
+    //Initial coordinates
     open var startX = 0
     open var startY = 0
 
-    //悬浮窗的坐标记录
+    //Floating-window coordinate record
     var wpX = 0
     var wpY = 0
 

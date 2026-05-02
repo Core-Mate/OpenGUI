@@ -16,12 +16,12 @@ class AMPermissionUtils {
 
         /////////////////////////////////////////////////////////////////////////////////
         //
-        //                      权限
+        // Permission
         //
         /////////////////////////////////////////////////////////////////////////////////
 
         /**
-         * 检查是否开启辅助权限
+ * Check Whether accessibility permission is enabled
          */
         fun hasAccessibilityPermission(ct: Context, serviceClass: Class<*>): Boolean {
             var ok = 0
@@ -56,14 +56,14 @@ class AMPermissionUtils {
         }
 
         /**
-         * 跳转到设置页的辅助功能
+ * Navigate to accessibility settings
          */
         fun openAccessibilitySetting(ct: Context) {
             ct.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
         }
 
         /**
-         * 检查悬浮窗权限
+ * Check Floating window Permission
          */
         fun hasAlertWindowPermission(context: Context): Boolean {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
@@ -95,13 +95,13 @@ class AMPermissionUtils {
         }
 
         /**
-         * 请求悬浮窗权限
+ * Request floating-window permission
          * @param activity
          * @param REQUEST_DIALOG_PERMISSION
          */
         fun openAlertWindowSetting(activity: Activity, REQUEST_DIALOG_PERMISSION: Int) {
             val sdkInt = Build.VERSION.SDK_INT
-            if (sdkInt >= Build.VERSION_CODES.O) { //8.0以上
+            if (sdkInt >= Build.VERSION_CODES.O) { // Android 8.0 and above.
                 val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
                 intent.data = Uri.parse("package:" + activity.packageName)
                 activity.startActivityForResult(intent, REQUEST_DIALOG_PERMISSION)
@@ -109,8 +109,8 @@ class AMPermissionUtils {
                 val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
                 intent.data = Uri.parse("package:" + activity.packageName)
                 activity.startActivityForResult(intent, REQUEST_DIALOG_PERMISSION)
-            } else { //4.4-6.0一下
-                //无需处理了.....
+            } else { // Android 4.4 to below 6.0.
+                //No handling needed.....
             }
         }
 

@@ -1,9 +1,9 @@
 /**
  * create-test-app.ts
  *
- * NestJS TestingModule 工厂，创建一个最小的 WS 测试应用。
- * 使用真实的 ExecutionGateway + ExecutionSocketService + WsAuthMiddleware，
- * 但所有外部依赖（Prisma、Redis、GraphRunner、BullMQ、Auth）均为 mock。
+ * NestJS Testing Module factory for creating a minimal WS test app.
+ * Uses the real ExecutionGateway + ExecutionSocketService + WsAuthMiddleware,
+ * but all external dependencies (Prisma, Redis, GraphRunner, BullMQ, Auth) are mocked.
  */
 import { type INestApplication } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
@@ -31,8 +31,8 @@ import {
 // ============================================================
 // Module-level jest.mock for Better-Auth
 // ============================================================
-// 注意：此文件中的 jest.mock 必须在测试文件的顶部 import 前生效
-// 由于 jest.mock 会被提升 (hoisted)，我们在测试文件顶部处理
+// Note: jest.mock in this file must take effect before imports at the top of the test file
+// Because jest.mock is hoisted, this is handled at the top of the test file
 
 export interface TestApp {
 	app: INestApplication;
@@ -53,7 +53,7 @@ export async function createTestApp(): Promise<TestApp> {
 	const mockGraphRunner = createMockGraphRunner();
 	const mockQueue = createMockQueue();
 
-	// Mock LeaseService — 所有方法默认成功
+	// Mock Lease Service; all methods succeed by default
 	const mockLeaseService = {
 		createLease: jest.fn().mockResolvedValue(true),
 		renewLease: jest.fn().mockResolvedValue(true),
@@ -66,7 +66,7 @@ export async function createTestApp(): Promise<TestApp> {
 		renewLeasesBatch: jest.fn().mockResolvedValue([]),
 	};
 
-	// Mock TaskExecutionService — 核心方法可编程
+	// Mock TaskExecutionService; core methods are programmable
 	const mockTaskExecutionService = {
 		startExecution: jest.fn().mockResolvedValue(undefined),
 		startForkExecution: jest.fn().mockResolvedValue(undefined),
@@ -113,18 +113,18 @@ export async function createTestApp(): Promise<TestApp> {
 
 	const app = moduleFixture.createNestApplication();
 
-	// 获取 Gateway 并手动注入 lazy-resolved 依赖
-	// （在真实应用中这些是通过 ModuleRef 在 onModuleInit 解析的）
+	// Get the Gateway and manually inject lazy-resolved dependencies
+	// (In the real app these are resolved through Module Ref in on Module Init)
 	const gateway = moduleFixture.get(ExecutionGateway);
 	const socketService = moduleFixture.get(ExecutionSocketService);
 
-	// 手动设置 Gateway 的 lazy 依赖（绕过 ModuleRef 动态 import）
+	// Manually set Gateway lazy dependencies, bypassing Module Ref dynamic import
 	(gateway as any).taskExecutionService = mockTaskExecutionService;
 	(gateway as any).graphRunnerService = mockGraphRunner;
 
 	await app.init();
 
-	// 获取 HTTP server 和端口
+	// Get the HTTP server and port
 	const httpServer = app.getHttpServer() as Server;
 	await new Promise<void>((resolve) => {
 		httpServer.listen(0, () => resolve());
@@ -150,7 +150,7 @@ export async function createTestApp(): Promise<TestApp> {
 }
 
 /**
- * 重置所有 mock 状态（在 afterEach 中调用）
+ * Reset all mock state, called from afterEach
  */
 export function resetAllMocks(testApp: TestApp) {
 	testApp.mockPrisma._reset();
@@ -183,6 +183,6 @@ export function resetAllMocks(testApp: TestApp) {
 		async (id: number) => testApp.mockPrisma.getExecution(id) ?? null,
 	);
 
-	// 清理 Gateway 内部状态
+	// Clean up Gateway internal state
 	(testApp.gateway as any).readyReceived?.clear();
 }

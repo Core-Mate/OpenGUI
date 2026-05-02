@@ -19,7 +19,7 @@ import com.coremate.opengui.automation.biz.tasks.wx.likecomment.AMWxLikeCommentH
 import com.coremate.opengui.automation.biz.tasks.wx.likecomment.bean.AMWxLikeCommentEventType
 
 /**
- * 第10步：评论3
+ * Step 10:comment 3
  */
 internal class AMWxLikeCommentStep10(index: Int, helper: AMWxLikeCommentHelper) :
     AMBaseStep<AMWxLikeCommentHelper>(index, helper) {
@@ -34,7 +34,7 @@ internal class AMWxLikeCommentStep10(index: Int, helper: AMWxLikeCommentHelper) 
         if (helper.param?.eventType == AMWxLikeCommentEventType.COMMENT || helper.param?.eventType == AMWxLikeCommentEventType.LIKE_AND_COMMENT) {
             AMEventUtils.sleep(AMActionDelay.MIDDLE)
             val nodeInfo = data?.bean as AccessibilityNodeInfo
-            //点击评论按钮
+            //Tap comment button
             AMEventUtils.reProcessUntilOk(
                 helper,
                 3,
@@ -45,7 +45,7 @@ internal class AMWxLikeCommentStep10(index: Int, helper: AMWxLikeCommentHelper) 
                     }
 
                     override fun work(timeIndex: Int): Boolean {
-                        //获取更多按钮
+                        //Get the more button
                         val btnNode = AMNodeUtils.getFirstNodeById(
                             nodeInfo,
                             IAMWidgetWX.fcMoreBtn().resourceId
@@ -59,7 +59,7 @@ internal class AMWxLikeCommentStep10(index: Int, helper: AMWxLikeCommentHelper) 
             }
             AMEventUtils.sleep(AMActionDelay.MIDDLE)
             AMEventUtils.sleep(AMActionDelay.MINI)
-            //点击输入评论内容
+            //Tap and enter comment content
             AMEventUtils.reProcessUntilOk(
                 helper,
                 3,

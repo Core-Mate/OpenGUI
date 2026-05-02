@@ -1,8 +1,8 @@
 /**
  * Mock RedisService
  *
- * 内存 Map 实现，支持 TTL 模拟。
- * 覆盖 LeaseService 和 TaskExecutionService 中使用的所有 Redis 方法。
+ * In-memory Map implementation with TTL simulation.
+ * Covers all Redis methods used by LeaseService and TaskExecutionService.
  */
 
 interface Entry {

@@ -21,7 +21,7 @@ internal open class IAMPageEvent {
 
 
     /**
-     * 判断是否要打开app
+ * Check whether the app should be opened
      */
     fun isOpenAppAndOpen(helper: AMBaseStepHelper): Boolean {
         AMEventUtils.sleep(AMActionDelay.MINI)
@@ -36,7 +36,7 @@ internal open class IAMPageEvent {
 
                 override fun work(timeIndex: Int): Boolean {
                     val rootNode = AMCore.instance.amContext?.rootNode() ?: return false
-                    //今后不提示
+                    //Do not prompt again
                     val checkBox =
                         AMNodeUtils.getFirstNodeById(
                             rootNode,
@@ -71,12 +71,12 @@ internal open class IAMPageEvent {
 
 
     /**
-     * 选择相册
-     * @param timeKey 时间的key
-     * @param index 索引
-     * @param extra 额外判断(默认为true)
-     * @param moreJudgment 是否存在多余判断
-     * @return Pair 是否成功 / 是否暂停
+ * Select album
+ * @param time Key time key
+ * @param index index
+ * @param extra additional predicate, true by default
+ * @param more Judgment whether extra checks exist
+ * @return Pair of success flag and pause flag
      * */
     fun selectPictureOrVideoByTimeAndIndex(
         helper: AMBaseStepHelper,
@@ -87,7 +87,7 @@ internal open class IAMPageEvent {
     ): Pair<Boolean, Boolean> {
         AMEventUtils.sleep(AMActionDelay.MINI)
         if (moreJudgment) {
-            //判断是否在选择图片视频页面
+            //Check whether on the image/video picker page
             AMEventUtils.reProcessUntilOk(
                 helper,
                 20,
@@ -119,7 +119,7 @@ internal open class IAMPageEvent {
             }
         }
         AMLog.onEDebugLog("开始处理第${index}张图片 - 获取recyclerView")
-        //获取recyclerView
+        //Get Recycler View
         var recyclerViewNode: AccessibilityNodeInfo? = null
         var alreadyWait = false
         AMEventUtils.reProcessUntilOk(
@@ -157,7 +157,7 @@ internal open class IAMPageEvent {
             }
         }
         AMLog.onEDebugLog("开始处理第${index}张图片 - 滑动")
-        //滑动
+        //Swipe
         AMEventUtils.scroll2TopOrBottom(recyclerViewNode, true)
         AMEventUtils.sleep(AMActionDelay.SHORT)
         var i = 0
@@ -191,7 +191,7 @@ internal open class IAMPageEvent {
             if (helper.isTaskPauseOrStop()) {
                 return Pair(false, true)
             }
-            //再次获取recyclerView
+            //Get RecyclerView again
             if (moreJudgment) {
                 AMCore.instance.amContext?.rootNode() ?: return Pair(false, false)
                 AMEventUtils.reProcessUntilOk(
@@ -219,23 +219,23 @@ internal open class IAMPageEvent {
             }
 
             AMLog.onEDebugLog("开始处理第${index}张图片 - 遍历其中的item")
-            //遍历其中的item
+            //Iterate its items
             for (itemNode in AMNodeUtils.getAllNodeByClassName(
                 recyclerViewNode,
                 RelativeLayout::class.java.name
             )) {
-                //过滤情况
+                //Filter cases
                 if (index > i) {
                     i++
                     continue
                 }
                 var tempImageInfo: AccessibilityNodeInfo? = null
-                //图片列表
+                //Image list
                 val imageList =
                     AMNodeUtils.getAllNodeByClassName(itemNode, ImageView::class.java.name)
                 if (imageList.isEmpty()) continue
 
-                //获取有desc的图片
+                //Get image with desc
                 val iterator = imageList.iterator()
                 while (true) {
                     if (iterator.hasNext()) {
@@ -246,7 +246,7 @@ internal open class IAMPageEvent {
                 }
                 if (tempImageInfo == null) continue
 
-                //获取图片的desc
+                //Get image desc
                 val str = (tempImageInfo.contentDescription ?: "").toString()
                 if (!str.contains(timeKey) || (extra && !str.contains("图片")) || (!extra && !str.contains(
                         "视频"
@@ -254,11 +254,11 @@ internal open class IAMPageEvent {
                 ) {
                     continue
                 }
-                //获取checkBox节点
+                //Get checkbox node
                 val checkNode =
                     AMNodeUtils.getNodeByClassName(itemNode, CheckBox::class.java.name) ?: continue
 
-                //点击checkBox
+                //Tap checkbox
                 if (!checkNode.isChecked) {
                     AMEventUtils.clickFirstClickableParentWithSimulate(checkNode, helper)
                     AMLog.onEDebugLog("开始处理第${index}张图片 - 点击checkBox")
@@ -271,12 +271,12 @@ internal open class IAMPageEvent {
     }
 
     /**
-     * 选择视频
-     * @param timeKey 时间的key
-     * @param index 索引
-     * @param extra 额外判断(默认为true)
-     * @param moreJudgment 是否存在多余判断
-     * @return Pair 是否成功 / 是否暂停
+ * Select video
+ * @param time Key time key
+ * @param index index
+ * @param extra additional predicate, true by default
+ * @param more Judgment whether extra checks exist
+ * @return Pair of success flag and pause flag
      * */
     open fun selectVideoByTimeAndIndex(
         helper: AMBaseStepHelper,
@@ -287,7 +287,7 @@ internal open class IAMPageEvent {
 
         if (moreJudgment) {
             AMCore.instance.amContext?.rootNode() ?: return Pair(false, false)
-            //判断是否在选择图片视频页面
+            //Check whether on the image/video picker page
             AMEventUtils.reProcessUntilOk(
                 helper,
                 20,
@@ -342,7 +342,7 @@ internal open class IAMPageEvent {
             AMLog.onEDebugLog("没有recyclerView")
             return Pair(false, false)
         }
-        //滑动
+        //Swipe
         AMEventUtils.scroll2TopOrBottom(recyclerViewNode, true)
         AMEventUtils.sleep(AMActionDelay.SHORT)
         var j = 0
@@ -350,7 +350,7 @@ internal open class IAMPageEvent {
             if (helper.isTaskPauseOrStop()) {
                 return Pair(false, true)
             }
-            //再次获取recyclerView
+            //Get RecyclerView again
             val rootNode = AMCore.instance.amContext?.rootNode() ?: return Pair(false, false)
             recyclerViewNode =
                 AMNodeUtils.getNodeByClassName(rootNode, RecyclerView::class.java.name)
@@ -359,18 +359,18 @@ internal open class IAMPageEvent {
                 false
             )
             AMLog.onEDebugLog("开始处理第${index}个视频 - 遍历其中的item")
-            //遍历其中的item
+            //Iterate its items
             for (itemNode in AMNodeUtils.getAllNodeByClassName(
                 recyclerViewNode,
                 RelativeLayout::class.java.name
             )) {
                 var tempImageInfo: AccessibilityNodeInfo? = null
-                //图片列表
+                //Image list
                 val imageList =
                     AMNodeUtils.getAllNodeByClassName(itemNode, ImageView::class.java.name)
                 if (imageList.isEmpty()) continue
 
-                //获取有desc的图片
+                //Get image with desc
                 val iterator = imageList.iterator()
                 while (true) {
                     if (iterator.hasNext()) {
@@ -380,7 +380,7 @@ internal open class IAMPageEvent {
                     break
                 }
                 if (tempImageInfo == null) continue
-                //获取图片的desc
+                //Get image desc
                 val str = (tempImageInfo.contentDescription ?: "").toString()
                 if (!str.contains(timeKey) || (!str.contains("视频"))) {
                     continue
@@ -393,11 +393,11 @@ internal open class IAMPageEvent {
                     j++
                     continue
                 }
-                //获取checkBox节点
+                //Get checkbox node
                 val checkNode =
                     AMNodeUtils.getNodeByClassName(itemNode, CheckBox::class.java.name) ?: continue
 
-                //点击checkBox
+                //Tap checkbox
                 if (!checkNode.isChecked) {
                     AMEventUtils.clickFirstClickableParentWithSimulate(checkNode, helper)
                     AMLog.onEDebugLog("开始处理第${index}张图片 - 点击checkBox")
@@ -473,7 +473,7 @@ internal open class IAMPageEvent {
     }
 
     /**
-     * 是否在目标app
+ * whetherin Targetapp
      * */
     fun isInTargetApp(target: AMTargetApp): Boolean {
         val rootNode = AMCore.instance.amContext?.rootNode() ?: return false
@@ -484,7 +484,7 @@ internal open class IAMPageEvent {
     }
 
     /**
-     * 是否在目标app
+ * whetherin Targetapp
      * */
     fun isInTargetApps(targets: MutableList<AMTargetApp>): Boolean {
         val rootNode = AMCore.instance.amContext?.rootNode() ?: return false

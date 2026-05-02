@@ -12,7 +12,7 @@ import com.coremate.opengui.automation.biz.common.event.tk.AMTkPageEvent
 import com.coremate.opengui.automation.biz.tasks.common.check.steps.tk.AMTkAutoReplyHelper
 
 /**
- * 第1步：跳转到抖音会话页面
+ * Step 1:Navigate to Douyin conversation page
  */
 internal class AMTkAutoReplyStep1(index: Int, helper: AMTkAutoReplyHelper) :
     AMBaseStep<AMTkAutoReplyHelper>(index, helper) {
@@ -27,14 +27,14 @@ internal class AMTkAutoReplyStep1(index: Int, helper: AMTkAutoReplyHelper) :
             AMEventUtils.sleep(AMActionDelay.MIDDLE)
         }
         SelectToSpeakService.service?.changeAccessibilityFlags(false)
-        //判断返回的微信首页
+        //Check Back WeChat home
         AMTkPageEvent.backTKChatListPage(object : IAMPageEvent.IAMTaskCallBack {
             override fun action(): Boolean {
                 return helper.isTaskPauseOrStop() || !helper.isOngoing()
             }
         }, helper)
 
-        //判断是否在会话页面
+        //Check whether on the conversation page
         if (!AMTkPageEvent.isInTkChatListPage()) {
             throw AMTaskException.business("不在抖音首页")
         }

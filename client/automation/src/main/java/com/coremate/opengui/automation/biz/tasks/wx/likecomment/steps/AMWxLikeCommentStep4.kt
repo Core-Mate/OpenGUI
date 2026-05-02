@@ -7,7 +7,7 @@ import com.coremate.opengui.automation.base.utils.AMLog
 import com.coremate.opengui.automation.biz.tasks.wx.likecomment.AMWxLikeCommentHelper
 
 /**
- * 第4步：任务分发
+ * Step 4:Task dispatch
  */
 internal class AMWxLikeCommentStep4(index: Int, helper: AMWxLikeCommentHelper) :
     AMBaseStep<AMWxLikeCommentHelper>(index, helper) {
@@ -15,7 +15,7 @@ internal class AMWxLikeCommentStep4(index: Int, helper: AMWxLikeCommentHelper) :
     override val isDispatcher: Boolean
         get() = true
 
-    //记录循环过滤索引
+    //Record loop filter index
     private var tempIndex = 0
 
     init {
@@ -33,7 +33,7 @@ internal class AMWxLikeCommentStep4(index: Int, helper: AMWxLikeCommentHelper) :
             if (i >= tempIndex) {
                 val nodeInfo = helper.tempNodeList[i]
                 AMLog.onEDebugLog("当前子步骤${subStepIndex}")
-                //第5步 - 检测
+                //Step 5 - Check
                 if (subStepIndex == 5) {
                     isCanNext =
                         onExecuteSubStep(
@@ -47,7 +47,7 @@ internal class AMWxLikeCommentStep4(index: Int, helper: AMWxLikeCommentHelper) :
 
                 }
 
-                //第6步 - 点赞1
+                //Step 6 - like 1
                 if (subStepIndex in 5..6 && isCanNext) {
                     isCanNext =
                         onExecuteSubStep(
@@ -60,7 +60,7 @@ internal class AMWxLikeCommentStep4(index: Int, helper: AMWxLikeCommentHelper) :
                         }.second
                 }
 
-                //第7步 - 点赞2
+                //Step 7 - like 2
                 if (subStepIndex in 5..7 && isCanNext) {
                     isCanNext =
                         onExecuteSubStep(
@@ -73,7 +73,7 @@ internal class AMWxLikeCommentStep4(index: Int, helper: AMWxLikeCommentHelper) :
                         }.second
                 }
 
-                //第8步 - 评论1
+                //Step 8 - comment 1
                 if (subStepIndex in 5..8 && isCanNext) {
                     isCanNext =
                         onExecuteSubStep(
@@ -85,7 +85,7 @@ internal class AMWxLikeCommentStep4(index: Int, helper: AMWxLikeCommentHelper) :
                             }
                         }.second
                 }
-                //第9步 - 评论2
+                //Step 9 - comment 2
                 if (subStepIndex in 5..9 && isCanNext) {
                     isCanNext =
                         onExecuteSubStep(
@@ -97,7 +97,7 @@ internal class AMWxLikeCommentStep4(index: Int, helper: AMWxLikeCommentHelper) :
                             }
                         }.second
                 }
-                //第10步 - 评论3
+                //Step 10 - comment 3
                 if (subStepIndex in 5..10 && isCanNext) {
                     isCanNext =
                         onExecuteSubStep(
@@ -109,7 +109,7 @@ internal class AMWxLikeCommentStep4(index: Int, helper: AMWxLikeCommentHelper) :
                             }
                         }.second
                 }
-                //第11步 - 评论4
+                //Step 11 - comment 4
                 if (subStepIndex in 5..11 && isCanNext) {
                     isCanNext =
                         onExecuteSubStep(
@@ -121,7 +121,7 @@ internal class AMWxLikeCommentStep4(index: Int, helper: AMWxLikeCommentHelper) :
                             }
                         }.second
                 }
-                //TODO:暂时，在这里进行成功数量+1
+                //TODO: temporarily increment success count here
                 helper.sucCount += 1
 
                 if (helper.sucCount >= (helper.param?.count ?: 0)) {
@@ -129,12 +129,12 @@ internal class AMWxLikeCommentStep4(index: Int, helper: AMWxLikeCommentHelper) :
                     break
                 }
                 subStepIndex = 5
-                //增加过滤索引
+                //Increment filter index
                 tempIndex++
             }
         }
 
-        //回到第3步
+        //Return to step 3
         helper.executorService.execute {
             tempIndex = 0
             AMLog.onEDebugLog("回到第3步")

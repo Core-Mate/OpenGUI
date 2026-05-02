@@ -13,7 +13,7 @@ import com.coremate.opengui.automation.biz.common.node.lv.IAMWidgetLV
 import com.coremate.opengui.automation.biz.tasks.tk.mixvideo.AMTkPublishVideoMixHelper
 
 /**
- * 第3步：判断权限和其他确定按钮
+ * Step 3:Check permissions and other confirm buttons
  */
 internal class AMTkPublishVideoMixStep3(index: Int, helper: AMTkPublishVideoMixHelper) :
     AMBaseStep<AMTkPublishVideoMixHelper>(index, helper) {
@@ -52,7 +52,7 @@ internal class AMTkPublishVideoMixStep3(index: Int, helper: AMTkPublishVideoMixH
         }
 
         if (isHasDialog) {
-            //点击AI弹窗确定
+            //Tap confirm in AI dialog
             AMEventUtils.reProcessUntilOk(
                 helper,
                 2,
@@ -80,7 +80,7 @@ internal class AMTkPublishVideoMixStep3(index: Int, helper: AMTkPublishVideoMixH
             AMEventUtils.sleep(AMActionDelay.MIDDLE)
         }
 
-        //点击去试试
+        //Tap try it
         AMEventUtils.reProcessUntilOk(
             helper,
             2,

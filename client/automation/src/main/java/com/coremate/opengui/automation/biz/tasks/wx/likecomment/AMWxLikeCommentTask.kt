@@ -12,11 +12,11 @@ internal class AMWxLikeCommentTask(amContext: AMContext) :
     AMBaseTask<AMWxLikeCommentHelper>(amContext) {
 
     override fun initTaskAndData(dataContainer: AMDataContainer?) {
-        //弹出悬浮窗
+        //Show floating window
         amContext.componentManager?.onExecute(AMCompModel(compCls = EnterFloat::class))
-        //设置数据
+        //Set data
         helper.param = dataContainer?.bean as AMWxLikeCommentParam
-        //注册
+        //Register
         helper.registerSteps(
             AMWxLikeCommentStep1::class,
             AMWxLikeCommentStep2::class,

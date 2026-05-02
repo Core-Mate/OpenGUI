@@ -5,23 +5,23 @@ import com.coremate.opengui.automation.base.data.AMDataContainer
 import com.coremate.opengui.automation.base.utils.AMLog
 
 /**
- * 步骤
+ * Step
  * */
 internal abstract class AMBaseStep<T : AMBaseStepHelper>(
     val index: Int,
     protected val helper: T,
 ) {
 
-    //是否需要分发子步骤的功能
+    //Whether substep dispatch is needed
     open val isDispatcher = false
 
-    //子步骤索引
+    //Substep index
     protected var subStepIndex = 4
 
     /**
-     * 执行主步骤
-     *  @param data 数据
-     *  @param isResume 是否恢复
+ * Execute main step
+ * @param data data
+ * @param is Resume whether this is a resume
      * */
     @CallSuper
     open fun onExecute(
@@ -44,9 +44,9 @@ internal abstract class AMBaseStep<T : AMBaseStepHelper>(
     }
 
     /**
-     * 执行子步骤
-     * @param subStep 子步骤
-     * @param data 数据
+ * Execute substep
+ * @param subStep substep
+ * @param data data
      * @param
      * @return Pair<isIsIntercept,isCanNext>
      * */
@@ -54,17 +54,17 @@ internal abstract class AMBaseStep<T : AMBaseStepHelper>(
         subStep: AMBaseStep<*>?,
         data: AMDataContainer? = null
     ): Pair<Boolean, Boolean> {
-        //是否可以进行下一步
+        //Whether the next step can proceed
         var isCanNext = true
-        //是否被拦截
+        //Whether intercepted
         var isIsIntercept = false
         subStep?.onExecute(data)?.let {
-            //记录子步骤索引
+            //RecordSubstep index
             subStepIndex = it.index
-            //赋值
+            //Assign value
             isCanNext = it.isCanNext
             isIsIntercept = it.isIntercept
-            //判断出错
+            //Check for errors
             if (!isCanNext) {
                 AMLog.onEDebugLog("第${it.index}步出错")
             }
@@ -73,9 +73,9 @@ internal abstract class AMBaseStep<T : AMBaseStepHelper>(
     }
 
     /**
-     * 执行子步骤扩展
-     * @param subStep 子步骤
-     * @param data 数据
+ * Execute substep extension
+ * @param subStep substep
+ * @param data data
      * @param
      * @return Pair<isIsIntercept,isCanNext>
      * */
@@ -83,19 +83,19 @@ internal abstract class AMBaseStep<T : AMBaseStepHelper>(
         subStep: AMBaseStep<*>?,
         data: AMDataContainer? = null
     ): Triple<Boolean, Boolean, Any?> {
-        //是否可以进行下一步
+        //Whether the next step can proceed
         var isCanNext = true
-        //是否被拦截
+        //Whether intercepted
         var isIsIntercept = false
         var extra: Any? = null
         subStep?.onExecute(data)?.let {
-            //记录子步骤索引
+            //RecordSubstep index
             subStepIndex = it.index
-            //赋值
+            //Assign value
             isCanNext = it.isCanNext
             isIsIntercept = it.isIntercept
             extra = it.extra
-            //判断出错
+            //Check for errors
             if (!isCanNext) {
                 AMLog.onEDebugLog("第${it.index}步出错")
             }
@@ -103,15 +103,15 @@ internal abstract class AMBaseStep<T : AMBaseStepHelper>(
         return Triple(isIsIntercept, isCanNext, extra)
     }
 
-    //释放
+    //Release
     abstract fun onDestroy()
 }
 
 /**
- * 条件判断
- * @param index 当步骤
- * @param isIntercept 是否拦截
- * @param isCanNext 是否可以进行下一步
+ * Condition check
+ * @param index current step
+ * @param is Intercept whether intercepted
+ * @param is Can Next Whether the next step can proceed
  * */
 class AMStepCondition private constructor(
     val index: Int,

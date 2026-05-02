@@ -3,11 +3,11 @@
 package com.coremate.opengui.common.utils
 
 import android.graphics.Bitmap
-import android.util.Base64 // android.util.Base64 是 Android 平台特有的
+import android.util.Base64 // android.util.Base64 is Android-specific.
 import java.io.ByteArrayOutputStream
 
 /**
- * 图像处理工具类。
+ * Image processing utilities.
  */
 object ImageUtils {
 

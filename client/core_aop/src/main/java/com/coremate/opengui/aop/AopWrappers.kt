@@ -2,7 +2,7 @@ package com.coremate.opengui.aop
 
 import com.coremate.opengui.aop.utils.ConsoleLogger
 import kotlin.system.measureTimeMillis
-import com.coremate.opengui.common_jvm.utils.Logger // 导入 Logger 接口
+import com.coremate.opengui.common_jvm.utils.Logger // Import Logger interface.
 
 public val runtimeLogger: Logger = ConsoleLogger()
 object InMemoryCache {
@@ -25,7 +25,7 @@ object InMemoryCache {
 }
 
 /**
- * 日志包装器：记录代码块执行耗时。
+ * Logging wrapper: records block execution time.
  */
 inline fun <T> logExecutionTime(block: () -> T): T {
     val result: T
@@ -38,19 +38,19 @@ inline fun <T> logExecutionTime(block: () -> T): T {
 }
 
 /**
- * 埋点包装器：发送一个分析事件。
+ * Tracking wrapper: sends an analytics event.
  */
 inline fun <T> trackEvent(eventName: String, block: () -> T): T {
-    // 在这里调用您的分析/埋点SDK
+    // Call the analytics/tracking SDK here
     runtimeLogger.debug("Analytics", "Tracking event: '$eventName'")
     return block()
 }
 
 /**
- * 缓存包装器：执行代码块，如果结果已在缓存中且未过期，则直接返回缓存结果。
- * @param key 缓存的唯一键。
- * @param ttlMillis 缓存的有效时间（毫秒）。
- * @param block 用于获取新数据的代码块。
+ * Cache wrapper: execute the block and return the cached result when present and not expired.
+ * @param key unique cache key.
+ * @param ttl Millis cache duration in milliseconds.
+ * @param block code block used to fetch fresh data.
  */
 suspend fun <T> cacheResult(key: String, ttlMillis: Long, block: suspend () -> T): T {
     val cachedResult: T? = InMemoryCache.get(key)

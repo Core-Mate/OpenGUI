@@ -1,8 +1,8 @@
 package com.coremate.opengui.aop.annotations
 
 /**
- * 标记一个方法或代码块，表示其需要被追踪（埋点）。
- * @param eventName 事件的唯一名称。
+ * Marks a method or code block that should be tracked for analytics.
+ * @param event Name unique event name.
  */
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.TYPE, AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.SOURCE)

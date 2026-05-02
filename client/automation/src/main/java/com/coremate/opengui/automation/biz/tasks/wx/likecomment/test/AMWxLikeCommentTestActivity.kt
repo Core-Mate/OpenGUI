@@ -25,11 +25,11 @@ class AMWxLikeCommentTestActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // 初始化 binding
+        // Initialize binding
         binding = ActivityAmwxLikeCommentTestBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // 设置系统边距
+        // Set system insets
         ViewCompat.setOnApplyWindowInsetsListener(binding.main) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(
@@ -43,7 +43,7 @@ class AMWxLikeCommentTestActivity : AppCompatActivity() {
 
         binding.seekReachCount.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                // 避免显示0，最少1次
+                // Avoid displaying 0; minimum is 1
                 val count = if (progress < 1) 1 else progress
                 binding.tvReachCurrent.text = "$count"
             }
@@ -53,7 +53,7 @@ class AMWxLikeCommentTestActivity : AppCompatActivity() {
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
 
-        // 示例：获取输入框内容并处理点击事件
+        // Example: read input content and handle click event
         binding.btnStart.setOnClickListener {
 
             val doLike = binding.switchLike.isChecked

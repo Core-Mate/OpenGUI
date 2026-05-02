@@ -17,7 +17,7 @@ import com.coremate.opengui.automation.biz.common.node.red.IAMWidgetRed
 internal object AMRedPageEvent : IAMPageEvent() {
 
     /**
-     * 回到小红书会话
+ * Return to Xiaohongshu conversation
      * */
     fun backRedChatListPage(callBack: IAMTaskCallBack, helper: AMBaseStepHelper? = null) {
         AMEventUtils.doSomethingUntilSuccess(
@@ -75,7 +75,7 @@ internal object AMRedPageEvent : IAMPageEvent() {
     }
 
     /**
-     * 是否在抖音会话列表
+ * Whether on the Douyin conversation list
      */
     fun isInRedChatListPage(name: String = "消息"): Boolean {
         val rootNode = AMCore.instance.amContext?.rootNode() ?: return false
@@ -92,7 +92,7 @@ internal object AMRedPageEvent : IAMPageEvent() {
 
 
     /**
-     * 获取red tab节点 - 新方案
+ * Get Red tab node - new approach
      * */
     fun getRedBottomTabByText(text: String): AccessibilityNodeInfo? {
         AMNodeUtils.getAllNodeById(
@@ -108,12 +108,12 @@ internal object AMRedPageEvent : IAMPageEvent() {
     }
 
     /**
-     * 获取返回节点
+ * Get back node
      * */
     fun getBackNode(): AccessibilityNodeInfo? {
         val rootNode = AMCore.instance.amContext?.rootNode() ?: return null
         var nodeInfo: AccessibilityNodeInfo? = null
-        //返回节点id
+        //Back node id
         nodeInfo =
             AMNodeUtils.getFirstNodeByIdWithCallback(rootNode, object :
                 MatchCallback<AccessibilityNodeInfo> {

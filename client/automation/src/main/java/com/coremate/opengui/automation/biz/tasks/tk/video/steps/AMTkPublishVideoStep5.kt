@@ -17,7 +17,7 @@ import com.coremate.opengui.automation.biz.common.node.wx.IAMWidgetWX
 import com.coremate.opengui.automation.biz.tasks.tk.video.AMTkPublishVideoHelper
 
 /**
- * 第5步：输入要AI生成的内容
+ * Step 5:Enter the content for AI generation
  */
 internal class AMTkPublishVideoStep5(index: Int, helper: AMTkPublishVideoHelper) :
     AMBaseStep<AMTkPublishVideoHelper>(index, helper) {
@@ -29,7 +29,7 @@ internal class AMTkPublishVideoStep5(index: Int, helper: AMTkPublishVideoHelper)
         }
         AMEventUtils.sleep(AMActionDelay.MIDDLE_LONG)
 
-        //输入框节点
+        //Input field node
         var editNode: AccessibilityNodeInfo? = null
         AMEventUtils.reProcessUntilOk(
             helper,

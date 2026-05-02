@@ -15,7 +15,7 @@ import com.coremate.opengui.automation.biz.common.node.wx.IAMWidgetWX
 import com.coremate.opengui.automation.biz.tasks.common.check.steps.wx.AMWxAutoReplyHelper
 
 /**
- * 第7步：自动回复
+ * Step 7:Auto-reply
  */
 internal class AMWxAutoReplyStep7(index: Int, helper: AMWxAutoReplyHelper) :
     AMBaseStep<AMWxAutoReplyHelper>(index, helper) {
@@ -31,7 +31,7 @@ internal class AMWxAutoReplyStep7(index: Int, helper: AMWxAutoReplyHelper) :
         }
 
         AMEventUtils.sleep(AMActionDelay.SHORT)
-        //输入框节点
+        //Input field node
         var editNode: AccessibilityNodeInfo? = null
         AMEventUtils.reProcessUntilOk(
             helper,

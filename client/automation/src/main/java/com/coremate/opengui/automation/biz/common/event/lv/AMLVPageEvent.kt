@@ -17,19 +17,19 @@ import com.coremate.opengui.automation.biz.common.node.lv.IAMWidgetLV
 internal object AMLVPageEvent : IAMPageEvent() {
 
     /**
-     * 获取返回节点
+ * Get back node
      * */
     fun getBackNode(): AccessibilityNodeInfo? {
         val rootNode = AMCore.instance.amContext?.rootNode() ?: return null
         var nodeInfo: AccessibilityNodeInfo? = null
-        //返回节点id
+        //Back node id
         nodeInfo =
             AMNodeUtils.getFirstNodeById(rootNode, IAMWidgetLV.globalBack().resourceId)
         return nodeInfo
     }
 
     /**
-     * 是否在剪映首页
+ * Whether on Jianying home page
      */
     fun isInHomePage(helper: AMBaseStepHelper?): Boolean {
         val rootNode = AMCore.instance.amContext?.rootNode() ?: return false
@@ -48,7 +48,7 @@ internal object AMLVPageEvent : IAMPageEvent() {
     }
 
     /**
-     * 回到剪映首页
+ * Return to Jianying home page
      * */
     fun backHomePage(callBack: IAMTaskCallBack, helper: AMBaseStepHelper? = null) {
         AMEventUtils.doSomethingUntilSuccess(
@@ -116,7 +116,7 @@ internal object AMLVPageEvent : IAMPageEvent() {
     }
 
     /**
-     * 返回
+ * Back
      * */
     fun simpleBack(helper: AMBaseStepHelper? = null) {
         if (!isInTargetApps(

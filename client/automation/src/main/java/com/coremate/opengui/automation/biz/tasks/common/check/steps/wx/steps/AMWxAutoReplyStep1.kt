@@ -12,7 +12,7 @@ import com.coremate.opengui.automation.biz.common.event.wx.AMWxPageEvent
 import com.coremate.opengui.automation.biz.tasks.common.check.steps.wx.AMWxAutoReplyHelper
 
 /**
- * 第1步：跳转到微信首页(会话页面)
+ * Step 1: Navigate to WeChat home (conversation page)
  */
 internal class AMWxAutoReplyStep1(index: Int, helper: AMWxAutoReplyHelper) :
     AMBaseStep<AMWxAutoReplyHelper>(index, helper) {
@@ -27,14 +27,14 @@ internal class AMWxAutoReplyStep1(index: Int, helper: AMWxAutoReplyHelper) :
             AMEventUtils.sleep(AMActionDelay.MIDDLE)
         }
         SelectToSpeakService.service?.changeAccessibilityFlags(false)
-        //判断返回的微信首页
+        //Check Back WeChat home
         AMWxPageEvent.back2WeChatHomePage(object : IAMPageEvent.IAMTaskCallBack {
             override fun action(): Boolean {
                 return helper.isTaskPauseOrStop() || !helper.isOngoing()
             }
         }, helper)
 
-        //判断是否在微信首页
+        //Check Whether on We Chat home page
         if (!AMWxPageEvent.isInWeChatHomePage()) {
             throw AMTaskException.business("不在微信首页")
         }

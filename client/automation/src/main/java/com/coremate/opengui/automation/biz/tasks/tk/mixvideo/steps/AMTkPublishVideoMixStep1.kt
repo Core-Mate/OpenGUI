@@ -12,7 +12,7 @@ import com.coremate.opengui.automation.biz.common.event.lv.AMLVPageEvent
 import com.coremate.opengui.automation.biz.tasks.tk.mixvideo.AMTkPublishVideoMixHelper
 
 /**
- * 第1步：跳转到剪映首页
+ * Step 1:Navigate to Jianying home page
  */
 internal class AMTkPublishVideoMixStep1(index: Int, helper: AMTkPublishVideoMixHelper) :
     AMBaseStep<AMTkPublishVideoMixHelper>(index, helper) {
@@ -33,7 +33,7 @@ internal class AMTkPublishVideoMixStep1(index: Int, helper: AMTkPublishVideoMixH
                 return helper.isTaskPauseOrStop()
             }
         }, helper)
-        //判断是否在剪映首页
+        //Check Whether on Jianying home page
         if (!AMLVPageEvent.isInHomePage(helper)) {
             throw AMTaskException.business("不在剪映首页")
         }

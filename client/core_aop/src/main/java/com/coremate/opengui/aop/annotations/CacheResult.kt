@@ -3,10 +3,10 @@ package com.coremate.opengui.aop.annotations
 import kotlin.time.DurationUnit
 
 /**
- * 标记一个方法，表示其结果可以被缓存。
- * @param key 缓存的唯一键。如果为空，将自动生成。
- * @param ttl (Time to Live) 缓存的有效时间。
- * @param unit 缓存有效时间的单位。
+ * Marks a method whose result can be cached.
+ * @param key unique cache key. Generated automatically when empty.
+ * @param ttl cache time to live.
+ * @param unit cache duration unit.
  */
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.SOURCE)

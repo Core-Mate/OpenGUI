@@ -3,17 +3,17 @@ package com.coremate.opengui.common.utils
 import android.content.Context
 
 /**
- * 通用工具类
- * 提供常用的工具方法
+ * Common utility class
+ * Provides common utility methods
  */
 object CommonUtils {
 
     /**
-     * 将 dp 转换为 px
+ * Convert dp to px
      *
-     * @param context 应用上下文
-     * @param dpValue dp 值
-     * @return 转换后的 px 值
+ * @param context application context
+ * @param dp Value dp value
+ * @return converted px value
      */
     fun dpToPx(context: Context, dpValue: Float): Int {
         val displayMetrics = context.resources.displayMetrics
@@ -21,33 +21,33 @@ object CommonUtils {
     }
 
     /**
-     * 将 dp 转换为 px (Double 版本)
+ * Convert dp to px (Double version)
      *
-     * @param context 应用上下文
-     * @param dpValue dp 值
-     * @return 转换后的 px 值
+ * @param context application context
+ * @param dp Value dp value
+ * @return converted px value
      */
     fun dpToPx(context: Context, dpValue: Double): Int {
         return dpToPx(context, dpValue.toFloat())
     }
 
     /**
-     * 将 dp 转换为 px (Int 版本)
+ * Convert dp to px (Int version)
      *
-     * @param context 应用上下文
-     * @param dpValue dp 值
-     * @return 转换后的 px 值
+ * @param context application context
+ * @param dp Value dp value
+ * @return converted px value
      */
     fun dpToPx(context: Context, dpValue: Int): Int {
         return dpToPx(context, dpValue.toFloat())
     }
 
     /**
-     * 将 px 转换为 dp
+ * Convert px to dp
      *
-     * @param context 应用上下文
-     * @param pxValue px 值
-     * @return 转换后的 dp 值
+ * @param context application context
+ * @param px Value px value
+ * @return converted dp value
      */
     fun pxToDp(context: Context, pxValue: Float): Int {
         val displayMetrics = context.resources.displayMetrics
@@ -55,10 +55,10 @@ object CommonUtils {
     }
 
     /**
-     * 获取屏幕宽度 (px)
+ * Get screen width in px
      *
-     * @param context 应用上下文
-     * @return 屏幕宽度
+ * @param context application context
+ * @return screen width
      */
     fun getScreenWidth(context: Context): Int {
         val displayMetrics = context.resources.displayMetrics
@@ -66,10 +66,10 @@ object CommonUtils {
     }
 
     /**
-     * 获取屏幕高度 (px)
+ * Get screen height in px
      *
-     * @param context 应用上下文
-     * @return 屏幕高度
+ * @param context application context
+ * @return screen height
      */
     fun getScreenHeight(context: Context): Int {
         val displayMetrics = context.resources.displayMetrics
@@ -77,10 +77,10 @@ object CommonUtils {
     }
 
     /**
-     * 获取屏幕密度
+ * Get screen density
      *
-     * @param context 应用上下文
-     * @return 屏幕密度
+ * @param context application context
+ * @return screen density
      */
     fun getScreenDensity(context: Context): Float {
         return context.resources.displayMetrics.density
@@ -88,40 +88,40 @@ object CommonUtils {
 }
 
 /**
- * Float 扩展函数：将 dp 转换为 px
+ * Float Extension functions:Convert dp to px
  *
- * @param context 应用上下文
- * @return 转换后的 px 值
+ * @param context application context
+ * @return converted px value
  */
 fun Float.dpToPx(context: Context): Int {
     return CommonUtils.dpToPx(context, this)
 }
 
 /**
- * Int 扩展函数：将 dp 转换为 px
+ * Int Extension functions:Convert dp to px
  *
- * @param context 应用上下文
- * @return 转换后的 px 值
+ * @param context application context
+ * @return converted px value
  */
 fun Int.dpToPx(context: Context): Int {
     return CommonUtils.dpToPx(context, this)
 }
 
 /**
- * Double 扩展函数：将 dp 转换为 px
+ * Double Extension functions:Convert dp to px
  *
- * @param context 应用上下文
- * @return 转换后的 px 值
+ * @param context application context
+ * @return converted px value
  */
 fun Double.dpToPx(context: Context): Int {
     return CommonUtils.dpToPx(context, this)
 }
 
 /**
- * Float 扩展函数：将 px 转换为 dp
+ * Float Extension functions:Convert px to dp
  *
- * @param context 应用上下文
- * @return 转换后的 dp 值
+ * @param context application context
+ * @return converted dp value
  */
 fun Float.pxToDp(context: Context): Int {
     return CommonUtils.pxToDp(context, this)

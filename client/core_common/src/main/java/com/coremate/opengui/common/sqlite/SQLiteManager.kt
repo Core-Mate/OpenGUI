@@ -75,36 +75,36 @@ class SQLiteManager private constructor(context: Context) :
     fun queryLogs(content: String): List<String> {
         val resultList = mutableListOf<String>()
 
-        // 1. 定位：找到符合条件的记录，并获取其时间戳（或ID）作为锚点
-        // 我们直接查最后 2 条记录
+        // 1. Locate matching records and use their timestamp (or ID) as the anchor
+        // Query the last 2 records directly
         val anchorTime = readableDatabase.query(
             TABLE_LOG,
-            arrayOf(COLUMN_TIME), // 只取时间戳列
+            arrayOf(COLUMN_TIME), // Read only the timestamp column.
             "$COLUMN_DATA = ?",
             arrayOf(content),
             null, null,
-            "$COLUMN_TIME DESC", // 按时间倒序
-            "2"                  // 取最近的两条
+            "$COLUMN_TIME DESC", // Sort by time descending.
+            "2"                  // Read the two most recent rows.
         ).use { cursor ->
             if (cursor.moveToLast()) {
-                // 如果只有 1 条，moveToLast 会停在第 1 条
-                // 如果有 2 条，moveToLast 会停在第 2 条（即倒数第二条）
+                // With only 1 record, move ToLast stops at the first record
+                // With 2 records, move ToLast stops at the second record, i.e. the penultimate one
                 cursor.getLong(0)
             } else {
-                -1L // 一条都没有
+                -1L // No rows.
             }
         }
 
         if (anchorTime == -1L) return emptyList()
 
-        // 2. 切片：查询在该时间点之后（不包含该点本身）的所有数据
+        // 2. Slice: query all data after that timestamp, excluding the anchor itself
         readableDatabase.query(
             TABLE_LOG,
             arrayOf(COLUMN_DATA),
             "$COLUMN_TIME >= ?",
             arrayOf(anchorTime.toString()),
             null, null,
-            "$COLUMN_TIME ASC" // 结果按时间正序排列
+            "$COLUMN_TIME ASC" // Return results in ascending time order.
         ).use { cursor ->
             val dataIndex = cursor.getColumnIndexOrThrow(COLUMN_DATA)
             while (cursor.moveToNext()) {
@@ -115,7 +115,7 @@ class SQLiteManager private constructor(context: Context) :
         return resultList
     }
 
-    /** 返回日志总条数 */
+ /** Return total log row count */
     fun getLogCount(): Long {
         val cursor = readableDatabase.rawQuery(
             "SELECT COUNT(*) FROM $TABLE_LOG",
@@ -126,7 +126,7 @@ class SQLiteManager private constructor(context: Context) :
         }
     }
 
-    /** 返回日志时间范围 [最早时间戳, 最晚时间戳]，无数据时返回 null to null */
+ /** Return log time range [earliest timestamp, latest timestamp], or null to null when there is no data */
     fun getLogTimeRange(): Pair<Long?, Long?> {
         val cursor = readableDatabase.rawQuery(
             "SELECT MIN(CAST($COLUMN_TIME AS INTEGER)), MAX(CAST($COLUMN_TIME AS INTEGER)) FROM $TABLE_LOG",
@@ -144,12 +144,12 @@ class SQLiteManager private constructor(context: Context) :
     @RequiresApi(Build.VERSION_CODES.O)
     fun timestampMsToBeijing(timestampStr: String): String {
         val timestamp = timestampStr.toLong()
-        // 区分秒和毫秒
+        // Distinguish seconds from milliseconds
         val instant = if (timestamp > 1_000_000_000_000L) {
-            // 毫秒时间戳（13位）
+            // Millisecond timestamp (13 digits)
             Instant.ofEpochMilli(timestamp)
         } else {
-            // 秒时间戳（10位）
+            // Second timestamp (10 digits)
             Instant.ofEpochSecond(timestamp)
         }
         val beijingTime = instant.atZone(ZoneId.of("Asia/Shanghai"))

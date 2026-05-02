@@ -15,7 +15,7 @@ import com.coremate.opengui.automation.biz.common.event.wx.AMWxPageEvent
 import com.coremate.opengui.automation.biz.tasks.wx.likecomment.AMWxLikeCommentHelper
 
 /**
- * 第2步: 判断是否在朋友圈并滑动到顶部
+ * Step 2: Check whether on Moments and swipe to top
  */
 internal class AMWxLikeCommentStep2(index: Int, helper: AMWxLikeCommentHelper) :
     AMBaseStep<AMWxLikeCommentHelper>(index, helper) {
@@ -27,11 +27,11 @@ internal class AMWxLikeCommentStep2(index: Int, helper: AMWxLikeCommentHelper) :
         }
 
         AMEventUtils.sleep(AMActionDelay.MIDDLE_LONG)
-        //判断否在朋友圈
+        //Check whether not on Moments
         AMWxPageEvent.comeToFriendMoments(helper, condition, isException = true).let {
             if (it.isIntercept) return it
         }
-        //滑动到顶部
+        //Swipe to top
         val listNode = AMNodeUtils.getNodeByClassName(
             AMCore.instance.amContext?.rootNode(),
             RecyclerView::class.java.name

@@ -6,14 +6,14 @@ import com.coremate.opengui.automation.base.utils.AMNodeUtils
 import com.coremate.opengui.automation.biz.common.event.wx.AMWxPageEvent
 import com.coremate.opengui.automation.biz.common.node.wx.IAMWidgetWX
 
-//节点模型过滤
+//Node model filter
 data class AMWxLikeCommentItemNode(
-    var userName: String = "",                //用户名
-    var momentText: String = "",        //文字
-    var imageCount: Int = 0             //图片数量
+    var userName: String = "",                // Username.
+    var momentText: String = "",        // Text.
+    var imageCount: Int = 0             // Image count.
 ) {
     companion object {
-        //通过节点转换为节点模型
+        //Convert node to node model
         fun transFormNode(contentNode: AccessibilityNodeInfo?): AMWxLikeCommentItemNode? {
             if (contentNode == null) return null
 
@@ -21,23 +21,23 @@ data class AMWxLikeCommentItemNode(
             if (contentNode.className != LinearLayout::class.java.name) {
                 return data
             }
-            //用户名
+            // Username.
             val nameNode =
                 AMNodeUtils.getFirstNodeById(contentNode, IAMWidgetWX.fcListUserName().resourceId)
             data.userName = nameNode?.text?.toString() ?: ""
 
 
-            //获取内部的LinearLayout集合
+            // Get inner LinearLayout collection.
             val llList = AMNodeUtils.getAllNodeByClassName(
                 contentNode,
                 LinearLayout::class.java.name
             )
-            //获取文字的LinearLayout
+            // Get text LinearLayout.
             var centerTopTextNode: AccessibilityNodeInfo? = null
 
             if (llList.isNotEmpty()) {
                 val list = llList.filter {
-                    //过滤带图片的文字链接 和 音乐
+                    //Filter text links with images and music
                     AMNodeUtils.getFirstNodeByDesc(
                         it,
                         false,
@@ -51,7 +51,7 @@ data class AMWxLikeCommentItemNode(
                 if (list.isNotEmpty()) {
                     centerTopTextNode = list.first()
                 }
-                //获取朋友圈文字
+                //Get Moments Text
                 if (centerTopTextNode != null) {
                     data.momentText =
                         AMWxPageEvent.getMomentTextFromMomentByLike(centerTopTextNode)
@@ -61,7 +61,7 @@ data class AMWxLikeCommentItemNode(
             } else {
                 data.momentText = ""
             }
-            //获取图片数量
+            //Get image count
             val imageNodes =
                 AMNodeUtils.getFirstNodeById(contentNode, IAMWidgetWX.fcListImages().resourceId)
             data.imageCount = imageNodes?.childCount ?: 0

@@ -14,7 +14,7 @@ import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
 import com.coremate.opengui.automation.base.utils.AMScreenUtils
 
-//截屏管理
+//Screenshot manager
 class CaptureManager {
 
     companion object {
@@ -35,7 +35,7 @@ class CaptureManager {
     private var mMediaProjectionManager: MediaProjectionManager? = null
 
     /**
-     * 开启截屏权限
+ * Request screenshot permission
      */
     fun openCapture(context: Activity?) {
         if (isOpenPermission) return
@@ -47,7 +47,7 @@ class CaptureManager {
     }
 
     /**
-     * 获取媒体
+ * Get media
      * */
     @SuppressLint("WrongConstant")
     fun setMediaProjection(resultCode: Int, data: Intent?) {
@@ -58,7 +58,7 @@ class CaptureManager {
     }
 
     /**
-     * 截图
+ * Screenshot
      * */
     fun startTask(listener: CaptureManagerListener?) {
         synchronized(this) {
@@ -96,7 +96,7 @@ class CaptureManager {
                                 Bitmap.Config.ARGB_8888
                             )
                             createBitMap.copyPixelsFromBuffer(buffer)
-                            // 创建 Bitmap 对象
+                            // Create Bitmap object
                             val bitmap = createBitMap.copy(Bitmap.Config.ARGB_8888, true)
                             image.close()
                             listener?.onScreenBitmap(bitmap)

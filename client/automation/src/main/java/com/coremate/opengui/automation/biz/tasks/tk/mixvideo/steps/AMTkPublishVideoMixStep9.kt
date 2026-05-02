@@ -12,7 +12,7 @@ import com.coremate.opengui.automation.biz.common.node.lv.IAMWidgetLV
 import com.coremate.opengui.automation.biz.tasks.tk.mixvideo.AMTkPublishVideoMixHelper
 
 /**
- * 第9步：等待导出，判断是否直接跳转到抖音
+ * Step 9:Wait for export and check whether it jumps directly to Douyin
  */
 internal class AMTkPublishVideoMixStep9(index: Int, helper: AMTkPublishVideoMixHelper) :
     AMBaseStep<AMTkPublishVideoMixHelper>(index, helper) {

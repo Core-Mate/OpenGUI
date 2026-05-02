@@ -12,11 +12,11 @@ internal class AMTkPublishVideoTask(amContext: AMContext) :
     AMBaseTask<AMTkPublishVideoHelper>(amContext) {
 
     override fun initTaskAndData(dataContainer: AMDataContainer?) {
-        //弹出悬浮窗
+        //Show floating window
         amContext.componentManager?.onExecute(AMCompModel(compCls = EnterFloat::class))
-        //设置数据
+        //Set data
         helper.param = dataContainer?.bean as AMTkPublishParam
-        //注册
+        //Register
         helper.registerSteps(
             AMTkPublishVideoStep1::class,
             AMTkPublishVideoStep2::class,

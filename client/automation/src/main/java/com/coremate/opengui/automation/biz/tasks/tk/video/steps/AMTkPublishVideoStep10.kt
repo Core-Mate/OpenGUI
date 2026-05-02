@@ -13,7 +13,7 @@ import com.coremate.opengui.automation.biz.common.node.lv.IAMWidgetLV
 import com.coremate.opengui.automation.biz.tasks.tk.video.AMTkPublishVideoHelper
 
 /**
- * 第10步：点击生成视频
+ * Step 10:Tap to generate video
  */
 internal class AMTkPublishVideoStep10(index: Int, helper: AMTkPublishVideoHelper) :
     AMBaseStep<AMTkPublishVideoHelper>(index, helper) {
@@ -26,7 +26,7 @@ internal class AMTkPublishVideoStep10(index: Int, helper: AMTkPublishVideoHelper
         AMEventUtils.sleep(AMActionDelay.MIDDLE)
         AMEventUtils.sleep(AMActionDelay.LONG)
 
-        //点击生成视频
+        //Tap to generate video
         AMEventUtils.reProcessUntilOk(
             helper,
             3,

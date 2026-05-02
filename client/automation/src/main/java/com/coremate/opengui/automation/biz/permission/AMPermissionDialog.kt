@@ -45,10 +45,10 @@ class AMPermissionDialog(val dContext: Context) : Dialog(dContext, R.style.MyDia
     }
 
     /**
-     * 更新UI
-     * 1、初始化调用
-     * 3、悬浮权限回调调用
-     * 4、辅助权限回调调用
+ * Update UI
+ * 1. called during initialization
+ * 3. called by floating-window permission callback
+ * 4. called by accessibility permission callback
      * */
     fun updateUIOrFinish(isCheckFinish: Boolean) {
         changeBtnState(binding.tvFloatBt, floatPermission)
@@ -63,7 +63,7 @@ class AMPermissionDialog(val dContext: Context) : Dialog(dContext, R.style.MyDia
     }
 
     /**
-     * 事件
+ * Event
      * */
     private fun initEvent() {
         binding.ivClose.setOnClickListener {
@@ -87,7 +87,7 @@ class AMPermissionDialog(val dContext: Context) : Dialog(dContext, R.style.MyDia
     }
 
     /**
-     * 更改按钮状态
+ * Change button state
      * */
     private fun changeBtnState(textView: TextView, isHasPermission: Boolean) {
         textView.apply {

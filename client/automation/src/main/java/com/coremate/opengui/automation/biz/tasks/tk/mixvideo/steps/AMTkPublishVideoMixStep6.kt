@@ -17,7 +17,7 @@ import com.coremate.opengui.automation.biz.common.node.lv.IAMWidgetLV
 import com.coremate.opengui.automation.biz.tasks.tk.mixvideo.AMTkPublishVideoMixHelper
 
 /**
- * 第6步：填写信息，点击合成
+ * Step 6:Fill information and tap compose
  */
 internal class AMTkPublishVideoMixStep6(index: Int, helper: AMTkPublishVideoMixHelper) :
     AMBaseStep<AMTkPublishVideoMixHelper>(index, helper) {
@@ -62,7 +62,7 @@ internal class AMTkPublishVideoMixStep6(index: Int, helper: AMTkPublishVideoMixH
 
         AMEventUtils.sleep(AMActionDelay.MIDDLE)
         var editNode: AccessibilityNodeInfo? = null
-        //长按
+        //Long press
         AMEventUtils.reProcessUntilOk(
             helper,
             10,
@@ -91,7 +91,7 @@ internal class AMTkPublishVideoMixStep6(index: Int, helper: AMTkPublishVideoMixH
 
         AMEventUtils.sleep(AMActionDelay.LONG)
         AMEventUtils.sleep(AMActionDelay.MINI)
-        //粘贴
+        //Paste
         AMEventUtils.reProcessUntilOk(
             helper,
             3,
@@ -118,7 +118,7 @@ internal class AMTkPublishVideoMixStep6(index: Int, helper: AMTkPublishVideoMixH
             }).dealWith { isSuc, intercept ->
         }
         AMEventUtils.sleep(AMActionDelay.SHORT)
-        //点击键盘消失
+        //Tap to hide keyboard
         AMEventUtils.reProcessUntilOk(
             helper,
             3,
@@ -146,7 +146,7 @@ internal class AMTkPublishVideoMixStep6(index: Int, helper: AMTkPublishVideoMixH
         }
         AMEventUtils.sleep(AMActionDelay.MIDDLE)
 
-        //点击合成
+        //Tap compose
         AMEventUtils.reProcessUntilOk(
             helper,
             3,

@@ -13,7 +13,7 @@ import com.coremate.opengui.automation.biz.common.node.tk.IAMWidgetTK
 import com.coremate.opengui.automation.biz.tasks.tk.video.AMTkPublishVideoHelper
 
 /**
- * 第18步：最终发布(废弃)
+ * Step 18: final publish (deprecated)
  */
 internal class AMTkPublishVideoStep18(index: Int, helper: AMTkPublishVideoHelper) :
     AMBaseStep<AMTkPublishVideoHelper>(index, helper) {

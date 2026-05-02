@@ -10,16 +10,16 @@ import java.util.concurrent.ThreadPoolExecutor.DiscardPolicy
 import java.util.concurrent.TimeUnit
 
 /**
- * 任务基类
+ * Base task class
  * */
 internal abstract class AMBaseTask<T : AMBaseStepHelper>(val amContext: AMContext) {
 
     protected var helper: T = AMUtils.getT(this, 0) as T
 
     init {
-        //上下文
+        //Context
         helper.amContext = amContext
-        //线程池
+        //Thread pool
         helper.executorService = ThreadPoolExecutor(
             1,
             1,
@@ -32,27 +32,27 @@ internal abstract class AMBaseTask<T : AMBaseStepHelper>(val amContext: AMContex
     }
 
     /**
-     * 任务初始化
+ * Initialize task
      * */
     abstract fun initTaskAndData(dataContainer: AMDataContainer?)
 
 
     /**
-     * 任务执行(子线程)
+ * Execute task on background thread
      * */
     open fun onExecute() {
         helper.onStartStep()
     }
 
     /**
-     * 任务状态改变
+ * Task status changed
      * */
     fun onObserveTaskStateChanged(isStopThrows: Boolean) {
         helper.onNotifyTaskStateChanged(isStopThrows)
     }
 
     /**
-     * 任务销毁
+ * Destroy task
      * */
     @CallSuper
     open fun onDestroy() {

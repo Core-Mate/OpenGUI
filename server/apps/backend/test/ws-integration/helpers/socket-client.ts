@@ -1,22 +1,22 @@
 /**
- * Socket.IO Client 辅助工具
+ * Socket.IO client helpers
  *
- * 提供创建认证 Socket.IO 客户端、等待事件、收集事件等辅助方法。
+ * Provides helpers for creating authenticated Socket.IO clients, waiting for events, and collecting events.
  */
 import { io, type Socket } from "socket.io-client";
 
-/** 跟踪所有创建的客户端以便 afterEach 清理 */
+/** Track all created clients so afterEach can clean them up */
 const activeSockets: Socket[] = [];
 
 export interface ClientOptions {
 	token?: string;
 	executionId?: number;
-	/** 额外传给 socket.io-client 的选项 */
+	/** Extra options passed to socket.io-client */
 	extraAuth?: Record<string, any>;
 }
 
 /**
- * 创建已认证的 Socket.IO 客户端并等待连接成功
+ * Create an authenticated Socket.IO client and wait for connection
  */
 export function createClient(
 	port: number,
@@ -36,7 +36,7 @@ export function createClient(
 }
 
 /**
- * 连接客户端并等待 connect 事件
+ * Connect the client and wait for the connect event
  */
 export function connectClient(socket: Socket, timeout = 5000): Promise<void> {
 	return new Promise((resolve, reject) => {
@@ -59,7 +59,7 @@ export function connectClient(socket: Socket, timeout = 5000): Promise<void> {
 }
 
 /**
- * 等待指定事件，返回事件 payload
+ * Wait for the given event and return its payload
  */
 export function waitForEvent<T = any>(
 	socket: Socket,
@@ -82,7 +82,7 @@ export function waitForEvent<T = any>(
 }
 
 /**
- * 等待 disconnect 事件
+ * Wait for the disconnect event
  */
 export function waitForDisconnect(
 	socket: Socket,
@@ -106,7 +106,7 @@ export function waitForDisconnect(
 }
 
 /**
- * 收集指定事件的所有 payload（持续一段时间）
+ * Collect all payloads for the given event over a short duration
  */
 export function collectEvents<T = any>(
 	socket: Socket,
@@ -130,7 +130,7 @@ export function collectEvents<T = any>(
 }
 
 /**
- * 断开所有活跃的测试客户端
+ * Disconnect all active test clients
  */
 export function disconnectAll(): void {
 	for (const socket of activeSockets) {
@@ -143,7 +143,7 @@ export function disconnectAll(): void {
 }
 
 /**
- * 辅助方法：发送 execution:ready 并等待 execution:started
+ * Helper: send execution:ready and wait for execution:started
  */
 export async function emitReadyAndWaitStarted(
 	socket: Socket,
@@ -156,7 +156,7 @@ export async function emitReadyAndWaitStarted(
 }
 
 /**
- * 小延迟，用于等待异步操作完成
+ * Short delay for async operations to settle
  */
 export function delay(ms: number): Promise<void> {
 	return new Promise((resolve) => setTimeout(resolve, ms));

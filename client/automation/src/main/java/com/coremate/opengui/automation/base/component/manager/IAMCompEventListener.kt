@@ -2,16 +2,16 @@ package com.coremate.opengui.automation.base.component.manager
 
 internal interface IAMCompEventListener {
 
-    //开始
+    //Start
     fun onStartComp()
 
-    //暂停
+    //Pause
     fun onPauseComp()
 
-    //结束
+    //End
     fun onStopComp()
 
-    //返回app
+    //Return to app
     fun onBackApp()
 
 

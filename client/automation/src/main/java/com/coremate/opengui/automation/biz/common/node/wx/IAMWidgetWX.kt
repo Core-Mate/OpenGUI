@@ -3,17 +3,17 @@ package com.coremate.opengui.automation.biz.common.node.wx
 import com.coremate.opengui.automation.biz.common.node.NodeWidgetBean
 
 /**
- * 微信的节点组件
+ * We Chat node components
  * */
 object IAMWidgetWX {
 
     /////////////////////////////////////////////////////////////////////////////////
     //
-    //                     全局
+    // Global
     //
     /////////////////////////////////////////////////////////////////////////////////
 
-    //全局/返回按钮 1
+    //Global/back button 1
     fun globalBack() = NodeWidgetBean(
         mutableListOf(
             "com.tencent.mm:id/a4p",
@@ -23,25 +23,25 @@ object IAMWidgetWX {
 
     /////////////////////////////////////////////////////////////////////////////////
     //
-    //                    微信首页
+    // We Chat home
     //
     /////////////////////////////////////////////////////////////////////////////////
 
-    //微信首页/搜索 1
+    //We Chat home/search 1
     fun mainSearch() = NodeWidgetBean(
         mutableListOf(
             "com.tencent.mm:id/jha"
         ), "android.widget.RelativeLayout", "", "搜索"
     )
 
-    //微信首页/更多 1
+    //We Chat home/more 1
     fun mainMore() = NodeWidgetBean(
         mutableListOf(
             "com.tencent.mm:id/jga"
         ), "android.widget.RelativeLayout", "", "更多功能按钮"
     )
 
-    //微信首页/最近
+    //We Chat home/recent
     fun topTitle() = NodeWidgetBean(
         mutableListOf(
             "com.tencent.mm:id/wp"
@@ -52,18 +52,18 @@ object IAMWidgetWX {
 
     /////////////////////////////////////////////////////////////////////////////////
     //
-    //                    底部导航
+    // Bottom navigation
     //
     /////////////////////////////////////////////////////////////////////////////////
 
-    //tab底部item的父容器 *
+    //tabbottomitemparent container *
     fun indexTabItem() = NodeWidgetBean(
         mutableListOf(
             "com.tencent.mm:id/nvt"
         ), "android.widget.RelativeLayout", "", ""
     )
 
-    //tab底部item/未读消息
+    //tab Bottom item/unread messages
     fun unReadText() = NodeWidgetBean(
         mutableListOf(
             "com.tencent.mm:id/osw"
@@ -72,25 +72,25 @@ object IAMWidgetWX {
 
     /////////////////////////////////////////////////////////////////////////////////
     //
-    //                    消息
+    // Message
     //
     /////////////////////////////////////////////////////////////////////////////////
 
-    ///消息列表/item
+    ///Message list/item
     fun messageListItem() = NodeWidgetBean(
         mutableListOf(
             "com.tencent.mm:id/cj1"
         ), "android.widget.LinearLayout", "", ""
     )
 
-    ///消息列表/好友昵称
+    ///Message list/friend nickname
     fun contactNickName() = NodeWidgetBean(
         mutableListOf(
             "com.tencent.mm:id/kbq"
         ), "android.widget.TextView", "", ""
     )
 
-    ///消息列表/数字红点
+    ///Message list/numbered red dot
     fun messageNumRedItem() = NodeWidgetBean(
         mutableListOf(
             "com.tencent.mm:id/o_u"
@@ -99,25 +99,25 @@ object IAMWidgetWX {
 
     /////////////////////////////////////////////////////////////////////////////////
     //
-    //                    聊天页面
+    // Chat page
     //
     /////////////////////////////////////////////////////////////////////////////////
 
-    //聊天页面/会话列表 *
+    //Chat page/conversation list *
     fun chatList() = NodeWidgetBean(
         mutableListOf(
             "com.tencent.mm:id/bp0"
         ), "androidx.recyclerview.widget.RecyclerView", "", ""
     )
 
-    //聊天页面/最后一条消息内容
+    //Chat page/last message content
     fun lastMessage() = NodeWidgetBean(
         mutableListOf(
             "com.tencent.mm:id/bkl"
         ), "android.widget.TextView", "", ""
     )
 
-    //聊天页面/发送按钮
+    //Chat page/send button
     fun sendBtn() = NodeWidgetBean(
         mutableListOf(
             "com.tencent.mm:id/bql"
@@ -127,26 +127,26 @@ object IAMWidgetWX {
 
     /////////////////////////////////////////////////////////////////////////////////
     //
-    //                    朋友圈
+    // Moments
     //
     /////////////////////////////////////////////////////////////////////////////////
 
 
-    //朋友圈用户名
+    //Moments username
     fun fcListUserName() = NodeWidgetBean(
         mutableListOf(
             "com.tencent.mm:id/kbq"
         ), "android.widget.TextView", "", ""
     )
 
-    //朋友圈/列表图片集合
+    //Moments/list image set
     fun fcListImages() = NodeWidgetBean(
         mutableListOf(
             "com.tencent.mm:id/n96"
         ), "", "", ""
     )
 
-    //朋友圈/评论输入框
+    //Moments/comment input field
     fun fcListCommentEdit() = NodeWidgetBean(
         mutableListOf(
             "com.tencent.mm:id/p0"
@@ -160,7 +160,7 @@ object IAMWidgetWX {
     )
 
 
-    //更多按钮
+    //more Button
     fun fcMoreBtn() = NodeWidgetBean(
         mutableListOf(
             "com.tencent.mm:id/r2"

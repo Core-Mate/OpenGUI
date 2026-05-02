@@ -1,8 +1,8 @@
 /**
  * Mock BullMQ Queue
  *
- * 模拟 @nestjs/bullmq 注入的 Queue 对象，
- * 记录 add() 调用并提供可编程的 getJob() 返回。
+ * Mock the Queue object injected by @nestjs/bullmq,
+ * Record add() calls and provide programmable get Job() responses.
  */
 export function createMockQueue() {
 	const jobs = new Map<string, any>();

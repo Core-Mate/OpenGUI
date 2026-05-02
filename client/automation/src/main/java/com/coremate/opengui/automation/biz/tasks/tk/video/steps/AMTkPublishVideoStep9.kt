@@ -16,7 +16,7 @@ import com.coremate.opengui.automation.biz.common.node.lv.IAMWidgetLV
 import com.coremate.opengui.automation.biz.tasks.tk.video.AMTkPublishVideoHelper
 
 /**
- * 第9步：点击应用
+ * Step 9:Tap Apply
  */
 internal class AMTkPublishVideoStep9(index: Int, helper: AMTkPublishVideoHelper) :
     AMBaseStep<AMTkPublishVideoHelper>(index, helper) {
@@ -50,11 +50,11 @@ internal class AMTkPublishVideoStep9(index: Int, helper: AMTkPublishVideoHelper)
 //            }).dealWith { isSuc, intercept ->
 //            if (isSuc) {
 //                val bText = editNode?.text.toString()
-//                AMEventUtils.setTextToEditText(editNode, bText+"\n视频时长限制在:${helper.param?.videoLength}秒以内")
+// AMEventUtils.setTextToEditText(editNode, bText + "\nVideo duration limit: ${helper.param?.videoLength} seconds")
 //            }
 //        }
 //        AMEventUtils.sleep(AMActionDelay.MIDDLE_LONG)
-        //点击应用
+        //Tap Apply
         AMEventUtils.reProcessUntilOk(
             helper,
             3,

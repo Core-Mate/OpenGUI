@@ -3,17 +3,17 @@ package com.coremate.opengui.automation.biz.common.node.lv
 import com.coremate.opengui.automation.biz.common.node.NodeWidgetBean
 
 /**
- * 剪映的节点组件
+ * Jianying node components
  * */
 object IAMWidgetLV {
 
     /////////////////////////////////////////////////////////////////////////////////
     //
-    //                    全局
+    // Global
     //
     /////////////////////////////////////////////////////////////////////////////////
 
-    //全局/返回按钮 1
+    //Global/back button 1
     fun globalBack() = NodeWidgetBean(
         mutableListOf(
             "com.lemon.lv:id/ivBack",
@@ -24,11 +24,11 @@ object IAMWidgetLV {
 
     /////////////////////////////////////////////////////////////////////////////////
     //
-    //                    底部导航
+    // Bottom navigation
     //
     /////////////////////////////////////////////////////////////////////////////////
 
-    //tab底部home按钮 *
+    //tabbottomhome Button *
     fun homeTabItem() = NodeWidgetBean(
         mutableListOf(
             "com.lemon.lv:id/radio_tab_home"
@@ -37,18 +37,18 @@ object IAMWidgetLV {
 
     /////////////////////////////////////////////////////////////////////////////////
     //
-    //                    首页
+    // Home page
     //
     /////////////////////////////////////////////////////////////////////////////////
 
-    //首页热门首次进入的工具列表
+    //Home hot tool list on first entry
     fun homeToolsFirstGridView() = NodeWidgetBean(
         mutableListOf(
             "com.lemon.lv:id/tool_recycler_view"
         ), "android.widget.GridView", "", ""
     )
 
-    //首页热门进入的工具列表
+    //Home hot tool list after entry
     fun homeToolsGridView() = NodeWidgetBean(
         mutableListOf(
             "com.lemon.lv:id/tool_first_level_rv"
@@ -57,18 +57,18 @@ object IAMWidgetLV {
 
     /////////////////////////////////////////////////////////////////////////////////
     //
-    //                    营销视频功能内部
+    // Inside marketing video feature
     //
     /////////////////////////////////////////////////////////////////////////////////
 
-    //营销视频
+    //Marketing video
     fun mixMarketingFirstVideos() = NodeWidgetBean(
         mutableListOf(
             "com.lemon.lv:id/home_tool_tv"
         ), "android.widget.TextView", "营销成片", ""
     )
 
-    //营销视频按钮
+    //Marketing video button
     fun mixMarketingVideos() = NodeWidgetBean(
         mutableListOf(
             "com.lemon.lv:id/tool_item_title"
@@ -76,91 +76,91 @@ object IAMWidgetLV {
     )
 
 
-    //使用AI功能的确定按钮或其他确定按钮
+    //Confirm button for AI feature or other confirmation button
     fun mixAiCommitBtn() = NodeWidgetBean(
         mutableListOf(
             "com.lemon.lv:id/btnPositive"
         ), "android.widget.Button", "确认", ""
     )
 
-    //选择素材，即可快速生成视频，取试试按钮
+    //Select materials to quickly generate a video, then use the Try button
     fun mixTryGoEditBtn() = NodeWidgetBean(
         mutableListOf(
             "com.lemon.lv:id/go_edit"
         ), "android.widget.Button", "去试试", ""
     )
 
-    //素材viewpage
+    //Material View Pager
     fun mixVideoViewPager() = NodeWidgetBean(
         mutableListOf(
             "com.lemon.lv:id/gallery_list_pager2"
         ), "androidx.viewpager.widget.ViewPager", "", ""
     )
 
-    //素材列表
+    //Material list
     fun mixVideoViewGridList() = NodeWidgetBean(
         mutableListOf(
             "com.lemon.lv:id/local_media_recycler_view"
         ), "android.widget.GridView", "", ""
     )
 
-    //每一个素材选择按钮
+    //Selection button for each material
     fun mixVideoItemSelBtn() = NodeWidgetBean(
         mutableListOf(
             "com.lemon.lv:id/iv_local_multi_media_select_index"
         ), "android.widget.TextView", "", ""
     )
 
-    //下一步按钮
+    //Next button
     fun mixMarketingVideoNext() = NodeWidgetBean(
         mutableListOf(
             "com.lemon.lv:id/sb_media_select_done"
         ), "android.widget.Button", "下一步", ""
     )
 
-    //商品门店信息
+    //Product/store information
     fun mixLynxTextAreaView() = NodeWidgetBean(
         mutableListOf(
             ""
         ), "com.bytedance.ies.xelement.input.LynxTextAreaView", "", ""
     )
 
-    //生成中的loading
+    //Generating loading state
     fun mixStartLoadingTv() = NodeWidgetBean(
         mutableListOf(
             "com.lemon.lv:id/loading_msg"
         ), "android.widget.TextView", "", ""
     )
 
-    //开始生成按钮
+    //Start generation button
     fun mixStartMixBtn() = NodeWidgetBean(
         mutableListOf(
             ""
         ), "com.lynx.tasm.behavior.ui.text.FlattenUIText", "开始生成", ""
     )
 
-    //合成进度
+    //Composition progress
     fun mixStartProgressTv() = NodeWidgetBean(
         mutableListOf(
             "com.lemon.lv:id/tvProgress"
         ), "android.widget.TextView", "", ""
     )
 
-    //努力导出中loading
+    //Exporting loading state
     fun mixExportLoading() = NodeWidgetBean(
         mutableListOf(
             "com.lemon.lv:id/main_title"
         ), "android.widget.TextView", "努力导出中...", ""
     )
 
-    //导出按钮
+    //Export button
     fun mixStartExportTv() = NodeWidgetBean(
         mutableListOf(
             "com.lemon.lv:id/ivExport"
         ), "android.widget.TextView", "导出", ""
     )
 
-    //导出并分享
+    //Export and share
     fun mixStartExportBtn() = NodeWidgetBean(
         mutableListOf(
             "com.lemon.lv:id/tv_shareAweme"
@@ -170,18 +170,18 @@ object IAMWidgetLV {
 
     /////////////////////////////////////////////////////////////////////////////////
     //
-    //                    AI故事按钮功能内部
+    // AI story button inside feature
     //
     /////////////////////////////////////////////////////////////////////////////////
 
-    //AI故事按钮
+    //AI story button
     fun marketingFirstVideos() = NodeWidgetBean(
         mutableListOf(
             "com.lemon.lv:id/home_tool_tv"
         ), "android.widget.TextView", "AI 故事成片", ""
     )
 
-    //AI故事按钮
+    //AI story button
     fun marketingVideos() = NodeWidgetBean(
         mutableListOf(
             "com.lemon.lv:id/tool_item_title"
@@ -189,35 +189,35 @@ object IAMWidgetLV {
     )
 
 
-    //功能升级提示-我知道了
+    //Feature upgrade prompt: Got it
     fun funcUpKnow() = NodeWidgetBean(
         mutableListOf(
             "com.lemon.lv:id/btn_got_it"
         ), "android.widget.Button", "我知道了", ""
     )
 
-    //AI生成
+    //AI Generate
     fun aiCreate() = NodeWidgetBean(
         mutableListOf(
             "com.lemon.lv:id/content_ai"
         ), "android.widget.TextView", "AI 生成", ""
     )
 
-    //ai文字输入框
+    //AI text input field
     fun aiInput() = NodeWidgetBean(
         mutableListOf(
             "com.lemon.lv:id/vet_lui_input_content"
         ), "android.widget.EditText", "说说你的想法吧", ""
     )
 
-    //ai文字输入发送
+    //Send AI text input
     fun aiInputSend() = NodeWidgetBean(
         mutableListOf(
             "com.lemon.lv:id/iv_lui_input_send"
         ), "android.widget.ImageView", "", ""
     )
 
-    //ai内容插入
+    //Insert AI content
     fun aiInputInsert() = NodeWidgetBean(
         mutableListOf(
             "com.lemon.lv:id/vtv_lui_bottom_tool_insert"
@@ -225,49 +225,49 @@ object IAMWidgetLV {
     )
 
 
-    //应用
+    //App
     fun makeAiVideo() = NodeWidgetBean(
         mutableListOf(
             "com.lemon.lv:id/btn_finish"
         ), "android.widget.TextView", "应用", ""
     )
 
-    //开始生成按钮
+    //Start generation button
     fun startBtn() = NodeWidgetBean(
         mutableListOf(
             "com.lemon.lv:id/generate_video_btn"
         ), "android.view.ViewGroup", "", ""
     )
 
-    //确定使用积分消耗
+    //Confirm point usage
     fun startBtnConfirm() = NodeWidgetBean(
         mutableListOf(
             "com.lemon.lv:id/btn_confirm"
         ), "android.widget.Button", "确认使用", ""
     )
 
-    //生成中的loading
+    //Generating loading state
     fun startLoadingTv() = NodeWidgetBean(
         mutableListOf(
             "com.lemon.lv:id/tvBottomContext"
         ), "android.widget.TextView", "视频生成中", ""
     )
 
-    //导出按钮
+    //Export button
     fun startExportTv() = NodeWidgetBean(
         mutableListOf(
             "com.lemon.lv:id/tvExport"
         ), "android.widget.Button", "导出", ""
     )
 
-    //弹窗的关闭按钮
+    //Dialog close button
     fun exportDialogClose() = NodeWidgetBean(
         mutableListOf(
             "com.lemon.lv:id/market_feedback_dialog_close"
         ), "android.widget.Button", "", ""
     )
 
-    //导出并分享
+    //Export and share
     fun startExportBtn() = NodeWidgetBean(
         mutableListOf(
             "com.lemon.lv:id/tv_share_aweme_v2"
@@ -275,7 +275,7 @@ object IAMWidgetLV {
     )
 
 
-    //打开第三方app的按钮
+    //Open third-party app button
     fun startThirdAppBtn() = NodeWidgetBean(
         mutableListOf(
             "android:id/button1"

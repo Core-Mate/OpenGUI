@@ -13,7 +13,7 @@ import com.coremate.opengui.automation.biz.common.node.tk.IAMWidgetTK
 import com.coremate.opengui.automation.biz.tasks.tk.video.AMTkPublishVideoHelper
 
 /**
- * 第17步：抖音操作下一步
+ * Step 17:Douyin next-step operation
  */
 internal class AMTkPublishVideoStep17(index: Int, helper: AMTkPublishVideoHelper) :
     AMBaseStep<AMTkPublishVideoHelper>(index, helper) {
@@ -45,7 +45,7 @@ internal class AMTkPublishVideoStep17(index: Int, helper: AMTkPublishVideoHelper
 //                }
 //            }).dealWith { isSuc, intercept ->
 //            if (!isSuc) {
-//                throw AMTaskException.business("点击下一步失败")
+// throw AM Task Exception.business("Tap next Failure")
 //            }
 //        }
 //        helper.executorService.execute {

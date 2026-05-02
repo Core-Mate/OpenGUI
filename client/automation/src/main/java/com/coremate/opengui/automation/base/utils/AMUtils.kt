@@ -9,7 +9,7 @@ import java.lang.reflect.ParameterizedType
 object AMUtils {
 
     /**
-     * 跳转到app内对应的页面
+ * Navigate to the corresponding page in the app
      * */
     fun jumpToPageInApp(
         accessibilityService: SelectToSpeakService?,
@@ -30,7 +30,7 @@ object AMUtils {
     }
 
     /**
-     * 获取类中的泛型，并实例化
+ * Get the generic type from the class and instantiate it
      * */
     @JvmStatic
     fun getT(o: Any, i: Int): Any? {

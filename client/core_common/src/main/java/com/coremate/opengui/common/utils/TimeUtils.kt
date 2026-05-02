@@ -58,7 +58,7 @@ object TimeUtils {
     }
 
     /**
-     * 用于执行记录列表：返回北京时间的日期部分 yyyy-MM-dd，与 Web 端一致。
+ * For execution record lists: return the Beijing-date portion as yyyy-MM-dd, aligned with web.
      */
     fun getHistoryDatePart(utcString: String?): String {
         if (utcString.isNullOrBlank()) return ""
@@ -72,7 +72,7 @@ object TimeUtils {
     }
 
     /**
-     * 用于执行记录列表：根据开始/结束时间计算时长，格式与 Web 一致，如 "2m 30s" 或 "45s"。
+ * For execution record lists: compute duration from start/end time in the same format as web, such as "2m 30s" or "45s".
      */
     fun getHistoryDuration(startedAt: String?, finishedAt: String?): String {
         if (startedAt.isNullOrBlank() || finishedAt.isNullOrBlank()) return ""
@@ -89,7 +89,7 @@ object TimeUtils {
         }
     }
 
-    // 扩展函数
+    // Extension functions
     fun String.toTimestamp(): Long = utcToTimestamp(this)
     fun Long.toUtcString(): String? = timestampToUtc(this)
     fun Long.toBeijingUtcString(): String? = timestampToZoneTime(this)

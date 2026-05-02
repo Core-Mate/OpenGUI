@@ -1,19 +1,19 @@
 /**
- * WS 通信 + 任务执行 集成测试
+ * WS communication + task execution integration tests
  *
- * 使用真实的 ExecutionGateway / ExecutionSocketService / WsAuthMiddleware，
- * 配合 socket.io-client 模拟 Android 客户端，验证：
- * 1. 核心主链路（execute → ready → streaming → finish）
- * 2. 暂停/恢复
- * 3. 取消任务
- * 4. 连接机制与边界情况
- * 5. 心跳与租约
- * 6. 超时
- * 7. 竞态条件
+ * Uses the real ExecutionGateway / ExecutionSocketService / WsAuthMiddleware,
+ * Uses socket.io-client to simulate an Android client and verify:
+ * 1. core path (execute -> ready -> streaming -> finish)
+ * 2. pause/resume
+ * 3. task cancellation
+ * 4. connection mechanics and edge cases
+ * 5. heartbeats and leases
+ * 6. timeouts
+ * 7. race conditions
  */
 
-// jest.mock 必须在 import 之前（会被 hoisted）
-// ====== ESM-only 依赖 mock（避免 pnpm monorepo 下 transform 问题）======
+// jest.mock must appear before imports because it is hoisted
+// ====== ESM-only dependency mocks to avoid transform issues under the pnpm monorepo======
 jest.mock("uuid", () => ({
 	v4: () => "test-uuid-" + Math.random().toString(36).slice(2, 10),
 }));
@@ -29,7 +29,7 @@ jest.mock("@repo/db", () => ({
 	Prisma: {},
 }));
 
-// ====== Mock 深层源码模块（避免递归拉入整个应用依赖树）======
+// ====== Mock deep source modules to avoid recursively loading the full app dependency tree======
 jest.mock("../../src/lib/auth", () => ({
 	auth: require("./helpers/mock-auth").mockAuth,
 }));
@@ -38,7 +38,7 @@ jest.mock("redis", () => ({
 		throw new Error("Redis not available in test");
 	}),
 }));
-// PrismaService — 只导出类 token，实际实现在 TestingModule 中覆盖
+// Prisma Service — Export only the class token; the implementation is overridden in Testing Module
 jest.mock("../../src/prisma/prisma.service", () => ({
 	PrismaService: class PrismaService {},
 }));
@@ -46,15 +46,15 @@ jest.mock("../../src/prisma/prisma.service", () => ({
 jest.mock("../../src/common/redis/redis.service", () => ({
 	RedisService: class RedisService {},
 }));
-// LeaseService — 只导出类 token
+// Lease Service — export class token only
 jest.mock("../../src/common/lease/lease.service", () => ({
 	LeaseService: class LeaseService {},
 }));
-// TaskExecutionService — 只导出类 token
+// TaskExecutionService — export class token only
 jest.mock("../../src/modules/task/task-execution.service", () => ({
 	TaskExecutionService: class TaskExecutionService {},
 }));
-// GraphRunnerService — 只导出类 token 和接口
+// GraphRunnerService — export only the class token and interface
 jest.mock("../../src/modules/graph-agent/graph-runner.service", () => ({
 	GraphRunnerService: class GraphRunnerService {},
 	CallUserResponse: class CallUserResponse {},
@@ -108,7 +108,7 @@ describe("WS Integration Tests", () => {
 		await testApp.cleanup();
 	});
 
-	// Helper: 种子化一条 PENDING execution 并设置 auth session
+	// Helper: seed one PENDING execution and set the auth session
 	function seedPendingExecution(
 		id: number,
 		userId = 1,
@@ -124,7 +124,7 @@ describe("WS Integration Tests", () => {
 		setMockSession(createUserSession(userId));
 	}
 
-	// Helper: 创建已连接客户端
+	// Helper: create a connected client
 	async function createConnectedClient(
 		executionId: number,
 		token = "valid-token",
@@ -135,24 +135,24 @@ describe("WS Integration Tests", () => {
 	}
 
 	// ============================================================
-	// 类别 1：核心主链路
+	// Category 1: core path
 	// ============================================================
 
 	describe("1. Core Happy Path", () => {
-		it("1.1 完整生命周期: connect → ready → agent:event streaming → finish", async () => {
+		it("1.1 full lifecycle: connect -> ready -> agent:event streaming -> finish", async () => {
 			seedPendingExecution(1);
 			const client = await createConnectedClient(1);
 
-			// emit execution:ready → 等待 execution:started
+			// emit execution:ready -> wait for execution:started
 			const started = await emitReadyAndWaitStarted(client, 1);
 			expect(started.executionId).toBe(1);
 			expect(testApp.mockTaskExecutionService.startExecution).toHaveBeenCalledWith(1);
 
-			// Gateway 还会自动发送 CONNECTED agent:event（seq=0）
-			// 等待该事件（可能已经到了）
+			// Gateway also automatically sends a CONNECTED agent:event (seq=0)
+			// Wait for that event, which may already have arrived
 			await delay(50);
 
-			// 发送第一个自定义 agent:event
+			// Send the first custom agent:event
 			const eventPromise1 = waitForEvent(client, "agent:event");
 			testApp.gateway.sendAgentEvent(1, {
 				type: AgentEventType.TEXT_DELTA,
@@ -161,13 +161,13 @@ describe("WS Integration Tests", () => {
 				content: "hello",
 			});
 			const event1 = await eventPromise1;
-			// seq=1 因为 seq=0 已被 CONNECTED 事件消费
+			// seq=1 because seq=0 was consumed by the CONNECTED event
 			expect(event1.seq).toBe(1);
 			expect(event1.content).toBe("hello");
 			expect(event1.type).toBe(AgentEventType.TEXT_DELTA);
 			expect(event1.timestamp).toBeDefined();
 
-			// 发送第二个 agent:event
+			// Send the second agent:event
 			const eventPromise2 = waitForEvent(client, "agent:event");
 			testApp.gateway.sendAgentEvent(1, {
 				type: AgentEventType.TEXT_DELTA,
@@ -179,7 +179,7 @@ describe("WS Integration Tests", () => {
 			expect(event2.seq).toBe(2);
 			expect(event2.content).toBe("world");
 
-			// 发送 execution:finished
+			// Send execution:finished
 			const finishPromise = waitForEvent(client, "execution:finished");
 			testApp.gateway.sendExecutionFinished(1, { status: "SUCCEED" });
 			const finished = await finishPromise;
@@ -187,7 +187,7 @@ describe("WS Integration Tests", () => {
 			expect(finished.status).toBe("SUCCEED");
 		});
 
-		it("1.2 截屏 ACK 完整往返", async () => {
+		it("1.2 screenshot ACK round trip", async () => {
 			seedPendingExecution(2);
 			testApp.mockPrisma.seedExecution({
 				id: 2,
@@ -197,7 +197,7 @@ describe("WS Integration Tests", () => {
 			});
 			const client = await createConnectedClient(2);
 
-			// 客户端监听 device:screenshot 并回传 ACK
+			// Client listens for device:screenshot and returns ACK
 			client.on("device:screenshot", (_data, callback) => {
 				callback({
 					success: true,
@@ -218,7 +218,7 @@ describe("WS Integration Tests", () => {
 			expect(result.currentAppName).toBe("com.example.app");
 		});
 
-		it("1.3 动作 ACK 完整往返", async () => {
+		it("1.3 action ACK round trip", async () => {
 			seedPendingExecution(3);
 			testApp.mockPrisma.seedExecution({
 				id: 3,
@@ -240,18 +240,18 @@ describe("WS Integration Tests", () => {
 			expect(result.success).toBe(true);
 		});
 
-		it("1.4 多事件 seq 单调递增", async () => {
+		it("1.4 multiple events keep seq monotonic", async () => {
 			seedPendingExecution(4);
 			const client = await createConnectedClient(4);
 			await emitReadyAndWaitStarted(client, 4);
 
-			// CONNECTED event 消费了 seq=0
+			// The CONNECTED event consumed seq=0
 			await delay(50);
 
 			const events: any[] = [];
 			client.on("agent:event", (data) => events.push(data));
 
-			// 快速发送 10 个事件
+			// Send 10 events quickly
 			for (let i = 0; i < 10; i++) {
 				testApp.gateway.sendAgentEvent(4, {
 					type: AgentEventType.TEXT_DELTA,
@@ -265,11 +265,11 @@ describe("WS Integration Tests", () => {
 
 			expect(events.length).toBe(10);
 			const seqs = events.map((e) => e.seq);
-			// seq 从 1 开始（0 被 CONNECTED 消费）
+			// seq starts from 1 because CONNECTED consumed 0
 			expect(seqs).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
 		});
 
-		it("1.5 截屏 ACK 返回失败时抛出错误", async () => {
+		it("1.5 throws when screenshot ACK returns failure", async () => {
 			seedPendingExecution(5);
 			testApp.mockPrisma.seedExecution({
 				id: 5,
@@ -297,12 +297,12 @@ describe("WS Integration Tests", () => {
 	});
 
 	// ============================================================
-	// 类别 2：暂停/恢复
+	// Category 2:pause/resume
 	// ============================================================
 
 	describe("2. Pause/Resume", () => {
-		it("2.1 execution:ready 识别 resume_pause 并调用 startResumeExecution", async () => {
-			// 模拟：暂停后恢复，状态已改为 PENDING + statusMessage="resume_pause"
+		it("2.1 execution:ready recognizes resume_pause and calls start Resume Execution", async () => {
+			// Simulate resume after pause with status changed to PENDING + status Message="resume_pause"
 			testApp.mockPrisma.seedExecution({
 				id: 10,
 				user_id: 1,
@@ -312,7 +312,7 @@ describe("WS Integration Tests", () => {
 			});
 			setMockSession(createUserSession(1));
 
-			// getExecutionRecord 返回带 statusMessage 的记录
+			// get Execution Record returns a record with status Message
 			testApp.mockTaskExecutionService.getExecutionRecord.mockResolvedValue({
 				id: 10,
 				executionStatus: "PENDING",
@@ -331,7 +331,7 @@ describe("WS Integration Tests", () => {
 			).not.toHaveBeenCalled();
 		});
 
-		it("2.2 execution:ready 识别 resume_hitl: 并调用 startResumeExecution(hitl)", async () => {
+		it("2.2 execution:ready recognizes resume_hitl: and calls start Resume Execution(hitl)", async () => {
 			testApp.mockPrisma.seedExecution({
 				id: 11,
 				user_id: 1,
@@ -356,7 +356,7 @@ describe("WS Integration Tests", () => {
 			).toHaveBeenCalledWith(11, "hitl");
 		});
 
-		it("2.3 execution:ready 识别 fork execution（有 originExecutionId）", async () => {
+		it("2.3 execution:ready recognizes forked execution with origin Execution Id", async () => {
 			testApp.mockPrisma.seedExecution({
 				id: 12,
 				user_id: 1,
@@ -384,17 +384,17 @@ describe("WS Integration Tests", () => {
 			).not.toHaveBeenCalled();
 		});
 
-		it("2.4 暂停后 WS 断开 → 恢复 → 重连 → ready 正确路由", async () => {
-			// Phase 1: 正常连接 + ready
+		it("2.4 after pause, WS disconnect -> resume -> reconnect -> ready routes correctly", async () => {
+			// Phase 1: normal connect + ready
 			seedPendingExecution(13);
 			const client1 = await createConnectedClient(13);
 			await emitReadyAndWaitStarted(client1, 13);
 
-			// Phase 2: 断开
+			// Phase 2: disconnect
 			client1.disconnect();
 			await delay(100);
 
-			// Phase 3: 模拟恢复后状态变为 PENDING + resume_pause
+			// Phase 3: simulate status becoming PENDING + resume_pause after resume
 			testApp.mockPrisma.seedExecution({
 				id: 13,
 				user_id: 1,
@@ -409,11 +409,11 @@ describe("WS Integration Tests", () => {
 				originExecutionId: null,
 			});
 
-			// 清理 Gateway 幂等 Set，模拟新一轮
+			// Clear the Gateway idempotency set to simulate a new round
 			(testApp.gateway as any).readyReceived.delete(13);
 			testApp.mockTaskExecutionService.startResumeExecution.mockClear();
 
-			// Phase 4: 重连
+			// Phase 4: reconnect
 			const client2 = await createConnectedClient(13);
 			await emitReadyAndWaitStarted(client2, 13);
 
@@ -424,16 +424,16 @@ describe("WS Integration Tests", () => {
 	});
 
 	// ============================================================
-	// 类别 3：取消任务
+	// Category 3:task cancellation
 	// ============================================================
 
 	describe("3. Cancel Execution", () => {
-		it("3.1 RUNNING 状态取消 → 发送 execution:finished(CANCELLED)", async () => {
+		it("3.1 cancel in RUNNING state sends execution:finished(CANCELLED)", async () => {
 			seedPendingExecution(20);
 			const client = await createConnectedClient(20);
 			await emitReadyAndWaitStarted(client, 20);
 
-			// 模拟服务端取消完成后发通知
+			// Simulate notification after server-side cancellation finishes
 			const finishPromise = waitForEvent(client, "execution:finished");
 			testApp.gateway.sendExecutionFinished(20, {
 				status: "CANCELLED",
@@ -443,10 +443,10 @@ describe("WS Integration Tests", () => {
 			expect(finished.status).toBe("CANCELLED");
 		});
 
-		it("3.2 PENDING 状态取消 → 发送 execution:error", async () => {
+		it("3.2 cancel in PENDING state sends execution:error", async () => {
 			seedPendingExecution(21);
 			const client = await createConnectedClient(21);
-			// 不发 execution:ready
+			// Do not send execution:ready
 
 			const errorPromise = waitForEvent(client, "execution:error");
 			testApp.gateway.sendExecutionError(
@@ -457,7 +457,7 @@ describe("WS Integration Tests", () => {
 			expect(error.message).toBe("Execution cancelled before start");
 		});
 
-		it("3.3 取消后客户端收到 execution:finished 包含 summary", async () => {
+		it("3.3 after cancel, client receives execution:finished with summary", async () => {
 			seedPendingExecution(22);
 			const client = await createConnectedClient(22);
 			await emitReadyAndWaitStarted(client, 22);
@@ -472,7 +472,7 @@ describe("WS Integration Tests", () => {
 			expect(finished.message).toContain("summary");
 		});
 
-		it("3.4 execution:error 事件格式正确", async () => {
+		it("3.4 execution:error event has the correct shape", async () => {
 			seedPendingExecution(23);
 			const client = await createConnectedClient(23);
 
@@ -484,7 +484,7 @@ describe("WS Integration Tests", () => {
 			expect(error.timestamp).toBeDefined();
 		});
 
-		it("3.5 取消后立即新建 execution 可正常连接", async () => {
+		it("3.5 new execution can connect immediately after cancellation", async () => {
 			// Execution 24: cancelled
 			seedPendingExecution(24);
 			const client1 = await createConnectedClient(24);
@@ -516,18 +516,18 @@ describe("WS Integration Tests", () => {
 	});
 
 	// ============================================================
-	// 类别 4：连接机制与边界情况
+	// Category 4:connection mechanics and edge cases
 	// ============================================================
 
 	describe("4. Connection & Edge Cases", () => {
-		it("4.1 无效 token → connect_error(Invalid authentication token)", async () => {
+		it("4.1 invalid token -> connect_error(Invalid authentication token)", async () => {
 			testApp.mockPrisma.seedExecution({
 				id: 30,
 				user_id: 1,
 				task_id: 1,
 				execution_status: "PENDING",
 			});
-			// 不设置 session → getSession 返回 null
+			// No session set -> get Session returns null
 			setMockSession(null);
 
 			const client = createClient(testApp.port, {
@@ -538,14 +538,14 @@ describe("WS Integration Tests", () => {
 			await expect(connectClient(client)).rejects.toThrow();
 		});
 
-		it("4.2 其他用户的 execution → connect_error", async () => {
+		it("4.2 another user's execution -> connect_error", async () => {
 			testApp.mockPrisma.seedExecution({
 				id: 31,
 				user_id: 1,
 				task_id: 1,
 				execution_status: "PENDING",
 			});
-			// 设置 user 2 的 session
+			// Set the session for user 2
 			setMockSession(createUserSession(2));
 
 			const client = createClient(testApp.port, {
@@ -556,7 +556,7 @@ describe("WS Integration Tests", () => {
 			await expect(connectClient(client)).rejects.toThrow();
 		});
 
-		it("4.3 已完成 execution → connect_error(FINISHED status)", async () => {
+		it("4.3 finished execution -> connect_error(FINISHED status)", async () => {
 			testApp.mockPrisma.seedExecution({
 				id: 32,
 				user_id: 1,
@@ -573,7 +573,7 @@ describe("WS Integration Tests", () => {
 			await expect(connectClient(client)).rejects.toThrow();
 		});
 
-		it("4.4 缺少 executionId → connect_error", async () => {
+		it("4.4 missing execution Id -> connect_error", async () => {
 			setMockSession(createUserSession(1));
 
 			const client = createClient(testApp.port, {
@@ -584,17 +584,17 @@ describe("WS Integration Tests", () => {
 			await expect(connectClient(client)).rejects.toThrow();
 		});
 
-		it("4.5 重复 execution:ready 幂等（只触发一次 startExecution）", async () => {
+		it("4.5 duplicate execution:ready is idempotent and triggers start Execution once", async () => {
 			seedPendingExecution(34);
 			const client = await createConnectedClient(34);
 
-			// 第一次 ready
+			// first ready
 			await emitReadyAndWaitStarted(client, 34);
 			expect(
 				testApp.mockTaskExecutionService.startExecution,
 			).toHaveBeenCalledTimes(1);
 
-			// 第二次 ready — 应被忽略
+			// second ready; should be ignored
 			client.emit("execution:ready", { executionId: 34 });
 			await delay(200);
 
@@ -603,14 +603,14 @@ describe("WS Integration Tests", () => {
 			).toHaveBeenCalledTimes(1);
 		});
 
-		it("4.6 同一 execution 旧 socket 被替换 + seq 保持连续", async () => {
+		it("4.6 old socket for the same execution is replaced and seq remains continuous", async () => {
 			seedPendingExecution(35);
 
-			// Socket A 连接
+			// Socket A connects
 			const clientA = await createConnectedClient(35);
 			await emitReadyAndWaitStarted(clientA, 35);
 
-			// CONNECTED 消费了 seq=0，再发两个事件（seq=1, seq=2）
+			// CONNECTED Consume seq=0, then send two events (seq=1, seq=2)
 			await delay(50);
 			testApp.gateway.sendAgentEvent(35, {
 				type: AgentEventType.TEXT_DELTA,
@@ -626,10 +626,10 @@ describe("WS Integration Tests", () => {
 			});
 			await delay(100);
 
-			// Socket B 连接同一 execution → A 应被断开
+			// Socket B connects to the same execution -> A should be disconnected
 			const disconnectPromise = waitForDisconnect(clientA);
 
-			// 需要新的 execution 状态允许连接（还在 RUNNING）
+			// A fresh execution state is needed to allow connection while still RUNNING
 			testApp.mockPrisma.seedExecution({
 				id: 35,
 				user_id: 1,
@@ -640,7 +640,7 @@ describe("WS Integration Tests", () => {
 			const clientB = await createConnectedClient(35);
 			await disconnectPromise;
 
-			// Socket B 发送事件 → seq 应从 3 开始（保留了 A 的 seq）
+			// Socket B sends an event -> seq should start at 3, preserving A's seq
 			const eventPromise = waitForEvent(clientB, "agent:event");
 			testApp.gateway.sendAgentEvent(35, {
 				type: AgentEventType.TEXT_DELTA,
@@ -653,7 +653,7 @@ describe("WS Integration Tests", () => {
 			expect(event.content).toBe("b1");
 		});
 
-		it("4.7 无连接时 sendAgentEvent 返回 false", async () => {
+		it("4.7 send Agent Event returns false with no connection", async () => {
 			const result = testApp.gateway.sendAgentEvent(999, {
 				type: AgentEventType.TEXT_DELTA,
 				taskExecutionId: 999,
@@ -663,13 +663,13 @@ describe("WS Integration Tests", () => {
 			expect(result).toBe(false);
 		});
 
-		it("4.8 无连接时 sendScreenshotReq 抛出错误", async () => {
+		it("4.8 send Screenshot Req throws with no connection", async () => {
 			await expect(testApp.gateway.sendScreenshotReq(999)).rejects.toThrow(
 				/No connection for execution 999/,
 			);
 		});
 
-		it("4.9 无连接时 sendActionReq 抛出错误", async () => {
+		it("4.9 send Action Req throws with no connection", async () => {
 			await expect(
 				testApp.gateway.sendActionReq(999, {
 					executionId: 999,
@@ -679,12 +679,12 @@ describe("WS Integration Tests", () => {
 			).rejects.toThrow(/No connection for execution 999/);
 		});
 
-		it("4.10 nextSeq 对未知 execution 返回 -1", () => {
+		it("4.10 next Seq returns -1 for an unknown execution", () => {
 			const seq = testApp.socketService.nextSeq(888);
 			expect(seq).toBe(-1);
 		});
 
-		it("4.11 断开后 removeConnectionBySocketId 正确清理", async () => {
+		it("4.11 remove Connection BySocket Id cleans up after disconnect", async () => {
 			seedPendingExecution(36);
 			const client = await createConnectedClient(36);
 
@@ -699,11 +699,11 @@ describe("WS Integration Tests", () => {
 	});
 
 	// ============================================================
-	// 类别 5：心跳与租约
+	// Category 5:heartbeats and leases
 	// ============================================================
 
 	describe("5. Heartbeat & Lease", () => {
-		it("5.1 心跳正常续租 → { renewed: true }", async () => {
+		it("5.1 heartbeat renews lease normally -> { renewed: true }", async () => {
 			seedPendingExecution(40);
 			const client = await createConnectedClient(40);
 
@@ -719,7 +719,7 @@ describe("WS Integration Tests", () => {
 			expect(testApp.mockLeaseService.renewLease).toHaveBeenCalledWith(40);
 		});
 
-		it("5.2 心跳重建过期 lease（执行仍活跃）", async () => {
+		it("5.2 heartbeat rebuilds expired lease while execution remains active", async () => {
 			testApp.mockPrisma.seedExecution({
 				id: 41,
 				user_id: 1,
@@ -728,10 +728,10 @@ describe("WS Integration Tests", () => {
 			});
 			setMockSession(createUserSession(1));
 
-			// renewLease 返回 false（lease 过期）
+			// renew Lease returns false because the lease expired
 			testApp.mockLeaseService.renewLease.mockResolvedValue(false);
 
-			// getExecutionRecord 返回活跃状态
+			// get Execution Record returns an active status
 			testApp.mockTaskExecutionService.getExecutionRecord.mockResolvedValue({
 				id: 41,
 				executionStatus: "RUNNING",
@@ -752,19 +752,19 @@ describe("WS Integration Tests", () => {
 			expect(testApp.mockLeaseService.createLease).toHaveBeenCalled();
 		});
 
-		it("5.3 心跳失败且 execution 非活跃 → 断开客户端", async () => {
+		it("5.3 heartbeat failure with inactive execution disconnects the client", async () => {
 			testApp.mockPrisma.seedExecution({
 				id: 42,
 				user_id: 1,
 				task_id: 1,
-				execution_status: "RUNNING", // Auth middleware 需要可连接状态
+				execution_status: "RUNNING", // Auth middleware requires a connectable status.
 			});
 			setMockSession(createUserSession(1));
 
-			// renewLease 返回 false
+			// renew Lease returns false
 			testApp.mockLeaseService.renewLease.mockResolvedValue(false);
 
-			// getExecutionRecord 返回 FINISHED（不再活跃）
+			// get Execution Record returns FINISHED and is no longer active
 			testApp.mockTaskExecutionService.getExecutionRecord.mockResolvedValue({
 				id: 42,
 				executionStatus: "FINISHED",
@@ -780,7 +780,7 @@ describe("WS Integration Tests", () => {
 			expect(reason).toBeDefined();
 		});
 
-		it("5.4 SUSPENDED 状态心跳可重建 lease", async () => {
+		it("5.4 heartbeat can rebuild lease in SUSPENDED state", async () => {
 			testApp.mockPrisma.seedExecution({
 				id: 43,
 				user_id: 1,
@@ -812,11 +812,11 @@ describe("WS Integration Tests", () => {
 	});
 
 	// ============================================================
-	// 类别 6：超时测试
+	// Category 6:timeouts Test
 	// ============================================================
 
 	describe("6. Timeouts", () => {
-		it("6.1 截屏 ACK 超时（客户端不回复）", async () => {
+		it("6.1 screenshot ACK timeout when the client does not respond", async () => {
 			testApp.mockPrisma.seedExecution({
 				id: 50,
 				user_id: 1,
@@ -826,18 +826,18 @@ describe("WS Integration Tests", () => {
 			setMockSession(createUserSession(1));
 			const client = await createConnectedClient(50);
 
-			// 客户端监听 device:screenshot 但不回复 callback
+			// Client listens for device:screenshot but does not call back
 
-			// sendScreenshotReq 内部有 15s 超时
-			// 为了测试不等那么久，我们验证 Promise 行为
+			// sendScreenshotReq has an internal 15s timeout
+			// To avoid waiting that long in the test, verify the Promise behavior
 			const screenshotPromise = testApp.gateway.sendScreenshotReq(50);
 
-			// 这个 Promise 会因超时 reject，但需要等 15s
-			// 测试标注：此测试需要较长时间（~15s），在 CI 中可能需要跳过
+			// This Promise rejects on timeout, but that takes 15s
+			// Test note: this test takes longer (~15s) and may need to be skipped in CI
 			await expect(screenshotPromise).rejects.toThrow();
 		}, 20000);
 
-		it("6.2 动作 ACK 超时（客户端不回复）", async () => {
+		it("6.2 action ACK timeout when the client does not respond", async () => {
 			testApp.mockPrisma.seedExecution({
 				id: 51,
 				user_id: 1,
@@ -856,7 +856,7 @@ describe("WS Integration Tests", () => {
 			await expect(actionPromise).rejects.toThrow();
 		}, 15000);
 
-		it("6.3 execution:ready 失败时发送 execution:error", async () => {
+		it("6.3 sends execution:error when execution:ready fails", async () => {
 			seedPendingExecution(52);
 
 			testApp.mockTaskExecutionService.startExecution.mockRejectedValue(
@@ -881,19 +881,19 @@ describe("WS Integration Tests", () => {
 	});
 
 	// ============================================================
-	// 类别 7：竞态条件
+	// Category 7:race conditions
 	// ============================================================
 
 	describe("7. Race Conditions", () => {
-		it("7.1 startExecution CAS 失败（expected PENDING）但已 RUNNING → 发送 started", async () => {
+		it("7.1 start Execution CAS fails with expected PENDING but already RUNNING -> sends started", async () => {
 			seedPendingExecution(60);
 
-			// startExecution 抛出 CAS 失败错误
+			// start Execution throws a CAS failure
 			testApp.mockTaskExecutionService.startExecution.mockRejectedValue(
 				new Error("CAS failed: expected PENDING but found RUNNING"),
 			);
 
-			// getExecutionRecord 返回 RUNNING（模拟另一方已启动）
+			// get Execution Record returns RUNNING to simulate another starter
 			testApp.mockTaskExecutionService.getExecutionRecord.mockResolvedValue({
 				id: 60,
 				executionStatus: "RUNNING",
@@ -903,14 +903,14 @@ describe("WS Integration Tests", () => {
 
 			const client = await createConnectedClient(60);
 
-			// 应该收到 execution:started 而不是 error
+			// Should receive execution:started instead of error
 			const startedPromise = waitForEvent(client, "execution:started");
 			client.emit("execution:ready", { executionId: 60 });
 			const started = await startedPromise;
 			expect(started.executionId).toBe(60);
 		});
 
-		it("7.2 startExecution CAS 失败且非 RUNNING → 发送 error", async () => {
+		it("7.2 start Execution CAS fails and status is not RUNNING -> sends error", async () => {
 			seedPendingExecution(61);
 
 			testApp.mockTaskExecutionService.startExecution.mockRejectedValue(
@@ -932,10 +932,10 @@ describe("WS Integration Tests", () => {
 			expect(error.message).toContain("expected PENDING");
 		});
 
-		it("7.3 多个客户端快速连接同一 execution → 只有最后一个存活", async () => {
+		it("7.3 multiple clients quickly connect to the same execution -> only the last survives", async () => {
 			seedPendingExecution(62);
 
-			// 同时创建 3 个客户端
+			// Create 3 clients concurrently
 			const clients = await Promise.all([
 				createConnectedClient(62),
 				(async () => {
@@ -950,11 +950,11 @@ describe("WS Integration Tests", () => {
 
 			await delay(300);
 
-			// 只有最后一个应该保持连接
+			// Only the last one should remain connected
 			const connectedCount = clients.filter((c) => c.connected).length;
 			expect(connectedCount).toBe(1);
 
-			// 最后连接的应该可以收到事件
+			// The last connected client should receive events
 			const lastClient = clients[2];
 			if (lastClient.connected) {
 				const eventPromise = waitForEvent(lastClient, "agent:event");
@@ -969,16 +969,16 @@ describe("WS Integration Tests", () => {
 			}
 		});
 
-		it("7.4 断开 → 立即重连 → execution:ready 正常工作", async () => {
+		it("7.4 disconnect -> immediate reconnect -> execution:ready still works", async () => {
 			seedPendingExecution(63);
 			const client1 = await createConnectedClient(63);
 			await emitReadyAndWaitStarted(client1, 63);
 
-			// 断开
+			// disconnect
 			client1.disconnect();
 			await delay(100);
 
-			// 重连（execution 仍在 RUNNING）
+			// Reconnect while execution is still RUNNING
 			testApp.mockPrisma.seedExecution({
 				id: 63,
 				user_id: 1,
@@ -989,7 +989,7 @@ describe("WS Integration Tests", () => {
 			const client2 = await createConnectedClient(63);
 			expect(client2.connected).toBe(true);
 
-			// sendAgentEvent 正常工作
+			// send Agent Event works normally
 			const eventPromise = waitForEvent(client2, "agent:event");
 			testApp.gateway.sendAgentEvent(63, {
 				type: AgentEventType.TEXT_DELTA,
@@ -1003,7 +1003,7 @@ describe("WS Integration Tests", () => {
 	});
 
 	// ============================================================
-	// 类别补充：ExecutionSocketService 单元级测试
+	// Additional category: ExecutionSocketService unit-level tests
 	// ============================================================
 
 	describe("8. ExecutionSocketService Internals", () => {
@@ -1017,7 +1017,7 @@ describe("WS Integration Tests", () => {
 			expect(conn!.seq).toBe(0);
 		});
 
-		it("8.2 isConnected 在连接/断开后正确返回", async () => {
+		it("8.2 is Connected returns correctly after connect/disconnect", async () => {
 			seedPendingExecution(71);
 			expect(testApp.socketService.isConnected(71)).toBe(false);
 
@@ -1029,7 +1029,7 @@ describe("WS Integration Tests", () => {
 			expect(testApp.socketService.isConnected(71)).toBe(false);
 		});
 
-		it("8.3 getActiveCount 正确计数", async () => {
+		it("8.3 get Active Count counts correctly", async () => {
 			const initialCount = testApp.socketService.getActiveCount();
 
 			seedPendingExecution(72);
@@ -1054,7 +1054,7 @@ describe("WS Integration Tests", () => {
 			expect(testApp.socketService.getActiveCount()).toBe(initialCount);
 		});
 
-		it("8.4 getSocketForExecution 返回 socket 或 null", async () => {
+		it("8.4 get Socket For Execution returns a socket or null", async () => {
 			expect(testApp.socketService.getSocketForExecution(999)).toBeNull();
 
 			seedPendingExecution(74);

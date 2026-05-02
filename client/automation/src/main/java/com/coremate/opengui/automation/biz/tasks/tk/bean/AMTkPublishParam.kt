@@ -1,19 +1,19 @@
 package com.coremate.opengui.automation.biz.tasks.tk.bean
 
 data class AMTkPublishParam(
-    //视频主题
+    //Video topic
     var videoText: String? = null,
-    //前几个视频
+    //First N videos
     var videoCount: Int? = null,
-    //视频长度
+    //Video length
     var videoLength: Int? = null,
-    //是否使用业务信息
+    //Whether to use business info
     var isUseUserBg: Boolean? = null,
-    //你所属的行业
+    //Your industry
     var industry: String? = null,
-    //您销售的产品
+    //The product you sell
     var productCategory: String? = null,
-    //您销售的产品特别
+    //Special qualities of the product you sell
     var productFeatures: String? = null,
-    //您的目标客户
+    //Your target customer
     var targetCustomerGroup: String? = null, )

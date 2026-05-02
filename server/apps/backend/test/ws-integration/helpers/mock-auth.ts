@@ -1,20 +1,20 @@
 /**
  * Mock Better-Auth
  *
- * 替代 src/lib/auth 中的 auth 对象。
- * 通过控制 getSession 返回值来模拟不同认证场景。
+ * Replace the auth object from src/lib/auth.
+ * Simulate authentication scenarios by controlling get Session return values.
  */
 
-/** 当前模拟的 session 返回值 */
+/** Current simulated session return value */
 let currentSession: any = null;
 
-/** 按 token 映射的 session（支持多用户测试） */
+/** Map sessions by token; supports multi-user tests */
 const tokenSessionMap = new Map<string, any>();
 
 export const mockAuth = {
 	api: {
 		getSession: jest.fn(async (opts: { headers: Headers }) => {
-			// 优先按 token 查找
+			// Prefer lookup by token
 			const authHeader = opts.headers.get("Authorization");
 			if (authHeader) {
 				const token = authHeader.replace("Bearer ", "");
@@ -27,21 +27,21 @@ export const mockAuth = {
 };
 
 /**
- * 设置默认 session（所有 token 生效）
+ * Set the default session for all tokens
  */
 export function setMockSession(session: any) {
 	currentSession = session;
 }
 
 /**
- * 为特定 token 设置 session
+ * Set the session for a specific token
  */
 export function setMockSessionForToken(token: string, session: any) {
 	tokenSessionMap.set(token, session);
 }
 
 /**
- * 创建一个标准的用户 session
+ * Create a standard user session
  */
 export function createUserSession(userId: number | string) {
 	return {
@@ -58,7 +58,7 @@ export function createUserSession(userId: number | string) {
 }
 
 /**
- * 重置所有 mock 状态
+ * Reset all mock state
  */
 export function resetMockAuth() {
 	currentSession = null;

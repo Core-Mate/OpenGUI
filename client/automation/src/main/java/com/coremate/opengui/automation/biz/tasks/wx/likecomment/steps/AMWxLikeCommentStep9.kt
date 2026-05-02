@@ -13,7 +13,7 @@ import com.coremate.opengui.automation.biz.tasks.wx.likecomment.AMWxLikeCommentH
 import com.coremate.opengui.automation.biz.tasks.wx.likecomment.bean.AMWxLikeCommentEventType
 
 /**
- * 第9步：评论2 - 点击更多
+ * Step 9:comment 2 - tap more
  */
 internal class AMWxLikeCommentStep9(index: Int, helper: AMWxLikeCommentHelper) :
     AMBaseStep<AMWxLikeCommentHelper>(index, helper) {
@@ -37,7 +37,7 @@ internal class AMWxLikeCommentStep9(index: Int, helper: AMWxLikeCommentHelper) :
                     }
 
                     override fun work(timeIndex: Int): Boolean {
-                        //获取更多按钮并点击
+                        //Get the more button and tap it
                         val btnNode = AMNodeUtils.getFirstNodeById(
                             nodeInfo,
                             IAMWidgetWX.fcMoreBtn().resourceId

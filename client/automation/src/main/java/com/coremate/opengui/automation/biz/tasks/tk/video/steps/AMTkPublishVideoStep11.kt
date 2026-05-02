@@ -15,7 +15,7 @@ import com.coremate.opengui.automation.biz.common.node.lv.IAMWidgetLV
 import com.coremate.opengui.automation.biz.tasks.tk.video.AMTkPublishVideoHelper
 
 /**
- * 第11步：判断是否能生成视频的条件
+ * Step 11:Check conditions for video generation
  */
 internal class AMTkPublishVideoStep11(index: Int, helper: AMTkPublishVideoHelper) :
     AMBaseStep<AMTkPublishVideoHelper>(index, helper) {
@@ -27,7 +27,7 @@ internal class AMTkPublishVideoStep11(index: Int, helper: AMTkPublishVideoHelper
         }
         AMEventUtils.sleep(AMActionDelay.MIDDLE_LONG)
 
-        //判断是否开通了SVIP
+        //Check whether SVIP is enabled
         AMEventUtils.reProcessUntilOk(
             helper,
             3,
@@ -55,7 +55,7 @@ internal class AMTkPublishVideoStep11(index: Int, helper: AMTkPublishVideoHelper
 
         AMEventUtils.sleep(AMActionDelay.MIDDLE)
 
-        //点击确定使用
+        //Tap confirm use
         AMEventUtils.reProcessUntilOk(
             helper,
             3,

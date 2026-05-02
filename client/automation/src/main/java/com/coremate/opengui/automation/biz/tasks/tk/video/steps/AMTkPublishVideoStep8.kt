@@ -13,7 +13,7 @@ import com.coremate.opengui.automation.biz.common.node.lv.IAMWidgetLV
 import com.coremate.opengui.automation.biz.tasks.tk.video.AMTkPublishVideoHelper
 
 /**
- * 第8步：点击插入
+ * Step 8:Tap Insert
  */
 internal class AMTkPublishVideoStep8(index: Int, helper: AMTkPublishVideoHelper) :
     AMBaseStep<AMTkPublishVideoHelper>(index, helper) {
@@ -25,7 +25,7 @@ internal class AMTkPublishVideoStep8(index: Int, helper: AMTkPublishVideoHelper)
         }
         AMEventUtils.sleep(AMActionDelay.MIDDLE)
 
-        //点击插入AI文案
+        //Tap to insert AI copy
         AMEventUtils.reProcessUntilOk(
             helper,
             3,

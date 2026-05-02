@@ -16,12 +16,12 @@ import com.coremate.opengui.automation.biz.tasks.wx.likecomment.AMWxLikeCommentH
 import com.coremate.opengui.automation.biz.tasks.wx.likecomment.bean.AMWxLikeCommentItemNode
 
 /**
- * 第3步：获取列表节点集合
+ * Step 3: Get list node collection
  */
 internal class AMWxLikeCommentStep3(index: Int, helper: AMWxLikeCommentHelper) :
     AMBaseStep<AMWxLikeCommentHelper>(index, helper) {
 
-    //已经加入的节点
+    //Already-added nodes
     private var alreadyAddNode = mutableListOf<AMWxLikeCommentItemNode>()
 
     override fun onExecute(data: AMDataContainer?, isResume: Boolean): AMStepCondition {
@@ -31,10 +31,10 @@ internal class AMWxLikeCommentStep3(index: Int, helper: AMWxLikeCommentHelper) :
         }
 
         AMEventUtils.sleep(AMActionDelay.SHORT)
-        //清空临时列表
+        //Clear temporary list
         helper.tempNodeList.clear()
         if (helper.isFinish) {
-            //完成
+            //Complete
             helper.amContext.processListener?.onProcessTaskFinish(
                 true,
                 System.currentTimeMillis() - helper.startTime,
@@ -47,13 +47,13 @@ internal class AMWxLikeCommentStep3(index: Int, helper: AMWxLikeCommentHelper) :
                 AMLog.onEDebugLog("任务停止在第${index}步1 - 步骤内")
                 return condition.interceptted()
             }
-            //获取当前页面所有朋友圈
+            //Get all Moments on the current page
             val rootNode = AMCore.instance.amContext?.rootNode()
-            //页面listview
+            //Page List View
             val listNode = AMNodeUtils.getNodeByClassName(rootNode, RecyclerView::class.java.name)
             helper.listNode = listNode
             val momentList = AMWxPageEvent.getMoments2()
-            //判断朋友圈是否为空
+            //Check Momentswhetheris empty
             if (momentList.isEmpty()) {
                 throw AMTaskException.business("朋友圈是空的")
             }
@@ -65,19 +65,19 @@ internal class AMWxLikeCommentStep3(index: Int, helper: AMWxLikeCommentHelper) :
                     IAMWidgetWX.fcMoreBtn().resourceId
                 ) ?: continue
                 val nodeData = AMWxLikeCommentItemNode.transFormNode(itemNode)
-                //过滤已经添加的节点
+                //Filter already-added nodes
                 if (nodeData != null && alreadyAddNode.contains(nodeData)) {
                     continue
                 }
-                //记录
+                //Record
                 if (nodeData != null) {
                     helper.tempNodeList.add(itemNode)
                     alreadyAddNode.add(nodeData)
-                    //TODO:只记录一条
+                    //TODO: record only one item
                     break
                 }
             }
-            //当临时列表不为空时，执行第4步
+            //Execute step 4 when the temporary list is not empty
             if (helper.tempNodeList.isNotEmpty()) {
                 AMLog.onEDebugLog("本次有${helper.tempNodeList.size}条")
                 helper.executorService.execute {
@@ -86,7 +86,7 @@ internal class AMWxLikeCommentStep3(index: Int, helper: AMWxLikeCommentHelper) :
                 return condition
             }
             var isSwipe = false
-            //判断加载中
+            //Check loading state
             while (true) {
                 if (AMNodeUtils.getFirstNodeByText(listNode, true, "正在加载") == null) break
                 if (!isSwipe) {
@@ -98,19 +98,19 @@ internal class AMWxLikeCommentStep3(index: Int, helper: AMWxLikeCommentHelper) :
                     return condition.interceptted()
                 }
             }
-            //判断结束
+            //Check end state
             if (helper.sucCount >= (helper.param?.count ?: 0)) {
                 AMLog.onEDebugLog("缓存完毕，结束循环")
                 break
             }
 
 //            if (listNode?.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD) == false) {
-//                AMLog.onEDebugLog("滑动完毕，结束循环")
+// AMLog.onEDebugLog("Swipe complete, end loop")
 //                break
 //            }
             AMEventUtils.sleep(AMActionDelay.LONG)
         }
-        //完成
+        //Complete
         helper.amContext.processListener?.onProcessTaskFinish(
             true,
             System.currentTimeMillis() - helper.startTime,

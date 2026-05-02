@@ -24,24 +24,24 @@ import com.coremate.opengui.automation.biz.common.event.IAMPageEvent
 import com.coremate.opengui.automation.biz.common.node.wx.IAMWidgetWX
 
 /**
- * 微信的事件
+ * We Chat events
  * */
 internal object AMWxPageEvent : IAMPageEvent() {
 
     /**
-     * 获取返回节点
+ * Get back node
      * */
     fun getBackNode(): AccessibilityNodeInfo? {
         val rootNode = AMCore.instance.amContext?.rootNode() ?: return null
         var nodeInfo: AccessibilityNodeInfo? = null
-        //返回节点id
+        //Back node id
         nodeInfo =
             AMNodeUtils.getFirstNodeById(rootNode, IAMWidgetWX.globalBack().resourceId)
         return nodeInfo
     }
 
     /**
-     * 获取wx tab节点 - 新方案
+ * Get We Chat tab node - new approach
      * */
     fun getWxBottomTabByText(text: String): AccessibilityNodeInfo? {
         AMNodeUtils.getAllNodeById(
@@ -59,7 +59,7 @@ internal object AMWxPageEvent : IAMPageEvent() {
     }
 
     /**
-     * 获取微信发现列表
+ * Get We Chat Discover list
      * */
     fun getWeChatDiscoverListView(rootNode: AccessibilityNodeInfo?): List<AccessibilityNodeInfo>? {
         if (rootNode == null) return null
@@ -72,7 +72,7 @@ internal object AMWxPageEvent : IAMPageEvent() {
     }
 
     /**
-     * 是否在微信首页
+ * Whether on We Chat home page
      */
     fun isInWeChatHomePage(name: String = "微信"): Boolean {
         AMCore.instance.amContext?.rootNode() ?: return false
@@ -94,7 +94,7 @@ internal object AMWxPageEvent : IAMPageEvent() {
     }
 
     /**
-     * 获取主页搜索节点
+ * Get home search node
      * */
     fun getMainSearchNode(): AccessibilityNodeInfo? {
         val rootNode = AMCore.instance.amContext?.rootNode() ?: return null
@@ -107,7 +107,7 @@ internal object AMWxPageEvent : IAMPageEvent() {
     }
 
     /**
-     * 获取主页更多节点
+ * Get home more node
      * */
     fun getMainMoreNode(): AccessibilityNodeInfo? {
         val rootNode = AMCore.instance.amContext?.rootNode() ?: return null
@@ -119,7 +119,7 @@ internal object AMWxPageEvent : IAMPageEvent() {
     }
 
     /**
-     * 是否在设置页面
+ * Whether on the settings page
      * */
     fun isInSettingPage(): Boolean {
         val rootNode = AMCore.instance.amContext?.rootNode() ?: return false
@@ -130,7 +130,7 @@ internal object AMWxPageEvent : IAMPageEvent() {
     }
 
     /**
-     * 是否在通用页面
+ * Whether on the General page
      * */
     fun isInCurrencyPage(): Boolean {
         val rootNode = AMCore.instance.amContext?.rootNode() ?: return false
@@ -147,7 +147,7 @@ internal object AMWxPageEvent : IAMPageEvent() {
     }
 
     /**
-     * 是否在辅助功能
+ * Whether on the Accessibility page
      * */
     fun isInHelperPage(): Boolean {
         val rootNode = AMCore.instance.amContext?.rootNode() ?: return false
@@ -164,7 +164,7 @@ internal object AMWxPageEvent : IAMPageEvent() {
     }
 
     /**
-     * 好友详情右上角三个点
+ * Top-right three-dot menu on friend details
      */
     private fun getFriendDetailMoreNode(): AccessibilityNodeInfo? {
         val rootNode = AMCore.instance.amContext?.rootNode() ?: return null
@@ -173,7 +173,7 @@ internal object AMWxPageEvent : IAMPageEvent() {
 
 
     /**
-     * 是否在朋友圈页面
+ * Whether on the Moments page
      * */
     fun isInFriendMomentsPage(): Boolean {
         val rootNode = AMCore.instance.amContext?.rootNode() ?: return false
@@ -186,12 +186,12 @@ internal object AMWxPageEvent : IAMPageEvent() {
 
 
     /**
-     * 获取朋友圈列表节点
+ * Get Moments list node
      * */
     fun getMoments(): MutableList<AccessibilityNodeInfo> {
         val list = mutableListOf<AccessibilityNodeInfo>()
         val rootNode = AMCore.instance.amContext?.rootNode() ?: return list
-        //页面listview
+        //Page List View
         var listNode =
             AMNodeUtils.getNodeByClassName(rootNode, ListView::class.java.name)
         if (listNode == null) {
@@ -211,7 +211,7 @@ internal object AMWxPageEvent : IAMPageEvent() {
     }
 
     /**
-     * 返回朋友圈页面
+ * Return to Moments page
      * */
     fun back2MomentAndHomePage(helper: AMBaseStepHelper): SomethingEvent {
 
@@ -257,7 +257,7 @@ internal object AMWxPageEvent : IAMPageEvent() {
     }
 
     /**
-     * 跳转朋友圈
+ * Navigate to Moments
      * */
     fun comeToFriendMoments(
         helper: AMBaseStepHelper,
@@ -373,7 +373,7 @@ internal object AMWxPageEvent : IAMPageEvent() {
     }
 
     /**
-     * 回到微信首页
+ * Return to We Chat home page
      * */
     fun back2WeChatHomePage(callBack: IAMTaskCallBack, helper: AMBaseStepHelper? = null) {
         AMEventUtils.doSomethingUntilSuccess(
@@ -431,7 +431,7 @@ internal object AMWxPageEvent : IAMPageEvent() {
     }
 
     /**
-     * 返回
+ * Back
      * */
     fun simpleBack(helper: AMBaseStepHelper? = null) {
         if (!isInTargetApp(AMTargetApp.WX)) return
@@ -445,7 +445,7 @@ internal object AMWxPageEvent : IAMPageEvent() {
     }
 
     /**
-     * 获取朋友圈列表文案 - 点赞使用
+ * Get Moments list text for likes
      * */
     fun getMomentTextFromMomentByLike(
         paramAccessibilityNodeInfo: AccessibilityNodeInfo
@@ -474,12 +474,12 @@ internal object AMWxPageEvent : IAMPageEvent() {
     }
 
     /**
-     * 获取朋友圈列表节点2
+ * Get Moments list node 2
      * */
     fun getMoments2(): MutableList<AccessibilityNodeInfo> {
         val list = mutableListOf<AccessibilityNodeInfo>()
         val rootNode = AMCore.instance.amContext?.rootNode() ?: return list
-        //页面listview
+        //Page List View
         var listNode =
             AMNodeUtils.getNodeByClassName(rootNode, ListView::class.java.name)
         if (listNode == null) {

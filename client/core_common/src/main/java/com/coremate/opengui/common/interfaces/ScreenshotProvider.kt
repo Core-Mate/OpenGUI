@@ -2,17 +2,17 @@
 
 package com.coremate.opengui.common.interfaces
 
-import android.graphics.Bitmap // 接口中使用 Bitmap，所以此接口必须在 Android 模块
+import android.graphics.Bitmap // Bitmap keeps this interface in an Android module.
 
 /**
- * 提供截图功能的抽象接口。
- * 旨在打破模块间的直接依赖，实现依赖倒置。
+ * Abstraction for screenshot capture.
+ * Breaks direct module dependencies through dependency inversion.
  */
 interface ScreenshotProvider {
     /**
-     * 捕获当前屏幕截图。
-     * 这是一个 suspend 函数，必须在协程作用域内调用。
-     * @return 屏幕截图的 Bitmap 对象，如果捕获失败则返回 null。
+ * Capture the current screen.
+ * This is a suspend function and must be called from a coroutine scope.
+ * @return screenshot Bitmap, or null when capture fails.
      */
     suspend fun capture(): Bitmap?
 }

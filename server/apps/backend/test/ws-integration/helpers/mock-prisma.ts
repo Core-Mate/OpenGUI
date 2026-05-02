@@ -1,8 +1,8 @@
 /**
  * Mock PrismaService
  *
- * 内存存储 + CAS 语义，模拟 task_execution 表操作。
- * 支持 findUnique, findFirst, create, update, updateMany（CAS）。
+ * In-memory storage with CAS semantics for task_execution table operations.
+ * Supports find Unique, find First, create, update, and update Many (CAS).
  */
 
 export interface MockExecution {
@@ -86,8 +86,8 @@ export function createMockPrisma() {
 		}),
 
 		/**
-		 * CAS 语义：仅当 WHERE 条件全部匹配时才更新
-		 * 返回 { count: 0 | 1 }
+ * CAS semantics: update only when every WHERE condition matches
+ * Returns { count: 0 | 1 }
 		 */
 		updateMany: jest.fn(async (args: any) => {
 			const where = args.where || {};
@@ -120,7 +120,7 @@ export function createMockPrisma() {
 				tenant_id: 1,
 			})),
 		},
-		// 暴露内部存储用于测试验证
+		// Expose internal storage for test assertions
 		_executions: executions,
 		_reset() {
 			executions.clear();
@@ -133,7 +133,7 @@ export function createMockPrisma() {
 			}
 		},
 		/**
-		 * 便捷方法：插入一条 execution 记录
+ * Convenience method: insert one execution record
 		 */
 		seedExecution(overrides: Partial<MockExecution> & { id: number }): MockExecution {
 			const exec: MockExecution = {

@@ -13,7 +13,7 @@ import com.coremate.opengui.automation.biz.common.node.red.IAMWidgetRed
 import com.coremate.opengui.automation.biz.tasks.common.check.steps.red.AMRedAutoReplyHelper
 
 /**
- * 第7步：自动回复
+ * Step 7:Auto-reply
  */
 internal class AMRedAutoReplyStep7(index: Int, helper: AMRedAutoReplyHelper) :
     AMBaseStep<AMRedAutoReplyHelper>(index, helper) {
@@ -29,7 +29,7 @@ internal class AMRedAutoReplyStep7(index: Int, helper: AMRedAutoReplyHelper) :
         }
 
         AMEventUtils.sleep(AMActionDelay.SHORT)
-        //输入框节点
+        //Input field node
         var editNode: AccessibilityNodeInfo? = null
         AMEventUtils.reProcessUntilOk(
             helper,

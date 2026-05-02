@@ -5,9 +5,9 @@ import com.coremate.opengui.automation.biz.tasks.common.check.AMCommonAutoReplyH
 internal interface AMCommonAutoListener {
 
     fun bindCommon(helper: AMCommonAutoReplyHelper)
-    //继续
+    //Continue
     fun onContinue()
-    //暂时停止
+    //Temporarily stop
     fun onTemporarySuspension()
 
 }

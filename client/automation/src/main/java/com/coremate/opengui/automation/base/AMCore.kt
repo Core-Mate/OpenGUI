@@ -27,7 +27,7 @@ import kotlin.reflect.KClass
 internal class AMCore : IAMProcessListener {
 
     companion object {
-        //跳转到权限页面之前的activity
+        //Activity before navigating to the permission page
         @JvmStatic
         @SuppressLint("StaticFieldLeak")
         var activityByOp: Activity? = null
@@ -44,11 +44,11 @@ internal class AMCore : IAMProcessListener {
 
     private val mainHandler = Handler(Looper.getMainLooper())
 
-    ///待执行的（目前只存自动回复的任务）
+    ///Pending tasks; currently only auto-reply tasks are stored
     var waitTasks = mutableListOf<AMDataContainer>()
 
     /**
-     * 添加任务监听
+ * Add task listener
      * */
     fun addObserver(listener: IAMProcessListener) {
         synchronized(this) {
@@ -57,7 +57,7 @@ internal class AMCore : IAMProcessListener {
     }
 
     /**
-     * 移除任务监听
+ * Remove task listener
      * */
     fun removeObserver(listener: IAMProcessListener) {
         synchronized(this) {
@@ -66,7 +66,7 @@ internal class AMCore : IAMProcessListener {
     }
 
     /**
-     * 移除所有监听
+ * Remove all listeners
      * */
     fun removeAllObserver() {
         synchronized(this) {
@@ -76,11 +76,11 @@ internal class AMCore : IAMProcessListener {
 
     /////////////////////////////////////////////////////////////////////////////////
     //
-    //                      核心调度
+    // Core scheduler
     //
     /////////////////////////////////////////////////////////////////////////////////
 
-    ///消费
+    ///Consume
     fun consume() {
         if (amContext?.taskManager?.isStartTool == true) {
             return
@@ -88,7 +88,7 @@ internal class AMCore : IAMProcessListener {
         if (waitTasks.isNotEmpty()) {
             val param = waitTasks.first()
             waitTasks.removeAt(0)
-            ///前置consume()操作
+            ///Pre-consume operation
             when (param.bizType) {
                 AMTaskBizType.TK_PUBLISH_VIDEO_MIX -> {
                     val clipboard =
@@ -138,7 +138,7 @@ internal class AMCore : IAMProcessListener {
     }
 
     /**
-     * 开始调度
+ * Start scheduling
      * */
     @JvmOverloads
     fun executes(
@@ -148,9 +148,9 @@ internal class AMCore : IAMProcessListener {
         threadFactory: ThreadFactory,
         data: AMDataContainer? = null,
     ) {
-        //先释放，防止之前的任务相关还存在
+        //Release first to clear any leftover task state
         destroyAll()
-        //设置上下文执行操作
+        //Set up context execution operations
         amContext = AMContext(
             activity = context,
             targetApps = targetApps,
@@ -162,20 +162,20 @@ internal class AMCore : IAMProcessListener {
         }.apply {
             taskManager.isStartTool = true
         }
-        //判断是否在app内
+        //Check whether inside the app
         if (AMContext.isInTargetApp) {
             Handler(Looper.getMainLooper()).post {
                 targetApps.first().openThirdApp()
-                //执行任务
+                //Execute task
                 AMLog.onEDebugLog("开始执行任务")
                 amContext?.taskManager?.onExecute(taskCls, data)
             }
         } else {
             targetApps.first().openThirdApp()
             Handler(Looper.getMainLooper()).postDelayed({
-                //强制在目标app内
+                //Force execution inside the target app
                 AMContext.isInTargetApp = true
-                //执行任务
+                //Execute task
                 AMLog.onEDebugLog("进入目标app后,开始执行任务")
                 amContext?.taskManager?.onExecute(taskCls, data)
             }, 850)
@@ -184,26 +184,26 @@ internal class AMCore : IAMProcessListener {
 
     /////////////////////////////////////////////////////////////////////////////////
     //
-    //                      服务检测
+    // Service check
     //
     /////////////////////////////////////////////////////////////////////////////////
 
     /**
-     * 辅助监测
+ * Helper monitoring
      * */
     fun onAccessibilityEvent(event: AccessibilityEvent) {
-        //过滤当前app的包名
+        //Filter the current app package name
         val packageName = AMServiceManager.applicationContext.packageName ?: ""
         if (event.packageName == packageName) {
             AMContext.isInTargetApp = false
             return
         }
-        //开始检测执行
+        //Start check execution
         amContext?.checkTargetAndDispatchTaskManager(event)
     }
 
     /**
-     * 服务中断
+ * Service interruption
      * */
     fun onAccessibilityInterrupt() {
         if (amContext?.taskManager?.taskState == AMTaskState.STOP) {
@@ -211,7 +211,7 @@ internal class AMCore : IAMProcessListener {
                 "无障碍服务中断，但是任务已经结束",
             )
         } else {
-            //打印记录
+            //Print records
             AMLog.onEDebugLog(
                 "无障碍服务中断",
             )
@@ -223,12 +223,12 @@ internal class AMCore : IAMProcessListener {
 
     /////////////////////////////////////////////////////////////////////////////////
     //
-    //                      整体流程状态回调 IAMProcessListener
+    // Overall process status callback IAM Process Listener
     //
     /////////////////////////////////////////////////////////////////////////////////
 
     /**
-     * 任务开始
+ * Task started
      * */
     override fun onProcessTaskStart() {
         amContext?.taskManager?.setTaskResume = true
@@ -241,7 +241,7 @@ internal class AMCore : IAMProcessListener {
     }
 
     /**
-     * 任务暂停
+ * Task paused
      * */
     override fun onProcessTaskPause(isActive: Boolean) {
         amContext?.taskManager?.setTaskState(AMTaskState.PAUSE)
@@ -253,7 +253,7 @@ internal class AMCore : IAMProcessListener {
     }
 
     /**
-     * 任务恢复
+ * Task resumed
      * */
     override fun onProcessTaskResume() {
         amContext?.taskManager?.setTaskState(AMTaskState.RESUME)
@@ -265,11 +265,11 @@ internal class AMCore : IAMProcessListener {
     }
 
     /**
-     * 任务成功完成
-     * @param isSuccess 是否成功
-     * @param elapsedTime 耗时
-     * @param data 完成后的数据
-     * @param exception 异常
+ * Task completed successfully
+ * @param is Success whether execution succeeded
+ * @param elapsed Time elapsed time
+ * @param data data after completion
+ * @param exception exception
      * */
     override fun onProcessTaskFinish(
         isSuccess: Boolean,
@@ -279,12 +279,12 @@ internal class AMCore : IAMProcessListener {
     ) {
         synchronized(this) {
             AMLog.onEDebugLog("onProcessTaskFinish")
-            //任务结束 (完成之后，不用在抛出停止异常)
+            //Task ended; after completion, no need to throw a stop exception
             amContext?.taskManager?.setTaskState(AMTaskState.STOP)
             mainHandler.post {
-                //关闭核心功能
+                //Close core functionality
                 amContext?.taskManager?.isStartTool = false
-                //任务释放
+                //Release task resources
                 amContext?.destroyCompsAndTask()
                 listeners.forEach {
                     it.onProcessTaskFinish(isSuccess, elapsedTime, exception, sucData)
@@ -297,7 +297,7 @@ internal class AMCore : IAMProcessListener {
 
     /////////////////////////////////////////////////////////////////////////////////
     //
-    //                      释放所有
+    // Release all resources
     //
     /////////////////////////////////////////////////////////////////////////////////
 
@@ -308,7 +308,7 @@ internal class AMCore : IAMProcessListener {
         }
     }
 
-    //异常监听
+    //Exception listener
     private inner class ATThreadFactory :
         ThreadFactory {
         override fun newThread(r: Runnable?): Thread {
@@ -318,7 +318,7 @@ internal class AMCore : IAMProcessListener {
                     if (e is AMTaskException) {
                         when (e.reason) {
                             AMTaskErrorReason.PAUSE -> {
-                                //... 暂停不处理
+                                //... Pause is not handled
                             }
 
                             AMTaskErrorReason.STOP -> {

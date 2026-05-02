@@ -13,7 +13,7 @@ import com.coremate.opengui.automation.biz.common.node.tk.IAMWidgetTK
 import com.coremate.opengui.automation.biz.tasks.tk.mixvideo.AMTkPublishVideoMixHelper
 
 /**
- * 第10步：抖音操作下一步
+ * Step 10:Douyin next-step operation
  */
 internal class AMTkPublishVideoMixStep10(index: Int, helper: AMTkPublishVideoMixHelper) :
     AMBaseStep<AMTkPublishVideoMixHelper>(index, helper) {
@@ -46,7 +46,7 @@ internal class AMTkPublishVideoMixStep10(index: Int, helper: AMTkPublishVideoMix
 //                }
 //            }).dealWith { isSuc, intercept ->
 //            if (!isSuc) {
-//                throw AMTaskException.business("点击下一步失败")
+// throw AM Task Exception.business("Tap next Failure")
 //            }
 //        }
 //

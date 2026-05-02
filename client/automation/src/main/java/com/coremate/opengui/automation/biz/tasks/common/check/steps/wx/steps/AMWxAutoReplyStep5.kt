@@ -10,7 +10,7 @@ import com.coremate.opengui.automation.base.utils.Something
 import com.coremate.opengui.automation.biz.tasks.common.check.steps.wx.AMWxAutoReplyHelper
 
 /**
- * 第5步：获取昵称并点击进入会话
+ * Step 5:Get nickname and tap into conversation
  */
 internal class AMWxAutoReplyStep5(index: Int, helper: AMWxAutoReplyHelper) :
     AMBaseStep<AMWxAutoReplyHelper>(index, helper) {

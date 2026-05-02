@@ -13,7 +13,7 @@ import com.coremate.opengui.automation.biz.common.node.lv.IAMWidgetLV
 import com.coremate.opengui.automation.biz.tasks.tk.video.AMTkPublishVideoHelper
 
 /**
- * 第4步：点击AI生成
+ * Step 4:Tap AI generation
  */
 internal class AMTkPublishVideoStep4(index: Int, helper: AMTkPublishVideoHelper) :
     AMBaseStep<AMTkPublishVideoHelper>(index, helper) {
@@ -25,7 +25,7 @@ internal class AMTkPublishVideoStep4(index: Int, helper: AMTkPublishVideoHelper)
         }
         AMEventUtils.sleep(AMActionDelay.MIDDLE)
 
-        //点击AI生成按钮
+        //Tap AI generation button
         AMEventUtils.reProcessUntilOk(
             helper,
             3,

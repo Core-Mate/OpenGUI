@@ -12,7 +12,7 @@ class ConsoleLogger : Logger {
     }
 
     override fun warn(tag: String, message: String) {
-        System.err.println("WARN/$tag: $message") // 警告和错误通常打印到标准错误流
+        System.err.println("WARN/$tag: $message") // Warnings and errors usually go to stderr.
     }
 
     override fun error(tag: String, message: String, throwable: Throwable?) {
