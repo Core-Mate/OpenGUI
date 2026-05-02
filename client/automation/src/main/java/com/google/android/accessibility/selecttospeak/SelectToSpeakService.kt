@@ -9,33 +9,33 @@ import com.coremate.opengui.automation.base.utils.AMUtils
 import kotlin.reflect.KProperty
 
 /**
- * 辅助服务
+ * Accessibility service
  * */
 class SelectToSpeakService : AccessibilityService() {
 
     companion object {
-        //无障碍服务
+        //Accessibility service
         var service: SelectToSpeakService? = null
     }
 
     private var serviceInfoConfig by AccessibilityConfig()
 
     /**
-     * 绑定service
+ * Bind service
      * */
     override fun onServiceConnected() {
         super.onServiceConnected()
         service = this
         AMLog.onEDebugLog("服务开启")
-        //设置配置信息
+        //Set configuration
         serviceInfoConfig = serviceInfo
         serviceInfo = serviceInfoConfig
-        //跳转回app
+        //Return to the app
 //        AMUtils.jumpToPageInApp(this, AMCore.activityByOp)
     }
 
     /**
-     * 更改是否获取真实布局或者简略布局
+ * Toggle real layout versus simplified layout capture
      * */
     fun changeAccessibilityFlags(isReal: Boolean) {
         serviceInfoConfig = serviceInfo
@@ -55,15 +55,15 @@ class SelectToSpeakService : AccessibilityService() {
     }
 
     /**
-     * 获取到指定的监听事件
+ * Received the specified observed event
      * */
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
-        //辅助功能的事件类型
+        //Accessibility event type
         AMCore.instance.onAccessibilityEvent(event)
     }
 
     /**
-     * 服务被中断
+ * Service interrupted
      * */
     override fun onInterrupt() {
         //....
@@ -71,7 +71,7 @@ class SelectToSpeakService : AccessibilityService() {
     }
 
     /**
-     * service销毁
+ * Service destroyed
      * */
     override fun onDestroy() {
         super.onDestroy()
@@ -81,7 +81,7 @@ class SelectToSpeakService : AccessibilityService() {
 }
 
 /**
- * 配置信息
+ * Configuration
  * */
 class AccessibilityConfig {
     companion object {

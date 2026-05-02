@@ -22,9 +22,9 @@ object LogManager {
             SQLiteManager.Companion.getInstance(context)
                 .insertLog(System.currentTimeMillis(), message)
             Log.d(tag, message)
-            // 检查是否需要创建新的日志文件（基于日期）
+            // Check whether a new log file should be created based on date
             checkAndCreateLogFile()
-            // 如果当前日志文件为空，则返回
+            // Return if the current log file is empty
             if (currentLogFile == null) {
                 Log.e(TAG, "Failed to create log file")
                 return
@@ -36,14 +36,14 @@ object LogManager {
 
     private fun checkAndCreateLogFile() {
         val today = SimpleDateFormat("MM_dd", Locale.getDefault()).format(Date())
-        // 如果日期发生变化或文件不存在，创建新的日志文件
+        // Create a new log file when the date changes or the file is missing
         if (currentDate != today || currentLogFile == null || !currentLogFile!!.exists()) {
             currentDate = today
             val fileName = "$LOG_FILE_PREFIX$today$LOG_FILE_SUFFIX"
-            // 获取 Download 目录
+            // Get the Download directory
             val downloadDir =
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-            // 确保目录存在
+            // Ensure the directory exists
             if (!downloadDir.exists()) {
                 downloadDir.mkdirs()
             }
@@ -51,9 +51,9 @@ object LogManager {
         }
     }
 
-    // 提供一个方法来设置 Context（在实际使用中需要调用此方法）
+    // Provide a method for setting Context; callers must invoke it in real use
     fun init() {
-        // 初始化时立即检查并创建日志文件
+        // Check and create the log file immediately during initialization
         checkAndCreateLogFile()
     }
 }

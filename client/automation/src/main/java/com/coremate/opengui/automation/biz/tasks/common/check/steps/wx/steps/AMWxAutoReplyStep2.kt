@@ -11,7 +11,7 @@ import com.coremate.opengui.automation.biz.common.node.wx.IAMWidgetWX
 import com.coremate.opengui.automation.biz.tasks.common.check.steps.wx.AMWxAutoReplyHelper
 
 /**
- * 第2步：监控微信未读消息数
+ * Step 2:Monitor We Chat unread count
  */
 internal class AMWxAutoReplyStep2(index: Int, helper: AMWxAutoReplyHelper) :
     AMBaseStep<AMWxAutoReplyHelper>(index, helper) {
@@ -24,7 +24,7 @@ internal class AMWxAutoReplyStep2(index: Int, helper: AMWxAutoReplyHelper) :
         AMEventUtils.sleep(AMActionDelay.MIDDLE)
         helper.commonHelper?.setReplying(false)
         if (helper.commonHelper?.isHasFinish == true) {
-            ///完成
+            ///Complete
             helper.commonHelper?.amContext?.processListener?.onProcessTaskFinish(
                 true,
                 System.currentTimeMillis() - (helper.commonHelper?.startTime ?: 0),

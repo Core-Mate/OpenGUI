@@ -17,7 +17,7 @@ import com.coremate.opengui.automation.biz.common.node.wx.IAMWidgetWX
 import com.coremate.opengui.automation.biz.tasks.common.check.steps.wx.AMWxAutoReplyHelper
 
 /**
- * 第6步：传参数给AI，获取评论
+ * Step 6:Pass parameters to AI and get comment
  */
 internal class AMWxAutoReplyStep6(index: Int, helper: AMWxAutoReplyHelper) :
     AMBaseStep<AMWxAutoReplyHelper>(index, helper) {
@@ -33,7 +33,7 @@ internal class AMWxAutoReplyStep6(index: Int, helper: AMWxAutoReplyHelper) :
         }
         AMEventUtils.sleep(AMActionDelay.MIDDLE)
 
-        //获取最后一条信息
+        //Get the last message
         var recyclerViewNode: AccessibilityNodeInfo? = null
         AMEventUtils.reProcessUntilOk(
             helper,
@@ -60,7 +60,7 @@ internal class AMWxAutoReplyStep6(index: Int, helper: AMWxAutoReplyHelper) :
             condition.isCanNext = false
             return condition
         }
-        //获取最后一个节点
+        //Get the last node
         val nodeList = mutableListOf<AccessibilityNodeInfo?>()
         for (i in 0..<(recyclerViewNode?.childCount ?: 0)) {
             val node = recyclerViewNode?.getChild(i)

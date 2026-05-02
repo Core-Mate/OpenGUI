@@ -13,15 +13,15 @@ import java.io.InputStream
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
- * Mock 实现的 ScreenshotProvider，用于从 assets 加载预设图片进行测试。
+ * Mock Screenshot Provider implementation that loads preset images from assets for tests.
  */
 class MockScreenshotProvider(
     private val context: Context,
-    private val imageAssetPaths: List<String> // 传入 assets 目录下的图片路径列表
+    private val imageAssetPaths: List<String> // Image paths under the assets directory.
 ) : ScreenshotProvider {
 
     private val runtimeLogger: Logger = AndroidLogger()
-    private val imageIndex = AtomicInteger(0) // 用于轮询图片列表
+    private val imageIndex = AtomicInteger(0) // Used to cycle through the image list.
 
     override suspend fun capture(): Bitmap? = withContext(Dispatchers.IO) {
         if (imageAssetPaths.isEmpty()) {
@@ -29,7 +29,7 @@ class MockScreenshotProvider(
             return@withContext null
         }
 
-        // 轮询图片列表
+        // Cycle through the image list
         val currentIndex = imageIndex.getAndIncrement() % imageAssetPaths.size
         val imagePath = imageAssetPaths[currentIndex]
 

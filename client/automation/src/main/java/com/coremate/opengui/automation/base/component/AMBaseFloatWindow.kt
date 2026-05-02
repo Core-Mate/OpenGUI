@@ -16,13 +16,13 @@ import com.coremate.opengui.automation.base.data.AMDataContainer
 import com.coremate.opengui.automation.base.utils.AMUtils
 
 /**
- * 悬浮窗
+ * Floating window
  * */
 abstract class AMBaseFloatWindow<BD : ViewBinding, SD : AMCompRepository>(context: Context) :
     FrameLayout(context),
     IAMComponent {
 
-    //悬浮属性
+    //Floating attributes
     val windowParams: WindowManager.LayoutParams by lazy {
         val type: Int = if (Build.VERSION.SDK_INT < 24) {
             WindowManager.LayoutParams.TYPE_PHONE
@@ -38,28 +38,28 @@ abstract class AMBaseFloatWindow<BD : ViewBinding, SD : AMCompRepository>(contex
         params
     }
 
-    //当前悬浮tags类型
+    //Current floating tags type
     var curWindowTags: Int? = null
 
     private var interactTranslationX = 0f
     private var interactTranslationY = 0f
 
-    //当前模型
+    //Current model
     internal lateinit var curModel: AMCompModel
 
-    //上下文
+    //Context
     internal lateinit var amContext: AMContext
 
     protected var binding: BD
     protected var repository: SD
 
-    //对外事件接口
+    //External event interface
     internal var listener: IAMCompEventListener? = null
 
     init {
         binding = this.setBinding()
         repository = AMUtils.getT(this, 1) as SD
-        //初始化坐标
+        //Initial coordinates
         interactTranslationX = repository.startX.toFloat()
         interactTranslationY = repository.startY.toFloat()
         repository.wpX = interactTranslationX.toInt()
@@ -76,7 +76,7 @@ abstract class AMBaseFloatWindow<BD : ViewBinding, SD : AMCompRepository>(contex
     }
 
     /**
-     * 拖动效果
+ * Drag behavior
      * */
     open fun setDragMoveSelf() {
         if (openDragMove()) {
@@ -133,7 +133,7 @@ abstract class AMBaseFloatWindow<BD : ViewBinding, SD : AMCompRepository>(contex
     }
 
     /**
-     * 隐藏
+ * Hide
      * */
     @CallSuper
     override fun dismiss() {
@@ -148,7 +148,7 @@ abstract class AMBaseFloatWindow<BD : ViewBinding, SD : AMCompRepository>(contex
     }
 
     /**
-     * 销毁
+ * Destroy
      * */
     open fun onDestroy() {
 

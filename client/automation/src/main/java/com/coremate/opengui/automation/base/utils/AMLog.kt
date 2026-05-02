@@ -7,7 +7,7 @@ class AMLog {
 
     companion object {
         /**
-         * 仅做调试打印
+ * Debug logging only
          */
         fun onEDebugLog(log: String) {
             if (BuildConfig.DEBUG) {

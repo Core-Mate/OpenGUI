@@ -12,7 +12,7 @@ import com.coremate.opengui.automation.biz.common.event.red.AMRedPageEvent
 import com.coremate.opengui.automation.biz.tasks.common.check.steps.red.AMRedAutoReplyHelper
 
 /**
- * 第1步：跳转到小红书会话页面
+ * Step 1: Navigate to the Xiaohongshu conversation page
  */
 internal class AMRedAutoReplyStep1(index: Int, helper: AMRedAutoReplyHelper) :
     AMBaseStep<AMRedAutoReplyHelper>(index, helper) {
@@ -27,14 +27,14 @@ internal class AMRedAutoReplyStep1(index: Int, helper: AMRedAutoReplyHelper) :
             AMEventUtils.sleep(AMActionDelay.MIDDLE)
         }
         SelectToSpeakService.service?.changeAccessibilityFlags(false)
-        //判断返回的小红书消息列表
+        //Check Back Xiaohongshu Message list
         AMRedPageEvent.backRedChatListPage(object : IAMPageEvent.IAMTaskCallBack {
             override fun action(): Boolean {
                 return helper.isTaskPauseOrStop() || !helper.isOngoing()
             }
         }, helper)
 
-        //判断是否在会话列表
+        //Check whether on the conversation list
         if (!AMRedPageEvent.isInRedChatListPage()) {
             throw AMTaskException.business("不在小红书首页")
         }

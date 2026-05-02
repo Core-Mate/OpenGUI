@@ -4,8 +4,8 @@ import android.content.Context
 import com.google.gson.Gson
 
 /**
- * 自动化脚本配置管理类。
- * 用于本地缓存和读取自动化脚本的参数配置。
+ * Automation script configuration manager.
+ * Caches and reads automation script parameter configuration locally.
  */
 object AutomationConfigManager {
 
@@ -13,10 +13,10 @@ object AutomationConfigManager {
     private val gson = Gson()
 
     /**
-     * 保存指定脚本的配置。
-     * @param context 应用上下文。
-     * @param scriptName 脚本的唯一名称（作为 SharedPreferences 的 key）。
-     * @param config 脚本的配置对象。
+ * Save configuration for the specified script.
+ * @param context application context.
+ * @param script Name unique script name used as the Shared Preferences key.
+ * @param config script configuration object.
      */
     fun <T> saveConfig(context: Context, scriptName: String, config: T) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -26,11 +26,11 @@ object AutomationConfigManager {
     }
 
     /**
-     * 读取指定脚本的配置。
-     * @param context 应用上下文。
-     * @param scriptName 脚本的唯一名称（作为 SharedPreferences 的 key）。
-     * @param classOfT 配置对象的 Class 类型。
-     * @return 对应的配置对象，如果不存在则返回 null。
+ * Read configuration for the specified script.
+ * @param context application context.
+ * @param script Name unique script name used as the Shared Preferences key.
+ * @param class OfT Class type for the configuration object.
+ * @return matching configuration object, or null when absent.
      */
     fun <T> loadConfig(context: Context, scriptName: String, classOfT: Class<T>): T? {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -48,14 +48,14 @@ object AutomationConfigManager {
         }
     }
 
-    // 辅助函数：清除某个脚本的配置
+    // Helper: clear configuration for one script
     fun clearConfig(context: Context, scriptName: String) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit().remove(scriptName).apply()
         AndroidLogger().info("AutomationConfigManager", "Cleared config for $scriptName")
     }
 
-    // 辅助函数：清除所有配置 (慎用)
+    // Helper: clear all configuration; use with care
     fun clearAllConfigs(context: Context) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit().clear().apply()

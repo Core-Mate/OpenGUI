@@ -13,7 +13,7 @@ import com.coremate.opengui.automation.base.utils.AMUtils
 internal class AMCompManager(private val amContext: AMContext) :
     IAMCompEventListener, IAMCompForeBackObserver {
 
-    //组件栈
+    //Component stack
     private val componentStack = mutableListOf<AMCompModel>()
 
     fun onExecute(
@@ -31,10 +31,10 @@ internal class AMCompManager(private val amContext: AMContext) :
     }
 
     /**
-     * 显示组件
-     * @param targetModel 目标组件模型
-     * @param isShow 是否直接显示出来
-     * @param dataContainer 数据
+ * Show Component
+ * @param target Model Target Component model
+ * @param isShow whether to show immediately
+ * @param data Container data
      * */
     private fun showComponent(
         targetModel: AMCompModel,
@@ -52,7 +52,7 @@ internal class AMCompManager(private val amContext: AMContext) :
         })
     }
 
-    //获取所有组件
+    //Get all components
     fun allComponent(): MutableList<AMCompModel> {
         return componentStack
     }
@@ -78,7 +78,7 @@ internal class AMCompManager(private val amContext: AMContext) :
     }
 
     /**
-     * 返回app
+ * Return to app
      * */
     override fun onBackApp() {
         AMUtils.jumpToPageInApp(
@@ -93,7 +93,7 @@ internal class AMCompManager(private val amContext: AMContext) :
     //
     /////////////////////////////////////////////////////////////////////////////////
 
-    //进入目标app前台（判断显示悬浮组件）
+    //Enter target app foreground and decide whether to show floating components
     override fun onBecameForegroundInTargetApp() {
         if (componentStack.isNotEmpty() && amContext.taskManager.isStartTool) {
             componentStack.forEach {
@@ -104,13 +104,13 @@ internal class AMCompManager(private val amContext: AMContext) :
         }
     }
 
-    //进入目标后台
+    //Enter target background
     override fun onBecameBackgroundInTargetApp() {
         //....
     }
 
     fun onDestroy() {
-        //隐藏所有
+        //Hide all
         componentStack.forEach {
             if (it.component != null) {
                 it.component?.dismiss()

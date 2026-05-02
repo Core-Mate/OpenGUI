@@ -14,7 +14,7 @@ import com.coremate.opengui.automation.base.utils.AMScreenUtils
 import com.coremate.opengui.automation.databinding.CompEnterBinding
 
 /**
- * 进入弹窗 (主动弹窗)
+ * Enter dialog (active dialog)
  * */
 class EnterFloat(context: Context) : AMBaseFloatWindow<CompEnterBinding, EnterRepository>(context),
     AMTaskChangedListener {
@@ -59,14 +59,14 @@ class EnterFloat(context: Context) : AMBaseFloatWindow<CompEnterBinding, EnterRe
 
         amContext.taskManager.listener = this
 
-        //结束
+        //End
         binding.llStop.setOnClickListener {
             if (isLoading) return@setOnClickListener
             isStopLoading = true
             listener?.onStopComp()
         }
 
-        //暂停/开始
+        //Pause/Start
         binding.llControl.setOnClickListener {
             if (isLoading) return@setOnClickListener
             isLoading = true

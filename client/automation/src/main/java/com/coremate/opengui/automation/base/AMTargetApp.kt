@@ -6,11 +6,11 @@ import android.content.pm.PackageManager
 import com.coremate.opengui.automation.AMServiceManager
 
 /**
- * 目标APP
- * @param zhName app名称
- * @param shortName 简称（例如微信 WX）
- * @param packageName 包名
- * @param version 适配版本
+ * Target app
+ * @param zh Name app name
+ * @param short Name short name, such as We Chat WX
+ * @param package Name package name
+ * @param version compatible version
  * */
 enum class AMTargetApp(
     val zhName: String,
@@ -57,16 +57,16 @@ enum class AMTargetApp(
 
     companion object {
         /**
-         * 判断是否安装
+ * Check whether installed
          * */
         fun checkInstall(context: Context, targetApp: AMTargetApp): Boolean =
             isAppInstalled(context, targetApp.packageName)
 
         /**
-         * 判断三方app是否已安装
-         * @param context 上下文对象
-         * @param packageName 三方app的包名
-         * @return 是否已安装
+ * Check whether the third-party app is installed
+ * @param context Context Object
+ * @param package Name third-partyapp Package name
+ * @return whether installed
          */
         private fun isAppInstalled(context: Context, packageName: String?): Boolean {
             val packageManager = context.packageManager
@@ -80,7 +80,7 @@ enum class AMTargetApp(
     }
 
     /**
-     * 打开三方app
+ * Open third-party app
      * */
     fun openThirdApp() {
         val intent =

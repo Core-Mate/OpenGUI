@@ -18,7 +18,7 @@ import com.coremate.opengui.automation.biz.common.node.tk.IAMWidgetTK
 import com.coremate.opengui.automation.biz.tasks.common.check.steps.tk.AMTkAutoReplyHelper
 
 /**
- * 第6步：传参数给AI，获取评论
+ * Step 6:Pass parameters to AI and get comment
  */
 internal class AMTkAutoReplyStep6(index: Int, helper: AMTkAutoReplyHelper) :
     AMBaseStep<AMTkAutoReplyHelper>(index, helper) {
@@ -34,7 +34,7 @@ internal class AMTkAutoReplyStep6(index: Int, helper: AMTkAutoReplyHelper) :
         }
         AMEventUtils.sleep(AMActionDelay.MIDDLE)
 
-        //获取最后一条信息
+        //Get the last message
         var recyclerViewNode: AccessibilityNodeInfo? = null
         AMEventUtils.reProcessUntilOk(
             helper,
@@ -61,7 +61,7 @@ internal class AMTkAutoReplyStep6(index: Int, helper: AMTkAutoReplyHelper) :
             condition.isCanNext = false
             return condition
         }
-        //获取最后一个节点
+        //Get the last node
         val nodeList = mutableListOf<AccessibilityNodeInfo?>()
         for (i in 0..<(recyclerViewNode?.childCount ?: 0)) {
             val node = recyclerViewNode?.getChild(i)
@@ -86,7 +86,7 @@ internal class AMTkAutoReplyStep6(index: Int, helper: AMTkAutoReplyHelper) :
             }
         }
 
-        // 运行测试场景 2
+        // Run test scenario 2
         val mockChatPartnerNickname = helper.nickName
         val mockLastWeChatMessage = contentStr
         if (!helper.isOngoing()) {

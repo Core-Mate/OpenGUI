@@ -10,7 +10,7 @@ import com.coremate.opengui.automation.biz.tasks.wx.likecomment.AMWxLikeCommentH
 import com.coremate.opengui.automation.biz.tasks.wx.likecomment.bean.AMWxLikeCommentEventType
 
 /**
- * 第8步：评论1 - 截图上传
+ * Step 8: comment 1 - upload screenshot
  */
 internal class AMWxLikeCommentStep8(index: Int, helper: AMWxLikeCommentHelper) :
     AMBaseStep<AMWxLikeCommentHelper>(index, helper) {
@@ -23,7 +23,7 @@ internal class AMWxLikeCommentStep8(index: Int, helper: AMWxLikeCommentHelper) :
         if (helper.param?.eventType == AMWxLikeCommentEventType.COMMENT || helper.param?.eventType == AMWxLikeCommentEventType.LIKE_AND_COMMENT) {
             AMEventUtils.sleep(AMActionDelay.MIDDLE)
 
-//            helper.tempCommentText = "赞"
+// helper.tempCommentText = "Like"
             var isCallBack = false
             AMLog.onEDebugLog("开始请求AI")
 //            AMServiceManager.instance.cozeAIManager?.testScenario_WeChatMomentsComment(

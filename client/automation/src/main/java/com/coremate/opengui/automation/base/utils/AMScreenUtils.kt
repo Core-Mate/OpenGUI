@@ -10,34 +10,34 @@ class AMScreenUtils {
 
     companion object {
         /**
-         * 获取屏幕的宽度（单位：px）
+ * Get screen width in px
          *
-         * @return 屏幕宽px
+ * @return screen width in px
          */
         @JvmStatic
         fun screenWidth() = AMServiceManager.applicationContext.let {
             val windowManager = it.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-            val dm = DisplayMetrics() // 创建了一张白纸
-            windowManager.defaultDisplay.getMetrics(dm) // 给白纸设置宽高
+            val dm = DisplayMetrics() // Create an empty metrics object.
+            windowManager.defaultDisplay.getMetrics(dm) // Populate width and height.
             dm.widthPixels
         } ?: 0
 
         /**
-         * 获取屏幕的高度（单位：px）
+ * Get screen height in px
          *
-         * @return 屏幕高px
+ * @return screen height in px
          */
         @JvmStatic
         fun screenHeight(): Int = AMServiceManager.applicationContext.let {
             val windowManager =
                 it.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-            val dm = DisplayMetrics() // 创建了一张白纸
-            windowManager.defaultDisplay.getMetrics(dm) // 给白纸设置宽高
+            val dm = DisplayMetrics() // Create an empty metrics object.
+            windowManager.defaultDisplay.getMetrics(dm) // Populate width and height.
             dm.heightPixels
         } ?: 0
 
         /**
-         * 获取状态栏高度
+ * Get status bar height
          * */
         @JvmStatic
         fun getStatusBarHeight(): Int = Resources.getSystem().getDimensionPixelSize(

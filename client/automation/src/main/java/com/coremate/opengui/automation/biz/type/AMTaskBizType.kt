@@ -8,7 +8,7 @@ import com.coremate.opengui.automation.biz.tasks.wx.likecomment.AMWxLikeCommentT
 import kotlin.reflect.KClass
 
 /**
- * 任务类型
+ * Task type
  * */
 enum class AMTaskBizType(
     val type: String,
@@ -17,7 +17,7 @@ enum class AMTaskBizType(
 ) {
 
     /** common */
-    //自动回复（wx、tk、red）
+    //Auto-reply(wx. tk. red)
     COMMON_AUTO_REPLY(
         "common_auto_reply",
         mutableListOf(
@@ -31,7 +31,7 @@ enum class AMTaskBizType(
     ),
 
     /** wx */
-    //微信评论点赞
+    //We Chat comment and like
     WX_LIKE_COMMENT(
         "wx_like_comment",
         mutableListOf(AMTargetApp.WX, AMTargetApp.SYS_PERMISSION, AMTargetApp.OPLUS_PERMISSION),
@@ -39,7 +39,7 @@ enum class AMTaskBizType(
     ),
 
     /** tk */
-    //抖音发布视频(合成)
+    //Douyin video publishing (composition)
     TK_PUBLISH_VIDEO_MIX(
         "tk_publish_video_mix",
         mutableListOf(
@@ -51,7 +51,7 @@ enum class AMTaskBizType(
         AMTkPublishVideoMixTask::class
     ),
 
-    //抖音发布视频(通过AI)
+    //Douyin video publishing (AI-assisted)
     TK_PUBLISH_VIDEO_AI(
         "tk_publish_video_ai",
         mutableListOf(

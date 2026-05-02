@@ -15,7 +15,7 @@ import com.coremate.opengui.automation.biz.common.node.wx.IAMWidgetWX
 import com.coremate.opengui.automation.biz.tasks.common.check.steps.wx.AMWxAutoReplyHelper
 
 /**
- * 第4步：分发子任务
+ * Step 4:Dispatch subtasks
  */
 internal class AMWxAutoReplyStep4(index: Int, helper: AMWxAutoReplyHelper) :
     AMBaseStep<AMWxAutoReplyHelper>(index, helper) {
@@ -23,7 +23,7 @@ internal class AMWxAutoReplyStep4(index: Int, helper: AMWxAutoReplyHelper) :
     override val isDispatcher: Boolean
         get() = true
 
-    //记录循环过滤索引
+    //Record loop filter index
     private var tempIndex = 0
 
     init {
@@ -45,7 +45,7 @@ internal class AMWxAutoReplyStep4(index: Int, helper: AMWxAutoReplyHelper) :
             if (i >= tempIndex) {
                 val nodeInfo = helper.tempNodeList[i]
                 AMLog.onEDebugLog("当前子步骤${subStepIndex}")
-                //第5步 - 点击进入
+                //Step 5 - Tap to enter
                 if (subStepIndex == 5) {
                     val nameInfo = AMNodeUtils.getFirstNodeById(
                         nodeInfo,
@@ -64,7 +64,7 @@ internal class AMWxAutoReplyStep4(index: Int, helper: AMWxAutoReplyHelper) :
 
                 }
 
-                //第6步 - 传参数给AI，获取评论
+                //Step 6 - Pass parameters to AI and get comment
                 if (subStepIndex in 5..6 && isCanNext) {
                     isCanNext =
                         onExecuteSubStep(
@@ -77,7 +77,7 @@ internal class AMWxAutoReplyStep4(index: Int, helper: AMWxAutoReplyHelper) :
                         }.second
                 }
 
-                //第7步 - 自动回复
+                //Step 7 - Auto-reply
                 if (subStepIndex in 5..7 && isCanNext) {
                     isCanNext =
                         onExecuteSubStep(
@@ -90,7 +90,7 @@ internal class AMWxAutoReplyStep4(index: Int, helper: AMWxAutoReplyHelper) :
                         }.second
                 }
 
-                //回到首页
+                //Return to home page
                 AMWxPageEvent.back2WeChatHomePage(object : IAMPageEvent.IAMTaskCallBack {
                     override fun action(): Boolean {
                         return helper.isTaskPauseOrStop() || !helper.isOngoing()
@@ -99,13 +99,13 @@ internal class AMWxAutoReplyStep4(index: Int, helper: AMWxAutoReplyHelper) :
 
 
                 subStepIndex = 5
-                //增加过滤索引
+                //Increment filter index
                 tempIndex++
             }
         }
         AMEventUtils.sleep(AMActionDelay.MIDDLE)
         helper.executorService.execute {
-            //回到第3步
+            //Return to step 3
             tempIndex = 0
             AMLog.onEDebugLog("回到第3步")
             helper.thirdStep()?.onExecute(data=AMDataContainer().withExtra(true))

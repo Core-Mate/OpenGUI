@@ -15,7 +15,7 @@ import com.coremate.opengui.automation.biz.common.node.lv.IAMWidgetLV
 import com.coremate.opengui.automation.biz.tasks.tk.mixvideo.AMTkPublishVideoMixHelper
 
 /**
- * 第2步：点击营销视频
+ * Step 2:Tap Marketing video
  */
 internal class AMTkPublishVideoMixStep2(index: Int, helper: AMTkPublishVideoMixHelper) :
     AMBaseStep<AMTkPublishVideoMixHelper>(index, helper) {
@@ -49,7 +49,7 @@ internal class AMTkPublishVideoMixStep2(index: Int, helper: AMTkPublishVideoMixH
             //...
         }
         if (gridViewNode == null) {
-            ///兼容首次布局
+            ///Handle first-run layout
             AMEventUtils.reProcessUntilOk(
                 helper,
                 10,
@@ -74,7 +74,7 @@ internal class AMTkPublishVideoMixStep2(index: Int, helper: AMTkPublishVideoMixH
             if (gridViewNode == null) {
                 throw AMTaskException.business("未找到营销视频所在列表")
             }
-            //点击进入营销成片
+            //Tap into marketing finished video
             AMEventUtils.reProcessUntilOk(
                 helper,
                 10,
@@ -104,7 +104,7 @@ internal class AMTkPublishVideoMixStep2(index: Int, helper: AMTkPublishVideoMixH
                 }
             }
         } else {
-            //点击进入营销视频
+            //Tap to enter Marketing video
             AMEventUtils.reProcessUntilOk(
                 helper,
                 10,

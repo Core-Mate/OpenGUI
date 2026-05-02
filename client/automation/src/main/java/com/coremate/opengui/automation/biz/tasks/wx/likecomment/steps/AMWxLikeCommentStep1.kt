@@ -11,7 +11,7 @@ import com.coremate.opengui.automation.biz.common.event.wx.AMWxPageEvent
 import com.coremate.opengui.automation.biz.tasks.wx.likecomment.AMWxLikeCommentHelper
 
 /**
- * 第1步：跳转到微信朋友圈
+ * Step 1:Navigate to We Chat Moments
  */
 internal class AMWxLikeCommentStep1(index: Int, helper: AMWxLikeCommentHelper) :
     AMBaseStep<AMWxLikeCommentHelper>(index, helper) {
@@ -35,7 +35,7 @@ internal class AMWxLikeCommentStep1(index: Int, helper: AMWxLikeCommentHelper) :
                 throw AMTaskException.business("进入朋友圈失败")
             }
         }
-        //判断是否在朋友圈
+        //Check whether on Moments
         AMWxPageEvent.comeToFriendMoments(helper, condition).let {
             if (it.isIntercept) return it
         }

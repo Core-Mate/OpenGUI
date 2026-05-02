@@ -13,7 +13,7 @@ import com.coremate.opengui.automation.biz.common.node.lv.IAMWidgetLV
 import com.coremate.opengui.automation.biz.tasks.tk.video.AMTkPublishVideoHelper
 
 /**
- * 第3步：判断权限和其他确定按钮
+ * Step 3:Check permissions and other confirm buttons
  */
 internal class AMTkPublishVideoStep3(index: Int, helper: AMTkPublishVideoHelper) :
     AMBaseStep<AMTkPublishVideoHelper>(index, helper) {
@@ -25,7 +25,7 @@ internal class AMTkPublishVideoStep3(index: Int, helper: AMTkPublishVideoHelper)
         }
         AMEventUtils.sleep(AMActionDelay.MIDDLE)
 
-        //点击我知道了
+        //Tap Got it
         AMEventUtils.reProcessUntilOk(
             helper,
             2,

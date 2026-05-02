@@ -32,7 +32,7 @@ internal class AMCommonAutoReplyHelper : AMBaseStepHelper() {
         AMTargetApp.RED,
     );
 
-    ///监控app的索引
+    ///Index of monitored app
     @Volatile
     private var appIndex = 0
 
@@ -41,16 +41,16 @@ internal class AMCommonAutoReplyHelper : AMBaseStepHelper() {
 
     private val appCount = apps.size
 
-    //是否在回复中
+    //Whether replying
     @Volatile
     private var setReplying = false
 
-    //获取任务状态
+    //Get task status
     val isReplying: Boolean
         get() = setReplying
 
     /**
-     * 设置是否是正在回复中的状态
+ * Set whether currently replying
      */
     fun setReplying(replying: Boolean) {
         synchronized(this) {
@@ -58,13 +58,13 @@ internal class AMCommonAutoReplyHelper : AMBaseStepHelper() {
         }
     }
 
-    //标记完成
+    //Mark complete
     var isHasFinish = false
 
-    //间隔时间（分钟）
+    //Interval in minutes
     private var cutDownTime = 0
 
-    ///计时监测
+    ///Timed monitor
     private val mCheckDelayTime: Long = 1000 * 60
     private var mCheckTimer: Timer? = null
     private var mCheckTimerTask: BroadcastTimerTask? = null
@@ -106,9 +106,9 @@ internal class AMCommonAutoReplyHelper : AMBaseStepHelper() {
             AMTkAutoReplyStep7::class,
         )
         startTime = System.currentTimeMillis()
-        // 开启监测
+        // Start monitoring
         startTimer()
-        //开始执行
+        //Start execution
         continueApp()
     }
 
@@ -132,7 +132,7 @@ internal class AMCommonAutoReplyHelper : AMBaseStepHelper() {
         }
     }
 
-    ///开始计时
+    ///Start timer
     private fun startTimer() {
         if (mCheckTimer == null) {
             mCheckTimer = Timer()
@@ -142,7 +142,7 @@ internal class AMCommonAutoReplyHelper : AMBaseStepHelper() {
         }
     }
 
-    ///取消计时
+    ///Cancel timer
     private fun cancelTimer() {
         mCheckTimer?.cancel()
         mCheckTimer = null
@@ -151,22 +151,22 @@ internal class AMCommonAutoReplyHelper : AMBaseStepHelper() {
     }
 
 
-    //倒计时
+    //Countdown
     private inner class BroadcastTimerTask : TimerTask() {
         override fun run() {
             if (isTaskPauseOrStop()) return
             if (isCurrentTimeAfter(param?.endTime ?: "")) {
                 AMLog.onEDebugLog("结束监测")
-                //结束了
+                //Ended
                 cancelTimer()
-                //停止掉
+                //Stop it
                 wxHelper.onTemporarySuspension()
                 tkHelper.onTemporarySuspension()
                 redHelper.onTemporarySuspension()
-                //标记完成
+                //Mark complete
                 isHasFinish = true
                 if (!isReplying) {
-                    //完成
+                    //Complete
                     amContext.processListener?.onProcessTaskFinish(
                         true,
                         System.currentTimeMillis() - startTime,
@@ -177,14 +177,14 @@ internal class AMCommonAutoReplyHelper : AMBaseStepHelper() {
                 cutDownTime--
                 if (cutDownTime <= 0) {
                     if (isReplying) {
-                        //正在回复的时候，继续倒计时
+                        //Continue countdown while replying
                         cutDownTime++
                     } else {
-                        //停止掉
+                        //Stop it
                         wxHelper.onTemporarySuspension()
                         tkHelper.onTemporarySuspension()
                         redHelper.onTemporarySuspension()
-                        //继续下一个app
+                        //Continue to the next app
                         cutDownTime = param?.interval ?: 10
                         appIndex = (appIndex + 1) % appCount
                         curApp = apps[appIndex]
@@ -227,7 +227,7 @@ internal class AMCommonAutoReplyHelper : AMBaseStepHelper() {
         }
     }
 
-    //是否超过结束时间
+    //Whether past the end time
     private fun isCurrentTimeAfter(endTimeStr: String): Boolean {
         return try {
             val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())

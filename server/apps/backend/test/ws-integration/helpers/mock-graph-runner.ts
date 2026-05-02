@@ -1,8 +1,8 @@
 /**
  * Mock GraphRunnerService
  *
- * 使用 Deferred 模式控制异步执行。
- * 暴露 hasExecution / preRegisterExecution / cancelExecution / pauseExecution 等方法。
+ * Use the Deferred pattern to control async execution.
+ * Expose methods such as has Execution, pre Register Execution, cancel Execution, and pause Execution.
  */
 import { Deferred } from "./deferred";
 
@@ -51,7 +51,7 @@ export function createMockGraphRunner() {
 				_skipSummary?: boolean,
 			): Promise<MockCancelExecutionResult> => {
 				registeredExecutions.delete(taskExecutionId);
-				// 自动 resolve 任何悬挂的 execution deferred
+				// Automatically resolve any pending execution deferred
 				const d = executionDeferreds.get(taskExecutionId);
 				if (d && !d.settled) {
 					d.resolve({ success: false, cancelled: true, abortReason: "cancel" });

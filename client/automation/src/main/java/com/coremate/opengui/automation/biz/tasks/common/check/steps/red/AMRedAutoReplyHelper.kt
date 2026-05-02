@@ -12,7 +12,7 @@ internal class AMRedAutoReplyHelper : AMBaseStepHelper(), AMCommonAutoListener {
     var commonHelper: AMCommonAutoReplyHelper? = null
     var param: AMCommonAutoReplyParam? = null
 
-    ///是否暂时停止
+    ///whether Temporarily stop
     var isTemporary = false
 
     var tempNodeList = mutableListOf<AccessibilityNodeInfo>()
@@ -20,7 +20,7 @@ internal class AMRedAutoReplyHelper : AMBaseStepHelper(), AMCommonAutoListener {
     var nickName = ""
     var replyContent = ""
 
-    ///是否是当前app
+    ///Whether this is the current app
     fun isOngoing() = (commonHelper?.curApp == AMTargetApp.RED || !isTemporary)
 
 

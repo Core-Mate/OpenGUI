@@ -8,19 +8,19 @@ internal class AMWxLikeCommentHelper : AMBaseStepHelper() {
 
     var param: AMWxLikeCommentParam? = null
 
-    //成功添加的数量
+    //Number added successfully
     var sucCount = 0
 
-    //临时节点
+    //temporary Node
     val tempNodeList = mutableListOf<AccessibilityNodeInfo>()
 
-    //列表
+    //List
     var listNode: AccessibilityNodeInfo? = null
 
-    //临时评论内容
+    //Temporary comment content
     var tempCommentText = "赞"
 
-    //是否完成
+    //Whether complete
     var isFinish = false
 
     override fun onObserveTaskResume() {

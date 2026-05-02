@@ -30,7 +30,7 @@ class AMForegroundService : Service() {
         val pendingIntent =
             PendingIntent.getActivity(this, 0, launchIntent, PendingIntent.FLAG_IMMUTABLE)
 
-        //TODO:8.0以上增加频道
+        //TODO: add channel support on Android 8.0+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val b = NotificationChannel(
                 CHANNEL_ID + noticeId,
@@ -43,19 +43,19 @@ class AMForegroundService : Service() {
         }
         val title = "Promotor"
         val mBuilder = NotificationCompat.Builder(this, CHANNEL_ID + noticeId)
-        mBuilder.setContentTitle(title) //设置通知栏标题
+        mBuilder.setContentTitle(title) // Set notification title.
             .setContentText("")
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setNumber(0) //设置通知集合的数量
+            .setNumber(0) // Set notification collection count.
             .setSound(null)
             .setSmallIcon(
                 AMServiceManager.instance.notificationImg ?: R.drawable.notification_small_icon
             )
             .setLights(0, 0, 0)
-            .setTicker(title) //通知首次出现在通知栏，带上升动画效果的
-            .setWhen(System.currentTimeMillis()) //通知产生的时间，会在通知信息里显示，一般是系统获取到的时间
+            .setTicker(title) // First ticker text shown with the notification animation.
+            .setWhen(System.currentTimeMillis()) // Notification creation time shown in notification details.
             .setVibrate(longArrayOf(0L))
         try {
             startForeground(noticeId, mBuilder.build())

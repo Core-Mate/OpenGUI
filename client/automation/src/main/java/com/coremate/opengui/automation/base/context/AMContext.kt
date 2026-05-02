@@ -24,15 +24,15 @@ internal class AMContext(
 ) : AMCheckTargetAppListener {
 
     companion object {
-        //是否在目标App内
+        //Whether in the target app
         @Volatile
         var isInTargetApp: Boolean = false
     }
 
-    //目标app检测
+    //Targetapp Check
     private val checkTargetApp = AMCheckTargetApp(this, this)
 
-    //悬浮/组件管理
+    //Floating/component management
     val windowManager = AMWindowManager()
     var componentManager: AMCompManager? = null
         set(value) {
@@ -40,10 +40,10 @@ internal class AMContext(
             field?.let { addForeOrBackObserver(it) }
         }
 
-    //任务管理
+    //Task management
     var taskManager: AMTaskManager = AMTaskManager(this)
 
-    //根结点缓存
+    //Root node cache
     @Volatile
     private var mRootNode: AccessibilityNodeInfo? = null
 
@@ -56,7 +56,7 @@ internal class AMContext(
                     SelectToSpeakService.service?.windows?.let {
                         it.forEach { windowInfo ->
                             if (windowInfo != null) {
-                                //windowInfo.root是get方法，直接判断空，下面的不一定不为空，所以用?
+                                //window Info.root is a getter; even if the direct null check passes, values below may still be null, so use ?
                                 val tempPackageName = windowInfo.root?.packageName
                                 if (tempPackageName != null && packageNames.contains(tempPackageName.toString())) {
                                     return windowInfo.root
@@ -73,40 +73,40 @@ internal class AMContext(
         }
     }
 
-    //流程状态回调
+    //Process status callback
     var processListener: IAMProcessListener? = null
 
-    //前后台监听
+    //Foreground/background listener
     private val foreOrBackObservers = mutableListOf<IAMCompForeBackObserver>()
 
     /**
-     * 添加前后台监听
+ * Add Foreground/background listener
      * */
     fun addForeOrBackObserver(observer: IAMCompForeBackObserver) {
         foreOrBackObservers.add(observer)
     }
 
     /**
-     * 检测是否在目标APP，并分发给任务
+ * Check whether in the target app and dispatch to the task
      * */
     fun checkTargetAndDispatchTaskManager(event: AccessibilityEvent) {
         val rootNode = rootNode()
-        //先检测：
+        //Check first:
         if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
-            //只有（窗口-状态改变）才去检测
+            //Check only for window state changes
             val isInTargetApp =
                 checkTargetApp.checkInTargetApp(targetApps, rootNode, event)
-            //监听结果
+            //Observe result
             observeInTargetApp(isInTargetApp, rootNode)
         }
-        //任务分发：
+        //Task dispatch:
         if (taskManager.isStartTool) {
             taskManager.observeAccessibilityEventInTask(isInTargetApp, event)
         }
     }
 
     /**
-     * 监听是否在目标内
+ * Observe whether inside target
      * */
     private fun observeInTargetApp(
         inTargetApp: Boolean,
@@ -181,7 +181,7 @@ internal class AMContext(
     }
 
     /**
-     * 当前组件是否事件穿透（目前支持挂起弹窗）
+ * Whether the current component allows event pass-through; currently supports suspended dialogs
      * */
     fun changeCompEventStrike(isStrike: Boolean) {
         val curComps = componentManager?.allComponent()
@@ -199,7 +199,7 @@ internal class AMContext(
 
     /////////////////////////////////////////////////////////////////////////////////
     //
-    //                      释放
+    // Release
     //
     /////////////////////////////////////////////////////////////////////////////////
 
@@ -217,42 +217,42 @@ internal class AMContext(
 }
 
 /**
- * 子管理的生命周期
+ * Child manager lifecycle
  * */
 interface IAMSubManagerLifeCycle {
 
-    //执行
+    //execute
     fun onExecute(taskCls: KClass<*>, dataContainer: AMDataContainer?) {
 
     }
 
-    //释放
+    //Release
     fun onDestroy()
 }
 
 /**
- * 整体流程回调状态
+ * Overall process callback status
  * */
 interface IAMProcessListener {
 
-    //任务开始
+    //Task started
     fun onProcessTaskStart() {}
 
     /**
-     * 任务暂停
-     * @param isActive 是否主动暂停
+ * Task paused
+ * @param is Active whether the pause is active
      */
     fun onProcessTaskPause(isActive: Boolean = true) {}
 
-    //任务恢复
+    //Task resumed
     fun onProcessTaskResume() {}
 
     /**
-     * 任务完成
-     * @param isSuccess 是否成功
-     * @param elapsedTime 耗时
-     * @param exception 异常
-     * @param sucData 数据
+ * Task complete
+ * @param is Success whether execution succeeded
+ * @param elapsed Time elapsed time
+ * @param exception exception
+ * @param suc Data data
      */
     fun onProcessTaskFinish(
         isSuccess: Boolean,

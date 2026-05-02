@@ -16,7 +16,7 @@ import com.coremate.opengui.automation.biz.tasks.wx.likecomment.AMWxLikeCommentH
 import com.coremate.opengui.automation.biz.tasks.wx.likecomment.bean.AMWxLikeCommentEventType
 
 /**
- * 第5步：检测更多按钮位置
+ * Step 5:Check more button position
  */
 internal class AMWxLikeCommentStep5(index: Int, helper: AMWxLikeCommentHelper) :
     AMBaseStep<AMWxLikeCommentHelper>(index, helper) {
@@ -27,7 +27,7 @@ internal class AMWxLikeCommentStep5(index: Int, helper: AMWxLikeCommentHelper) :
             return condition
         }
         AMEventUtils.sleep(AMActionDelay.SHORT)
-        //判断更多按钮是否在屏幕内
+        //Check whether the more button is on screen
         val nodeInfo = data?.bean as AccessibilityNodeInfo
         AMEventUtils.reProcessUntilOk(
             helper,
@@ -39,7 +39,7 @@ internal class AMWxLikeCommentStep5(index: Int, helper: AMWxLikeCommentHelper) :
                 }
 
                 override fun work(timeIndex: Int): Boolean {
-                    //获取更多按钮并点击
+                    //Get the more button and tap it
                     val btnNode = AMNodeUtils.getFirstNodeById(
                         nodeInfo,
                         IAMWidgetWX.fcMoreBtn().resourceId

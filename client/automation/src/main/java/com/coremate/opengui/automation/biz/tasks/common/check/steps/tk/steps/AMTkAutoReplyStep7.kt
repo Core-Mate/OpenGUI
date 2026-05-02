@@ -13,7 +13,7 @@ import com.coremate.opengui.automation.biz.common.node.tk.IAMWidgetTK
 import com.coremate.opengui.automation.biz.tasks.common.check.steps.tk.AMTkAutoReplyHelper
 
 /**
- * 第7步：自动回复
+ * Step 7:Auto-reply
  */
 internal class AMTkAutoReplyStep7(index: Int, helper: AMTkAutoReplyHelper) :
     AMBaseStep<AMTkAutoReplyHelper>(index, helper) {
@@ -29,7 +29,7 @@ internal class AMTkAutoReplyStep7(index: Int, helper: AMTkAutoReplyHelper) :
         }
 
         AMEventUtils.sleep(AMActionDelay.SHORT)
-        //输入框节点
+        //Input field node
         var editNode: AccessibilityNodeInfo? = null
         AMEventUtils.reProcessUntilOk(
             helper,

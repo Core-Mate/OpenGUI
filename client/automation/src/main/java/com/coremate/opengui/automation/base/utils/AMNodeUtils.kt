@@ -3,12 +3,12 @@ package com.coremate.opengui.automation.base.utils
 import android.view.accessibility.AccessibilityNodeInfo
 
 /**
- * 节点工具
+ * Node utilities
  * */
 object AMNodeUtils {
 
     /**
-     * 通过Id获取第一个NodeInfo
+ * Get the first Node Info by ID
      */
     fun getFirstNodeById(
         nodeInfo: AccessibilityNodeInfo?,
@@ -24,7 +24,7 @@ object AMNodeUtils {
     }
 
     /**
-     * 通过Id获取第一个NodeInfo (条件)
+ * Get the first Node Info by ID with predicate
      */
     fun getFirstNodeByIdWithCallback(
         parentOrRoot: AccessibilityNodeInfo?,
@@ -58,7 +58,7 @@ object AMNodeUtils {
     }
 
     /**
-     * 根据id获取节点
+ * Get node by ID
      * */
     private fun findNodesById(
         parentOrRoot: AccessibilityNodeInfo?,
@@ -78,7 +78,7 @@ object AMNodeUtils {
     }
 
     /**
-     * 通过Id获取全部NodeInfo (精准)
+ * Get all Node Info by ID exactly
      */
     fun getAllNodeById(
         nodeInfo: AccessibilityNodeInfo?,
@@ -93,7 +93,7 @@ object AMNodeUtils {
     }
 
     /**
-     * 通过Text获取第一个NodeInfo
+ * Get the first Node Info by text
      */
     fun getFirstNodeByText(
         nodeInfo: AccessibilityNodeInfo?,
@@ -121,7 +121,7 @@ object AMNodeUtils {
     }
 
     /**
-     * 通过Desc获取第一个NodeInfo
+ * Get the first Node Info by desc
      */
     fun getFirstNodeByDesc(
         nodeInfo: AccessibilityNodeInfo?,
@@ -150,7 +150,7 @@ object AMNodeUtils {
     }
 
     /**
-     * 通过Desc获取第一个NodeInfo
+ * Get the first Node Info by desc
      */
     fun getFirstNodeByDescCallBack(
         nodeInfo: AccessibilityNodeInfo?,
@@ -175,7 +175,7 @@ object AMNodeUtils {
     }
 
     /**
-     * 通过ID和Text模糊匹配 获取第一个NodeInfo
+ * Get the first Node Info by fuzzy ID and text match
      */
     fun getFirstNodeByIdWithContainText(
         nodeInfo: AccessibilityNodeInfo?,
@@ -199,7 +199,7 @@ object AMNodeUtils {
     }
 
     /**
-     * 通过className获取节点
+ * Get node by class Name
      */
     fun getNodeByClassName(
         nodeInfo: AccessibilityNodeInfo?,
@@ -224,7 +224,7 @@ object AMNodeUtils {
     }
 
     /**
-     * 通过ClassName获取同层布局第一个
+ * Get the first sibling layout by Class Name
      */
     fun getBrotherNodeByClassName(
         nodeInfo: AccessibilityNodeInfo?,
@@ -255,7 +255,7 @@ object AMNodeUtils {
     }
 
     /**
-     * 通过ClassName获取全部NodeInfo (精准)
+ * Get all Node Info by Class Name exactly
      */
     fun getAllNodeByClassName(
         nodeInfo: AccessibilityNodeInfo?,
@@ -279,7 +279,7 @@ object AMNodeUtils {
     }
 
     /**
-     * 通过Desc及ClassName获取第一个NodeInfo
+ * Get the first Node Info by desc and class Name
      */
     fun getFirstNodeByDescWithClassName(
         nodeInfo: AccessibilityNodeInfo?,
@@ -301,7 +301,7 @@ object AMNodeUtils {
     }
 
     /**
-     * 通过Desc及ClassName获取第一个NodeInfo
+ * Get the first Node Info by desc and class Name
      */
     fun getAllNodeContainDesc(
         nodeInfo: AccessibilityNodeInfo?,
@@ -326,7 +326,7 @@ object AMNodeUtils {
 
 
     /**
-     * 获取节点
+ * Get node
      * */
     private fun findNode(
         accessibilityNodeInfo: AccessibilityNodeInfo?,
@@ -396,7 +396,7 @@ object AMNodeUtils {
     }
 
     /**
-     * 获取子节点
+ * Get child nodes
      * */
     fun findChildNodes(
         rootNode: AccessibilityNodeInfo?,

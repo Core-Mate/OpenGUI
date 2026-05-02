@@ -24,11 +24,11 @@ class AMCommonAutoReplyTestActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // 初始化 binding
+        // Initialize binding
         binding = ActivityAmcommonAutoTestReplyBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // 设置默认值
+        // Set default values
         val now = Calendar.getInstance()
         val later = Calendar.getInstance().apply {
             add(Calendar.MINUTE, 15)
@@ -70,7 +70,7 @@ class AMCommonAutoReplyTestActivity : AppCompatActivity() {
         DatePickerDialog(
             this,
             { _, year, month, dayOfMonth ->
-                // 日期选完后再弹出时间选择器
+                // Show the time picker after date selection
                 calendar.set(Calendar.YEAR, year)
                 calendar.set(Calendar.MONTH, month)
                 calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth)
@@ -82,7 +82,7 @@ class AMCommonAutoReplyTestActivity : AppCompatActivity() {
                         calendar.set(Calendar.MINUTE, minute)
                         calendar.set(Calendar.SECOND, 0)
 
-                        // 格式化时间
+                        // Format time
                         val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
                         val formatted = sdf.format(calendar.time)
                         targetView.text = formatted

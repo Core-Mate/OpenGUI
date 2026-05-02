@@ -18,12 +18,12 @@ import com.coremate.opengui.automation.biz.common.node.tk.IAMWidgetTK
 import com.coremate.opengui.automation.biz.tasks.common.check.steps.tk.AMTkAutoReplyHelper
 
 /**
- * 第3步：遍历消息列表
+ * Step 3: Traverse the message list
  */
 internal class AMTkAutoReplyStep3(index: Int, helper: AMTkAutoReplyHelper) :
     AMBaseStep<AMTkAutoReplyHelper>(index, helper) {
 
-    //已经加入的好友信息
+    //Already-added friend info
     private var alreadyAddFriends = mutableListOf<String>()
 
     override fun onExecute(data: AMDataContainer?, isResume: Boolean): AMStepCondition {
@@ -34,30 +34,30 @@ internal class AMTkAutoReplyStep3(index: Int, helper: AMTkAutoReplyHelper) :
 
         SelectToSpeakService.service?.changeAccessibilityFlags(true)
         AMEventUtils.sleep(AMActionDelay.SHORT)
-        //清空临时列表
+        //Clear temporary list
         alreadyAddFriends.clear()
         helper.tempNodeList.clear()
         while (true) {
             if (!helper.isOngoing() || helper.isTaskPauseOrStop()) {
                 return condition
             }
-            //根节点
+            //Root node
             var rootNode = AMCore.instance.amContext?.rootNode()
             if (rootNode == null) {
                 AMEventUtils.sleep(AMActionDelay.MIDDLE)
                 rootNode = AMCore.instance.amContext?.rootNode()
             }
-            //列表节点
+            //List node
             val listViewNode =
                 AMNodeUtils.getFirstNodeById(rootNode, IAMWidgetTK.msgList().resourceId)
                     ?: throw AMTaskException.business("列表为空")
 
-            ///是否要滑动到最顶部
+            ///Whether to swipe to the top
             var isNoCanSlide = false
             if (data?.extra is Boolean) {
                 isNoCanSlide = data.extra as Boolean
             }
-            //滑动到最顶部
+            //Swipe to the top
             while (true) {
                 if (!helper.isOngoing() || helper.isTaskPauseOrStop()) {
                     return condition
@@ -69,17 +69,17 @@ internal class AMTkAutoReplyStep3(index: Int, helper: AMTkAutoReplyHelper) :
 
             for (i in 0..<listViewNode.childCount) {
                 val tvNodeInfo = listViewNode.getChild(i)
-                //1.判断节点是否为空
+                //1. Check whether the node is null
                 if (tvNodeInfo.className.toString() != Button::class.java.name) continue
                 val nameInfo = AMNodeUtils.getFirstNodeById(
                     tvNodeInfo,
                     IAMWidgetTK.contactNickName().resourceId
                 )
-                //2.判断用户昵称是否为空 (name可能会重复,先忽略)
+                //2. Check whether the user nickname is empty; name may repeat, ignore for now
                 val name = nameInfo?.text.toString()
                 if (TextUtils.isEmpty(name)) continue
 
-                //3.过滤非红点的节点
+                //3.Filter nodes without red dots
                 val numRedInfo = AMNodeUtils.getFirstNodeById(
                     tvNodeInfo,
                     IAMWidgetTK.messageNumRedItem().resourceId
@@ -97,17 +97,17 @@ internal class AMTkAutoReplyStep3(index: Int, helper: AMTkAutoReplyHelper) :
                 if (numRedInfo == null && numRedInfo2 == null) {
                     continue
                 }
-                //4.过滤已经添加的节点
+                //4.Filter already-added nodes
                 if (alreadyAddFriends.contains(name)) {
                     continue
                 }
-                //添加到总数组
+                //Add to the main array
                 alreadyAddFriends.add(name)
-                //添加到临时数组
+                //Add to the temporary array
                 helper.tempNodeList.add(tvNodeInfo)
 
             }
-            //当临时列表不为空时，执行第4步
+            //Execute step 4 when the temporary list is not empty
             if (helper.tempNodeList.isNotEmpty()) {
                 helper.executorService.execute {
                     if (helper.isOngoing()) {
@@ -116,7 +116,7 @@ internal class AMTkAutoReplyStep3(index: Int, helper: AMTkAutoReplyHelper) :
                 }
                 return condition
             }
-            //滑动
+            //Swipe
             if (listViewNode.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)) {
                 AMEventUtils.sleep(AMActionDelay.MIDDLE)
                 continue
@@ -126,7 +126,7 @@ internal class AMTkAutoReplyStep3(index: Int, helper: AMTkAutoReplyHelper) :
             }
         }
 
-        ///回到第2步继续
+        ///Return to step 2 and continue
         helper.executorService.execute {
             if (helper.isOngoing()) {
                 helper.secondStep()?.onExecute()

@@ -11,23 +11,23 @@ import java.util.concurrent.ThreadPoolExecutor
 import kotlin.reflect.KClass
 
 /**
- * 步骤辅助类
+ * Step Helper Class
  * */
 internal abstract class AMBaseStepHelper {
 
-    //上下文
+    //Context
     lateinit var amContext: AMContext
 
-    //当前任务状态
+    //Current task Status
     private var curTaskState: AMTaskState? = null
 
-    //主线程handler
+    //Main-thread handler
     val mainHandler by lazy { Handler(Looper.getMainLooper()) }
 
-    //任务开始时间
+    //Task start time
     var startTime: Long = 0
 
-    //当前执行的步骤索引（默认从1开始）
+    //Current step index, starting at 1 by default
     @Volatile
     var setStepIndex = 1
         set(value) {
@@ -41,11 +41,11 @@ internal abstract class AMBaseStepHelper {
 
     lateinit var executorService: ThreadPoolExecutor
 
-    //所有步骤
+    //All steps
     private var steps = mutableListOf<AMBaseStep<*>>()
 
     /**
-     * 注册步骤
+ * Register Step
      * */
     fun registerSteps(vararg steps: KClass<*>) {
         AMLog.onEDebugLog("成功注册${steps.size}个步骤")
@@ -57,7 +57,7 @@ internal abstract class AMBaseStepHelper {
     }
 
     /**
-     * 开始执行步骤
+ * Start execution Step
      * */
     fun onStartStep() {
         executorService.execute {
@@ -67,7 +67,7 @@ internal abstract class AMBaseStepHelper {
     }
 
     /**
-     * 任务状态改变
+ * Task status changed
      * */
     fun onNotifyTaskStateChanged(isStopThrows: Boolean) {
 
@@ -94,7 +94,7 @@ internal abstract class AMBaseStepHelper {
                     executorService.execute {
                         AMLog.onEDebugLog("任务暂停")
                         amContext.taskManager.setTaskResume = false
-                        //抛出异常
+                        //Throw exception
                         throw AMTaskException.pause()
                     }
                 } else {
@@ -106,7 +106,7 @@ internal abstract class AMBaseStepHelper {
                 executorService.execute {
                     AMLog.onEDebugLog("任务结束")
                     amContext.taskManager.setTaskResume = false
-                    //抛出异常
+                    //Throw exception
                     if (isStopThrows) {
                         throw AMTaskException.stop()
                     }
@@ -124,117 +124,117 @@ internal abstract class AMBaseStepHelper {
     protected abstract fun onObserveTaskResume()
 
     /**
-     * 获取第一步
+ * Get Step 1
      * */
     fun firstStep() = this[0]
 
     /**
-     * 获取第二步
+ * Get Step 2
      * */
     fun secondStep() = this[1]
 
     /**
-     * 获取第三步
+ * Get Step 3
      * */
     fun thirdStep() = this[2]
 
     /**
-     * 获取第四步
+ * Get Step 4
      * */
     fun forthStep() = this[3]
 
     /**
-     * 获取第五步
+ * Get Step 5
      * */
     fun fiveStep() = this[4]
 
     /**
-     * 获取第六步
+ * Get Step 6
      * */
     fun sixStep() = this[5]
 
     /**
-     * 获取第七步
+ * Get Step 7
      * */
     fun sevenStep() = this[6]
 
     /**
-     * 获取第八步
+ * Get Step 8
      * */
     fun eightStep() = this[7]
 
     /**
-     * 获取第九步
+ * Get Step 9
      * */
     fun nineStep() = this[8]
 
     /**
-     * 获取第十步
+ * Get Step 10
      * */
     fun tenStep() = this[9]
 
     /**
-     * 获取第十一步
+ * Get Step 11
      * */
     fun elevenStep() = this[10]
 
     /**
-     * 获取第十二步
+ * Get step 12
      * */
     fun twelveStep() = this[11]
 
     /**
-     * 获取第13步
+ * Get Step 13
      * */
     fun thirteenStep() = this[12]
 
     /**
-     * 获取第14步
+ * Get Step 14
      * */
     fun fourteenStep() = this[13]
 
     /**
-     * 获取第15步
+ * Get Step 15
      * */
     fun fifteenStep() = this[14]
 
     /**
-     * 获取第16步
+ * Get Step 16
      * */
     fun sixteenStep() = this[15]
 
     /**
-     * 获取第17步
+ * Get Step 17
      * */
     fun seventeenStep() = this[16]
 
     /**
-     * 获取第18步
+ * Get Step 18
      * */
     fun eightTeenStep() = this[17]
 
     /**
-     * 获取第n步
+ * Get step n
      * */
     protected operator fun get(index: Int): AMBaseStep<*>? =
         if (index < steps.size) steps[index] else null
 
     /**
-     * 任务是否暂停或者停止
+ * Whether the task is paused or stopped
      * */
     fun isTaskPauseOrStop(): Boolean {
         return amContext.taskManager.taskState == AMTaskState.PAUSE || amContext.taskManager.taskState == AMTaskState.STOP
     }
 
     /**
-     * 任务是否停止
+ * Whether the task is stopped
      * */
     fun isTaskStop(): Boolean {
         return amContext.taskManager.taskState == AMTaskState.STOP
     }
 
     /**
-     * 主线程执行
+ * Run on main thread
      * */
     inline fun postMainHandler(crossinline action: () -> Unit, delay: AMActionDelay? = null) {
         if (delay != null) {
@@ -249,7 +249,7 @@ internal abstract class AMBaseStepHelper {
     }
 
     /**
-     * 释放
+ * Release
      * */
     @CallSuper
     open fun onDestroy() {

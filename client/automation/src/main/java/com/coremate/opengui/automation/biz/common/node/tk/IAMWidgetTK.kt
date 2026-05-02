@@ -3,24 +3,24 @@ package com.coremate.opengui.automation.biz.common.node.tk
 import com.coremate.opengui.automation.biz.common.node.NodeWidgetBean
 
 /**
- * 抖音的节点组件
+ * Douyin node components
  * */
 object IAMWidgetTK {
 
     /////////////////////////////////////////////////////////////////////////////////
     //
-    //                    全局
+    // Global
     //
     /////////////////////////////////////////////////////////////////////////////////
 
-    //全局loading *
+    //Global loading *
     fun loading() = NodeWidgetBean(
         mutableListOf(
             "com.ss.android.ugc.aweme:id/emz"
         ), "android.widget.RelativeLayout", "", ""
     )
 
-    //全局/返回 *
+    //Global/back *
     fun backBtn() = NodeWidgetBean(
         mutableListOf(
             "com.ss.android.ugc.aweme:id/back_btn"
@@ -29,11 +29,11 @@ object IAMWidgetTK {
 
     /////////////////////////////////////////////////////////////////////////////////
     //
-    //                    主页
+    // Home
     //
     /////////////////////////////////////////////////////////////////////////////////
 
-    //主页/搜索 *
+    //Home/search *
     fun mainSearchBtn() = NodeWidgetBean(
         mutableListOf(
             "com.ss.android.ugc.aweme:id/obj"
@@ -42,18 +42,18 @@ object IAMWidgetTK {
 
     /////////////////////////////////////////////////////////////////////////////////
     //
-    //                    底部导航
+    // Bottom navigation
     //
     /////////////////////////////////////////////////////////////////////////////////
 
-    //tab底部item的父容器 *
+    //tabbottomitemparent container *
     fun indexTabItem() = NodeWidgetBean(
         mutableListOf(
             "com.ss.android.ugc.aweme:id/n6t"
         ), "android.widget.TextView", "", ""
     )
 
-    //tab底部item/未读消息
+    //tab Bottom item/unread messages
     fun unReadText() = NodeWidgetBean(
         mutableListOf(
             "com.ss.android.ugc.aweme:id/nt="
@@ -62,18 +62,18 @@ object IAMWidgetTK {
 
     /////////////////////////////////////////////////////////////////////////////////
     //
-    //                    消息列表
+    // Message list
     //
     /////////////////////////////////////////////////////////////////////////////////
 
-    ///消息列表/顶部搜索
+    ///Message list/top search
     fun msgSearchBtn() = NodeWidgetBean(
         mutableListOf(
             "com.ss.android.ugc.aweme:id/gwd"
         ), "android.widget.Button", "", "搜索"
     )
 
-    ///消息列表/列表
+    ///Message list/list
     fun msgList() = NodeWidgetBean(
         mutableListOf(
             "com.ss.android.ugc.aweme:id/mp4"
@@ -81,14 +81,14 @@ object IAMWidgetTK {
     )
 
 
-    ///消息列表/好友昵称
+    ///Message list/friend nickname
     fun contactNickName() = NodeWidgetBean(
         mutableListOf(
             "com.ss.android.ugc.aweme:id/tv_title"
         ), "android.widget.TextView", "", ""
     )
 
-    ///消息列表/数字红点
+    ///Message list/numbered red dot
     fun messageNumRedItem() = NodeWidgetBean(
         mutableListOf(
             "com.ss.android.ugc.aweme:id/red_tips_count_view"
@@ -101,7 +101,7 @@ object IAMWidgetTK {
         ), "android.widget.TextView", "", ""
     )
 
-    ///消息列表/红点
+    ///Message list/red dot
     fun messageRedItem() = NodeWidgetBean(
         mutableListOf(
             "com.ss.android.ugc.aweme:id/g76"
@@ -111,39 +111,39 @@ object IAMWidgetTK {
 
     /////////////////////////////////////////////////////////////////////////////////
     //
-    //                    发布页面
+    // Publish page
     //
     /////////////////////////////////////////////////////////////////////////////////
 
-    //聊天页面/返回 *
+    //Chat page/back *
     fun chatBackBtn() = NodeWidgetBean(
         mutableListOf(
             "com.ss.android.ugc.aweme:id/hf0"
         ), "android.widget.FrameLayout", "", ""
     )
 
-    //聊天页面/列表 *
+    //Chat page/list *
     fun chatList() = NodeWidgetBean(
         mutableListOf(
             "com.ss.android.ugc.aweme:id/lnn"
         ), "androidx.recyclerview.widget.RecyclerView", "", ""
     )
 
-    //聊天页面/文字内容
+    //Chat page/text content
     fun chatContent() = NodeWidgetBean(
         mutableListOf(
             "com.ss.android.ugc.aweme:id/content_layout"
         ), "android.widget.TextView", "", ""
     )
 
-    //聊天页面/底部输入框
+    //Chat page/bottom input field
     fun chatEdit() = NodeWidgetBean(
         mutableListOf(
             "com.ss.android.ugc.aweme:id/msg_et"
         ), "android.widget.EditText", "", ""
     )
 
-    //聊天页面/发送按钮
+    //Chat page/send button
     fun chatSend() = NodeWidgetBean(
         mutableListOf(
             "com.ss.android.ugc.aweme:id/fz-"
@@ -153,11 +153,11 @@ object IAMWidgetTK {
 
     /////////////////////////////////////////////////////////////////////////////////
     //
-    //                    发布页面
+    // Publish page
     //
     /////////////////////////////////////////////////////////////////////////////////
 
-    //下一步
+    //Next step
     fun nextBtn() = NodeWidgetBean(
         mutableListOf(
             "m.l.plugin.tools_plugin:id/fl_next_step",
@@ -165,7 +165,7 @@ object IAMWidgetTK {
         ), "android.widget.TextView", "下一步", ""
     )
 
-    //发布
+    //Publish
     fun publishBtn() = NodeWidgetBean(
         mutableListOf(
             "m.l.plugin.tools_plugin:id/publish_txt"

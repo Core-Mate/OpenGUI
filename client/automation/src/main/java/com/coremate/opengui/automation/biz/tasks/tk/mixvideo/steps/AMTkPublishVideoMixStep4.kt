@@ -15,7 +15,7 @@ import com.coremate.opengui.automation.biz.common.node.lv.IAMWidgetLV
 import com.coremate.opengui.automation.biz.tasks.tk.mixvideo.AMTkPublishVideoMixHelper
 
 /**
- * 第4步：选择素材
+ * Step 4:Select material
  */
 internal class AMTkPublishVideoMixStep4(index: Int, helper: AMTkPublishVideoMixHelper) :
     AMBaseStep<AMTkPublishVideoMixHelper>(index, helper) {
@@ -27,7 +27,7 @@ internal class AMTkPublishVideoMixStep4(index: Int, helper: AMTkPublishVideoMixH
         }
         SelectToSpeakService.service?.changeAccessibilityFlags(false)
         AMEventUtils.sleep(AMActionDelay.SHORT)
-        //获取素材列表
+        //Get Material list
         var listNode: AccessibilityNodeInfo? = null
         AMEventUtils.reProcessUntilOk(
             helper,

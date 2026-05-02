@@ -9,7 +9,7 @@ import com.coremate.opengui.automation.base.utils.AMLog
 import java.util.*
 
 /**
- * 检测是否在目标内
+ * Checkwhetherin Targetinside
  * */
 internal class AMCheckTargetApp(
     var amContext: AMContext,
@@ -21,22 +21,22 @@ internal class AMCheckTargetApp(
     private var mCheckTimer: Timer? = null
     private var mCheckTimerTask: BroadcastTimerTask? = null
 
-    //延时检测时间
+    //Delayed check time
     private val mCheckDelayTime: Long = 500
 
-    //倒计时间隔
+    //Countdowninterval
     private val mCheckCtTime: Long = 800
 
-    //检测次数
+    //Checkcount
     private var mCheckCount = 3
 
-    //临时计数
+    //Temporary count
     private var mTmpCount = 0
 
     /**
-     * 检测是否在目标app
-     * @param event 事件
-     * @param reCheck 是否需要进行重新检测
+ * Checkwhetherin Targetapp
+ * @param event event
+ * @param reCheck whether recheck is needed
      * */
     fun checkInTargetApp(
         targetApps: List<AMTargetApp>,
@@ -48,7 +48,7 @@ internal class AMCheckTargetApp(
             "======package:${eventPackage} -->class:${event.className} "
         )
         AMLog.onEDebugLog("====== Node:" + rootNode?.packageName)
-        //如果是当前包名,默认就在微信中
+        //If this is the current package name, treat it as already inside We Chat
         val packageNames = targetApps.joinToString(separator = ", ") { it.packageName }
         if (packageNames.contains(eventPackage)) {
             AMLog.onEDebugLog(
@@ -61,7 +61,7 @@ internal class AMCheckTargetApp(
             cancelReCheck()
             return true
         }
-        //兜底策略:通过node进行mCheckCount次检测
+        //Fallback: check mCheckCount times through nodes
         if (packageNames.contains(rootNode?.packageName?.toString() ?: "")) {
             startCheckInTargetAppByTimer()
             return true
@@ -80,7 +80,7 @@ internal class AMCheckTargetApp(
     }
 
     /**
-     * 取消重新检测
+ * Cancel recheck
      * */
     fun cancelReCheck() {
         mTmpCount = 0
@@ -90,7 +90,7 @@ internal class AMCheckTargetApp(
         mCheckTimerTask = null
     }
 
-    //倒计时
+    //Countdown
     private inner class BroadcastTimerTask : TimerTask() {
         override fun run() {
             mTmpCount++

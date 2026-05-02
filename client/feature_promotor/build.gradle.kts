@@ -92,7 +92,7 @@ dependencies {
     implementation("io.noties.markwon:core:4.6.2")
     implementation("com.google.android.material:material:1.12.0")
 
-// Markwon 核心库
+// Markwon core library
     implementation("io.noties.markwon:core:4.6.2"){
         exclude(group = "org.jetbrains", module = "annotations")
         exclude(group = "org.jetbrains", module = "annotations-java5")
@@ -108,16 +108,16 @@ dependencies {
         exclude(group = "org.jetbrains", module = "annotations-java5")
     }
 
-    implementation("io.noties.markwon:ext-latex:4.6.2") // 数学公式支持
-    implementation("io.noties.markwon:ext-tables:4.6.2") // 表格的使用
-    implementation("io.noties.markwon:inline-parser:4.6.2") // 表格的使用
+    implementation("io.noties.markwon:ext-latex:4.6.2") // Math formula support
+    implementation("io.noties.markwon:ext-tables:4.6.2") // Table support
+    implementation("io.noties.markwon:inline-parser:4.6.2") // Table support
     implementation("io.noties.markwon:linkify:4.6.2")
     implementation("io.noties.markwon:recycler-table:4.6.2")
     implementation("io.noties.markwon:image:4.6.2")
     implementation("io.noties.markwon:ext-tasklist:4.6.2")
     implementation("io.noties.markwon:ext-strikethrough:4.6.2")
     api("com.github.lihangleo2:ShadowLayout:3.4.5")
-// 强制使用一个版本的注解库
+// Force a single annotation library version
     implementation("io.noties:prism4j:2.0.0"){
         exclude(group = "org.jetbrains", module = "annotations")
         exclude(group = "org.jetbrains", module = "annotations-java5")
@@ -127,10 +127,10 @@ dependencies {
 
     implementation("com.github.gzu-liyujiang.AndroidPicker:WheelPicker:4.1.14")
 
-    // 基础依赖包，必须要依赖
+    // Base dependency package; required
     implementation("com.geyifeng.immersionbar:immersionbar:3.2.2")
-// kotlin扩展（可选）
+// Kotlin extension (optional)
     implementation("com.geyifeng.immersionbar:immersionbar-ktx:3.2.2")
-// fragment快速实现（可选）已废弃
+// Fragment quick implementation (optional, deprecated)
     implementation("com.geyifeng.immersionbar:immersionbar-components:3.2.2")
 }

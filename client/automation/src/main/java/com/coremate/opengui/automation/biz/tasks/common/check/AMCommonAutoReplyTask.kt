@@ -19,11 +19,11 @@ internal class AMCommonAutoReplyTask(amContext: AMContext) :
 
 
     override fun initTaskAndData(dataContainer: AMDataContainer?) {
-        //弹出悬浮窗
+        //Show floating window
         amContext.componentManager?.onExecute(AMCompModel(compCls = EnterFloat::class))
-        //设置数据
+        //Set data
         helper.param = dataContainer?.bean as AMCommonAutoReplyParam
-        //设置子helper
+        //Set child helper
         helper.initSub()
 
     }

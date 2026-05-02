@@ -1,24 +1,24 @@
 package com.coremate.opengui.automation.base.exception
 
-///失败原因
+///Failure reason
 enum class AMTaskErrorReason(val text: String) {
-    //暂停
+    //Pause
     PAUSE("PAUSE"),
 
-    //正常 停止
+    //Normal stop
     STOP("STOP"),
 
-    //崩溃
+    //Crash
     CRASH("CRASH"),
 
-    //业务异常
+    //Business exception
     BUSINESS("BUSINESS"),
 
-    //服务中断
+    //Service interruption
     INTERRUPT("INTERRUPT")
 }
 
-///异常
+///Exception
 class AMTaskException private constructor(
     val reason: AMTaskErrorReason,
     override val cause: Throwable? = null,

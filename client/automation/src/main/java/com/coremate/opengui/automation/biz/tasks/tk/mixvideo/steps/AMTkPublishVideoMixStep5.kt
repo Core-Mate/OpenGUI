@@ -13,7 +13,7 @@ import com.coremate.opengui.automation.biz.common.node.lv.IAMWidgetLV
 import com.coremate.opengui.automation.biz.tasks.tk.mixvideo.AMTkPublishVideoMixHelper
 
 /**
- * 第5步：点击下一步
+ * Step 5:Tap next
  */
 internal class AMTkPublishVideoMixStep5(index: Int, helper: AMTkPublishVideoMixHelper) :
     AMBaseStep<AMTkPublishVideoMixHelper>(index, helper) {

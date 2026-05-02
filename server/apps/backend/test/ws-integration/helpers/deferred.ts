@@ -1,8 +1,8 @@
 /**
- * Deferred<T> — Promise 控制工具
+ * Deferred<T> - Promise control helper
  *
- * 允许测试在外部控制 Promise 的 resolve/reject 时机，
- * 用于模拟 GraphRunner 等异步执行的精确时序控制。
+ * Allows tests to control Promise resolve/reject timing externally,
+ * Used to precisely control async execution timing for GraphRunner and similar code.
  */
 export class Deferred<T> {
 	promise: Promise<T>;

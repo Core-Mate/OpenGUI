@@ -13,7 +13,7 @@ import com.coremate.opengui.automation.biz.tasks.wx.likecomment.AMWxLikeCommentH
 import com.coremate.opengui.automation.biz.tasks.wx.likecomment.bean.AMWxLikeCommentEventType
 
 /**
- * 第7步：点赞2
+ * Step 7:like 2
  */
 internal class AMWxLikeCommentStep7(index: Int, helper: AMWxLikeCommentHelper) :
     AMBaseStep<AMWxLikeCommentHelper>(index, helper) {
@@ -41,12 +41,12 @@ internal class AMWxLikeCommentStep7(index: Int, helper: AMWxLikeCommentHelper) :
                     }
 
                     override fun work(timeIndex: Int): Boolean {
-                        //获取更多按钮
+                        //Get the more button
                         val btnNode = AMNodeUtils.getFirstNodeById(
                             nodeInfo,
                             IAMWidgetWX.fcMoreBtn().resourceId
                         ) ?: return false
-                        //点赞
+                        //Like
                         return AMEventUtils.doClickDownByX(btnNode, helper, x = -250f)
                     }
                 }).dealWith { isSuc, intercept ->

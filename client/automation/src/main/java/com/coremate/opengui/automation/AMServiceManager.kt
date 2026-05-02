@@ -26,38 +26,38 @@ import com.coremate.opengui.automation.biz.permission.AMPermissionDialog
 class AMServiceManager {
 
     companion object {
-        ///全局上下文
+        ///Global Context
         lateinit var applicationContext: Context
         val instance by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
             AMServiceManager()
         }
     }
 
-    //是否开启前台服务
+    //Whether foreground service is enabled
     private var isStartService = false
 
-    //前台服务图标
+    //Foreground service icon
     var notificationImg: Int? = null
 
 //    var cozeAIManager: CozeAIManager? = null
 
     /**
-     * 初始化
-     * @param context 必须是ApplicationContext
+ * Initialize
+ * @param context must be Application Context
      */
     fun init(context: Context) {
         applicationContext = context
     }
 
     /**
-     * 获取无障碍服务
+ * Get Accessibility service
      */
     fun accessibilityService(): AccessibilityService? {
         return SelectToSpeakService.service
     }
 
     /**
-     * 检测权限
+ * Check Permission
      * */
     fun checkPermission(
         context: Activity,
@@ -77,12 +77,12 @@ class AMServiceManager {
     }
 
     /**
-     * 开启前台服务
-     * @param notificationImg 图标
+ * Start foreground service
+ * @param notification Img icon
      */
     fun startForegroundService(context: Activity, requestCode: Int, notificationImg: Int? = null) {
         this.notificationImg = notificationImg
-        //请求通知权限
+        //Request notification permission
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                 context.requestPermissions(
@@ -99,7 +99,7 @@ class AMServiceManager {
 
     private fun startForeground(context: Activity) {
         isStartService = true
-        //再次启动Service
+        //Start Service again
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val intentFive = Intent(context, AMForegroundService::class.java)
             context.startForegroundService(intentFive)
@@ -110,10 +110,10 @@ class AMServiceManager {
     }
 
     /**
-     * 关闭前台服务
+ * Stop foreground service
      */
     fun stopForegroundService(context: Context?) {
-        //停止Service
+        //Stop Service
         if (context != null) {
             if (isStartService) {
                 isStartService = false
@@ -131,7 +131,7 @@ class AMServiceManager {
     }
 
     /**
-     * 开启自启动权限
+ * Open autostart permission settings
      */
     fun gotoOppoAutoStartSettings(context: Context) {
         AlertDialog.Builder(context)
@@ -156,7 +156,7 @@ class AMServiceManager {
                         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         context.startActivity(intent)
                     } catch (e: Exception) {
-                        // fallback：跳转到应用详情页
+                        // fallback: navigate to the app details page
                         val fallbackIntent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
                         fallbackIntent.data = Uri.parse("package:${context.packageName}")
                         fallbackIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -172,9 +172,9 @@ class AMServiceManager {
     }
 
     /**
-     * 执行任务
-     * @param context 当前调用的actviity
-     * @param param - bizType 和 对应的bean(参数)
+ * Execute task
+ * @param context current calling activity
+ * @param param biz Type and the corresponding parameter bean
      */
     fun processTask(context: Activity, param: AMDataContainer) {
         AMCore.instance.context = context
@@ -190,21 +190,21 @@ class AMServiceManager {
     }
 
     /**
-     * 添加任务监听
+ * Add task listener
      * */
     fun addObserver(listener: IAMProcessListener) {
         AMCore.instance.addObserver(listener)
     }
 
     /**
-     * 移除任务监听
+ * Remove task listener
      * */
     fun removeObserver(listener: IAMProcessListener) {
         AMCore.instance.removeObserver(listener)
     }
 
     /**
-     * 移除所有监听
+ * Remove all listeners
      * */
     fun removeAllObserver() {
         AMCore.instance.removeAllObserver()

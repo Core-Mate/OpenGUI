@@ -11,7 +11,7 @@ import com.coremate.opengui.automation.biz.common.node.lv.IAMWidgetLV
 import com.coremate.opengui.automation.biz.tasks.tk.mixvideo.AMTkPublishVideoMixHelper
 
 /**
- * 第7步：等待合成
+ * Step 7:Wait for composition
  */
 internal class AMTkPublishVideoMixStep7(index: Int, helper: AMTkPublishVideoMixHelper) :
     AMBaseStep<AMTkPublishVideoMixHelper>(index, helper) {

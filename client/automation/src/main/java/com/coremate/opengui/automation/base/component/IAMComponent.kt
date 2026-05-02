@@ -6,22 +6,22 @@ import com.coremate.opengui.automation.base.data.AMDataContainer
 internal interface IAMComponent {
 
     /**
-     * 初始化
+ * Initialize
      * */
     fun initUIAndData(dataContainer: AMDataContainer?)
 
     /**
-     * 显示
+ * Show
      * */
     fun show()
 
     /**
-     * 隐藏
+ * Hide
      * */
     fun dismiss()
 
     /**
-     * 设置隐藏自身
+ * Set self-hidden state
      * */
     fun setHiddenSelf()
 }

@@ -54,30 +54,30 @@ object AppLauncher {
      * This is an heuristic and might not be perfectly accurate for all apps.
      *
      * @param context The context to use.
-     * @param appName The human-readable name of the app (e.g., "抖音", "微信").
+ * @param app Name The human-readable name of the app (e.g., "Douyin", "We Chat").
      * @return The package name if found, or null otherwise.
      */
     fun getPackageNameFromAppName(context: Context, appName: String): String? {
         val packageManager = context.packageManager
         val installedApplications = packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
 
-        // 优先使用预定义的常量映射
+        // Prefer predefined constant mappings
         val predefinedPackageName = when (appName) {
             "抖音" -> Constants.AppPackageNames.DOUYIN
             "微信" -> Constants.AppPackageNames.WECHAT
             "QQ" -> Constants.AppPackageNames.QQ
-            // ... 添加更多预定义映射
+            //... Add more predefined mappings
             else -> null
         }
         if (predefinedPackageName != null) {
             return predefinedPackageName
         }
 
-        // 尝试遍历已安装应用，通过应用标签进行模糊匹配 (性能较低，精确度不高)
+        // Try scanning installed apps and fuzzy-match by app label; slower and less accurate
         for (app in installedApplications) {
             val appLabel = packageManager.getApplicationLabel(app).toString()
-            if (appLabel.equals(appName, ignoreCase = true) || // 精确匹配
-                appLabel.contains(appName, ignoreCase = true)) { // 包含匹配
+            if (appLabel.equals(appName, ignoreCase = true) || // Exact match.
+                appLabel.contains(appName, ignoreCase = true)) { // Contains match.
                 return app.packageName
             }
         }

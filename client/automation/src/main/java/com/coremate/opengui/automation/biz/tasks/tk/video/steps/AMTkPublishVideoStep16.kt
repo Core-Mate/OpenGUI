@@ -14,7 +14,7 @@ import com.coremate.opengui.automation.biz.common.node.lv.IAMWidgetLV
 import com.coremate.opengui.automation.biz.tasks.tk.video.AMTkPublishVideoHelper
 
 /**
- * 第16步：点击分享到抖音
+ * Step 16:Tap share to Douyin
  */
 internal class AMTkPublishVideoStep16(index: Int, helper: AMTkPublishVideoHelper) :
     AMBaseStep<AMTkPublishVideoHelper>(index, helper) {
@@ -26,7 +26,7 @@ internal class AMTkPublishVideoStep16(index: Int, helper: AMTkPublishVideoHelper
         }
         AMEventUtils.sleep(AMActionDelay.MIDDLE_LONG)
 
-        //点击分享到抖音
+        //Tap share to Douyin
         AMEventUtils.reProcessUntilOk(
             helper,
             3,

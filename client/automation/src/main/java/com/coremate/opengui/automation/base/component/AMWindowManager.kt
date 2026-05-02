@@ -50,7 +50,7 @@ internal class AMWindowManager : IAMSubManagerLifeCycle {
 
 
     /**
-     * 添加view
+ * Add view
      * */
     fun add(
         component: AMBaseFloatWindow<*, *>,
@@ -82,7 +82,7 @@ internal class AMWindowManager : IAMSubManagerLifeCycle {
     }
 
     /**
-     * 移除view
+ * Remove view
      * */
     fun remove(component: AMBaseFloatWindow<*, *>) {
         if (component.parent != null) {
@@ -91,7 +91,7 @@ internal class AMWindowManager : IAMSubManagerLifeCycle {
     }
 
     /**
-     * 是否事件穿透
+ * Whether events pass through
      * */
     fun changeEventStrike(component: AMBaseFloatWindow<*, *>?, isStrike: Boolean) {
         component?.let {
@@ -105,7 +105,7 @@ internal class AMWindowManager : IAMSubManagerLifeCycle {
     }
 
     /**
-     * 更改view的位置
+ * Change view position
      * */
     fun updateView(component: AMBaseFloatWindow<*, *>) {
         mWindowManager?.updateViewLayout(component, component.windowParams)
@@ -118,7 +118,7 @@ internal class AMWindowManager : IAMSubManagerLifeCycle {
     /////////////////////////////////////////////////////////////////////////////////
 
     /**
-     * toast 提示
+ * Toast prompt
      * */
     fun showToast(msg: String) {
 

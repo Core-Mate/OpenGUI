@@ -3,17 +3,17 @@ package com.coremate.opengui.automation.biz.common.node.red
 import com.coremate.opengui.automation.biz.common.node.NodeWidgetBean
 
 /**
- * 小红书的节点组件
+ * Xiaohongshu node components
  * */
 object IAMWidgetRed {
 
     /////////////////////////////////////////////////////////////////////////////////
     //
-    //                    全局
+    // Global
     //
     /////////////////////////////////////////////////////////////////////////////////
 
-    //全局/返回按钮 1
+    //Global/back button 1
     fun globalBack() = NodeWidgetBean(
         mutableListOf(
             "com.xingin.xhs:id/a2i",
@@ -23,18 +23,18 @@ object IAMWidgetRed {
 
     /////////////////////////////////////////////////////////////////////////////////
     //
-    //                    底部导航
+    // Bottom navigation
     //
     /////////////////////////////////////////////////////////////////////////////////
 
-    //tab底部item的父容器 *
+    //tabbottomitemparent container *
     fun indexTabItem() = NodeWidgetBean(
         mutableListOf(
             "com.xingin.xhs:id/igz"
         ), "android.widget.TextView", "", ""
     )
 
-    //tab底部item/未读消息
+    //tab Bottom item/unread messages
     fun unReadText() = NodeWidgetBean(
         mutableListOf(
             "com.xingin.xhs:id/gbi"
@@ -43,18 +43,18 @@ object IAMWidgetRed {
 
     /////////////////////////////////////////////////////////////////////////////////
     //
-    //                    消息列表
+    // Message list
     //
     /////////////////////////////////////////////////////////////////////////////////
 
-    ///消息列表/顶部右边群聊按钮
+    ///Message list/top-right group chat button
     fun msgGroupbtn() = NodeWidgetBean(
         mutableListOf(
             "com.xingin.xhs:id/fmq"
         ), "android.widget.TextView", "", "发现群聊"
     )
 
-    ///消息列表/数字红点
+    ///Message list/numbered red dot
     fun messageNumRedItem() = NodeWidgetBean(
         mutableListOf(
             "com.xingin.xhs:id/ce2"
@@ -67,14 +67,14 @@ object IAMWidgetRed {
         ), "android.widget.TextView", "", ""
     )
 
-    ///消息列表/列表
+    ///Message list/list
     fun msgList() = NodeWidgetBean(
         mutableListOf(
             "com.xingin.xhs:id/fqk"
         ), "androidx.recyclerview.widget.RecyclerView", "", ""
     )
 
-    ///消息列表/好友昵称
+    ///Message list/friend nickname
     fun contactNickName() = NodeWidgetBean(
         mutableListOf(
             "com.xingin.xhs:id/fqh"
@@ -84,25 +84,25 @@ object IAMWidgetRed {
 
     /////////////////////////////////////////////////////////////////////////////////
     //
-    //                    消息
+    // Message
     //
     /////////////////////////////////////////////////////////////////////////////////
 
-    //聊天页面/会话列表 *
+    //Chat page/conversation list *
     fun chatList() = NodeWidgetBean(
         mutableListOf(
             "com.xingin.xhs:id/az4"
         ), "androidx.recyclerview.widget.RecyclerView", "", ""
     )
 
-    //聊天页面/最后一条消息内容
+    //Chat page/last message content
     fun lastMessage() = NodeWidgetBean(
         mutableListOf(
             "com.xingin.xhs:id/ayd"
         ), "android.widget.TextView", "", ""
     )
 
-    //聊天页面/发送按钮
+    //Chat page/send button
     fun sendBtn() = NodeWidgetBean(
         mutableListOf(
             "com.xingin.xhs:id/ayy"
@@ -115,7 +115,7 @@ object IAMWidgetRed {
         ), "android.widget.EditText", "", ""
     )
 
-    //你可能感兴趣的人
+    //People you may be interested in
     fun likeManNode() = NodeWidgetBean(
         mutableListOf(
             "com.xingin.xhs:id/fth"

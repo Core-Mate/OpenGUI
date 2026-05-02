@@ -1,10 +1,10 @@
 /**
- * Plan Supervisor 结构化输出集成测试
+ * Plan Supervisor structured-output integration tests
  *
- * 验证 ChatOpenAI + createAgent + providerStrategy 能否拿到 structuredResponse
- * 使用真实模型调用，mock 数据尽量简化
+ * Verify that ChatOpenAI + createAgent + providerStrategy can produce structuredResponse
+ * Use a real model call with simplified mock data
  *
- * 运行：pnpm test -- plan-supervisor.node.spec
+ * Run: pnpm test -- plan-supervisor.node.spec
  */
 
 import { HumanMessage } from "@langchain/core/messages";
@@ -13,7 +13,7 @@ import { ChatOpenAI } from "@langchain/openai";
 import { createAgent, providerStrategy } from "langchain";
 import { z } from "zod";
 
-// ====== API 配置（与 plan-supervisor.node.ts 保持一致）======
+// ====== API config (kept aligned with plan-supervisor.node.ts)======
 const API_KEY = process.env.VLM_API_KEY ?? "test-api-key-placeholder";
 const BASE_URL =
 	process.env.VLM_BASE_URL ?? "https://dashscope.aliyuncs.com/compatible-mode/v1";
@@ -34,7 +34,7 @@ const SupervisorOutputSchema = z.object({
 
 type SupervisorOutput = z.infer<typeof SupervisorOutputSchema>;
 
-// ====== Mock 工具 ======
+// ====== Mock tools ======
 const mockWriteTodos = tool(
 	async ({ todos }) => `已创建 ${todos.length} 个待办事项`,
 	{
@@ -73,7 +73,7 @@ const mockLoadSkill = tool(
 	},
 );
 
-describe("PlanSupervisor - ChatOpenAI 结构化输出集成测试", () => {
+describe("Plan Supervisor - ChatOpenAI structured-output integration tests", () => {
 	let model: ChatOpenAI;
 
 	beforeAll(() => {
@@ -88,7 +88,7 @@ describe("PlanSupervisor - ChatOpenAI 结构化输出集成测试", () => {
 		});
 	});
 
-	it("无工具：providerStrategy 直接返回 structuredResponse", async () => {
+	it("No tools: providerStrategy returns structuredResponse directly", async () => {
 		const agent = createAgent({
 			model,
 			tools: [],
@@ -117,7 +117,7 @@ describe("PlanSupervisor - ChatOpenAI 结构化输出集成测试", () => {
 		expect(typeof response.total_complete).toBe("boolean");
 	}, 120000);
 
-	it("带工具：模型先调用工具再返回 structuredResponse", async () => {
+	it("With tools: the model calls a tool before returning structuredResponse", async () => {
 		const agent = createAgent({
 			model,
 			tools: [mockWriteTodos, mockReadTodos],
@@ -151,7 +151,7 @@ describe("PlanSupervisor - ChatOpenAI 结构化输出集成测试", () => {
 		expect(response.total_complete).toBe(false);
 	}, 120000);
 
-	it("带 load_skill 工具：模拟 supervisor 加载 skill 后返回结构化输出", async () => {
+	it("With load_skill: simulate the supervisor loading a skill before returning structured output", async () => {
 		const agent = createAgent({
 			model,
 			tools: [mockWriteTodos, mockReadTodos, mockLoadSkill],
@@ -194,7 +194,7 @@ describe("PlanSupervisor - ChatOpenAI 结构化输出集成测试", () => {
 		expect(response.total_complete).toBe(false);
 	}, 120000);
 
-	it("完成场景：所有任务完成时返回 total_complete=true", async () => {
+	it("Completion path: returns total_complete=true when all tasks are done", async () => {
 		const completedReadTodos = tool(
 			async () =>
 				JSON.stringify({
@@ -244,7 +244,7 @@ describe("PlanSupervisor - ChatOpenAI 结构化输出集成测试", () => {
 		expect(response.total_complete).toBe(true);
 	}, 120000);
 
-	it("多轮对话：模拟首次规划 + 执行反馈的连续调用", async () => {
+	it("Multi-turn conversation: simulate initial planning followed by execution feedback", async () => {
 		const todosState: Array<{ content: string; status: string }> = [];
 
 		const statefulWriteTodos = tool(
@@ -289,7 +289,7 @@ describe("PlanSupervisor - ChatOpenAI 结构化输出集成测试", () => {
 3. 所有子任务完成后设置 total_complete=true
 使用中文。`;
 
-		// 第一轮：首次规划
+		// Round 1: initial planning
 		const agent1 = createAgent({
 			model,
 			tools: [statefulWriteTodos, statefulReadTodos],
@@ -315,12 +315,12 @@ describe("PlanSupervisor - ChatOpenAI 结构化输出集成测试", () => {
 		expect(response1.total_complete).toBe(false);
 		expect(response1.current_sub_task.length).toBeGreaterThan(0);
 
-		// 标记第一个任务完成
+		// Mark the first task complete
 		if (todosState.length > 0) {
 			todosState[0].status = "completed";
 		}
 
-		// 第二轮：执行反馈
+		// Round 2: execution feedback
 		const agent2 = createAgent({
 			model,
 			tools: [statefulWriteTodos, statefulReadTodos],
@@ -349,12 +349,12 @@ describe("PlanSupervisor - ChatOpenAI 结构化输出集成测试", () => {
 		);
 
 		expect(response2).toBeDefined();
-		// 第二轮应该要么继续下一个子任务，要么完成
+		// The second round should either continue with the next subtask or finish
 		if (response2.total_complete) {
-			// 如果所有任务都完成了
+			// If all tasks are complete
 			expect(response2.total_complete).toBe(true);
 		} else {
-			// 还有下一个子任务
+			// There is another subtask
 			expect(response2.current_sub_task.length).toBeGreaterThan(0);
 		}
 	}, 240000);

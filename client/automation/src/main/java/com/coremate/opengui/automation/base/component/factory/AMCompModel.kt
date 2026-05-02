@@ -4,17 +4,17 @@ import com.coremate.opengui.automation.base.component.IAMComponent
 import kotlin.reflect.KClass
 
 /**
- * 组件模型
+ * Component model
  * */
 internal class AMCompModel(val compCls: KClass<*>) {
 
-    //组件实例
+    //Component instance
     var component: IAMComponent? = null
 
-    //显示隐藏
+    //Show Hide
     private var isShow: Boolean = false
 
-    //是否隐藏了自身(标识)
+    //Whether it hid itself (marker)
     private var isHiddenSelf = false
 
     fun changeShow(show: Boolean) {

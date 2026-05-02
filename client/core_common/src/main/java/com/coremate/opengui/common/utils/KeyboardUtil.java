@@ -6,12 +6,12 @@ import android.widget.EditText;
 
 
 /**
- * 键盘工具
+ * Keyboard utility
  */
 public class KeyboardUtil {
 
     /**
-     * 打开键盘
+ * Open the keyboard
      *
      * @param mEditText
      */
@@ -24,7 +24,7 @@ public class KeyboardUtil {
     }
 
     /**
-     * 关闭软键盘
+ * Close the soft keyboard
      *
      * @param mEditText
      */

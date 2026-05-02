@@ -19,7 +19,7 @@ internal class AMTkAutoReplyHelper : AMBaseStepHelper(), AMCommonAutoListener {
     var nickName = ""
     var replyContent = ""
 
-    ///是否是当前app
+    ///Whether this is the current app
     fun isOngoing() = (commonHelper?.curApp == AMTargetApp.TK || !isTemporary)
 
     public override fun onObserveTaskResume() {
@@ -29,7 +29,7 @@ internal class AMTkAutoReplyHelper : AMBaseStepHelper(), AMCommonAutoListener {
             }
 
             else -> {
-                //其他步骤全部在第4部中处理
+                //All other steps are handled in step 4
                 forthStep()?.onExecute(isResume = true)
             }
         }

@@ -24,7 +24,7 @@ enum class AMActionDelay(val millis: Long) {
 }
 
 /**
- * 事件工具
+ * Event utilities
  * */
 internal object AMEventUtils {
 
@@ -33,12 +33,12 @@ internal object AMEventUtils {
     }
 
     /**
-     * 执行事件
-     * @param times 执行次数（失败之后继续执行直到times结束）
-     * @param delay 事件延时
-     * @param something 回调
-     * @param isInterruptIgnore 过滤中断
-     * @return 返回结果枚举
+ * Execute event
+ * @param times execution count; continue after failures until times is exhausted
+ * @param delay event delay
+ * @param something callback
+ * @param is Interrupt Ignore ignore interruption
+ * @return result enum
      * */
     fun reProcessUntilOk(
         helper: AMBaseStepHelper,
@@ -75,10 +75,10 @@ internal object AMEventUtils {
     }
 
     /**
-     * 执行事件
-     * @param times 执行次数（失败之后继续执行直到times结束）
-     * @param delay 事件延时
-     * @param something 回调
+ * Execute event
+ * @param times execution count; continue after failures until times is exhausted
+ * @param delay event delay
+ * @param something callback
      * */
     internal fun <T> doSomethingUntilSuccess(
         times: Int,
@@ -86,7 +86,7 @@ internal object AMEventUtils {
         something: Something<T>
     ): T? {
         var curIndex = 0
-        val maxTimes = 1.coerceAtLeast(times) //最小1次
+        val maxTimes = 1.coerceAtLeast(times) // At least one attempt.
         while (true) {
             var result: T? = null
             if (curIndex < maxTimes) {
@@ -95,7 +95,7 @@ internal object AMEventUtils {
                 if (isSuc) {
                     return result
                 } else {
-                    //增加中断
+                    //Add interruption
                     try {
                         if (something.workInterruput()) {
                             return result
@@ -113,7 +113,7 @@ internal object AMEventUtils {
     }
 
     /**
-     * 遍历父节点点击（默认尝试10次）
+ * Traverse parent nodes and tap, up to 10 attempts by default
      * */
     fun clickFirstClickableParent(
         nodeInfo: AccessibilityNodeInfo?,
@@ -146,7 +146,7 @@ internal object AMEventUtils {
     }
 
     /**
-     * 遍历父节点点击（默认尝试10次）
+ * Traverse parent nodes and tap, up to 10 attempts by default
      * */
     fun clickFirstClickableParentWithSimulate(
         nodeInfo: AccessibilityNodeInfo?,
@@ -183,14 +183,14 @@ internal object AMEventUtils {
     }
 
     /**
-     * 模拟点击
+ * Simulate tap
      * */
     fun doClickDown(
         nodeInfo: AccessibilityNodeInfo?,
         helper: AMBaseStepHelper? = null,
     ): Boolean {
         AMLog.onEDebugLog("使用模拟点击")
-        //将悬浮窗事件穿透
+        //Enable floating-window event pass-through
         Handler(Looper.getMainLooper()).post {
             helper?.amContext?.changeCompEventStrike(true)
         }
@@ -219,7 +219,7 @@ internal object AMEventUtils {
             },
             null
         ) ?: false
-        //将悬浮窗事件恢复
+        //Restore floating-window event handling
         Handler(Looper.getMainLooper()).post {
             helper?.amContext?.changeCompEventStrike(false)
         }
@@ -232,7 +232,7 @@ internal object AMEventUtils {
         y: Float = 0f
     ): Boolean {
         AMLog.onEDebugLog("使用模拟点击")
-        //将悬浮窗事件穿透
+        //Enable floating-window event pass-through
         Handler(Looper.getMainLooper()).post {
             helper?.amContext?.changeCompEventStrike(true)
         }
@@ -258,7 +258,7 @@ internal object AMEventUtils {
             },
             null
         ) ?: false
-        //将悬浮窗事件恢复
+        //Restore floating-window event handling
         Handler(Looper.getMainLooper()).post {
             helper?.amContext?.changeCompEventStrike(false)
         }
@@ -271,7 +271,7 @@ internal object AMEventUtils {
         x: Float = 0f,
     ): Boolean {
         AMLog.onEDebugLog("使用模拟点击")
-        //将悬浮窗事件穿透
+        //Enable floating-window event pass-through
         Handler(Looper.getMainLooper()).post {
             helper?.amContext?.changeCompEventStrike(true)
         }
@@ -300,7 +300,7 @@ internal object AMEventUtils {
             },
             null
         ) ?: false
-        //将悬浮窗事件恢复
+        //Restore floating-window event handling
         Handler(Looper.getMainLooper()).post {
             helper?.amContext?.changeCompEventStrike(false)
         }
@@ -312,7 +312,7 @@ internal object AMEventUtils {
         y: Float = 0f,
     ): Boolean {
         AMLog.onEDebugLog("使用模拟点击")
-        //将悬浮窗事件穿透
+        //Enable floating-window event pass-through
         Handler(Looper.getMainLooper()).post {
             helper?.amContext?.changeCompEventStrike(true)
         }
@@ -339,7 +339,7 @@ internal object AMEventUtils {
             },
             null
         ) ?: false
-        //将悬浮窗事件恢复
+        //Restore floating-window event handling
         Handler(Looper.getMainLooper()).post {
             helper?.amContext?.changeCompEventStrike(false)
         }
@@ -347,14 +347,14 @@ internal object AMEventUtils {
     }
 
     /**
-     * 模拟双击
+ * Simulate double tap
      */
     fun doDoubleClick(
         nodeInfo: AccessibilityNodeInfo?,
         helper: AMBaseStepHelper? = null,
     ): Boolean {
         AMLog.onEDebugLog("使用模拟双击")
-        //将悬浮窗事件穿透
+        //Enable floating-window event pass-through
         Handler(Looper.getMainLooper()).post {
             helper?.amContext?.changeCompEventStrike(true)
         }
@@ -366,7 +366,7 @@ internal object AMEventUtils {
         path.moveTo(rect.centerX().toFloat(), rect.centerY().toFloat())
         val gesture = GestureDescription.Builder()
             .addStroke(GestureDescription.StrokeDescription(path, 0, 1))
-            .addStroke(GestureDescription.StrokeDescription(path, 100, 1)) // 第二次点击，延迟100ms
+            .addStroke(GestureDescription.StrokeDescription(path, 100, 1)) // Second tap, delayed by 100 ms.
             .build()
         val clickAble = SelectToSpeakService.service?.dispatchGesture(
             gesture,
@@ -381,7 +381,7 @@ internal object AMEventUtils {
             },
             null
         ) ?: false
-        //将悬浮窗事件恢复
+        //Restore floating-window event handling
         Handler(Looper.getMainLooper()).post {
             helper?.amContext?.changeCompEventStrike(false)
         }
@@ -390,7 +390,7 @@ internal object AMEventUtils {
 
 
     /**
-     * 模拟长按
+ * Simulate Long press
      * */
     fun doLongClickDown(
         nodeInfo: AccessibilityNodeInfo?,
@@ -398,7 +398,7 @@ internal object AMEventUtils {
     ): Boolean {
         if (nodeInfo == null) return false
         AMLog.onEDebugLog("使用模拟长按")
-        //将悬浮窗事件穿透
+        //Enable floating-window event pass-through
         Handler(Looper.getMainLooper()).post {
             helper?.amContext?.changeCompEventStrike(true)
         }
@@ -427,7 +427,7 @@ internal object AMEventUtils {
             null
         ) ?: false
 
-        //将悬浮窗事件恢复
+        //Restore floating-window event handling
         Handler(Looper.getMainLooper()).post {
             helper?.amContext?.changeCompEventStrike(false)
         }
@@ -435,14 +435,14 @@ internal object AMEventUtils {
     }
 
     /**
-     * 模拟滑动
+ * Simulate Swipe
      * */
     fun doSwipeUp(
         nodeInfo: AccessibilityNodeInfo?,
         helper: AMBaseStepHelper? = null,
     ): Boolean {
         AMLog.onEDebugLog("使用模拟上滑动")
-        //将悬浮窗事件穿透
+        //Enable floating-window event pass-through
         Handler(Looper.getMainLooper()).post {
             helper?.amContext?.changeCompEventStrike(true)
         }
@@ -477,7 +477,7 @@ internal object AMEventUtils {
             null
         ) ?: false
 
-        //将悬浮窗事件恢复
+        //Restore floating-window event handling
         sleep(AMActionDelay.MIDDLE)
         Handler(Looper.getMainLooper()).post {
             helper?.amContext?.changeCompEventStrike(false)
@@ -492,7 +492,7 @@ internal object AMEventUtils {
     ): Boolean {
         AMLog.onEDebugLog("使用模拟上滑动 $px 像素")
 
-        // 开启事件穿透（避免悬浮窗拦截）
+        // Enable event pass-through to avoid floating-window interception
         Handler(Looper.getMainLooper()).post {
             helper?.amContext?.changeCompEventStrike(true)
         }
@@ -503,18 +503,18 @@ internal object AMEventUtils {
         if (nodeInfo == null || SelectToSpeakService.service == null) return false
         nodeInfo.getBoundsInScreen(rect)
 
-        // 创建滑动路径（垂直滑动30像素）
+        // Create swipe path with 30 px vertical movement
         val path = Path()
         val startX = rect.left + 55
-        val startY = rect.centerY() + px / 2   // 中心下方 px/2 像素
+        val startY = rect.centerY() + px / 2   // px / 2 below center.
         val endX = rect.left + 55
-        val endY = rect.centerY() - px / 2     // 中心上方 px/2 像素
+        val endY = rect.centerY() - px / 2     // px / 2 above center.
 
         path.moveTo(startX.toFloat(), startY.toFloat())
         path.lineTo(endX.toFloat(), endY.toFloat())
 
         val gesture = GestureDescription.Builder()
-            .addStroke(GestureDescription.StrokeDescription(path, 0, 100)) // 200ms 滑动
+            .addStroke(GestureDescription.StrokeDescription(path, 0, 100)) // 200 ms swipe.
             .build()
 
         sleep(AMActionDelay.MINI)
@@ -535,7 +535,7 @@ internal object AMEventUtils {
             null
         ) ?: false
 
-        // 恢复事件阻断状态
+        // Restore event blocking state
         sleep(AMActionDelay.MIDDLE)
         Handler(Looper.getMainLooper()).post {
             helper?.amContext?.changeCompEventStrike(false)
@@ -546,7 +546,7 @@ internal object AMEventUtils {
 
 
     /**
-     * 上下滑动
+ * Vertical swipe
      * */
     fun scroll2TopOrBottom(
         listView: AccessibilityNodeInfo?,
@@ -568,7 +568,7 @@ internal object AMEventUtils {
     }
 
     /**
-     * 输入框填充内容
+ * Fill input field content
      */
     fun setTextToEditText(nodeInfo: AccessibilityNodeInfo?, text: String): Boolean {
         if (nodeInfo == null) return false
@@ -582,7 +582,7 @@ internal object AMEventUtils {
     }
 
     /**
-     * 给输入框焦点
+ * Focus the input field
      * */
     fun setFocusToEditText(nodeInfo: AccessibilityNodeInfo?): Boolean {
         if (nodeInfo == null) return false
@@ -600,10 +600,10 @@ sealed class SomethingEvent {
             is Result -> {
                 val s = result ?: false
                 if (s) {
-                    //成功
+                    //Success
                     action(true, intercept)
                 } else {
-                    //失败
+                    //Failure
                     action(false, intercept)
                 }
                 return
@@ -613,17 +613,17 @@ sealed class SomethingEvent {
 }
 
 /**
- * 执行事件回调
- * @param T 返回类型
+ * Execute event callback
+ * @param T return type
  * */
 interface Something<T> {
-    //判断成功返回T
+    //Check Success BackT
     fun judgmentSuccess(result: T): Boolean
 
-    //工作(多次)
+    //Work multiple times
     fun work(timeIndex: Int): T
 
-    //中断
+    //Interrupt
     fun workInterruput(): Boolean {
         return false
     }

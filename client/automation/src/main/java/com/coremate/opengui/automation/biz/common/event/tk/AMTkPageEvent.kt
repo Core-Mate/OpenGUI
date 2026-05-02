@@ -18,7 +18,7 @@ import com.coremate.opengui.automation.biz.common.node.tk.IAMWidgetTK
 internal object AMTkPageEvent : IAMPageEvent() {
 
     /**
-     * 回到抖音首页
+ * Return to Douyin home page
      * */
     fun backTKHomePage(callBack: IAMTaskCallBack, helper: AMBaseStepHelper? = null) {
         AMEventUtils.doSomethingUntilSuccess(
@@ -76,7 +76,7 @@ internal object AMTkPageEvent : IAMPageEvent() {
     }
 
     /**
-     * 是否在抖音首页
+ * Whether on Douyin home page
      */
     fun isInTkHomePage(name: String = "首页"): Boolean {
         AMCore.instance.amContext?.rootNode() ?: return false
@@ -90,7 +90,7 @@ internal object AMTkPageEvent : IAMPageEvent() {
     }
 
     /**
-     * 回到抖音会话
+ * Return to Douyin conversation
      * */
     fun backTKChatListPage(callBack: IAMTaskCallBack, helper: AMBaseStepHelper? = null) {
         AMEventUtils.doSomethingUntilSuccess(
@@ -149,7 +149,7 @@ internal object AMTkPageEvent : IAMPageEvent() {
     }
 
     /**
-     * 是否在抖音会话列表
+ * Whether on the Douyin conversation list
      */
     fun isInTkChatListPage(name: String = "消息"): Boolean {
         val rootNode = AMCore.instance.amContext?.rootNode() ?: return false
@@ -165,7 +165,7 @@ internal object AMTkPageEvent : IAMPageEvent() {
     }
 
     /**
-     * 获取tk tab节点 - 新方案
+ * Get tk tab node - new approach
      * */
     fun getTKBottomTabByText(text: String): AccessibilityNodeInfo? {
         AMNodeUtils.getAllNodeById(
@@ -181,7 +181,7 @@ internal object AMTkPageEvent : IAMPageEvent() {
     }
 
     /**
-     * 获取主页搜索节点
+ * Get home search node
      * */
     fun getMainSearchNode(): AccessibilityNodeInfo? {
         val rootNode = AMCore.instance.amContext?.rootNode() ?: return null
@@ -198,7 +198,7 @@ internal object AMTkPageEvent : IAMPageEvent() {
     }
 
     /**
-     * 获取消息列表搜索节点
+ * Get message-list search node
      * */
     fun getMsgSearchNode(): AccessibilityNodeInfo? {
         val rootNode = AMCore.instance.amContext?.rootNode() ?: return null
@@ -216,12 +216,12 @@ internal object AMTkPageEvent : IAMPageEvent() {
 
 
     /**
-     * 获取返回节点
+ * Get back node
      * */
     fun getBackNode(): AccessibilityNodeInfo? {
         val rootNode = AMCore.instance.amContext?.rootNode() ?: return null
         var nodeInfo: AccessibilityNodeInfo? = null
-        //返回节点id
+        //Back node id
         nodeInfo =
             AMNodeUtils.getFirstNodeByIdWithCallback(rootNode, object :
                 MatchCallback<AccessibilityNodeInfo> {

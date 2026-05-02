@@ -11,7 +11,7 @@ import com.coremate.opengui.automation.biz.common.node.tk.IAMWidgetTK
 import com.coremate.opengui.automation.biz.tasks.common.check.steps.tk.AMTkAutoReplyHelper
 
 /**
- * 第2步：监控抖音未读消息数
+ * Step 2:Monitor Douyin unread count
  */
 internal class AMTkAutoReplyStep2(index: Int, helper: AMTkAutoReplyHelper) :
     AMBaseStep<AMTkAutoReplyHelper>(index, helper) {
@@ -24,7 +24,7 @@ internal class AMTkAutoReplyStep2(index: Int, helper: AMTkAutoReplyHelper) :
         AMEventUtils.sleep(AMActionDelay.MIDDLE)
         helper.commonHelper?.setReplying(false)
         if (helper.commonHelper?.isHasFinish == true) {
-            ///完成
+            ///Complete
             helper.commonHelper?.amContext?.processListener?.onProcessTaskFinish(
                 true,
                 System.currentTimeMillis() - (helper.commonHelper?.startTime ?: 0),

@@ -17,15 +17,15 @@ internal class AMFloatFactory {
         listener: IAMCompEventListener?
     ): IAMComponent = (model.compCls.constructors.first()
         .call(AMServiceManager.applicationContext) as AMBaseFloatWindow<*, *>).apply {
-        //设置初始化数据
+        //Set initial data
         this.curModel = model
         this.amContext = amContext
         this.listener = listener
     }.apply {
-        //设置拖动效果
+        //Set drag behavior
         setDragMoveSelf()
     }.apply {
-        //开始加载UI和数据
+        //Start loading UI and data
         initUIAndData(dataContainer)
     }
 

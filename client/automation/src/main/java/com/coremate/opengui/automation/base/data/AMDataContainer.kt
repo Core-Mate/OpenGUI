@@ -4,7 +4,7 @@ import com.coremate.opengui.automation.biz.type.AMTaskBizType
 
 data class AMDataContainer(val bizType: AMTaskBizType? = null, var bean: Any? = null) {
 
-    //额外信息
+    //Extra info
     var extra: Any? = null
 
 

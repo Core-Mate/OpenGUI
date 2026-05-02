@@ -12,7 +12,7 @@ import com.coremate.opengui.automation.biz.common.node.lv.IAMWidgetLV
 import com.coremate.opengui.automation.biz.tasks.tk.video.AMTkPublishVideoHelper
 
 /**
- * 第15步：判断在分享之前，有没有其他弹窗
+ * Step 15:Check for other dialogs before sharing
  */
 internal class AMTkPublishVideoStep15(index: Int, helper: AMTkPublishVideoHelper) :
     AMBaseStep<AMTkPublishVideoHelper>(index, helper) {
@@ -24,7 +24,7 @@ internal class AMTkPublishVideoStep15(index: Int, helper: AMTkPublishVideoHelper
         }
         AMEventUtils.sleep(AMActionDelay.MIDDLE)
 
-        //点击弹窗关闭
+        //Tap dialog close
         AMEventUtils.reProcessUntilOk(
             helper,
             2,
