@@ -14,6 +14,18 @@
   <a href="./docs/get-started.md"><img src="https://img.shields.io/badge/MANUAL_SETUP-DOCS-4b4b4b?style=for-the-badge" alt="Manual setup docs"></a>
 </p>
 
+<p align="center">
+  If OpenGUI helps you build or test real Android agents, <a href="https://github.com/Core-Mate/open-gui">a GitHub star helps the project grow</a>.
+</p>
+
+## 📣 News
+
+- `[2026.5.7]` OpenGUI added GitHub Star CTA touchpoints across the README, backend startup output, Android settings, and the first successful phone task prompt.
+- `[2026.5.7]` Local startup was hardened to avoid common PostgreSQL and Redis port conflicts during Docker-based backend setup.
+- `[2026.5.2]` Public code comments and developer-facing copy were translated to English for a cleaner source-available release.
+- `[2026.5.1]` Backend onboarding was improved with a completed `.env.example`, clearer startup checks, and graph-agent VLM environment configuration.
+- `[2026.4.30]` OpenGUI added a Japanese README and switched the project license to BUSL-1.1 while translating public Android UI and prompts to English.
+
 ## What You Can Do with OpenGUI
 
 OpenGUI lets AI operate real Android phones.

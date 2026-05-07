@@ -45,9 +45,10 @@ async function bootstrap() {
 	const port = process.env.PORT ?? 7777;
 	await app.listen(port);
 
-	console.log(
-		`📚 API Documentation available at: http://localhost:${port}/docs`,
-	);
+	const docsUrl = `http://localhost:${port}/docs`;
+	console.log(`📚 API Documentation available at: ${docsUrl}`);
+	console.log("⭐ If this project helps, star it here:");
+	console.log("   https://github.com/Core-Mate/open-gui");
 }
 
 bootstrap();
