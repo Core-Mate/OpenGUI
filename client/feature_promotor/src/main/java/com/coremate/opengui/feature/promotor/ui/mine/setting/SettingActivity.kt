@@ -5,6 +5,7 @@ import android.os.Build
 import android.widget.Toast
 import com.coremate.opengui.feature.promotor.databinding.ActivitySettingBinding
 import com.coremate.opengui.feature.promotor.ui.base.BaseBindingActivity
+import com.coremate.opengui.feature.promotor.util.GitHubStarHelper
 import com.coremate.opengui.network.api.ServerConstant
 import com.tencent.mmkv.MMKV
 
@@ -28,6 +29,9 @@ class SettingActivity :
 
     override fun initEvent() {
         binding.btnBack.setOnClickListener { finish() }
+        binding.layoutStarGithub.setOnClickListener {
+            GitHubStarHelper.openRepository(this)
+        }
 
         binding.btnSave.setOnClickListener {
             val url = binding.etServerUrl.text.toString().trim()

@@ -47,6 +47,7 @@ import com.coremate.opengui.feature.promotor.ui.markdown.TableEntry
 import com.coremate.opengui.feature.promotor.ui.markdown.TableEntryPlugin
 import com.coremate.opengui.feature.promotor.ui.markdown.XMNotTableEntry
 import com.coremate.opengui.feature.promotor.ui.markdown.latex.JLatexMathPlugin
+import com.coremate.opengui.feature.promotor.util.GitHubStarHelper
 import com.coremate.opengui.feature.promotor.util.calculateDuration
 import com.coremate.opengui.network.api.task.Extra
 import io.noties.markwon.AbstractMarkwonPlugin
@@ -329,11 +330,28 @@ class SummarizerActivity :
                         it.executionResultSummary ?: "No feedback for this task"
                     )
                     markwonAdapter?.notifyDataSetChanged()
+                    if (it.executionResult == "SUCCEED") {
+                        maybeShowFirstSuccessStarPrompt()
+                    }
                 }
             }.onFailure {
                 it.printStackTrace()
             }
         }
+    }
+
+    private fun maybeShowFirstSuccessStarPrompt() {
+        if (!GitHubStarHelper.shouldShowFirstSuccessPrompt(this)) {
+            return
+        }
+        GitHubStarHelper.markFirstSuccessPromptShown(this)
+        AlertDialog.Builder(this)
+            .setMessage("OpenGUI just completed its first phone task. If this helped, star the project on GitHub.")
+            .setPositiveButton("Star on GitHub") { _, _ ->
+                GitHubStarHelper.openRepository(this)
+            }
+            .setNegativeButton("Maybe later", null)
+            .show()
     }
 
     fun exportRecyclerViewToPdf(recyclerView: RecyclerView, pdfFile: File) {

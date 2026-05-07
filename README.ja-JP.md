@@ -14,6 +14,18 @@
   <a href="./docs/get-started.md"><img src="https://img.shields.io/badge/MANUAL_SETUP-DOCS-4b4b4b?style=for-the-badge" alt="手動セットアップドキュメント"></a>
 </p>
 
+<p align="center">
+  OpenGUI が実機 Android エージェントの構築やテストに役立った場合は、<a href="https://github.com/Core-Mate/open-gui">GitHub Star でプロジェクトの成長を応援してください</a>。
+</p>
+
+## 📣 最近の更新
+
+- `[2026.5.7]` README、バックエンド起動出力、Android 設定画面、初回タスク成功後の軽い案内に GitHub Star への導線を追加しました。
+- `[2026.5.7]` Docker ベースのバックエンド起動時に、一般的な PostgreSQL / Redis ポート競合を避けられるようローカル起動フローを強化しました。
+- `[2026.5.2]` ソース公開版として読みやすくするため、公開コードコメントと開発者向け文言を英語化しました。
+- `[2026.5.1]` バックエンドのオンボーディングとして、`.env.example`、起動時チェック、graph agent 向け VLM 環境変数設定を整備しました。
+- `[2026.4.30]` 日本語 README を追加し、ライセンスを BUSL-1.1 に切り替え、公開 Android UI とプロンプトを英語化しました。
+
 ## OpenGUI でできること
 
 OpenGUI は、AI が実際の Android スマートフォンを操作できるようにするシステムです。

@@ -32,14 +32,24 @@ info "Node.js $(node -v) / pnpm $(pnpm -v)"
 # --------------------------------------------------
 # 2. Start PostgreSQL + Redis (docker run)
 # --------------------------------------------------
+POSTGRES_HOST_PORT=55432
+REDIS_HOST_PORT=56379
+
 if docker ps --format '{{.Names}}' | grep -q "^opengui-postgres$"; then
-  info "PostgreSQL is already running"
-else
+  if docker port opengui-postgres 5432/tcp 2>/dev/null | grep -q ":${POSTGRES_HOST_PORT}$"; then
+    info "PostgreSQL is already running"
+  else
+    warn "Recreating PostgreSQL with host port ${POSTGRES_HOST_PORT} ..."
+    docker rm -f opengui-postgres >/dev/null
+  fi
+fi
+
+if ! docker ps --format '{{.Names}}' | grep -q "^opengui-postgres$"; then
   warn "Starting PostgreSQL ..."
   docker rm -f opengui-postgres 2>/dev/null || true
   docker run -d \
     --name opengui-postgres \
-    -p 5432:5432 \
+    -p ${POSTGRES_HOST_PORT}:5432 \
     -e POSTGRES_USER=opengui \
     -e POSTGRES_PASSWORD=opengui \
     -e POSTGRES_DB=opengui \
@@ -62,13 +72,20 @@ else
 fi
 
 if docker ps --format '{{.Names}}' | grep -q "^opengui-redis$"; then
-  info "Redis is already running"
-else
+  if docker port opengui-redis 6379/tcp 2>/dev/null | grep -q ":${REDIS_HOST_PORT}$"; then
+    info "Redis is already running"
+  else
+    warn "Recreating Redis with host port ${REDIS_HOST_PORT} ..."
+    docker rm -f opengui-redis >/dev/null
+  fi
+fi
+
+if ! docker ps --format '{{.Names}}' | grep -q "^opengui-redis$"; then
   warn "Starting Redis ..."
   docker rm -f opengui-redis 2>/dev/null || true
   docker run -d \
     --name opengui-redis \
-    -p 6379:6379 \
+    -p ${REDIS_HOST_PORT}:6379 \
     -v opengui-redisdata:/data \
     redis:7-alpine >/dev/null
   info "Redis started"
@@ -208,8 +225,7 @@ fi
 # --------------------------------------------------
 info "Starting OpenGUI Server ..."
 echo ""
-echo "  API:  http://localhost:${PORT:-7777}/api"
-echo "  Docs: http://localhost:${PORT:-7777}/docs"
+echo "  The backend will print API docs and GitHub star links after startup."
 echo ""
 
 pnpm backend

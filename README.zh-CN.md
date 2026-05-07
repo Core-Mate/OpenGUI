@@ -14,6 +14,18 @@
   <a href="./docs/get-started.md"><img src="https://img.shields.io/badge/MANUAL_SETUP-DOCS-4b4b4b?style=for-the-badge" alt="Manual setup docs"></a>
 </p>
 
+<p align="center">
+  如果 OpenGUI 帮你构建或测试真实 Android Agent，<a href="https://github.com/Core-Mate/open-gui">给项目一个 GitHub Star 会帮助它继续成长</a>。
+</p>
+
+## 📣 近期更新
+
+- `[2026.5.7]` OpenGUI 在 README、后端启动输出、Android 设置页和首次成功执行任务后的轻提示中加入 GitHub Star 入口。
+- `[2026.5.7]` 本地启动流程增强，Docker 方式启动后端时会避开常见的 PostgreSQL 和 Redis 端口冲突。
+- `[2026.5.2]` 公开代码注释和面向开发者的文案完成英文化，便于源码可见版本对外发布。
+- `[2026.5.1]` 后端上手流程补齐 `.env.example`、启动检查提示和 graph agent 的 VLM 环境变量配置。
+- `[2026.4.30]` OpenGUI 新增日文 README，并将项目许可证切换到 BUSL-1.1，同时把公开 Android UI 和 Prompt 翻译为英文。
+
 ## 你可以用 OpenGUI 做什么
 
 OpenGUI 让 AI 操作真实的 Android 手机。

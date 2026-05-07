@@ -12,8 +12,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.coremate.opengui.common_jvm.event.AutomationEvent
 import com.coremate.opengui.common_jvm.event.AutomationEventBus
 import com.coremate.opengui.feature.promotor.databinding.FragmentMyTaskBinding
-import com.coremate.opengui.feature.promotor.ui.widget.ContentStartBigTitleBar
 import com.coremate.opengui.feature.promotor.ui.task.adapter.ExecutedTaskListAdapter
+import com.coremate.opengui.feature.promotor.ui.widget.ContentStartBigTitleBar
+import com.coremate.opengui.feature.promotor.util.GitHubStarHelper
 import com.coremate.opengui.network.api.task.TaskListRespItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
@@ -47,6 +48,12 @@ class MyTaskFragment : Fragment() {
         taskListAdapter = ExecutedTaskListAdapter(fragmentManager, presenter)
         binding.rvTaskList.adapter = taskListAdapter;
         binding.rvTaskList.layoutManager = LinearLayoutManager(requireContext())
+        binding.layoutGithubStar.setOnClickListener {
+            GitHubStarHelper.openRepository(requireContext())
+        }
+        binding.btnGithubStar.setOnClickListener {
+            GitHubStarHelper.openRepository(requireContext())
+        }
 
         binding.rvTaskList.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
