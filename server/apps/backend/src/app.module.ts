@@ -83,7 +83,7 @@ import { PrismaModule } from "./prisma/prisma.module";
 		// Creator Agent module (Claude Agent SDK based content creation)
 		CreatorAgentModule,
 
-		// IM Channel module (remote task dispatch via Feishu/Telegram)
+		// IM Channel module (remote task dispatch via Feishu/Telegram/Discord)
 		ImChannelModule,
 	],
 	controllers: [AppController],
