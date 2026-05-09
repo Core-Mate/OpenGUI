@@ -40,8 +40,24 @@ What `server/start.sh` does:
 
 Required keys for a practical first run:
 
-- `CLAUDE_API_KEY`
 - `VLM_API_KEY`
+- `VLM_BASE_URL`
+- `VLM_MODEL`
+
+The backend currently uses the `VLM_*` variables as the shared
+OpenAI-compatible model configuration for graph agents. They are used by
+planning, supervision, summarization, and the executor vision path.
+
+Example:
+
+```env
+VLM_API_KEY=your_api_key
+VLM_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+VLM_MODEL=qwen3.6-plus
+```
+
+The backend can start without these values, but real task execution will fail
+when the graph needs to call the model.
 
 Useful endpoints after startup:
 
@@ -82,4 +98,5 @@ For local runs, the backend task controllers also default to `userId = 1`, so fi
 ## More detail
 
 - Backend details: [`server/apps/backend/README.md`](../server/apps/backend/README.md)
+- Discord remote control: [`DISCORD.md`](../DISCORD.md)
 - Android client details: [`client/README.md`](../client/README.md)

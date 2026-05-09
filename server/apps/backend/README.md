@@ -28,6 +28,73 @@ pnpm build
 pnpm start:prod
 ```
 
+## 配置与远程任务入口
+
+后端配置文件使用 `server/apps/backend/.env`。第一次启动前可以从示例文件复制：
+
+```bash
+cp .env.example .env
+```
+
+基础运行至少需要 PostgreSQL、Redis 和模型配置。未配置 IM 机器人时，后端会正常启动，只跳过对应入口。
+
+### Graph Agent 模型配置
+
+OpenGUI 后端的 graph agents 使用 OpenAI-compatible 的模型接口。当前统一通过 `.env` 里的 `VLM_*` 变量配置：
+
+```env
+VLM_API_KEY=
+VLM_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+VLM_MODEL=qwen3.6-plus
+```
+
+这组配置会被规划、监督、总结和 executor VLM 路径共用。也就是说，变量名虽然叫 `VLM_*`，但它不只影响视觉执行节点，也会影响 graph agent 的文本侧模型调用。
+
+说明：
+
+- `VLM_API_KEY`：模型服务 API key，执行真实任务前必须配置。
+- `VLM_BASE_URL`：OpenAI-compatible endpoint。使用 OpenAI 默认接口时可以按实际 provider 配置。
+- `VLM_MODEL`：模型名，例如 `qwen3.6-plus` 或你的 provider 支持的其他模型。
+- 后端可以在缺少这些值时启动，但任务执行到模型调用时会失败。
+
+### Discord 入口
+
+Discord Bot 可以作为远程任务入口：用户在 Discord 频道里发送命令，后端创建或执行 OpenGUI 任务，再把任务下发给已经待命的 Android 手机。
+
+支持两种命令形式：
+
+```text
+!opengui help
+!opengui devices
+!opengui do open browser and search OpenGUI
+```
+
+```text
+/opengui help
+/opengui devices
+/opengui do task:open browser and search OpenGUI
+```
+
+需要在 `.env` 中配置：
+
+```env
+DISCORD_BOT_TOKEN=
+DISCORD_CLIENT_ID=
+DISCORD_ALLOWED_GUILD_IDS=
+DISCORD_ALLOWED_CHANNEL_IDS=
+DISCORD_ALLOWED_USER_IDS=
+DISCORD_COMMAND_PREFIX=!opengui
+DISCORD_REGISTER_COMMANDS=false
+```
+
+安全建议：
+
+- 生产或团队测试环境建议至少配置 `DISCORD_ALLOWED_GUILD_IDS` 和 `DISCORD_ALLOWED_CHANNEL_IDS`。
+- 前缀命令需要在 Discord Developer Portal 打开 **Message Content Intent**。
+- Slash 命令建议保持 guild-scoped 注册，并只在需要更新命令时设置 `DISCORD_REGISTER_COMMANDS=true`。
+
+完整配置步骤见 [../../../DISCORD.zh-CN.md](../../../DISCORD.zh-CN.md)。
+
 ---
 
 ## Agent Graph 架构

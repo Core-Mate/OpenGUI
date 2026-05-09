@@ -14,17 +14,11 @@
   <a href="./docs/get-started.md"><img src="https://img.shields.io/badge/MANUAL_SETUP-DOCS-4b4b4b?style=for-the-badge" alt="Manual setup docs"></a>
 </p>
 
-<p align="center">
-  If OpenGUI helps you build or test real Android agents, <a href="https://github.com/Core-Mate/open-gui">a GitHub star helps the project grow</a>.
-</p>
+## Recent Updates
 
-## 📣 News
-
-- `[2026.5.7]` OpenGUI added GitHub Star CTA touchpoints across the README, backend startup output, Android settings, and the first successful phone task prompt.
-- `[2026.5.7]` Local startup was hardened to avoid common PostgreSQL and Redis port conflicts during Docker-based backend setup.
-- `[2026.5.2]` Public code comments and developer-facing copy were translated to English for a cleaner source-available release.
-- `[2026.5.1]` Backend onboarding was improved with a completed `.env.example`, clearer startup checks, and graph-agent VLM environment configuration.
-- `[2026.4.30]` OpenGUI added a Japanese README and switched the project license to BUSL-1.1 while translating public Android UI and prompts to English.
+- `[2026.5.9]` Added a Discord IM channel for remote Android task dispatch, including prefix commands, slash commands, allowlists, and guild-scoped command registration.
+- `[2026.5.7]` Hardened local startup to avoid common PostgreSQL and Redis port conflicts during Docker-based backend setup.
+- `[2026.5.1]` Improved backend onboarding with `.env.example`, startup checks, and graph-agent VLM environment configuration.
 
 ## What You Can Do with OpenGUI
 
@@ -35,13 +29,13 @@ You can use the same repository in four practical ways:
 - **Operate mainstream Android apps**: let AI handle mobile tasks inside X, Reddit, Hacker News, Telegram, WeChat, Weibo, Xiaohongshu, and other Android apps on a real phone.
 - **Run shipped workflows**: the repository already includes a runnable backend, Android client, standby dispatch path, and a set of built-in task capabilities.
 - **Let Claude or Codex bootstrap it for you**: point the model at [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md), describe the goal in plain language, and let it handle setup, build, install, and local debugging.
-- **Operate phones as remote workers**: dispatch tasks through Feishu, Telegram, or REST API, keep devices on standby, and get structured results back from the backend.
+- **Operate phones as remote workers**: dispatch tasks through Feishu, Telegram, Discord, or REST API, keep devices on standby, and get structured results back from the backend.
 
 ## Highlights
 
 - **Built for long-running tasks**: OpenGUI is shaped for mobile workflows that may run for hours, with progress, review, and recovery kept inside the system.
 - **The task can keep moving**: `Plan Supervisor` maintains task state and continuation, `Executor Graph` runs screenshot, vision, action, and call-user loops on top of live device state, and `Summarizer` closes the run with a structured result.
-- **Phones can stay on standby**: the standby dispatch path lets devices receive remote work through Feishu, Telegram, or REST entry points.
+- **Phones can stay on standby**: the standby dispatch path lets devices receive remote work through Feishu, Telegram, Discord, or REST entry points.
 - **Models can be assigned by role**: model routing separates planning from VLM execution so teams can choose providers by job.
 - **The system is organized around real mobile workflows**: the graph, device execution path, and model split already exist in the source tree.
 
@@ -63,13 +57,13 @@ The source code currently exposes these pieces:
 | **Task state** | Usually local and session-bound | Task state managed in the backend graph |
 | **Device path** | Often laptop-driven control | Android client with standby and execution sockets |
 | **Model usage** | One model does most of the work | Planning and VLM paths can be split across providers |
-| **Remote operation** | Optional add-on | Feishu, Telegram, REST API, and standby dispatch are built into the backend |
+| **Remote operation** | Optional add-on | Feishu, Telegram, Discord, REST API, and standby dispatch are built into the backend |
 
 ## Typical Use Cases
 
 - Open X and collect recent posts for a topic
 - Read and summarize Reddit or Hacker News threads on a live phone
-- Trigger Android tasks remotely from Feishu or Telegram
+- Trigger Android tasks remotely from Feishu, Telegram, Discord, or REST API
 - Execute repetitive mobile workflows on Android devices
 - Run long mobile workflows that need state, review, and recovery over many hours
 
@@ -153,7 +147,19 @@ Reference docs:
 - [server/start.sh](./server/start.sh)
 - [client/start.sh](./client/start.sh)
 - [server/apps/backend/README.md](./server/apps/backend/README.md)
+- [DISCORD.md](./DISCORD.md)
 - [client/README.md](./client/README.md)
+
+### 3. Optional Discord remote control
+
+Discord can be enabled as an optional IM channel. A Discord bot receives commands
+such as `!opengui devices` or `!opengui do ...`, then the backend dispatches the
+task to a standby Android phone and posts progress back to the same channel.
+
+This is not required for local use. If `DISCORD_BOT_TOKEN` is empty, the backend
+starts normally and skips Discord.
+
+Full setup guide: [DISCORD.md](./DISCORD.md).
 
 ## The System
 
@@ -171,7 +177,7 @@ flowchart LR
     SP --> SM["Summarizer"]
     SM --> SR["Structured Results"]
 
-    RD["Feishu / Telegram / REST API"] --> ST["Standby Gateway"]
+    RD["Feishu / Telegram / Discord / REST API"] --> ST["Standby Gateway"]
     ST --> AC
 
     SP --> MR["Model Routing"]
@@ -184,6 +190,7 @@ flowchart LR
 - **Backend graph**: `server/apps/backend/src/modules/graph-agent/graph/`
 - **Task APIs**: `server/apps/backend/src/modules/task/task.controller.ts`
 - **Standby dispatch**: `server/apps/backend/src/common/ws/standby.gateway.ts`
+- **IM channel dispatch**: `server/apps/backend/src/modules/im-channel/`
 - **Android standby connection**: `client/core_network/src/main/java/com/coremate/opengui/network/websocket/StandbySocketManager.kt`
 - **Android execution path**: `client/core_accessibility/src/main/java/com/coremate/opengui/accessibility/GestureService.kt`
 
@@ -192,6 +199,7 @@ flowchart LR
 - [skills/open-gui-bootstrap/SKILL.md](./skills/open-gui-bootstrap/SKILL.md)
 - [docs/get-started.md](./docs/get-started.md)
 - [server/apps/backend/README.md](./server/apps/backend/README.md)
+- [DISCORD.md](./DISCORD.md)
 - [client/README.md](./client/README.md)
 - [CONTRIBUTING.md](./CONTRIBUTING.md)
 - [SECURITY.md](./SECURITY.md)
@@ -199,13 +207,11 @@ flowchart LR
 
 ## Community / Support
 
-If OpenGUI is useful to you, the most helpful ways to support it are:
+The most useful project feedback is:
 
-- star the repository
 - open issues for bugs and feature requests
 - share real use cases and deployment feedback
 - contribute docs, integrations, and fixes
-- introduce the project to teams building mobile AI agents
 
 ## License
 

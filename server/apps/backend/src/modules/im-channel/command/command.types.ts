@@ -18,5 +18,6 @@ export interface ParsedCommand {
 	taskId?: number;
 	description?: string;
 	executionId?: number;
+	feedback?: string;
 	rawText: string;
 }

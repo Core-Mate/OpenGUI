@@ -14,17 +14,11 @@
   <a href="./docs/get-started.md"><img src="https://img.shields.io/badge/MANUAL_SETUP-DOCS-4b4b4b?style=for-the-badge" alt="Manual setup docs"></a>
 </p>
 
-<p align="center">
-  如果 OpenGUI 帮你构建或测试真实 Android Agent，<a href="https://github.com/Core-Mate/open-gui">给项目一个 GitHub Star 会帮助它继续成长</a>。
-</p>
+## 近期更新
 
-## 📣 近期更新
-
-- `[2026.5.7]` OpenGUI 在 README、后端启动输出、Android 设置页和首次成功执行任务后的轻提示中加入 GitHub Star 入口。
+- `[2026.5.9]` 新增 Discord IM 入口，支持前缀命令、Slash 命令、安全白名单和 guild-scoped 命令注册，可从 Discord 频道远程下发 Android 任务。
 - `[2026.5.7]` 本地启动流程增强，Docker 方式启动后端时会避开常见的 PostgreSQL 和 Redis 端口冲突。
-- `[2026.5.2]` 公开代码注释和面向开发者的文案完成英文化，便于源码可见版本对外发布。
 - `[2026.5.1]` 后端上手流程补齐 `.env.example`、启动检查提示和 graph agent 的 VLM 环境变量配置。
-- `[2026.4.30]` OpenGUI 新增日文 README，并将项目许可证切换到 BUSL-1.1，同时把公开 Android UI 和 Prompt 翻译为英文。
 
 ## 你可以用 OpenGUI 做什么
 
@@ -35,13 +29,13 @@ OpenGUI 让 AI 操作真实的 Android 手机。
 - **操作主流 Android App**：让 AI 在真实手机上执行 X、Reddit、Hacker News、Telegram、微信、微博、小红书等移动任务。
 - **运行现成工作流**：仓库已经包含可直接启动的后端、Android 客户端、待命派发链路，以及部分预置任务能力。
 - **让 Claude 或 Codex 帮你跑起来**：把 [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md) 交给模型，直接用自然语言描述目标，让它处理安装、构建、安装 APK 和本地排障。
-- **把手机当成远程 worker 使用**：通过飞书、Telegram 或 REST API 下发任务，让设备保持待命，并从后端拿回结构化结果。
+- **把手机当成远程 worker 使用**：通过飞书、Telegram、Discord 或 REST API 下发任务，让设备保持待命，并从后端拿回结构化结果。
 
 ## 亮点
 
 - **适合长时任务**：OpenGUI 面向长时移动工作流，任务可以持续运行数小时，并在过程中继续推进、复核和恢复。
 - **任务能持续跑下去**：`Plan Supervisor` 维护任务列表和继续执行状态，`Executor Graph` 围绕当前设备状态运行截图、视觉分析、动作执行和 call-user 循环，`Summarizer` 在任务结束时输出结构化结果。
-- **手机可以保持待命**：待命派发链路让设备可以通过飞书、Telegram 或 REST 入口接收远程任务。
+- **手机可以保持待命**：待命派发链路让设备可以通过飞书、Telegram、Discord 或 REST 入口接收远程任务。
 - **模型可以按角色分工**：模型路由把规划侧和 VLM 执行侧拆开，便于按角色选择 provider。
 - **整套系统围绕真实移动工作流组织**：graph、设备执行链路和模型分工已经在源码里落地。
 
@@ -63,13 +57,13 @@ OpenGUI 采用的是一套分层清晰的移动 operator system。
 | **任务状态** | 常常停留在本地会话里 | 任务状态由后端 graph 持有 |
 | **设备链路** | 常见是电脑侧驱动手机 | Android 客户端自带待命与执行连接 |
 | **模型使用** | 一个主模型承担大部分工作 | 规划和 VLM 执行可以拆给不同 provider |
-| **远程运行** | 往往是附加能力 | 飞书、Telegram、REST API、待命派发已经在后端里 |
+| **远程运行** | 往往是附加能力 | 飞书、Telegram、Discord、REST API、待命派发已经在后端里 |
 
 ## 典型使用场景
 
 - 打开 X 并采集某个主题的近期内容
 - 在真实手机上阅读并总结 Reddit 或 Hacker News 帖子
-- 从飞书或 Telegram 远程触发手机任务
+- 从飞书、Telegram、Discord 或 REST API 远程触发手机任务
 - 在 Android 设备上执行重复性的移动工作流
 - 运行需要状态管理、复核和恢复机制的长时移动工作流
 
@@ -153,7 +147,19 @@ cd client
 - [server/start.sh](./server/start.sh)
 - [client/start.sh](./client/start.sh)
 - [server/apps/backend/README.md](./server/apps/backend/README.md)
+- [DISCORD.zh-CN.md](./DISCORD.zh-CN.md)
 - [client/README.md](./client/README.md)
+
+### 3. 可选的 Discord 远程控制
+
+Discord 可以作为可选 IM 入口启用。Discord Bot 接收 `!opengui devices` 或
+`!opengui do ...` 这类命令，后端再把任务下发给待命 Android 手机，并把进度回传到
+同一个 Discord 频道。
+
+这不是本地运行的必选项。`DISCORD_BOT_TOKEN` 为空时，后端会正常启动并跳过
+Discord。
+
+完整配置说明见：[DISCORD.zh-CN.md](./DISCORD.zh-CN.md)。
 
 ## 系统结构
 
@@ -171,7 +177,7 @@ flowchart LR
     SP --> SM["Summarizer"]
     SM --> SR["结构化结果"]
 
-    RD["Feishu / Telegram / REST API"] --> ST["Standby Gateway"]
+    RD["Feishu / Telegram / Discord / REST API"] --> ST["Standby Gateway"]
     ST --> AC
 
     SP --> MR["Model Routing"]
@@ -184,30 +190,30 @@ flowchart LR
 - **后端 graph**：`server/apps/backend/src/modules/graph-agent/graph/`
 - **任务 API**：`server/apps/backend/src/modules/task/task.controller.ts`
 - **待命派发**：`server/apps/backend/src/common/ws/standby.gateway.ts`
+- **IM 入口派发**：`server/apps/backend/src/modules/im-channel/`
 - **设备待命连接**：`client/core_network/src/main/java/com/coremate/opengui/network/websocket/StandbySocketManager.kt`
 - **Android 执行链路**：`client/core_accessibility/src/main/java/com/coremate/opengui/accessibility/GestureService.kt`
 
-## Documentation
+## 文档
 
 - [skills/open-gui-bootstrap/SKILL.md](./skills/open-gui-bootstrap/SKILL.md)
 - [docs/get-started.md](./docs/get-started.md)
 - [server/apps/backend/README.md](./server/apps/backend/README.md)
+- [DISCORD.zh-CN.md](./DISCORD.zh-CN.md)
 - [client/README.md](./client/README.md)
 - [CONTRIBUTING.md](./CONTRIBUTING.md)
 - [SECURITY.md](./SECURITY.md)
 - [CLAUDE.md](./CLAUDE.md)
 
-## Community / Support
+## 社区 / 支持
 
-如果 OpenGUI 对你有帮助，最有效的支持方式包括：
+最有价值的项目反馈包括：
 
-- 给仓库点 Star
 - 提交 bug 和 feature request
 - 分享真实使用场景和部署反馈
 - 贡献文档、集成和修复
-- 推荐给正在做移动 AI Agent 的团队
 
-## License
+## 许可证
 
 OpenGUI 采用 Business Source License 1.1 (BUSL-1.1)，源码可见。
 

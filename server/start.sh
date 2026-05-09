@@ -112,16 +112,26 @@ fi
 
 set -a; source "$ENV_FILE" 2>/dev/null || true; set +a
 
+MODEL_CONFIG_MISSING=0
 if [ -z "$VLM_API_KEY" ]; then
-  warn "VLM_API_KEY is not set. Please edit .env."
+  warn "VLM_API_KEY is not set."
+  MODEL_CONFIG_MISSING=1
 fi
 
 if [ -z "$VLM_MODEL" ]; then
-  warn "VLM_MODEL is not set. Please edit .env."
+  warn "VLM_MODEL is not set."
+  MODEL_CONFIG_MISSING=1
 fi
 
 if [ -z "$VLM_BASE_URL" ]; then
-  warn "VLM_BASE_URL is not set. Please edit .env."
+  warn "VLM_BASE_URL is not set."
+  MODEL_CONFIG_MISSING=1
+fi
+
+if [ "$MODEL_CONFIG_MISSING" -eq 1 ]; then
+  warn "Graph agent model config is incomplete. The backend can start, but task execution will fail until VLM_* is configured in $ENV_FILE."
+else
+  info "Graph agent model config detected: VLM_MODEL=$VLM_MODEL"
 fi
 
 info ".env loaded"
@@ -225,7 +235,7 @@ fi
 # --------------------------------------------------
 info "Starting OpenGUI Server ..."
 echo ""
-echo "  The backend will print API docs and GitHub star links after startup."
+echo "  The backend will print the local API docs URL and project link after startup."
 echo ""
 
 pnpm backend
