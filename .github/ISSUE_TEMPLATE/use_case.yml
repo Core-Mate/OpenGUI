@@ -1,0 +1,26 @@
+name: Share a use case
+description: Share a real deployment idea or experiment for OpenGUI.
+title: "[Use case]: "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use cases help shape the roadmap. If you tried OpenGUI, tell us what worked, what failed, and which phone workflow matters most.
+  - type: textarea
+    id: scenario
+    attributes:
+      label: Scenario
+      description: What phone-based workflow do you want to run?
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Device, Android version, backend setup, model provider, and app(s) involved.
+  - type: textarea
+    id: success
+    attributes:
+      label: What would make this successful?
+      description: Describe the result, duration, reliability, or output format you need.

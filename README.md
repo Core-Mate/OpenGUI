@@ -20,6 +20,14 @@
 - `[2026.5.7]` Hardened local startup to avoid common PostgreSQL and Redis port conflicts during Docker-based backend setup.
 - `[2026.5.1]` Improved backend onboarding with `.env.example`, startup checks, and graph-agent VLM environment configuration.
 
+## Try It, Discuss It, Contribute
+
+- **Download the Android test APK** from the latest [GitHub release](https://github.com/Core-Mate/OpenGUI/releases/latest).
+- **Follow the setup guide** in [docs/get-started.md](./docs/get-started.md) or ask Claude/Codex to run [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md).
+- **Share a real phone workflow** by opening a [use case issue](https://github.com/Core-Mate/OpenGUI/issues/new/choose).
+- **Pick a starter contribution** from [ROADMAP.md](./ROADMAP.md) or the `good first issue` label.
+- **Join the Discord community**: https://discord.gg/pqHHw7XgJ3
+
 ## What You Can Do with OpenGUI
 
 OpenGUI lets AI operate real Android phones.
@@ -30,8 +38,6 @@ You can use the same repository in four practical ways:
 - **Run shipped workflows**: the repository already includes a runnable backend, Android client, standby dispatch path, and a set of built-in task capabilities.
 - **Let Claude or Codex bootstrap it for you**: point the model at [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md), describe the goal in plain language, and let it handle setup, build, install, and local debugging.
 - **Operate phones as remote workers**: dispatch tasks through Feishu, Telegram, Discord, or REST API, keep devices on standby, and get structured results back from the backend.
-
-- join the Discord community: https://discord.gg/pqHHw7XgJ3
 
 ## Highlights
 

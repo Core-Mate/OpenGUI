@@ -1,0 +1,41 @@
+name: Feature request
+description: Suggest a workflow, integration, or improvement for OpenGUI.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        OpenGUI is most useful when feature requests are grounded in a real mobile workflow. Tell us what phone task you want to automate and how you would judge success.
+  - type: textarea
+    id: workflow
+    attributes:
+      label: Workflow
+      description: What should OpenGUI do on the phone?
+      placeholder: I want a standby Android phone to...
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why is this useful?
+      description: Explain the user, team, or deployment scenario.
+    validations:
+      required: true
+  - type: textarea
+    id: desired
+    attributes:
+      label: Desired behavior
+      description: What should the backend, Android client, or IM channel return?
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Android automation
+        - Backend graph / task state
+        - Model routing
+        - IM channel
+        - Documentation
+        - Developer tooling
+        - Other

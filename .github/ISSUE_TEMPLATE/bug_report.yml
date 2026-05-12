@@ -1,0 +1,50 @@
+name: Bug report
+description: Report something that is not working in OpenGUI.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve OpenGUI. The most useful reports include the phone/emulator setup, backend logs, and the exact task that failed.
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Describe the failure and what you expected instead.
+      placeholder: The Android client connected, but the task stopped after...
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Include the task prompt, command, or app flow if possible.
+      placeholder: |
+        1. Start backend with ./start.sh
+        2. Install APK v0.1.1
+        3. Run task...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      placeholder: v0.1.1 or commit SHA
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where did it happen?
+      options:
+        - Android client
+        - Backend
+        - Bootstrap skill
+        - Discord / IM channel
+        - Documentation
+        - Other
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs, screenshots, or screen recording
+      description: Paste relevant backend logs, Android logs, screenshots, or a short recording link.
+      render: shell
