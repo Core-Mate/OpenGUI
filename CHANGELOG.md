@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+### Documentation
+- Added a troubleshooting guide for backend connection, Android permissions, model configuration, and local Redis/PostgreSQL conflicts.
 ## [0.1.0] - 2026-03-30
 
 ### Initial source-available release
