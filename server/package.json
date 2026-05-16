@@ -5,6 +5,7 @@
 		"build": "turbo run build",
 		"dev": "turbo run dev",
 		"backend": "cd apps/backend && pnpm run dev",
+		"opengui": "node scripts/opengui-control.mjs",
 		"lint": "turbo run lint",
 		"format-and-lint": "biome check .",
 		"format-and-lint:fix": "biome check --write .",

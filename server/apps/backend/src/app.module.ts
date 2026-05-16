@@ -16,6 +16,7 @@ import { CreditsModule } from "./modules/credits";
 import { DeviceLogModule } from "./modules/device-log/device-log.module";
 import { CreatorAgentModule } from "./modules/creator-agent";
 import { ImChannelModule } from "./modules/im-channel/im-channel.module";
+import { RemoteControlModule } from "./modules/remote-control";
 import { TaskModule } from "./modules/task/task.module";
 import { TenantModule } from "./modules/tenant";
 import { UserModule } from "./modules/user/user.module";
@@ -85,6 +86,9 @@ import { PrismaModule } from "./prisma/prisma.module";
 
 		// IM Channel module (remote task dispatch via Feishu/Telegram/Discord)
 		ImChannelModule,
+
+		// Local developer remote control API and CLI support
+		RemoteControlModule,
 	],
 	controllers: [AppController],
 	providers: [

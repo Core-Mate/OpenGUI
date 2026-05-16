@@ -8,10 +8,13 @@ import {
 	type ExecutionPhaseChangedEvent,
 	type ExecutionActionThoughtEvent,
 } from "../../common/events/execution-events";
-import { StandbyGateway } from "../../common/ws/standby.gateway";
 import { StandbySocketService } from "../../common/ws/standby-socket.service";
 import { TaskService } from "../task/task.service";
 import { TaskExecutionService } from "../task/task-execution.service";
+import {
+	type RemoteControlExecutionResponse,
+	RemoteControlService,
+} from "../remote-control";
 import { DiscordBotService } from "./discord/discord-bot.service";
 import { FeishuBotService } from "./feishu/feishu-bot.service";
 import { TelegramBotService } from "./telegram/telegram-bot.service";
@@ -39,8 +42,8 @@ export class ImChannelService implements OnModuleInit {
 		private readonly commandParser: CommandParserService,
 		private readonly taskService: TaskService,
 		private readonly taskExecutionService: TaskExecutionService,
-		private readonly standbyGateway: StandbyGateway,
 		private readonly standbySocketService: StandbySocketService,
+		private readonly remoteControlService: RemoteControlService,
 	) {
 		this.logger.setContext(ImChannelService.name);
 	}
@@ -168,48 +171,20 @@ export class ImChannelService implements OnModuleInit {
 	}
 
 	private async handleRunTask(message: ImInboundMessage, taskId: number) {
-		const device = this.standbySocketService.getOnlineDevice();
-		if (!device) {
-			await this.reply(
-				message,
-				"❌ No online device. Start the app on the work phone first.",
-			);
-			return;
-		}
-
-		const task = await this.taskService.getTaskById(taskId, DEFAULT_USER_ID);
-		if (!task) {
-			await this.reply(
-				message,
-				`❌ No task found with ID ${taskId}\nSend /tasks to view the list`,
-			);
-			return;
-		}
-
-		await this.dispatchExecution(message, taskId, task.taskName, device);
+		const result = await this.remoteControlService.runTask(
+			{ taskId },
+			DEFAULT_USER_ID,
+		);
+		await this.trackDispatchedExecution(message, result);
 	}
 
 	private async handleDoTask(message: ImInboundMessage, description: string) {
-		const device = this.standbySocketService.getOnlineDevice();
-		if (!device) {
-			await this.reply(
-				message,
-				"❌ No online device. Start the app on the work phone first.",
-			);
-			return;
-		}
-
-		const name =
-			description.length > 20
-				? `${description.substring(0, 20)}...`
-				: description;
-		const task = await this.taskService.createTask(DEFAULT_USER_ID, {
-			taskName: name,
-			taskDescription: description,
-		});
-
-		await this.reply(message, `📝 Created task: ${name}`);
-		await this.dispatchExecution(message, task.id, name, device);
+		const result = await this.remoteControlService.doTask(
+			{ description },
+			DEFAULT_USER_ID,
+		);
+		await this.reply(message, `📝 Created task: ${result.taskName}`);
+		await this.trackDispatchedExecution(message, result);
 	}
 
 	private async handleStatus(message: ImInboundMessage, executionId?: number) {
@@ -423,36 +398,22 @@ export class ImChannelService implements OnModuleInit {
 
 	// ============================================================
 
-	private async dispatchExecution(
+	private async trackDispatchedExecution(
 		message: ImInboundMessage,
-		taskId: number,
-		taskName: string,
-		device: NonNullable<ReturnType<StandbySocketService["getOnlineDevice"]>>,
+		result: RemoteControlExecutionResponse,
 	) {
-		const result = await this.taskExecutionService.executeTask(
-			taskId,
-			DEFAULT_USER_ID,
-			{ deviceId: device.deviceId },
-		);
-
 		this.activeExecutions.set(result.executionId, {
 			platform: message.platform,
 			conversationId: message.conversationId,
 			platformUserId: message.platformUserId,
-			taskName,
+			taskName: result.taskName,
 			startedAt: Date.now(),
 		});
 
 		await this.reply(
 			message,
-			`▶️ Starting execution: ${taskName}\nDevice: ${device.deviceName || device.deviceId}`,
+			`▶️ Starting execution: ${result.taskName}\nDevice: ${result.device.deviceName || result.device.deviceId}`,
 		);
-
-		this.standbyGateway.dispatchToDevice(device, {
-			executionId: result.executionId,
-			taskId,
-			taskName,
-		});
 	}
 
 	private getExecutionIdForContext(
