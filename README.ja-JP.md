@@ -16,7 +16,7 @@
 
 ## 最近の更新
 
-- `[2026.5.9]` Discord IM エントリーを追加しました。プレフィックスコマンド、スラッシュコマンド、allowlist、guild 単位のコマンド登録に対応し、Discord チャンネルから Android タスクをリモート実行できます。
+- `[2026.5.9]` [Discord IM エントリー](./docs/DISCORD.ja-JP.md)を追加しました。プレフィックスコマンド、スラッシュコマンド、allowlist、guild 単位のコマンド登録に対応し、Discord チャンネルから Android タスクをリモート実行できます。
 - `[2026.5.7]` Docker ベースのバックエンド起動時に、一般的な PostgreSQL / Redis ポート競合を避けられるようローカル起動フローを強化しました。
 - `[2026.5.1]` バックエンドのオンボーディングとして、`.env.example`、起動時チェック、graph agent 向け VLM 環境変数設定を整備しました。
 
@@ -147,7 +147,7 @@ cd client
 - [server/start.sh](./server/start.sh)
 - [client/start.sh](./client/start.sh)
 - [server/apps/backend/README.md](./server/apps/backend/README.md)
-- [DISCORD.ja-JP.md](./DISCORD.ja-JP.md)
+- [docs/DISCORD.ja-JP.md](./docs/DISCORD.ja-JP.md)
 - [client/README.md](./client/README.md)
 
 ### 3. 任意の Discord リモートコントロール
@@ -160,7 +160,7 @@ Discord は任意の IM チャンネルとして有効化できます。Discord 
 ローカル利用には必須ではありません。`DISCORD_BOT_TOKEN` が空の場合、バックエンド
 は通常どおり起動し、Discord をスキップします。
 
-詳細な設定手順: [DISCORD.ja-JP.md](./DISCORD.ja-JP.md)。
+詳細な設定手順: [docs/DISCORD.ja-JP.md](./docs/DISCORD.ja-JP.md)。
 
 ## システム構成
 
@@ -200,7 +200,7 @@ flowchart LR
 - [skills/open-gui-bootstrap/SKILL.md](./skills/open-gui-bootstrap/SKILL.md)
 - [docs/get-started.md](./docs/get-started.md)
 - [server/apps/backend/README.md](./server/apps/backend/README.md)
-- [DISCORD.ja-JP.md](./DISCORD.ja-JP.md)
+- [docs/DISCORD.ja-JP.md](./docs/DISCORD.ja-JP.md)
 - [client/README.md](./client/README.md)
 - [CONTRIBUTING.md](./CONTRIBUTING.md)
 - [SECURITY.md](./SECURITY.md)

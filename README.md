@@ -16,7 +16,7 @@
 
 ## Recent Updates
 
-- `[2026.5.9]` Added a Discord IM channel for remote Android task dispatch, including prefix commands, slash commands, allowlists, and guild-scoped command registration.
+- `[2026.5.9]` Added a [Discord IM channel](./docs/DISCORD.md) for remote Android task dispatch, including prefix commands, slash commands, allowlists, and guild-scoped command registration.
 - `[2026.5.7]` Hardened local startup to avoid common PostgreSQL and Redis port conflicts during Docker-based backend setup.
 - `[2026.5.1]` Improved backend onboarding with `.env.example`, startup checks, and graph-agent VLM environment configuration.
 
@@ -31,7 +31,7 @@ You can use the same repository in four practical ways:
 - **Let Claude or Codex bootstrap it for you**: point the model at [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md), describe the goal in plain language, and let it handle setup, build, install, and local debugging.
 - **Operate phones as remote workers**: dispatch tasks through Feishu, Telegram, Discord, or REST API, keep devices on standby, and get structured results back from the backend.
 
-- join the Discord community: https://discord.gg/pqHHw7XgJ3
+- [Join the Discord community](https://discord.gg/pqHHw7XgJ3)
 
 ## Highlights
 
@@ -149,7 +149,7 @@ Reference docs:
 - [server/start.sh](./server/start.sh)
 - [client/start.sh](./client/start.sh)
 - [server/apps/backend/README.md](./server/apps/backend/README.md)
-- [DISCORD.md](./DISCORD.md)
+- [docs/DISCORD.md](./docs/DISCORD.md)
 - [client/README.md](./client/README.md)
 
 ### 3. Optional Discord remote control
@@ -161,7 +161,7 @@ task to a standby Android phone and posts progress back to the same channel.
 This is not required for local use. If `DISCORD_BOT_TOKEN` is empty, the backend
 starts normally and skips Discord.
 
-Full setup guide: [DISCORD.md](./DISCORD.md).
+Full setup guide: [docs/DISCORD.md](./docs/DISCORD.md).
 
 ## The System
 
@@ -201,7 +201,7 @@ flowchart LR
 - [skills/open-gui-bootstrap/SKILL.md](./skills/open-gui-bootstrap/SKILL.md)
 - [docs/get-started.md](./docs/get-started.md)
 - [server/apps/backend/README.md](./server/apps/backend/README.md)
-- [DISCORD.md](./DISCORD.md)
+- [docs/DISCORD.md](./docs/DISCORD.md)
 - [client/README.md](./client/README.md)
 - [CONTRIBUTING.md](./CONTRIBUTING.md)
 - [SECURITY.md](./SECURITY.md)

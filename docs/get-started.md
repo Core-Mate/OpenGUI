@@ -98,5 +98,5 @@ For local runs, the backend task controllers also default to `userId = 1`, so fi
 ## More detail
 
 - Backend details: [`server/apps/backend/README.md`](../server/apps/backend/README.md)
-- Discord remote control: [`DISCORD.md`](../DISCORD.md)
+- Discord remote control: [`docs/DISCORD.md`](./DISCORD.md)
 - Android client details: [`client/README.md`](../client/README.md)
