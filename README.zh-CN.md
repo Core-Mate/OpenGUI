@@ -16,6 +16,7 @@
 
 ## 近期更新
 
+- `[2026.5.16]` 新增 [Codex / Claude Code 远程控制](./docs/codex-remote-control.zh-CN.md)，提供本地 REST API、`pnpm opengui -- ...` CLI，以及 [`open-gui-remote-control`](./skills/open-gui-remote-control/SKILL.md) Skill，可从编码 Agent 下发 Android App 任务。
 - `[2026.5.9]` 新增 [Discord IM 入口](./docs/DISCORD.zh-CN.md)，支持前缀命令、Slash 命令、安全白名单和 guild-scoped 命令注册，可从 Discord 频道远程下发 Android 任务。
 - `[2026.5.7]` 本地启动流程增强，Docker 方式启动后端时会避开常见的 PostgreSQL 和 Redis 端口冲突。
 - `[2026.5.1]` 后端上手流程补齐 `.env.example`、启动检查提示和 graph agent 的 VLM 环境变量配置。
@@ -29,6 +30,7 @@ OpenGUI 让 AI 操作真实的 Android 手机。
 - **操作主流 Android App**：让 AI 在真实手机上执行 X、Reddit、Hacker News、Telegram、微信、微博、小红书等移动任务。
 - **运行现成工作流**：仓库已经包含可直接启动的后端、Android 客户端、待命派发链路，以及部分预置任务能力。
 - **让 Claude 或 Codex 帮你跑起来**：把 [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md) 交给模型，直接用自然语言描述目标，让它处理安装、构建、安装 APK 和本地排障。
+- **让 Codex 控制 Android App**：OpenGUI 启动后，把 [`skills/open-gui-remote-control/SKILL.md`](./skills/open-gui-remote-control/SKILL.md) 交给 Codex 或 Claude Code，用本地 CLI 列设备、下发任务并查询 execution 状态。
 - **把手机当成远程 worker 使用**：通过飞书、Telegram、Discord 或 REST API 下发任务，让设备保持待命，并从后端拿回结构化结果。
 - [加入 Discord 社区](https://discord.gg/pqHHw7XgJ3)
 
@@ -87,6 +89,15 @@ OpenGUI 采用的是一套分层清晰的移动 operator system。
 - 开启 AccessibilityService
 - 授予悬浮窗或电池权限
 - 提供 API Key 或机器人密钥
+
+后端和 Android client 跑起来后，可以继续使用 [`skills/open-gui-remote-control/SKILL.md`](./skills/open-gui-remote-control/SKILL.md)，让 Codex 或 Claude Code 通过本地 CLI 控制手机：
+
+```bash
+cd server
+pnpm opengui -- devices --json
+pnpm opengui -- do "观察当前手机屏幕，简要描述你看到了什么，然后结束" --json
+pnpm opengui -- status <executionId> --json
+```
 
 推荐配置：
 

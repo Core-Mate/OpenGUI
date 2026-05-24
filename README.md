@@ -16,6 +16,7 @@
 
 ## Recent Updates
 
+- `[2026.5.16]` Added [Codex / Claude Code remote control](./docs/codex-remote-control.zh-CN.md) with a local REST API, `pnpm opengui -- ...` CLI, and the [`open-gui-remote-control`](./skills/open-gui-remote-control/SKILL.md) Skill for dispatching Android app tasks from coding agents.
 - `[2026.5.9]` Added a [Discord IM channel](./docs/DISCORD.md) for remote Android task dispatch, including prefix commands, slash commands, allowlists, and guild-scoped command registration.
 - `[2026.5.7]` Hardened local startup to avoid common PostgreSQL and Redis port conflicts during Docker-based backend setup.
 - `[2026.5.1]` Improved backend onboarding with `.env.example`, startup checks, and graph-agent VLM environment configuration.
@@ -29,6 +30,7 @@ You can use the same repository in four practical ways:
 - **Operate mainstream Android apps**: let AI handle mobile tasks inside X, Reddit, Hacker News, Telegram, WeChat, Weibo, Xiaohongshu, and other Android apps on a real phone.
 - **Run shipped workflows**: the repository already includes a runnable backend, Android client, standby dispatch path, and a set of built-in task capabilities.
 - **Let Claude or Codex bootstrap it for you**: point the model at [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md), describe the goal in plain language, and let it handle setup, build, install, and local debugging.
+- **Let Codex control Android apps**: after OpenGUI is running, point Codex or Claude Code at [`skills/open-gui-remote-control/SKILL.md`](./skills/open-gui-remote-control/SKILL.md) to list devices, dispatch tasks, and track executions through the local CLI.
 - **Operate phones as remote workers**: dispatch tasks through Feishu, Telegram, Discord, or REST API, keep devices on standby, and get structured results back from the backend.
 
 - [Join the Discord community](https://discord.gg/pqHHw7XgJ3)
@@ -88,6 +90,15 @@ It should only stop for:
 - enabling AccessibilityService
 - granting overlay or battery permissions
 - providing API keys or bot credentials
+
+After the backend and Android client are running, use [`skills/open-gui-remote-control/SKILL.md`](./skills/open-gui-remote-control/SKILL.md) to let Codex or Claude Code control the phone through the local CLI:
+
+```bash
+cd server
+pnpm opengui -- devices --json
+pnpm opengui -- do "Observe the current Android screen and summarize what you see" --json
+pnpm opengui -- status <executionId> --json
+```
 
 Recommended profiles:
 

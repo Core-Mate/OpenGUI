@@ -16,6 +16,7 @@
 
 ## 最近の更新
 
+- `[2026.5.16]` [Codex / Claude Code リモートコントロール](./docs/codex-remote-control.zh-CN.md)を追加しました。ローカル REST API、`pnpm opengui -- ...` CLI、[`open-gui-remote-control`](./skills/open-gui-remote-control/SKILL.md) Skill により、コーディングエージェントから Android アプリタスクをディスパッチできます。
 - `[2026.5.9]` [Discord IM エントリー](./docs/DISCORD.ja-JP.md)を追加しました。プレフィックスコマンド、スラッシュコマンド、allowlist、guild 単位のコマンド登録に対応し、Discord チャンネルから Android タスクをリモート実行できます。
 - `[2026.5.7]` Docker ベースのバックエンド起動時に、一般的な PostgreSQL / Redis ポート競合を避けられるようローカル起動フローを強化しました。
 - `[2026.5.1]` バックエンドのオンボーディングとして、`.env.example`、起動時チェック、graph agent 向け VLM 環境変数設定を整備しました。
@@ -29,6 +30,7 @@ OpenGUI は、AI が実際の Android スマートフォンを操作できるよ
 - **主要な Android アプリを操作**: X、Reddit、Hacker News、Telegram、WeChat、Weibo、小紅書などの Android アプリ上で、AI にモバイルタスクを実行させることができます。
 - **組み込みワークフローを実行**: バックエンド、Android クライアント、スタンバイディスパッチパス、組み込みタスク機能一式がすぐに実行可能な状態で含まれています。
 - **Claude や Codex にブートストラップさせる**: [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md) をモデルに指示し、目的を自然言語で説明すれば、セットアップ、ビルド、インストール、ローカルデバッグをモデルが処理します。
+- **Codex で Android アプリを操作**: OpenGUI の起動後、[`skills/open-gui-remote-control/SKILL.md`](./skills/open-gui-remote-control/SKILL.md) を Codex または Claude Code に渡すと、ローカル CLI 経由でデバイス一覧、タスクディスパッチ、execution 状態確認ができます。
 - **リモートワーカーとしてスマートフォンを操作**: Feishu、Telegram、Discord、REST API 経由でタスクをディスパッチし、デバイスをスタンバイ状態に保ち、バックエンドから構造化された結果を受け取ることができます。
 
 ## 特徴
@@ -86,6 +88,15 @@ OpenGUI は、明示的なオーケストレーションレイヤーを持つモ
 - AccessibilityService の有効化
 - オーバーレイまたはバッテリー権限の付与
 - API キーまたはボット認証情報の入力
+
+バックエンドと Android client が起動したら、[`skills/open-gui-remote-control/SKILL.md`](./skills/open-gui-remote-control/SKILL.md) を使って Codex または Claude Code にローカル CLI 経由でスマートフォンを操作させることができます:
+
+```bash
+cd server
+pnpm opengui -- devices --json
+pnpm opengui -- do "Observe the current Android screen and summarize what you see" --json
+pnpm opengui -- status <executionId> --json
+```
 
 推奨プロファイル:
 
