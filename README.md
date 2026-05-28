@@ -29,6 +29,24 @@ Demo video coming soon.
 
 The first demo will show OpenGUI operating a real Android app on an Android device, including screen understanding, tapping, typing, and returning a structured result.
 
+## Quick Start
+
+Fastest path: use Claude Code or Codex to bootstrap the project.
+
+1. Open this repository in Claude Code or Codex.
+2. Ask it to read [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md).
+3. Connect an Android phone or start an emulator.
+4. Approve USB debugging and enable AccessibilityService when asked.
+5. Run a first task through the local CLI.
+
+```bash
+cd server
+pnpm opengui -- devices --json
+pnpm opengui -- do "Observe the current Android screen and summarize what you see" --json
+```
+
+Manual setup: see [`docs/get-started.md`](./docs/get-started.md).
+
 ## Recent Updates
 
 - `[2026.5.16]` Added [Codex / Claude Code remote control](./docs/codex-remote-control.zh-CN.md) with a local REST API, `pnpm opengui -- ...` CLI, and the [`open-gui-remote-control`](./skills/open-gui-remote-control/SKILL.md) Skill for dispatching Android app tasks from coding agents.
@@ -85,6 +103,24 @@ The source code currently exposes these pieces:
 - Trigger Android tasks remotely from Feishu, Telegram, Discord, or REST API
 - Execute repetitive mobile workflows on Android devices
 - Run long mobile workflows that need state, review, and recovery over many hours
+
+## Current Limitations
+
+- Requires an Android device or emulator.
+- Requires USB debugging and AccessibilityService permissions.
+- Execution quality depends on the model, app UI, network state, and task length.
+- Not an always-on OS-level assistant yet; tasks are currently triggered manually or through configured dispatch channels.
+- Long-running tasks are supported by the system design, but reliability still needs more real-world testing.
+- More ready-to-run task examples and benchmarks are still needed.
+
+## Roadmap
+
+- Add a short demo video and more real app examples.
+- Improve one-command local setup.
+- Add more ready-to-run phone-use task templates.
+- Improve execution recovery and failure reporting.
+- Add benchmark tasks for Android GUI agent reliability.
+- Expand docs for model configuration and cost-saving profiles.
 
 ## How to Use OpenGUI
 
