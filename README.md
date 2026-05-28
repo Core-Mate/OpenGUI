@@ -31,13 +31,32 @@ The first demo will show OpenGUI operating a real Android app on an Android devi
 
 ## Quick Start
 
-Fastest path: use Claude Code or Codex to bootstrap the project.
+The fastest way to try OpenGUI is to let Claude Code or Codex bootstrap it for you.
 
-1. Open this repository in Claude Code or Codex.
-2. Ask it to read [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md).
-3. Connect an Android phone or start an emulator.
-4. Approve USB debugging and enable AccessibilityService when asked.
-5. Run a first task through the local CLI.
+```text
+Read ./skills/open-gui-bootstrap/SKILL.md and help me run OpenGUI. Only ask me for phone-side actions.
+```
+
+You will need:
+
+- an Android phone or emulator
+- USB debugging enabled
+- AccessibilityService enabled
+- model API keys for real task execution
+
+OpenGUI will use the repository scripts to start the backend and install the Android client:
+
+```bash
+cd server
+./start.sh
+```
+
+```bash
+cd client
+./start.sh
+```
+
+After the backend and Android client are running, send a first task:
 
 ```bash
 cd server
@@ -45,7 +64,7 @@ pnpm opengui -- devices --json
 pnpm opengui -- do "Observe the current Android screen and summarize what you see" --json
 ```
 
-Manual setup: see [`docs/get-started.md`](./docs/get-started.md).
+Manual setup guide: [`docs/get-started.md`](./docs/get-started.md).
 
 ## Recent Updates
 
