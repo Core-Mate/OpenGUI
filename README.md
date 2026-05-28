@@ -1,3 +1,4 @@
+
 <p align="center">
   <strong>Language:</strong> <a href="./README.md">English</a> | <a href="./README.zh-CN.md">简体中文</a> | <a href="./README.ja-JP.md">日本語</a>
 </p>
@@ -14,6 +15,20 @@
   <a href="./docs/get-started.md"><img src="https://img.shields.io/badge/MANUAL_SETUP-DOCS-4b4b4b?style=for-the-badge" alt="Manual setup docs"></a>
 </p>
 
+<p align="center">
+  <strong>A mobile GUI agent framework for Android.</strong>
+</p>
+
+<p align="center">
+  OpenGUI helps AI agents see, understand, and operate Android app interfaces on real devices.
+</p>
+
+## Demo
+
+Demo video coming soon.
+
+The first demo will show OpenGUI operating a real Android app on an Android device, including screen understanding, tapping, typing, and returning a structured result.
+
 ## Recent Updates
 
 - `[2026.5.16]` Added [Codex / Claude Code remote control](./docs/codex-remote-control.zh-CN.md) with a local REST API, `pnpm opengui -- ...` CLI, and the [`open-gui-remote-control`](./skills/open-gui-remote-control/SKILL.md) Skill for dispatching Android app tasks from coding agents.
@@ -23,7 +38,7 @@
 
 ## What You Can Do with OpenGUI
 
-OpenGUI lets AI operate real Android phones.
+OpenGUI provides an Android GUI agent stack for screen understanding, task planning, action execution, review, and recovery.
 
 You can use the same repository in four practical ways:
 
