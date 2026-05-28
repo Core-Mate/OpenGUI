@@ -14,6 +14,38 @@
   <a href="./docs/get-started.md"><img src="https://img.shields.io/badge/MANUAL_SETUP-DOCS-4b4b4b?style=for-the-badge" alt="Manual setup docs"></a>
 </p>
 
+<p align="center">
+  <strong>面向 Android 的移动端 GUI Agent 框架。</strong>
+</p>
+
+<p align="center">
+  OpenGUI 让 AI Agent 能够看懂、理解并操作真实 Android 设备上的 App 界面。
+</p>
+
+## Demo
+
+Demo 视频即将补充。
+
+第一版 Demo 会展示 OpenGUI 在真实 Android 设备上操作真实 App，包括屏幕理解、点击、输入和返回结构化结果。
+
+## Quick Start
+
+最快路径：使用 Claude Code 或 Codex 帮你启动项目。
+
+1. 在 Claude Code 或 Codex 中打开这个仓库。
+2. 让它读取 [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md)。
+3. 连接一台 Android 手机，或启动 Android 模拟器。
+4. 按提示允许 USB 调试并开启 AccessibilityService。
+5. 通过本地 CLI 跑第一个任务。
+
+```bash
+cd server
+pnpm opengui -- devices --json
+pnpm opengui -- do "观察当前手机屏幕，简要描述你看到了什么，然后结束" --json
+```
+
+手动安装请看 [`docs/get-started.md`](./docs/get-started.md)。
+
 ## 近期更新
 
 - `[2026.5.16]` 新增 [Codex / Claude Code 远程控制](./docs/codex-remote-control.zh-CN.md)，提供本地 REST API、`pnpm opengui -- ...` CLI，以及 [`open-gui-remote-control`](./skills/open-gui-remote-control/SKILL.md) Skill，可从编码 Agent 下发 Android App 任务。
@@ -69,6 +101,24 @@ OpenGUI 采用的是一套分层清晰的移动 operator system。
 - 从飞书、Telegram、Discord 或 REST API 远程触发手机任务
 - 在 Android 设备上执行重复性的移动工作流
 - 运行需要状态管理、复核和恢复机制的长时移动工作流
+
+## 当前限制
+
+- 需要 Android 真机或模拟器。
+- 需要开启 USB 调试和 AccessibilityService 权限。
+- 执行质量会受到模型能力、App UI、网络状态和任务长度影响。
+- 目前还不是 OS 级常驻助手；任务需要手动触发，或通过已配置的派发入口触发。
+- 系统设计支持长时任务，但可靠性仍需要更多真实场景测试。
+- 还需要补充更多可直接运行的任务示例和 benchmark。
+
+## Roadmap
+
+- 补充短 Demo 视频和更多真实 App 示例。
+- 优化一键本地启动流程。
+- 增加更多可直接运行的 phone-use 任务模板。
+- 提升执行恢复和失败反馈能力。
+- 增加 Android GUI Agent 可靠性 benchmark 任务。
+- 完善模型配置和省钱混用方案文档。
 
 ## 怎么使用 OpenGUI
 
