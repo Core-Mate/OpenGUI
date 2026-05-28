@@ -30,13 +30,32 @@ Demo 動画は近日追加予定です。
 
 ## Quick Start
 
-最短ルート: Claude Code または Codex を使ってプロジェクトをブートストラップします。
+OpenGUI を最も早く試す方法は、Claude Code または Codex にブートストラップを任せることです。
 
-1. このリポジトリを Claude Code または Codex で開きます。
-2. [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md) を読むように指示します。
-3. Android スマートフォンを接続するか、エミュレーターを起動します。
-4. 求められたら USB デバッグを許可し、AccessibilityService を有効化します。
-5. ローカル CLI から最初のタスクを実行します。
+```text
+Read ./skills/open-gui-bootstrap/SKILL.md and help me run OpenGUI. Only ask me for phone-side actions.
+```
+
+必要なもの:
+
+- Android スマートフォンまたはエミュレーター
+- USB デバッグの有効化
+- AccessibilityService の有効化
+- 実際のタスク実行に使うモデル API キー
+
+OpenGUI はリポジトリ内のスクリプトを使ってバックエンドを起動し、Android クライアントをインストールします:
+
+```bash
+cd server
+./start.sh
+```
+
+```bash
+cd client
+./start.sh
+```
+
+バックエンドと Android クライアントが起動したら、最初のタスクを送信します:
 
 ```bash
 cd server
@@ -44,7 +63,7 @@ pnpm opengui -- devices --json
 pnpm opengui -- do "Observe the current Android screen and summarize what you see" --json
 ```
 
-手動セットアップは [`docs/get-started.md`](./docs/get-started.md) を参照してください。
+手動セットアップガイド: [`docs/get-started.md`](./docs/get-started.md)
 
 ## 最近の更新
 
