@@ -14,6 +14,38 @@
   <a href="./docs/get-started.md"><img src="https://img.shields.io/badge/MANUAL_SETUP-DOCS-4b4b4b?style=for-the-badge" alt="手動セットアップドキュメント"></a>
 </p>
 
+<p align="center">
+  <strong>Android 向けのモバイル GUI エージェントフレームワーク。</strong>
+</p>
+
+<p align="center">
+  OpenGUI は、AI エージェントが実機上の Android アプリ UI を見て、理解し、操作できるようにします。
+</p>
+
+## Demo
+
+Demo 動画は近日追加予定です。
+
+最初の Demo では、OpenGUI が実際の Android デバイス上でアプリを操作し、画面理解、タップ、入力、構造化された結果の返却までを示します。
+
+## Quick Start
+
+最短ルート: Claude Code または Codex を使ってプロジェクトをブートストラップします。
+
+1. このリポジトリを Claude Code または Codex で開きます。
+2. [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md) を読むように指示します。
+3. Android スマートフォンを接続するか、エミュレーターを起動します。
+4. 求められたら USB デバッグを許可し、AccessibilityService を有効化します。
+5. ローカル CLI から最初のタスクを実行します。
+
+```bash
+cd server
+pnpm opengui -- devices --json
+pnpm opengui -- do "Observe the current Android screen and summarize what you see" --json
+```
+
+手動セットアップは [`docs/get-started.md`](./docs/get-started.md) を参照してください。
+
 ## 最近の更新
 
 - `[2026.5.16]` [Codex / Claude Code リモートコントロール](./docs/codex-remote-control.zh-CN.md)を追加しました。ローカル REST API、`pnpm opengui -- ...` CLI、[`open-gui-remote-control`](./skills/open-gui-remote-control/SKILL.md) Skill により、コーディングエージェントから Android アプリタスクをディスパッチできます。
@@ -68,6 +100,24 @@ OpenGUI は、明示的なオーケストレーションレイヤーを持つモ
 - Feishu、Telegram、Discord、REST API から Android タスクをリモートでトリガーする
 - Android デバイス上で反復的なモバイルワークフローを実行する
 - 状態管理、レビュー、リカバリーが必要な長時間モバイルワークフローを実行する
+
+## 現在の制限
+
+- Android 実機またはエミュレーターが必要です。
+- USB デバッグと AccessibilityService 権限が必要です。
+- 実行品質は、モデル、アプリ UI、ネットワーク状態、タスクの長さに依存します。
+- 現時点では OS レベルの常駐アシスタントではありません。タスクは手動、または設定済みのディスパッチ経路から起動します。
+- 長時間タスクはシステム設計上サポートされていますが、信頼性にはさらに実環境での検証が必要です。
+- すぐに実行できるタスク例と benchmark は今後さらに追加する必要があります。
+
+## Roadmap
+
+- 短い Demo 動画と実アプリ例を追加する。
+- ローカルセットアップをより一コマンドに近づける。
+- すぐに実行できる phone-use タスクテンプレートを増やす。
+- 実行リカバリーと失敗レポートを改善する。
+- Android GUI Agent の信頼性 benchmark タスクを追加する。
+- モデル設定とコスト削減プロファイルのドキュメントを拡充する。
 
 ## OpenGUI の使い方
 
