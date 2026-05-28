@@ -30,13 +30,32 @@ Demo 视频即将补充。
 
 ## Quick Start
 
-最快路径：使用 Claude Code 或 Codex 帮你启动项目。
+最快的试用方式，是让 Claude Code 或 Codex 帮你完成启动。
 
-1. 在 Claude Code 或 Codex 中打开这个仓库。
-2. 让它读取 [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md)。
-3. 连接一台 Android 手机，或启动 Android 模拟器。
-4. 按提示允许 USB 调试并开启 AccessibilityService。
-5. 通过本地 CLI 跑第一个任务。
+```text
+Read ./skills/open-gui-bootstrap/SKILL.md and help me run OpenGUI. Only ask me for phone-side actions.
+```
+
+你需要准备：
+
+- 一台 Android 手机或模拟器
+- 已开启 USB 调试
+- 已开启 AccessibilityService
+- 用于真实任务执行的模型 API Key
+
+OpenGUI 会使用仓库内脚本启动后端，并安装 Android 客户端：
+
+```bash
+cd server
+./start.sh
+```
+
+```bash
+cd client
+./start.sh
+```
+
+后端和 Android 客户端都跑起来后，发送第一个任务：
 
 ```bash
 cd server
@@ -44,7 +63,7 @@ pnpm opengui -- devices --json
 pnpm opengui -- do "观察当前手机屏幕，简要描述你看到了什么，然后结束" --json
 ```
 
-手动安装请看 [`docs/get-started.md`](./docs/get-started.md)。
+手动安装指南：[`docs/get-started.md`](./docs/get-started.md)。
 
 ## 近期更新
 
