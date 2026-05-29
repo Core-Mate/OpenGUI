@@ -24,9 +24,11 @@
 
 ## Demo
 
-Demo 视频即将补充。
+<p align="center">
+  <img src="./docs/assets/opengui-demo.gif" alt="OpenGUI 移动端 GUI Agent Demo" width="100%">
+</p>
 
-第一版 Demo 会展示 OpenGUI 在真实 Android 设备上操作真实 App，包括屏幕理解、点击、输入和返回结构化结果。
+OpenGUI 会读取真实 Android App 界面，规划下一步操作，执行移动端动作，并返回结构化结果。
 
 ## Quick Start
 
