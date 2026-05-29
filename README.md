@@ -90,6 +90,7 @@ You can use the same repository in four practical ways:
 ## Highlights
 
 - **Built for long-running tasks**: OpenGUI is shaped for mobile workflows that may run for hours, with progress, review, and recovery kept inside the system.
+- **Plan before action, summarize after execution**: before touching an app, OpenGUI breaks the goal into executable steps; after the run, it returns a structured summary of what happened, what worked, and what still needs attention.
 - **The task can keep moving**: `Plan Supervisor` maintains task state and continuation, `Executor Graph` runs screenshot, vision, action, and call-user loops on top of live device state, and `Summarizer` closes the run with a structured result.
 - **Phones can stay on standby**: the standby dispatch path lets devices receive remote work through Feishu, Telegram, Discord, or REST entry points.
 - **Models can be assigned by role**: model routing separates planning from VLM execution so teams can choose providers by job.
