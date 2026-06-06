@@ -1,0 +1,51 @@
+name: Setup help
+description: Ask for help getting OpenGUI running.
+title: ""
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this when the server, Android app, device connection, or model setup is blocked.
+
+        Please do not paste API keys, bot tokens, private screenshots, or full `.env` files.
+  - type: textarea
+    id: goal
+    attributes:
+      label: What are you trying to run?
+      description: Tell us which setup path you are following.
+      placeholder: I am trying to start the backend and connect an Android emulator.
+    validations:
+      required: true
+  - type: textarea
+    id: blocked
+    attributes:
+      label: Where did it stop?
+      description: Paste the command, error, or screen where you got stuck.
+      placeholder: |
+        cd server && ./start.sh
+        ...
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Fill in what you know. It is okay to leave unknown fields blank.
+      value: |
+        - OS:
+        - Node.js:
+        - pnpm:
+        - Docker:
+        - Android Studio or Gradle:
+        - Android device or emulator:
+    validations:
+      required: false
+  - type: textarea
+    id: tried
+    attributes:
+      label: What have you tried?
+      description: List any docs, commands, or workarounds you already tried.
+    validations:
+      required: false

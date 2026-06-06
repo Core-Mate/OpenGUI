@@ -1,0 +1,32 @@
+name: Feature request
+description: Suggest a change that would make OpenGUI more useful.
+title: ""
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for sharing an idea. Please keep it grounded in a workflow you actually want to run.
+  - type: textarea
+    id: workflow
+    attributes:
+      label: What are you trying to do?
+      description: Describe the task, app, or workflow this would help with.
+      placeholder: I want to run a phone task on a specific standby device without guessing which device will be selected.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like to change?
+      description: A rough idea is fine.
+      placeholder: It would help if the docs showed how to pick a device from the CLI output.
+    validations:
+      required: false
+  - type: textarea
+    id: context
+    attributes:
+      label: Notes or examples
+      description: Add links, examples, screenshots, or related issues. Redact private content.
+    validations:
+      required: false
