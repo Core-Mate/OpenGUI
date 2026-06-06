@@ -1,0 +1,50 @@
+name: Bug report
+description: Something did not work as expected.
+title: ""
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this. A short, concrete report is enough.
+
+        Please do not paste API keys, private screenshots, tokens, or full `.env` files. Security issues should be reported privately through SECURITY.md.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the problem in a few sentences.
+      placeholder: I started the backend and opened the Android app, but the device never appeared in the CLI device list.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: What did you try?
+      description: Share the commands or steps that led to the problem.
+      placeholder: |
+        cd server && ./start.sh
+        pnpm opengui -- devices --json
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: Paste the relevant output or attach screenshots after redacting secrets.
+      render: shell
+    validations:
+      required: false
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Fill in what you know. It is okay to leave unknown fields blank.
+      value: |
+        - OS:
+        - Node.js:
+        - pnpm:
+        - Android device or emulator:
+        - OpenGUI commit:
+    validations:
+      required: false
