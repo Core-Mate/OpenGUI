@@ -43,6 +43,7 @@ cd client
 ## Reporting Issues
 
 - Use GitHub Issues for bug reports and feature requests
+- See the [public label policy](docs/labels.md) for how maintainers classify issues and pull requests
 - For security vulnerabilities, see [SECURITY.md](SECURITY.md)
 
 ## License
