@@ -1,0 +1,48 @@
+name: DeepSeek Harness Plugin CI
+
+on:
+  push:
+    paths:
+      - 'deepseek-harness-plugin/**'
+      - '.github/workflows/deepseek-harness-plugin-ci.yml'
+  pull_request:
+    paths:
+      - 'deepseek-harness-plugin/**'
+      - '.github/workflows/deepseek-harness-plugin-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        node: [22.19.0, 24]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: deepseek-harness-plugin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.19.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: pnpm
+          cache-dependency-path: deepseek-harness-plugin/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run check
+      - run: mkdir -p .artifacts && npm pack --pack-destination .artifacts
+      - name: Verify package contents and bundled ADB executables
+        shell: bash
+        run: |
+          archive="$(find .artifacts -maxdepth 1 -name '*.tgz' -print -quit)"
+          test -n "$archive"
+          tar -tzf "$archive" > "$RUNNER_TEMP/archive-files.txt"
+          tar -tvzf "$archive" > "$RUNNER_TEMP/archive-verbose.txt"
+          grep -Fx 'package/lib/index.js' "$RUNNER_TEMP/archive-files.txt"
+          grep -Fx 'package/cordis.patch.yml' "$RUNNER_TEMP/archive-files.txt"
+          grep -E '^-rwxr-xr-x .* package/assets/platform-tools/darwin/adb$' "$RUNNER_TEMP/archive-verbose.txt"
+          grep -E '^-rwxr-xr-x .* package/assets/platform-tools/linux-x64/adb$' "$RUNNER_TEMP/archive-verbose.txt"

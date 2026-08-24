@@ -1,0 +1,7 @@
+interface:
+  display_name: "OpenGUI Installer"
+  short_description: "Install verified OpenGUI v0.1.5 into DSH on macOS"
+  icon_small: "./assets/opengui-mark.svg"
+  icon_large: "./assets/opengui-wordmark.svg"
+  brand_color: "#F1BF1F"
+  default_prompt: "Use $opengui-coremate-install to download, verify, install, and open OpenGUI v0.1.5 for my DSH web profile."

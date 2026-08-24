@@ -1,0 +1,324 @@
+import { useCallback, useEffect, useRef, useState } from 'react'
+import type { CSSProperties } from 'react'
+import {
+  DEVICE_SELECTION_PATH,
+  DEVICE_STREAM_ENABLE_PATH,
+  DEVICE_STREAM_STATUS_PATH,
+  MIRROR_START_PATH,
+  MIRROR_STOP_PATH,
+} from '../mirror-contract.ts'
+import type { MirrorDeviceStatus, MirrorStatus } from '../mirror-contract.ts'
+import type { ScrcpyStreamStatus } from '../scrcpy-stream.ts'
+import { BrowserInstallPrompt } from './BrowserInstallPrompt.tsx'
+import { OpenGuiMark } from './OpenGuiMark.tsx'
+import { mirrorBusy, mirrorLabel, mirrorProgress, postMirrorStatus, readMirrorStatus } from './MirrorButton.tsx'
+import { TaskStopButton } from './TaskStopButton.tsx'
+import { PhoneStream } from './PhoneStream.tsx'
+
+const DISCORD_URL = 'https://discord.gg/pqHHw7XgJ3'
+const OPENGUI_GITHUB_URL = 'https://github.com/Core-Mate/OpenGUI'
+const OPENGUI_WEBSITE_URL = 'https://opengui.ai/'
+
+const rootStyle: CSSProperties = {
+  width: '100%',
+  margin: 0,
+  padding: '16px clamp(16px, 2vw, 32px) 180px',
+  boxSizing: 'border-box',
+  containerType: 'inline-size',
+  color: 'var(--dsw-alias-label-primary, #27272a)',
+  fontFamily: '-apple-system, "SF Pro Text", "PingFang SC", "Noto Sans SC", sans-serif',
+}
+
+const headerStyle: CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  flexWrap: 'wrap',
+  gap: 12,
+  paddingBottom: 16,
+}
+
+const brandStyle: CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 8,
+  color: 'var(--dsw-alias-label-secondary, #52525b)',
+  fontSize: 12,
+  fontWeight: 650,
+}
+
+const bodyStyle: CSSProperties = {
+  margin: 0,
+  maxWidth: '64ch',
+  color: 'var(--dsw-alias-label-secondary, #52525b)',
+  fontSize: 13,
+  lineHeight: 1.7,
+}
+
+const headerLinkStyle: CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  minHeight: 40,
+  padding: '0 6px',
+  borderRadius: 6,
+  color: 'var(--dsw-alias-label-secondary, #52525b)',
+  fontSize: 12,
+  fontWeight: 650,
+  textDecoration: 'none',
+}
+
+const gridStyle: CSSProperties = {
+  display: 'grid',
+  alignItems: 'stretch',
+  justifyContent: 'start',
+  gap: 16,
+}
+
+const deviceStyle: CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  overflow: 'hidden',
+  borderRadius: 10,
+  background: 'var(--dsw-alias-bg-layer-1, #fff)',
+  boxShadow: '0 1px 3px rgba(39, 39, 42, 0.14)',
+}
+
+const deviceHeaderStyle: CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  flexWrap: 'wrap',
+  gap: 12,
+  minHeight: 48,
+  padding: '7px 8px 7px 12px',
+}
+
+const actionStyle: CSSProperties = {
+  minWidth: 40,
+  minHeight: 40,
+  border: '1px solid var(--dsw-alias-border-l2, rgba(128,128,128,.28))',
+  borderRadius: 6,
+  color: 'var(--dsw-alias-label-primary, #27272a)',
+  background: 'transparent',
+  font: 'inherit',
+  fontSize: 12,
+  fontWeight: 650,
+  cursor: 'pointer',
+}
+
+const connectStyle: CSSProperties = {
+  display: 'grid',
+  placeItems: 'center',
+  minHeight: 360,
+  padding: 24,
+  border: '1px dashed color-mix(in srgb, var(--dsw-alias-label-secondary, #52525b) 34%, transparent)',
+  borderRadius: 10,
+  color: 'var(--dsw-alias-label-primary, #27272a)',
+  background: 'color-mix(in srgb, var(--dsw-alias-bg-layer-1, #fff) 72%, transparent)',
+  textAlign: 'center',
+  boxSizing: 'border-box',
+}
+
+export type DeviceWallItem =
+  | { readonly kind: 'device', readonly device: MirrorDeviceStatus }
+  | { readonly kind: 'connect-more' }
+
+/** Keep the wall content-driven: every visible device, followed by one connection guide. */
+export function buildDeviceWallItems(devices: readonly MirrorDeviceStatus[]): DeviceWallItem[] {
+  return [
+    ...devices.map(device => ({ kind: 'device' as const, device })),
+    { kind: 'connect-more' },
+  ]
+}
+
+function phaseLabel(status: MirrorStatus): string {
+  const online = status.devices.filter(device => device.connected).length
+  const deviceLabel = `${online} 台设备在线`
+  switch (status.taskPhase) {
+    case 'waiting-for-device': return `${deviceLabel} · 等待手机`
+    case 'routing': return `${deviceLabel} · 正在规划`
+    case 'running': return `${deviceLabel} · 正在执行`
+    case 'stopping': return `${deviceLabel} · 正在停止`
+    case 'idle': return deviceLabel
+  }
+}
+
+function mirrorActive(device: MirrorDeviceStatus): boolean {
+  return ['downloading', 'extracting', 'launching', 'running'].includes(device.phase)
+}
+
+export function CoremateView({ coremateSessionId }: { readonly coremateSessionId?: string }): JSX.Element {
+  const [status, setStatus] = useState<MirrorStatus>()
+  const [expanded, setExpanded] = useState<Set<string>>(() => new Set())
+  const seenDevices = useRef(new Set<string>())
+  const [pending, setPending] = useState(false)
+  const [error, setError] = useState<string>()
+  const [streamStatus, setStreamStatus] = useState<ScrcpyStreamStatus>()
+  const [streamGeneration, setStreamGeneration] = useState(0)
+
+  useEffect(() => {
+    const controller = new AbortController()
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const poll = async (): Promise<void> => {
+      try {
+        const next = await readMirrorStatus(controller.signal)
+        setStatus(next)
+        setExpanded(current => {
+          const connectedIds = new Set(next.devices.map(device => device.id))
+          const value = new Set([...current].filter(id => connectedIds.has(id)))
+          seenDevices.current = new Set([...seenDevices.current].filter(id => connectedIds.has(id)))
+          for (const device of next.devices) {
+            if (seenDevices.current.has(device.id)) continue
+            seenDevices.current.add(device.id)
+            value.add(device.id)
+          }
+          return value
+        })
+        setError(undefined)
+      } catch (reason) {
+        if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : String(reason))
+      } finally {
+        if (!controller.signal.aborted) timer = setTimeout(poll, document.hidden ? 10_000 : 1_500)
+      }
+    }
+    void poll()
+    return () => {
+      controller.abort()
+      if (timer !== undefined) clearTimeout(timer)
+    }
+  }, [])
+
+  useEffect(() => {
+    const controller = new AbortController()
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const poll = async (): Promise<void> => {
+      try {
+        const response = await fetch(DEVICE_STREAM_STATUS_PATH, { cache: 'no-store', signal: controller.signal })
+        if (response.ok) setStreamStatus(await response.json() as ScrcpyStreamStatus)
+      } catch { /* stream support is optional; each card retains screenshot fallback */ }
+      finally {
+        if (!controller.signal.aborted) timer = setTimeout(poll, document.hidden ? 5_000 : 1_500)
+      }
+    }
+    void poll()
+    return () => {
+      controller.abort()
+      if (timer !== undefined) clearTimeout(timer)
+    }
+  }, [])
+
+  const enableStream = useCallback(async (): Promise<void> => {
+    const response = await fetch(DEVICE_STREAM_ENABLE_PATH, { method: 'POST', headers: { Accept: 'application/json' } })
+    if (!response.ok) throw new Error(`启用实时画面失败 (${response.status})`)
+    setStreamStatus(await response.json() as ScrcpyStreamStatus)
+    setStreamGeneration(value => value + 1)
+  }, [])
+
+  const mutate = useCallback(async (path: string, ids: readonly string[]): Promise<void> => {
+    setPending(true)
+    try {
+      setStatus(await postMirrorStatus(path, ids))
+      setError(undefined)
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : String(reason))
+    } finally {
+      setPending(false)
+    }
+  }, [])
+
+  const selected = status?.devices.filter(device => device.selected).map(device => device.id) ?? []
+  const wallItems = buildDeviceWallItems(status?.devices ?? [])
+  return (
+    <main style={rootStyle} lang="zh-CN" data-coremate-view>
+      <style>{`
+        [data-coremate-press]{transition:transform 120ms cubic-bezier(.16,1,.3,1),background-color 120ms ease-out}
+        [data-coremate-press]:active{transform:scale(.96)}
+        [data-coremate-press]:focus-visible,[data-coremate-header-link]:focus-visible{outline:2px solid #d9a900;outline-offset:2px}
+        @media(hover:hover){[data-coremate-header-link]:hover{color:var(--dsw-alias-label-primary,#27272a);background:var(--dsw-alias-bg-layer-2,rgba(128,128,128,.10))}}
+        @media(prefers-reduced-motion:reduce){[data-coremate-press]{transition:none}}
+        [data-coremate-device-wall]{grid-template-columns:minmax(0,1fr)}
+        [data-coremate-device-card] > [data-coremate-preview]{flex:1 1 auto}
+        @container (min-width:560px){[data-coremate-device-wall]{grid-template-columns:repeat(2,minmax(0,1fr))}}
+        @container (min-width:840px){[data-coremate-device-wall]{grid-template-columns:repeat(3,minmax(0,1fr))}}
+        @container (min-width:1100px){[data-coremate-device-wall]{grid-template-columns:repeat(4,minmax(0,1fr))}}
+        @container (min-width:1400px){[data-coremate-device-wall]{grid-template-columns:repeat(5,minmax(0,1fr))}}
+      `}</style>
+      <header style={headerStyle}>
+        <div style={brandStyle}>
+          <OpenGuiMark />
+          <span>设备工作台</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end', gap: 6 }}>
+          <a data-coremate-header-link href={OPENGUI_GITHUB_URL} target="_blank" rel="noreferrer" style={headerLinkStyle}>GitHub ↗</a>
+          <a data-coremate-header-link href={OPENGUI_WEBSITE_URL} target="_blank" rel="noreferrer" style={headerLinkStyle}>官方网站 ↗</a>
+          <span role="status" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, minHeight: 40, padding: '0 6px', color: 'var(--dsw-alias-label-secondary, #52525b)', fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>
+            <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: 999, background: status?.devices.some(device => device.connected) === true ? '#16a34a' : '#a1a1aa' }} />
+            {status === undefined ? '正在检测设备' : phaseLabel(status)}
+          </span>
+          <TaskStopButton {...(coremateSessionId === undefined ? {} : { coremateSessionId })} />
+        </div>
+      </header>
+
+      <div style={{ position: 'sticky', top: 0, zIndex: 10 }}><BrowserInstallPrompt /></div>
+
+      <section aria-label="设备照片墙" style={gridStyle} data-coremate-device-wall>
+        {wallItems.map(item => {
+          if (item.kind === 'connect-more') {
+            return (
+              <aside key="connect-more" style={connectStyle} data-coremate-connect-more>
+                <div>
+                  <span aria-hidden="true" style={{ display: 'inline-grid', placeItems: 'center', width: 48, height: 48, marginBottom: 16, border: '1px solid currentColor', borderRadius: 999, fontSize: 30, fontWeight: 300, lineHeight: 1 }}>+</span>
+                  <h2 style={{ margin: '0 0 8px', fontSize: 17, lineHeight: 1.35, fontWeight: 720 }}>连接更多设备</h2>
+                  <p style={bodyStyle}>连接 Android 手机并开启 USB 调试，授权后会自动出现在设备墙。</p>
+                  <p style={{ ...bodyStyle, marginTop: 14, fontSize: 12 }}>
+                    需要帮助可加入 <a href={DISCORD_URL} target="_blank" rel="noreferrer">Discord</a>。微信群二维码暂未开放。
+                  </p>
+                </div>
+              </aside>
+            )
+          }
+          const device = item.device
+          const active = mirrorActive(device)
+          const open = expanded.has(device.id)
+          return (
+            <article key={device.id} style={deviceStyle} data-coremate-device-card>
+                <div style={deviceHeaderStyle}>
+                  <label style={{ display: 'flex', flex: '1 1 92px', alignItems: 'center', gap: 7, minWidth: 0, cursor: status?.selectionLocked === true ? 'not-allowed' : 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={device.selected}
+                      disabled={pending || status?.selectionLocked === true || !device.connected}
+                      onChange={() => void mutate(DEVICE_SELECTION_PATH, device.selected ? selected.filter(id => id !== device.id) : [...selected, device.id])}
+                    />
+                    <span style={{ minWidth: 0, overflowWrap: 'anywhere', fontSize: 12, fontWeight: 700 }}>{device.label}</span>
+                    <span aria-label={device.connected ? '在线' : '已断开'} title={device.connected ? '在线' : '已断开'} style={{ width: 6, height: 6, flex: '0 0 auto', borderRadius: 999, background: device.connected ? '#16a34a' : '#a1a1aa' }} />
+                  </label>
+                  <div style={{ display: 'flex', flex: '0 0 auto', gap: 6 }}>
+                    <button data-coremate-press type="button" style={actionStyle} aria-label={`${open ? '收起' : '展开'} ${device.label} 画面`} aria-expanded={open} onClick={() => setExpanded(current => {
+                      const next = new Set(current)
+                      if (next.has(device.id)) next.delete(device.id)
+                      else next.add(device.id)
+                      return next
+                    })}>{open ? '收起' : '展开'}</button>
+                    <button
+                      data-coremate-press
+                      type="button"
+                      style={{ ...actionStyle, color: active ? '#b45309' : actionStyle.color }}
+                      aria-label={mirrorLabel(device)}
+                      aria-busy={mirrorBusy(device)}
+                      disabled={pending || device.phase === 'unsupported' || (!device.connected && !active)}
+                      onClick={() => void mutate(active ? MIRROR_STOP_PATH : MIRROR_START_PATH, [device.id])}
+                    >{mirrorProgress(device) ?? (active ? '关闭窗口' : '独立窗口')}</button>
+                  </div>
+                </div>
+                {device.message === undefined ? null : <div role="status" style={{ padding: '0 12px 8px', color: device.phase === 'error' ? '#b91c1c' : 'var(--dsw-alias-label-secondary, #52525b)', fontSize: 11 }}>{device.message}</div>}
+                <PhoneStream device={device} expanded={open} streamStatus={streamStatus} streamGeneration={streamGeneration} enableStream={enableStream} />
+            </article>
+          )
+        })}
+      </section>
+
+      {error === undefined ? null : <p role="status" style={{ ...bodyStyle, color: '#b91c1c' }}>{error}</p>}
+    </main>
+  )
+}
