@@ -1,4 +1,0 @@
-assets/platform-tools/darwin/adb binary
-assets/platform-tools/linux-x64/adb binary
-assets/platform-tools/win32-x64/*.dll binary
-assets/platform-tools/win32-x64/*.exe binary

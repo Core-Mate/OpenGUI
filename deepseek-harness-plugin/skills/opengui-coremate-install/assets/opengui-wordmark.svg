@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="640" height="168" viewBox="0 0 1600 420" role="img" aria-label="OpenGUI">
-  <defs>
-    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ffe76a"/><stop offset="52%" stop-color="#ffc423"/><stop offset="53%" stop-color="#d88931"/><stop offset="100%" stop-color="#c97726"/></linearGradient>
-    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-  </defs>
-  <rect width="1600" height="420" fill="#171717"/>
-  <rect x="18" y="18" width="1564" height="384" fill="none" stroke="#242424" stroke-width="6"/>
-  <g transform="translate(800 238)"><g font-family="Arial Black, Impact, Helvetica Neue, sans-serif" font-size="196" font-weight="900" text-anchor="middle" letter-spacing="4"><text x="30" y="12" fill="none" stroke="#f1bf1f" stroke-width="12">OpenGUI</text><text x="14" y="-4" fill="#c97628" stroke="#111" stroke-width="8">OpenGUI</text><text x="0" y="-18" fill="url(#gold)" stroke="#111" stroke-width="8" filter="url(#softGlow)">OpenGUI</text></g></g>
-</svg>
