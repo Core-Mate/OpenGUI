@@ -42,12 +42,21 @@ function commandState(name = 'opengui', doneSeq?: number): ConversationContextRe
 }
 
 describe('OpenGUI completion promotion', () => {
-  it('publishes one success marker for a completed Turn owned by a live /opengui command', () => {
+  const assistant = (seq: number, turn = 4) => match(event('assistant/message', {
+    turn,
+    step: 1,
+    message: createAssistantMessage({ content: [{ type: 'text', text: '完成。' }], source: { provider: 'test', model: 'vision' } }),
+  }, seq), 'start')
+
+  it('publishes one success marker only after command/done names the final assistant message', () => {
     expect(corematePromotionDefinition.kind).toBe('coremate-promotion')
-    const start = match(event('turn/start', { turn: 4 }, 2), 'start')
+    const start = assistant(2)
     const initial = corematePromotionDefinition.start(context(), start, commandState())
-    const end = match(event('turn/end', { turn: 4, reason: { kind: 'completed' } }, 3), 'update')
-    const completed = corematePromotionDefinition.update(context(initial) as never, end)
+    expect(corematePromotionDefinition.buildLocationData?.(context(initial), 'turn')).toBeNull()
+    const done = match(event('command/done', {
+      commandId: 'command-1' as never, kind: 'success', sourceEventSeq: 2,
+    }, 3), 'update')
+    const completed = corematePromotionDefinition.update(context(initial) as never, done)
 
     expect(corematePromotionDefinition.buildLocationData?.(context(completed), 'turn')).toEqual({
       kind: 'turn', turn: 4, key: 'coremate-promotion',
@@ -56,20 +65,22 @@ describe('OpenGUI completion promotion', () => {
   })
 
   it('still attributes turns launched through the legacy /coremate alias', () => {
-    const start = match(event('turn/start', { turn: 5 }, 2), 'start')
+    const start = assistant(2, 5)
     const initial = corematePromotionDefinition.start(context(), start, commandState('coremate'))
     expect(initial.attributed).toBe(true)
   })
 
   it.each([
-    ['cancelled Turn', 'opengui', undefined, { kind: 'interrupted' }],
-    ['another command', 'help', undefined, { kind: 'completed' }],
-    ['finished configuration command', 'opengui', 1, { kind: 'completed' }],
-  ] as const)('does not publish for %s', (_label, name, doneSeq, reason) => {
-    const start = match(event('turn/start', { turn: 2 }, 2), 'start')
+    ['failed command', 'opengui', undefined, 'error'],
+    ['another command', 'help', undefined, 'success'],
+    ['finished configuration command', 'opengui', 1, 'success'],
+  ] as const)('does not publish for %s', (_label, name, doneSeq, kind) => {
+    const start = assistant(2, 2)
     const initial = corematePromotionDefinition.start(context(), start, commandState(name, doneSeq))
-    const end = match(event('turn/end', { turn: 2, reason }, 3), 'update')
-    const finished = corematePromotionDefinition.update(context(initial) as never, end)
+    const done = match(event('command/done', {
+      commandId: 'command-1' as never, kind, sourceEventSeq: 2,
+    }, 3), 'update')
+    const finished = corematePromotionDefinition.update(context(initial) as never, done)
 
     expect(corematePromotionDefinition.buildLocationData?.(context(finished), 'turn')).toBeNull()
   })
@@ -84,7 +95,7 @@ describe('OpenGUI completion promotion', () => {
     }, 2), 'update')
     const finished = coremateCommandContextDefinition.update(context(initial) as never, done)
 
-    expect(finished).toEqual({ name: 'opengui', runSeq: 1, doneSeq: 2 })
+    expect(finished).toEqual({ name: 'opengui', runSeq: 1, doneSeq: 2, doneKind: 'success' })
     expect(selectCorematePromotion({
       turn: { data: { get: () => undefined } },
     } as never)).toBeNull()

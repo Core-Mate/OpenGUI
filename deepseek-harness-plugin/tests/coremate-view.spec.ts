@@ -17,7 +17,7 @@ describe('OpenGUI device photo wall', () => {
     expect(buildDeviceWallItems([])).toEqual([{ kind: 'connect-more' }])
   })
 
-  it.each([1, 3, 4, 5])('appends one connection guide after %i devices', count => {
+  it.each([1, 3, 4, 5, 10])('appends one connection guide after %i devices', count => {
     const devices = Array.from({ length: count }, (_, index) => device(`phone-${index + 1}`))
     const items = buildDeviceWallItems(devices)
 

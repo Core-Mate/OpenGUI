@@ -27,15 +27,30 @@ export interface CoremateVideoDecoder {
 }
 
 /** Low-latency Annex-B H.264 decoder that paints the newest frame onto one canvas. */
-export function createCoremateVideoDecoder(canvas: HTMLCanvasElement, onFrame: () => void): CoremateVideoDecoder {
+export function createCoremateVideoDecoder(
+  canvas: HTMLCanvasElement,
+  onFrame: () => void,
+  onFatal: (error: Error) => void,
+): CoremateVideoDecoder {
   let width = 0
   let height = 0
   let configPackets: Uint8Array[] = []
   let waitingForKey = true
   let configured = false
+  let closed = false
+  let generation = 0
+  let chain = Promise.resolve()
+  let decoder: VideoDecoder
   const context = canvas.getContext('2d', { alpha: false, desynchronized: true })
   if (context === null) throw new Error('Canvas 2D 不可用')
-  const decoder = new VideoDecoder({
+  const fatal = (reason: unknown): void => {
+    if (closed) return
+    closed = true
+    const error = reason instanceof Error ? reason : new Error(String(reason))
+    try { if (decoder.state !== 'closed') decoder.close() } catch { /* already failed */ }
+    onFatal(error)
+  }
+  decoder = new VideoDecoder({
     output(frame) {
       try {
         if (canvas.width !== frame.displayWidth || canvas.height !== frame.displayHeight) {
@@ -44,18 +59,29 @@ export function createCoremateVideoDecoder(canvas: HTMLCanvasElement, onFrame: (
         }
         context.drawImage(frame, 0, 0, canvas.width, canvas.height)
         onFrame()
+      } catch (error) {
+        fatal(error)
       } finally {
         frame.close()
       }
     },
-    error(error) { console.warn('coremate-mobile: embedded video decoder failed', error) },
+    error: fatal,
   })
-  const configure = (data: Uint8Array): void => {
-    decoder.configure({ codec: avcCodecFromAnnexB(data), optimizeForLatency: true, hardwareAcceleration: 'prefer-hardware' })
+  const configure = async (data: Uint8Array, packetGeneration: number): Promise<void> => {
+    const config: VideoDecoderConfig = {
+      codec: avcCodecFromAnnexB(data),
+      optimizeForLatency: true,
+      hardwareAcceleration: 'prefer-hardware',
+    }
+    const support = await VideoDecoder.isConfigSupported(config)
+    if (!support.supported) throw new Error(`当前浏览器不支持视频编码 ${config.codec}`)
+    if (closed || packetGeneration !== generation) return
+    decoder.configure(config)
     configured = true
   }
   return {
     session(nextWidth, nextHeight) {
+      if (closed) return
       width = nextWidth
       height = nextHeight
       canvas.width = width
@@ -65,28 +91,41 @@ export function createCoremateVideoDecoder(canvas: HTMLCanvasElement, onFrame: (
       configured = false
       waitingForKey = true
       configPackets = []
+      generation += 1
     },
     packet(flags, pts, data) {
-      const config = (flags & 1) !== 0
-      const key = (flags & 2) !== 0
-      if (config) { configPackets.push(Uint8Array.from(data)); return }
-      if (waitingForKey && !key) return
-      if (!key && decoder.decodeQueueSize > 3) return
-      let payload = data
-      if (key) {
-        payload = concatVideoData(configPackets, data)
-        if (!configured) configure(payload)
-        waitingForKey = false
-        configPackets = []
-      }
-      if (!configured) configure(payload)
-      decoder.decode(new EncodedVideoChunk({
-        type: key ? 'key' : 'delta',
-        timestamp: Number(pts > BigInt(Number.MAX_SAFE_INTEGER) ? BigInt(Number.MAX_SAFE_INTEGER) : pts),
-        data: payload,
-      }))
+      if (closed) return
+      const packetGeneration = generation
+      const packetData = Uint8Array.from(data)
+      chain = chain.then(async () => {
+        if (closed || packetGeneration !== generation) return
+        const config = (flags & 1) !== 0
+        const key = (flags & 2) !== 0
+        if (config) { configPackets.push(packetData); return }
+        if (waitingForKey && !key) return
+        if (!key && decoder.decodeQueueSize > 3) return
+        let payload: Uint8Array<ArrayBufferLike> = packetData
+        if (key) {
+          payload = concatVideoData(configPackets, packetData)
+          if (!configured) await configure(payload, packetGeneration)
+          if (closed || packetGeneration !== generation) return
+          waitingForKey = false
+          configPackets = []
+        }
+        if (!configured) await configure(payload, packetGeneration)
+        if (closed || packetGeneration !== generation) return
+        decoder.decode(new EncodedVideoChunk({
+          type: key ? 'key' : 'delta',
+          timestamp: Number(pts > BigInt(Number.MAX_SAFE_INTEGER) ? BigInt(Number.MAX_SAFE_INTEGER) : pts),
+          data: payload,
+        }))
+      }).catch(error => {
+        if (!closed && packetGeneration === generation) fatal(error)
+      })
     },
     close() {
+      if (closed) return
+      closed = true
       if (decoder.state !== 'closed') decoder.close()
     },
   }

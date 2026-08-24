@@ -54,7 +54,12 @@ function mappedSources(event: RelayedSurfaceEvent, seqs: ReadonlyMap<number, num
  * The returned disposer also repairs a partially mirrored turn when the child
  * is cancelled before it can publish its own closing boundaries.
  */
-export function relayPhoneTaskProgress(source: PhoneTaskProgressSource): () => void {
+export interface PhoneTaskProgressRelay {
+  dispose(): void
+  latestAssistantMessageSeq(): number | undefined
+}
+
+export function relayPhoneTaskProgress(source: PhoneTaskProgressSource): PhoneTaskProgressRelay {
   const seen = new Set<number>()
   const turns = new Map<number, number>()
   const seqs = new Map<number, number>()
@@ -62,6 +67,7 @@ export function relayPhoneTaskProgress(source: PhoneTaskProgressSource): () => v
   let openTurn: { child: number, parent: number } | undefined
   let openStep: { child: number, parent: number, step: number } | undefined
   let stopped = false
+  let lastAssistantMessageSeq: number | undefined
 
   const parentTurn = (childTurn: number): number => {
     const existing = turns.get(childTurn)
@@ -117,6 +123,7 @@ export function relayPhoneTaskProgress(source: PhoneTaskProgressSource): () => v
           surfaceOp: 'append',
           ...(sourceEventSeqs === undefined ? {} : { sourceEventSeqs }),
         })
+        lastAssistantMessageSeq = mirrored.seq
         break
       }
       case 'tool/call':
@@ -156,7 +163,7 @@ export function relayPhoneTaskProgress(source: PhoneTaskProgressSource): () => v
     throw error
   }
 
-  return () => {
+  const dispose = (): void => {
     if (stopped) return
     stopped = true
     unsubscribe()
@@ -172,6 +179,7 @@ export function relayPhoneTaskProgress(source: PhoneTaskProgressSource): () => v
       openTurn = undefined
     }
   }
+  return { dispose, latestAssistantMessageSeq: () => lastAssistantMessageSeq }
 }
 
 export interface NestedTaskProgressSource {

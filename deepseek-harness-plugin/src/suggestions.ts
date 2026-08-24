@@ -60,14 +60,14 @@ export function cleanCoremateSuggestionBlocks(output: readonly ContentBlock[]): 
   readonly output: ContentBlock[]
   readonly suggestions: readonly CoremateSuggestion[]
 } {
-  const lastText = output.findLastIndex(block => block.type === 'text')
-  if (lastText < 0) return { output: [...output], suggestions: [] }
-  const block = output[lastText] as Extract<ContentBlock, { type: 'text' }>
-  const parsed = parseCoremateSuggestions(block.text)
+  let start = output.length
+  while (start > 0 && output[start - 1]?.type === 'text') start -= 1
+  if (start === output.length) return { output: [...output], suggestions: [] }
+  const tail = output.slice(start) as Extract<ContentBlock, { type: 'text' }>[]
+  const parsed = parseCoremateSuggestions(tail.map(block => block.text).join(''))
   if (parsed.suggestions.length === 0) return { output: [...output], suggestions: [] }
-  const next = [...output]
-  if (parsed.text.length === 0) next.splice(lastText, 1)
-  else next[lastText] = { ...block, text: parsed.text }
+  const next = output.slice(0, start)
+  if (parsed.text.length > 0) next.push({ ...tail[0]!, text: parsed.text })
   return { output: next, suggestions: parsed.suggestions }
 }
 

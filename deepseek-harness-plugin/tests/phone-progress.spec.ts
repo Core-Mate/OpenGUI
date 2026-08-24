@@ -40,7 +40,7 @@ describe('phone task chat progress', () => {
     })
     expect(subscribe).toHaveBeenCalledOnce()
 
-    stop()
+    stop.dispose()
     expect(listeners).toHaveLength(0)
     expect(parent.events.slice(-2).map(event => event.type)).toEqual(['step/end', 'turn/end'])
   })
@@ -96,7 +96,7 @@ describe('phone task chat progress', () => {
       data: { message: { content: [{ type: 'text', text: '已打开小红书。' }] } },
     })
     const lengthBeforeStop = parent.events.length
-    stop()
+    stop.dispose()
     expect(parent.events).toHaveLength(lengthBeforeStop)
   })
 
@@ -252,6 +252,6 @@ describe('phone task chat progress', () => {
       { type: 'tool/code-dispatch-start', data: nestedData },
       { type: 'tool/code-dispatch', data: { ...nestedData, isError: false } },
     ])
-    stop()
+    stop.dispose()
   })
 })

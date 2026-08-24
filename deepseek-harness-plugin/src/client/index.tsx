@@ -74,7 +74,7 @@ export function apply(ctx: ClientContext): void {
     resolve(binding) {
       const coremateDraftActions: CoremateDraftActions = {
         claim(span) {
-          const claimed = binding.ctx.bail('slash/input-begin-command', {
+          const claimed = binding.ctx.bail(binding.ctx, 'slash/input-begin-command', {
             claim: coremateCommandClaim(ctx, { sessionId: binding.sessionId }),
             span,
           }) === true

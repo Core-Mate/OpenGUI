@@ -120,7 +120,7 @@ export class DeviceFleet {
       throw new Error('coremate-mobile: no authorized Android device is connected; connect a phone and accept its USB debugging prompt')
     }
     if (snapshot.selectedDeviceIds.length === 0) {
-      throw new Error('coremate-mobile: multiple phones are connected; select at least one below the chat input before running /opengui')
+      throw new Error('coremate-mobile: multiple phones are connected; select at least one in the OpenGUI Tab before running /opengui')
     }
     return this.materialize(snapshot, snapshot.selectedDeviceIds)
   }

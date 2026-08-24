@@ -7,7 +7,7 @@
 import { createHash } from 'node:crypto'
 import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
-import type { CommandInvocation } from '@deepseek-ai/dsh-commands'
+import type { CommandDefinition, CommandInvocation, CommandResult } from '@deepseek-ai/dsh-commands'
 import type { AgentOptions } from '@deepseek-ai/dsh-agent'
 import { credentialRef } from '@deepseek-ai/dsh-credentials'
 import type { AskUserQuestionAnswer } from '@deepseek-ai/dsh-user-questions'
@@ -37,10 +37,11 @@ import { encodePhoneScreenshot } from './image.ts'
 import { configurePhoneModel } from './configuration.ts'
 import { DeviceFleet } from './device-fleet.ts'
 import type { FleetDevice } from './device-fleet.ts'
+import { OwnedForwardRegistry } from './forward-registry.ts'
 import { installMirrorHttp } from './mirror-http.ts'
 import { relayNestedTaskProgress, relayPhoneTaskProgress } from './phone-progress.ts'
-import { CoremateTaskCoordinator } from './phone-task.ts'
-import type { CoremateTaskPresentation, CoremateTaskResult, CoremateTaskState } from './phone-task.ts'
+import { OpenGuiTaskManager, OPENGUI_USAGE } from './phone-task.ts'
+import type { CoremateTaskPresentation, CoremateTaskResult, OpenGuiTaskLease } from './phone-task.ts'
 import { resolveMobileProfile, type MobileApi } from './provider.ts'
 import { latestPhoneScreenshotMessages, PhoneExecutionState, PhoneOperationQueue, waitForPhoneUi } from './runtime.ts'
 import { PhonePreview } from './preview.ts'
@@ -61,7 +62,8 @@ import {
   inheritedCapabilityFailure,
   type CoremateModelStrategy,
 } from './model-routing.ts'
-import { COREMATE_SUGGESTION_INSTRUCTION } from './suggestions.ts'
+import { cleanCoremateSuggestionBlocks, COREMATE_SUGGESTION_INSTRUCTION } from './suggestions.ts'
+import { AsyncSemaphore } from './concurrency.ts'
 
 export { actionCommand, canUseAdbInputText, managedAdbPath, normalizePhoneAction, ObservationId, parseDevices, parseScreenSize, selectAuthorizedSerial, textInputCommands } from './adb.ts'
 export type { AdbDevice, PhoneAction, PhoneCoordinateSpace, ScreenSize, TargetBoundingBox } from './adb.ts'
@@ -101,6 +103,8 @@ export interface Config {
   commandTimeoutMs?: number
   /** Maximum phone-control operations in one child task. */
   maxOperations?: number
+  /** Maximum selected phones controlled concurrently by one task. */
+  maxParallelDevices?: number
   /** Declared model context capacity. */
   contextWindow?: number
   /** Declared maximum model output. */
@@ -118,11 +122,12 @@ const DEFAULT_CONFIG = {
   trustUnknownCurrentModels: false,
   commandTimeoutMs: 15_000,
   maxOperations: 100,
+  maxParallelDevices: 4,
   contextWindow: 262_144,
   maxTokens: 32_768,
   streamIdleTimeoutMs: 300_000,
 } as const satisfies Required<Pick<Config,
-  'api' | 'apiKeyEnv' | 'modelStrategy' | 'trustUnknownCurrentModels' | 'commandTimeoutMs' | 'maxOperations' | 'contextWindow' | 'maxTokens' | 'streamIdleTimeoutMs'>>
+  'api' | 'apiKeyEnv' | 'modelStrategy' | 'trustUnknownCurrentModels' | 'commandTimeoutMs' | 'maxOperations' | 'maxParallelDevices' | 'contextWindow' | 'maxTokens' | 'streamIdleTimeoutMs'>>
 
 export const Config: z<Config> = z.object({
   baseURL: z.string(),
@@ -133,6 +138,7 @@ export const Config: z<Config> = z.object({
   trustUnknownCurrentModels: z.boolean().default(DEFAULT_CONFIG.trustUnknownCurrentModels),
   commandTimeoutMs: z.number().step(1).min(1_000).max(120_000).default(DEFAULT_CONFIG.commandTimeoutMs),
   maxOperations: z.number().step(1).min(1).max(10_000).default(DEFAULT_CONFIG.maxOperations),
+  maxParallelDevices: z.number().step(1).min(1).max(16).default(DEFAULT_CONFIG.maxParallelDevices),
   contextWindow: z.number().step(1).min(1).default(DEFAULT_CONFIG.contextWindow),
   maxTokens: z.number().step(1).min(1).default(DEFAULT_CONFIG.maxTokens),
   streamIdleTimeoutMs: z.number().step(1).min(1_000).max(2_147_483_647).default(DEFAULT_CONFIG.streamIdleTimeoutMs),
@@ -146,6 +152,7 @@ type ResolvedConfig = Config & {
   trustUnknownCurrentModels: boolean
   commandTimeoutMs: number
   maxOperations: number
+  maxParallelDevices: number
   contextWindow: number
   maxTokens: number
   streamIdleTimeoutMs: number
@@ -159,6 +166,7 @@ function resolvedConfig(config: Config): ResolvedConfig {
     trustUnknownCurrentModels: config.trustUnknownCurrentModels ?? DEFAULT_CONFIG.trustUnknownCurrentModels,
     commandTimeoutMs: config.commandTimeoutMs ?? DEFAULT_CONFIG.commandTimeoutMs,
     maxOperations: config.maxOperations ?? DEFAULT_CONFIG.maxOperations,
+    maxParallelDevices: config.maxParallelDevices ?? DEFAULT_CONFIG.maxParallelDevices,
     contextWindow: config.contextWindow ?? DEFAULT_CONFIG.contextWindow,
     maxTokens: config.maxTokens ?? DEFAULT_CONFIG.maxTokens,
     streamIdleTimeoutMs: config.streamIdleTimeoutMs ?? DEFAULT_CONFIG.streamIdleTimeoutMs,
@@ -191,9 +199,42 @@ function configuredProfile(config: Config): ResolvedPiAiProviderProfile | undefi
   })
 }
 
-function textFrom(result: SubagentResult): string {
-  return result.output.filter((block): block is Extract<ContentBlock, { type: 'text' }> => block.type === 'text')
+function textFromBlocks(output: readonly ContentBlock[]): string {
+  return output.filter((block): block is Extract<ContentBlock, { type: 'text' }> => block.type === 'text')
     .map(block => block.text).join('')
+}
+
+function textFrom(result: SubagentResult): string {
+  return textFromBlocks(result.output)
+}
+
+export async function mapWithConcurrency<Input, Output>(
+  values: readonly Input[],
+  limit: number,
+  signal: AbortSignal,
+  worker: (value: Input, index: number, signal: AbortSignal) => Promise<Output>,
+): Promise<Output[]> {
+  const output = new Array<Output>(values.length)
+  const batch = new AbortController()
+  const combined = AbortSignal.any([signal, batch.signal])
+  let next = 0
+  const runWorker = async (): Promise<void> => {
+    while (true) {
+      if (combined.aborted) throw combined.reason
+      const index = next++
+      if (index >= values.length) return
+      try {
+        output[index] = await worker(values[index]!, index, combined)
+      } catch (error) {
+        if (!batch.signal.aborted) batch.abort(error)
+        throw error
+      }
+    }
+  }
+  const settled = await Promise.allSettled(Array.from({ length: Math.min(limit, values.length) }, runWorker))
+  const failure = settled.find((value): value is PromiseRejectedResult => value.status === 'rejected')
+  if (failure !== undefined) throw failure.reason
+  return output
 }
 
 interface ForegroundProgress {
@@ -213,6 +254,7 @@ function progressFor(
 async function settleForeground(run: SubagentRun, progress?: ForegroundProgress): Promise<CoremateTaskResult> {
   let failure: unknown
   let stopProgress: (() => void) | undefined
+  let sourceEventSeq: (() => number | undefined) | undefined
   try {
     if (progress !== undefined) {
       const child = run.localAgent
@@ -226,20 +268,29 @@ async function settleForeground(run: SubagentRun, progress?: ForegroundProgress)
         }),
         parent: progress.parent.session,
       }
-      stopProgress = progress.nestedUnderCallId === undefined
-        ? relayPhoneTaskProgress(source)
-        : relayNestedTaskProgress({
+      if (progress.nestedUnderCallId === undefined) {
+        const relay = relayPhoneTaskProgress(source)
+        stopProgress = () => relay.dispose()
+        sourceEventSeq = () => relay.latestAssistantMessageSeq()
+      } else {
+        stopProgress = relayNestedTaskProgress({
           ...source,
           rootCallId: progress.nestedUnderCallId,
           sourceId: String(child.session.id),
         })
+      }
     }
     const result = await run.result
     if (result.stopReason !== 'completed') {
       const partial = textFrom(result)
       throw new Error(`coremate-mobile task ended with ${result.stopReason}${partial ? `\nPartial output:\n${partial}` : ''}`)
     }
-    return { runId: run.id, output: result.output }
+    const source = sourceEventSeq?.()
+    return {
+      runId: run.id,
+      output: result.output,
+      ...(source === undefined ? {} : { sourceEventSeq: source }),
+    }
   } catch (error) {
     failure = error
     throw error
@@ -359,21 +410,34 @@ export function apply(ctx: Context, baseConfig: Config): void {
     const output = String(await run(['devices', '-l'], signal))
     return parseDevices(output)
   })
-  const phoneTasks = new CoremateTaskCoordinator(async (task, parent, signal, presentation, requestedOptions) => {
+  interface OpenGuiExecutionContext {
+    readonly targets: readonly FleetDevice[]
+    readonly route: AgentOptions
+  }
+  const tasks = new OpenGuiTaskManager<OpenGuiExecutionContext>()
+
+  const executePhoneTask = async (
+    task: string,
+    parent: CommandInvocation['agent'],
+    lease: OpenGuiTaskLease<OpenGuiExecutionContext>,
+    presentation: CoremateTaskPresentation,
+  ): Promise<CoremateTaskResult> => {
     const foregroundProgress = progressFor(parent, presentation)
     const showMirror = presentation === 'parent-chat'
-    const targets = await fleet.selectedDevices(signal)
-    const route = requestedOptions ?? inheritedAgentOptions(parent.options)
+    const context = lease.context
+    if (context === undefined) throw new Error('coremate-mobile: OpenGUI task context is missing')
+    const targets = await fleet.resolveConnected(context.targets.map(target => target.id), lease.signal)
+    if (targets.length !== context.targets.length || targets.some((target, index) => target.serial !== context.targets[index]?.serial)) {
+      throw new Error('coremate-mobile: a phone locked to this task disconnected; reconnect it and submit the task again')
+    }
     const startRun = async (executionSignal: AbortSignal): Promise<CoremateTaskResult> => {
-      const batch = new AbortController()
-      const childSignal = AbortSignal.any([executionSignal, batch.signal])
-      const operations = targets.map(async (target): Promise<{ target: FleetDevice, result: CoremateTaskResult }> => {
+      const operation = async (target: FleetDevice, _index: number, childSignal: AbortSignal): Promise<{ target: FleetDevice, result: CoremateTaskResult }> => {
         const child = await ctx.subagents.start('spawn', {
           label: `Control ${target.label}`,
           prompt: [{ type: 'text', text: `Target phone: ${target.label}\n\nTask: ${task}` }],
           parent,
           signal: childSignal,
-          agentOptions: route,
+          agentOptions: context.route,
           maxDepth: 2,
           toolFilter: { allow: ['phone_control'] },
           persona: `You control exactly one fixed Android phone, labeled ${target.label}. Never try to discover, switch, or act on another phone. Observe before the first change. For every mutation, echo the exact current observationId. Tap with a tight targetBBox and swipe with coordinates in current screenshot pixels. Perform exactly one action per phone_control call and inspect the returned observation. Use wait only when the UI is visibly loading; ordinary actions already auto-observe. Never reuse coordinates from an old observation. Stop and report any authorization, device, model, repeated-no-progress, operation-limit, or unsupported-action error.`,
@@ -384,13 +448,19 @@ export function apply(ctx: Context, baseConfig: Config): void {
         }
         executionState.assignTarget(child.localAgent, target.serial)
         return { target, result: await settleForeground(child, foregroundProgress) }
-      })
+      }
       let results: { target: FleetDevice, result: CoremateTaskResult }[]
       try {
-        results = await Promise.all(operations)
+        results = await mapWithConcurrency(
+          targets,
+          resolvedConfig(current()).maxParallelDevices,
+          executionSignal,
+          operation,
+        )
       } catch (error) {
-        batch.abort(error)
-        await Promise.allSettled(operations)
+        if (error instanceof Error && context.route.provider === INHERITED_PROVIDER && inheritedCapabilityFailure(error)) {
+          lease.recordCapabilityFailure(error)
+        }
         throw error
       }
       if (results.length === 1) return results[0]!.result
@@ -404,14 +474,21 @@ export function apply(ctx: Context, baseConfig: Config): void {
       }
     }
     if (showMirror) {
-      return parent.runMaintenance(maintenanceSignal => startRun(AbortSignal.any([signal, maintenanceSignal])))
+      return parent.runMaintenance(maintenanceSignal => startRun(AbortSignal.any([lease.signal, maintenanceSignal])))
     }
-    return startRun(signal)
-  })
-  const browserTasks = new CoremateTaskCoordinator(async (task, parent, signal, presentation, requestedOptions) => {
+    return startRun(lease.signal)
+  }
+
+  const executeBrowserTask = async (
+    task: string,
+    parent: CommandInvocation['agent'],
+    lease: OpenGuiTaskLease<OpenGuiExecutionContext>,
+    presentation: CoremateTaskPresentation,
+  ): Promise<CoremateTaskResult> => {
     const foregroundProgress = progressFor(parent, presentation)
     const showProgress = presentation === 'parent-chat'
-    const route = requestedOptions ?? inheritedAgentOptions(parent.options)
+    const context = lease.context
+    if (context === undefined) throw new Error('coremate-mobile: OpenGUI task context is missing')
     const startRun = async (executionSignal: AbortSignal): Promise<CoremateTaskResult> => {
       const page = await managedBrowser.open(executionSignal)
       page.setDefaultTimeout(resolvedConfig(current()).commandTimeoutMs)
@@ -424,7 +501,7 @@ export function apply(ctx: Context, baseConfig: Config): void {
           prompt: [{ type: 'text', text: `Task: ${task}` }],
           parent,
           signal: executionSignal,
-          agentOptions: route,
+          agentOptions: context.route,
           maxDepth: 2,
           toolFilter: { allow: ['browser_control'] },
           persona: 'You control exactly one visible local browser managed by the OpenGUI plugin. Use browser_control only. Navigate only when the task requires it, observe before coordinate-based actions, and echo the exact current observationId for every later mutation. Tap with a tight targetBBox in current screenshot pixels. Perform one action per call and inspect the returned observation. Use wait only for visible loading. Never claim success without observing the result. Do not submit purchases, publish content, upload files, or delete data unless the user explicitly requested that exact side effect.',
@@ -435,6 +512,11 @@ export function apply(ctx: Context, baseConfig: Config): void {
         browserController.bind(child.localAgent, page)
         settlementStarted = true
         return await settleForeground(child, foregroundProgress)
+      } catch (error) {
+        if (error instanceof Error && context.route.provider === INHERITED_PROVIDER && inheritedCapabilityFailure(error)) {
+          lease.recordCapabilityFailure(error)
+        }
+        throw error
       } finally {
         if (child?.localAgent !== undefined) browserController.release(child.localAgent)
         if (!settlementStarted && child !== undefined) await child.dispose().catch(() => {})
@@ -442,38 +524,46 @@ export function apply(ctx: Context, baseConfig: Config): void {
       }
     }
     if (showProgress) {
-      return parent.runMaintenance(maintenanceSignal => startRun(AbortSignal.any([signal, maintenanceSignal])))
+      return parent.runMaintenance(maintenanceSignal => startRun(AbortSignal.any([lease.signal, maintenanceSignal])))
     }
-    return startRun(signal)
-  })
+    return startRun(lease.signal)
+  }
 
-  const commandTasks = new CoremateTaskCoordinator(async (task, parent, signal, presentation, requestedOptions) => {
-    const route = requestedOptions ?? inheritedAgentOptions(parent.options)
+  const executeRouterTask = async (
+    task: string,
+    parent: CommandInvocation['agent'],
+    lease: OpenGuiTaskLease<OpenGuiExecutionContext>,
+    presentation: CoremateTaskPresentation,
+  ): Promise<CoremateTaskResult> => {
+    const context = lease.context
+    if (context === undefined) throw new Error('coremate-mobile: OpenGUI task context is missing')
     const startRun = async (executionSignal: AbortSignal): Promise<CoremateTaskResult> => {
       const child = await ctx.subagents.start('spawn', {
         label: 'Run OpenGUI task',
         prompt: [{ type: 'text', text: `Task: ${task}` }],
         parent,
         signal: executionSignal,
-        agentOptions: route,
+        agentOptions: context.route,
         maxDepth: 1,
         toolFilter: { allow: ['phone_agent', 'browser_agent'] },
-          persona: `Route and complete the user task with the smallest necessary delegation. Use phone_agent for Android phone work and browser_agent for website work; call both sequentially only when the task genuinely spans both. Do not pretend to operate either target yourself. Return a concise completion summary grounded in the delegated results.\n\n${COREMATE_SUGGESTION_INSTRUCTION}`,
+          persona: `Route and complete the user task with the smallest necessary delegation. Treat APP, app, application, Android, phone, mobile game, daily reward, 手机, 应用, 游戏, 福利 and similar device work as phone_agent tasks. Use browser_agent only when the user explicitly names a website, webpage, URL, web app, or browser target. Never infer the DSH page itself as the task target. Call both sequentially only when the task genuinely spans both. Do not pretend to operate either target yourself. Return a concise completion summary grounded in the delegated results.\n\n${COREMATE_SUGGESTION_INSTRUCTION}`,
       })
-      return settleForeground(child, progressFor(parent, presentation))
+      if (child.localAgent !== undefined) lease.bindAgent(child.localAgent)
+      const result = await settleForeground(child, progressFor(parent, presentation))
+      const capabilityError = lease.capabilityFailure()
+      if (capabilityError !== undefined) throw capabilityError
+      return result
     }
     if (presentation === 'parent-chat') {
-      return parent.runMaintenance(maintenanceSignal => startRun(AbortSignal.any([signal, maintenanceSignal])))
+      return parent.runMaintenance(maintenanceSignal => startRun(AbortSignal.any([lease.signal, maintenanceSignal])))
     }
-    return startRun(signal)
-  })
+    return startRun(lease.signal)
+  }
 
   ctx.effect(function* () {
     yield async () => {
-      commandTasks.cancel()
-      phoneTasks.cancel()
-      browserTasks.cancel()
-      await Promise.allSettled([commandTasks.dispose(), phoneTasks.dispose(), browserTasks.dispose(), managedBrowser.close()])
+      tasks.cancel()
+      await Promise.allSettled([tasks.dispose(), managedBrowser.close()])
     }
   }, 'coremate-mobile task lifecycle')
   ctx.llm.registerConfigurableProviders([{
@@ -505,7 +595,9 @@ export function apply(ctx: Context, baseConfig: Config): void {
     onChange: refreshRoute,
   })
 
-  const dedicatedAgentOptions = async (invocation: CommandInvocation): Promise<AgentOptions> => {
+  type TaskInteraction = Pick<CommandInvocation, 'agent' | 'signal'>
+
+  const dedicatedAgentOptions = async (invocation: TaskInteraction): Promise<AgentOptions> => {
     const questions = ctx.get('userQuestions')
     const credentials = ctx.get('credentials')
     const initial = resolvedConfig(current())
@@ -563,24 +655,26 @@ export function apply(ctx: Context, baseConfig: Config): void {
     return (item?.selected[0] ?? item?.custom ?? '').trim()
   }
 
-  const waitForSelectedPhone = async (invocation: CommandInvocation, signal: AbortSignal): Promise<void> => {
+  const waitForSelectedPhone = async (invocation: TaskInteraction): Promise<readonly FleetDevice[]> => {
+    const signal = invocation.signal
     while (true) {
       let failure: Error
       try {
-        await fleet.selectedDevices(signal)
-        return
+        return await fleet.selectedDevices(signal)
       } catch (error) {
         if (signal.aborted) throw signal.reason
         failure = error instanceof Error ? error : new Error(String(error))
       }
       const questions = ctx.get('userQuestions')
-      if (questions === undefined) throw failure
+      if (questions === undefined) {
+        throw new Error(`${failure.message}; 请前往 OpenGUI Tab 连接并选择设备后重试`)
+      }
       const answer = await questions.ask({
         questions: [{
           id: 'deviceConnection',
           header: '连接 Android 手机',
           question: 'OpenGUI 需要先检测到一台已授权并选中的手机。',
-          detail: `${failure.message}\n\n请连接 USB，开启 USB 调试并在手机上允许这台电脑。连接多台手机时，请在输入框下方选择至少一台。`,
+          detail: `${failure.message}\n\n请连接 USB，开启 USB 调试并在手机上允许这台电脑。连接多台手机时，请前往 OpenGUI Tab 选择至少一台。`,
           options: [
             { label: '重新检测', description: '保持任务暂停，重新检查手机连接与选择。' },
             { label: '取消任务', description: '结束本次 OpenGUI 任务，不调用模型。' },
@@ -596,7 +690,7 @@ export function apply(ctx: Context, baseConfig: Config): void {
   }
 
   let configuring = false
-  const prepareDirectCommand = async (invocation: CommandInvocation): Promise<AgentOptions> => {
+  const prepareTask = async (invocation: TaskInteraction): Promise<AgentOptions> => {
     if (configuring) throw new Error('coremate-mobile: OpenGUI 模型配置正在另一条命令中进行')
     configuring = true
     try {
@@ -635,9 +729,9 @@ export function apply(ctx: Context, baseConfig: Config): void {
     }
   }
 
-  const recoverDirectCommand = async (
+  const recoverTask = async (
     error: Error,
-    invocation: CommandInvocation,
+    invocation: TaskInteraction,
     options: AgentOptions,
   ): Promise<string | undefined> => {
     if (options.provider !== INHERITED_PROVIDER || !inheritedCapabilityFailure(error)) return undefined
@@ -666,15 +760,65 @@ export function apply(ctx: Context, baseConfig: Config): void {
     await dedicatedAgentOptions(invocation)
     return '当前 DSH 模型不兼容；专用视觉模型已配置。为避免重复操作，原任务未自动重试，请重新提交。'
   }
-  ctx.commands.register(commandTasks.command(waitForSelectedPhone, prepareDirectCommand, recoverDirectCommand))
-  ctx.commands.register(commandTasks.command(waitForSelectedPhone, prepareDirectCommand, recoverDirectCommand, 'coremate'))
+  const runRootTask = async (
+    interaction: TaskInteraction,
+    operation: (lease: OpenGuiTaskLease<OpenGuiExecutionContext>) => Promise<CoremateTaskResult>,
+  ): Promise<CoremateTaskResult> => tasks.runRoot<CoremateTaskResult>(interaction.agent, interaction.signal, 'waiting-for-device', async lease => {
+    const targets = await waitForSelectedPhone(interaction)
+    lease.setPhase('routing')
+    const route = await prepareTask(interaction)
+    lease.context = { targets, route }
+    lease.setPhase('running')
+    try {
+      return await operation(lease)
+    } catch (error) {
+      if (error instanceof Error) {
+        const recovered = await recoverTask(error, interaction, route)
+        if (recovered !== undefined) throw new Error(recovered)
+      }
+      throw error
+    }
+  })
+
+  const directCommand = (commandName: 'opengui' | 'coremate'): CommandDefinition => ({
+    name: commandName,
+    description: commandName === 'opengui'
+      ? 'Run a phone or local-browser task with OpenGUI'
+      : 'Legacy alias for /opengui',
+    input: { hint: '<task>' },
+    handler: async (invocation): Promise<CommandResult> => {
+      const task = invocation.rawInput.trim()
+      if (task.length === 0) return { kind: 'success', text: OPENGUI_USAGE }
+      try {
+        const result = await runRootTask(invocation, lease => executeRouterTask(task, invocation.agent, lease, 'parent-chat'))
+        const cleaned = cleanCoremateSuggestionBlocks(result.output)
+        const text = textFromBlocks(cleaned.output).trim()
+        return {
+          kind: 'success',
+          text: text.length > 0 ? text : `OpenGUI task completed (run ${result.runId}).`,
+          ...(result.sourceEventSeq === undefined ? {} : { sourceEventSeq: result.sourceEventSeq }),
+        }
+      } catch (error) {
+        return { kind: 'error', text: error instanceof Error ? error.message : String(error) }
+      }
+    },
+  })
+  ctx.commands.register(directCommand('opengui'))
+  ctx.commands.register(directCommand('coremate'))
 
   const scrcpyInstaller = new ScrcpyInstaller()
   const scrcpyAsset = resolveScrcpyAsset()
+  const forwardRegistry = new OwnedForwardRegistry()
+  const forwardRecovery = forwardRegistry.recover((args, signal) => run(args, signal)).then(result => {
+    if (result.removed > 0 || result.retained > 0) {
+      ctx.logger.info(`coremate-mobile: recovered ${result.removed} owned ADB forwards; ${result.retained} retained for retry`)
+    }
+  }).catch(error => ctx.logger.warn(error instanceof Error ? error : new Error(String(error))))
   const textInput = new ScrcpyTextInput({
     adbPath,
     runAdb: (args, signal) => run(args, signal),
     installer: scrcpyInstaller,
+    forwardRegistry,
     ...(scrcpyAsset === undefined ? {} : { asset: scrcpyAsset }),
   })
   const mirror = new ScrcpyMirror({
@@ -683,33 +827,40 @@ export function apply(ctx: Context, baseConfig: Config): void {
     ...(scrcpyAsset === undefined ? {} : { asset: scrcpyAsset }),
     onError: error => ctx.logger.warn(error instanceof Error ? error : new Error(String(error))),
   })
+  const cleanupForTermination = (): void => {
+    mirror.stopAllSync()
+    forwardRegistry.releaseAllSync(adbPath())
+    process.off('SIGTERM', cleanupForTermination)
+    if (process.listenerCount('SIGTERM') === 0) process.kill(process.pid, 'SIGTERM')
+  }
+  process.prependListener('SIGTERM', cleanupForTermination)
+  const mediaPermits = new AsyncSemaphore(2)
   const preview = new PhonePreview(async (serial, signal) => {
     const value = await run(['-s', serial, 'exec-out', 'screencap', '-p'], signal, true)
     return Buffer.isBuffer(value) ? value : Buffer.from(value)
-  })
+  }, 2, Date.now, mediaPermits)
   const streams = new ScrcpyVideoStreams({
     adbPath,
     runAdb: (args, signal) => run(args, signal),
     installer: scrcpyInstaller,
+    forwardRegistry,
     ...(scrcpyAsset === undefined ? {} : { asset: scrcpyAsset }),
     onError: error => ctx.logger.warn(error instanceof Error ? error : new Error(String(error))),
   })
   const taskControl = {
-    isActive: (): boolean => commandTasks.isActive() || phoneTasks.isActive() || browserTasks.isActive(),
-    state: (): CoremateTaskState => {
-      const states = [commandTasks.state(), phoneTasks.state(), browserTasks.state()]
-      return states.find(state => state.active) ?? commandTasks.state()
-    },
-    cancel: (): boolean => {
-      const command = commandTasks.cancel()
-      const phone = phoneTasks.cancel()
-      const browser = browserTasks.cancel()
-      return command || phone || browser
-    },
+    isActive: (): boolean => tasks.isActive(),
+    state: () => tasks.state(),
+    cancel: (): boolean => tasks.cancel(),
   }
   installMirrorHttp(ctx, mirror, fleet, taskControl, managedBrowser, preview, streams)
   ctx.effect(function* () {
-    yield async () => { await Promise.all([mirror.dispose(), textInput.dispose(), streams.dispose()]) }
+    yield async () => {
+      process.off('SIGTERM', cleanupForTermination)
+      await forwardRecovery
+      await Promise.all([mirror.dispose(), textInput.dispose(), streams.dispose()])
+      const cleanup = await forwardRegistry.recover((args, signal) => run(args, signal))
+      if (cleanup.retained > 0) ctx.logger.warn(new Error(`coremate-mobile: ${cleanup.retained} owned ADB forwards remain for next-start recovery`))
+    }
   }, 'coremate-mobile native scrcpy mirror lifecycle')
   const targetFor = async (agent: object, signal: AbortSignal): Promise<string> => {
     return executionState.resolveTarget(agent, async () => {
@@ -721,11 +872,13 @@ export function apply(ctx: Context, baseConfig: Config): void {
     })
   }
   const observe = async (agent: object, serial: string, signal: AbortSignal): Promise<PhoneObservation> => {
-    const [sizeRaw, focusRaw, pngRaw] = await Promise.all([
-      run(['-s', serial, 'shell', 'wm', 'size'], signal),
-      run(['-s', serial, 'shell', 'dumpsys', 'window', 'windows'], signal),
-      run(['-s', serial, 'exec-out', 'screencap', '-p'], signal, true),
-    ])
+    const releaseMedia = await mediaPermits.acquire(signal)
+    try {
+      const [sizeRaw, focusRaw, pngRaw] = await Promise.all([
+        run(['-s', serial, 'shell', 'wm', 'size'], signal),
+        run(['-s', serial, 'shell', 'dumpsys', 'window', 'windows'], signal),
+        run(['-s', serial, 'exec-out', 'screencap', '-p'], signal, true),
+      ])
     const screen = parseScreenSize(String(sizeRaw))
     const png = Buffer.isBuffer(pngRaw) ? pngRaw : Buffer.from(pngRaw)
     const jpeg = await encodePhoneScreenshot(png)
@@ -756,9 +909,12 @@ export function apply(ctx: Context, baseConfig: Config): void {
       foregroundPackage: currentPackage(String(focusRaw)),
       image,
     }
-    observations.set(agent, { value, fingerprint })
-    executionState.recordObservation(agent, { observationId, screenshotFingerprint: fingerprint })
-    return value
+      observations.set(agent, { value, fingerprint })
+      executionState.recordObservation(agent, { observationId, screenshotFingerprint: fingerprint })
+      return value
+    } finally {
+      releaseMedia()
+    }
   }
 
   ctx.tools.register(defineTool({
@@ -954,7 +1110,10 @@ export function apply(ctx: Context, baseConfig: Config): void {
     isConcurrencySafe: () => false,
     async execute(args, exec) {
       if (exec.agent === undefined) throw new Error('coremate-mobile: phone_agent requires a calling agent')
-      const result = await phoneTasks.run(args.task, exec.agent, exec.signal, { nestedUnderCallId: exec.callId })
+      const nested = tasks.nestedLease(exec.agent, exec.signal)
+      const result = nested === undefined
+        ? await runRootTask({ agent: exec.agent, signal: exec.signal }, lease => executePhoneTask(args.task, exec.agent!, lease, { nestedUnderCallId: exec.callId }))
+        : await executePhoneTask(args.task, exec.agent, nested, { nestedUnderCallId: exec.callId })
       return { runId: result.runId, output: result.output as unknown as JsonValue[] }
     },
   }))
@@ -976,7 +1135,10 @@ export function apply(ctx: Context, baseConfig: Config): void {
     isConcurrencySafe: () => false,
     async execute(args, exec) {
       if (exec.agent === undefined) throw new Error('coremate-mobile: browser_agent requires a calling agent')
-      const result = await browserTasks.run(args.task, exec.agent, exec.signal, { nestedUnderCallId: exec.callId })
+      const nested = tasks.nestedLease(exec.agent, exec.signal)
+      const result = nested === undefined
+        ? await runRootTask({ agent: exec.agent, signal: exec.signal }, lease => executeBrowserTask(args.task, exec.agent!, lease, { nestedUnderCallId: exec.callId }))
+        : await executeBrowserTask(args.task, exec.agent, nested, { nestedUnderCallId: exec.callId })
       return { runId: result.runId, output: result.output as unknown as JsonValue[] }
     },
   }))

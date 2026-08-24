@@ -57,6 +57,13 @@ describe('coremate-mobile ADB policy', () => {
     expect(Config({})).not.toHaveProperty('settleDelayMs')
   })
 
+  it('defaults multi-device tasks to four workers and bounds explicit values', () => {
+    expect(Config({}).maxParallelDevices).toBe(4)
+    expect(() => Config({ maxParallelDevices: 0 })).toThrow()
+    expect(() => Config({ maxParallelDevices: 17 })).toThrow()
+    expect(Config({ maxParallelDevices: 16 }).maxParallelDevices).toBe(16)
+  })
+
   it('keeps safe ASCII on adb input text and rejects unacknowledged Unicode injection', () => {
     expect(textInputCommands('hello world')).toEqual([
       ['shell', 'input', 'text', 'hello%sworld'],

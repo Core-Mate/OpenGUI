@@ -4,6 +4,8 @@ import type { ChildProcess } from 'node:child_process'
 import { connect, createServer } from 'node:net'
 import type { Socket } from 'node:net'
 import type { FleetDevice } from './device-fleet.ts'
+import { OwnedForwardRegistry } from './forward-registry.ts'
+import type { OwnedForward } from './forward-registry.ts'
 import {
   SCRCPY_VERSION,
   type ScrcpyAsset,
@@ -132,6 +134,7 @@ interface StreamEntry {
   socket?: Socket
   process?: ChildProcess
   port?: number
+  forward?: OwnedForward
   idleTimer: ReturnType<typeof setTimeout> | undefined
   lastCodec?: string
   lastSession?: string
@@ -140,6 +143,7 @@ interface StreamEntry {
   closeCode: number
   closeReason: string
   closed: boolean
+  closing?: Promise<void>
 }
 
 export interface ScrcpyVideoStreamsOptions {
@@ -153,6 +157,7 @@ export interface ScrcpyVideoStreamsOptions {
   idleGraceMs?: number
   maxSources?: number
   onError?: (error: unknown) => void
+  forwardRegistry?: OwnedForwardRegistry
 }
 
 /** Shares one scrcpy encoder per device across same-origin browser subscribers. */
@@ -165,6 +170,7 @@ export class ScrcpyVideoStreams {
   private readonly idleGraceMs: number
   private readonly maxSources: number
   private readonly onError: (error: unknown) => void
+  private readonly forwardRegistry: OwnedForwardRegistry
   private readonly entries = new Map<string, StreamEntry>()
   private readonly lifetime = new AbortController()
   private approved = false
@@ -181,6 +187,7 @@ export class ScrcpyVideoStreams {
     this.idleGraceMs = options.idleGraceMs ?? 5_000
     this.maxSources = options.maxSources ?? 4
     this.onError = options.onError ?? (() => {})
+    this.forwardRegistry = options.forwardRegistry ?? new OwnedForwardRegistry()
   }
 
   approve(): boolean {
@@ -214,6 +221,10 @@ export class ScrcpyVideoStreams {
     if (!installed && !this.approved) throw new Error('stream_download_not_approved')
 
     let entry = this.entries.get(device.id)
+    if (entry?.closed === true) {
+      if (this.entries.get(device.id) === entry) this.entries.delete(device.id)
+      entry = undefined
+    }
     if (entry === undefined) {
       if (this.entries.size >= this.maxSources) throw new Error('stream_capacity_wait')
       const controller = new AbortController()
@@ -284,9 +295,18 @@ export class ScrcpyVideoStreams {
     const port = await this.freePort()
     entry.port = port
     const scid = (randomBytes(4).readUInt32BE(0) & 0x7fffffff).toString(16).padStart(8, '0')
+    const forward: OwnedForward = { serial: entry.device.serial, port, scid, kind: 'video-stream' }
     await this.options.runAdb(['-s', entry.device.serial, 'push', installed.server, SCRCPY_REMOTE_SERVER], signal)
-    await this.options.runAdb(['-s', entry.device.serial, 'forward', '--remove', `tcp:${port}`], signal).catch(() => undefined)
-    await this.options.runAdb(['-s', entry.device.serial, 'forward', `tcp:${port}`, `localabstract:scrcpy_${scid}`], signal)
+    try {
+      await this.forwardRegistry.track(forward)
+      entry.forward = forward
+      await this.options.runAdb([
+        '-s', entry.device.serial, 'forward', '--no-rebind', `tcp:${port}`, `localabstract:scrcpy_${scid}`,
+      ], signal)
+    } catch (error) {
+      await this.forwardRegistry.release(forward, this.options.runAdb).catch(() => false)
+      throw error
+    }
 
     const child = this.spawnImpl(this.options.adbPath(), [
       '-s', entry.device.serial, 'shell', ...buildScrcpyVideoServerArgs(scid),
@@ -375,21 +395,23 @@ export class ScrcpyVideoStreams {
     for (const sink of entry.subscribers) sink.sendText(text)
   }
 
-  private async closeEntry(entry: StreamEntry): Promise<void> {
-    if (entry.closed) return
+  private closeEntry(entry: StreamEntry): Promise<void> {
+    if (entry.closing !== undefined) return entry.closing
+    if (entry.closed) return Promise.resolve()
     entry.closed = true
-    if (entry.idleTimer !== undefined) clearTimeout(entry.idleTimer)
-    entry.controller.abort(new Error('coremate-mobile: embedded stream stopped'))
-    entry.socket?.destroy()
-    const child = entry.process
-    if (child !== undefined && child.exitCode === null) await terminateChild(child)
-    if (entry.port !== undefined) {
-      const cleanupSignal = AbortSignal.timeout(5_000)
-      await this.options.runAdb(['-s', entry.device.serial, 'forward', '--remove', `tcp:${entry.port}`], cleanupSignal).catch(() => undefined)
-    }
-    if (this.entries.get(entry.device.id) === entry) this.entries.delete(entry.device.id)
-    for (const sink of entry.subscribers) sink.close(entry.closeCode, entry.closeReason)
-    entry.subscribers.clear()
+    const closing = (async (): Promise<void> => {
+      if (entry.idleTimer !== undefined) clearTimeout(entry.idleTimer)
+      entry.controller.abort(new Error('coremate-mobile: embedded stream stopped'))
+      entry.socket?.destroy()
+      const child = entry.process
+      if (child !== undefined && child.exitCode === null) await terminateChild(child)
+      if (entry.forward !== undefined) await this.forwardRegistry.release(entry.forward, this.options.runAdb)
+      if (this.entries.get(entry.device.id) === entry) this.entries.delete(entry.device.id)
+      for (const sink of entry.subscribers) sink.close(entry.closeCode, entry.closeReason)
+      entry.subscribers.clear()
+    })()
+    entry.closing = closing
+    return closing
   }
 
   private publicError(error: unknown): string {

@@ -84,6 +84,10 @@ export class CoremateTaskStatusStore {
     return this.consumedSessionIds.has(sessionId)
   }
 
+  markConsumedSession(sessionId: string): void {
+    this.consumedSessionIds.add(sessionId)
+  }
+
   /** Finish command admission; task execution, once observed, remains Host-owned. */
   finishLaunch(error?: string): void {
     this.clearLaunchTimer()

@@ -41,7 +41,10 @@ function sink() {
   } satisfies ScrcpyStreamSink & { disconnect(): void }
 }
 
-function setup(maxSources = 4) {
+function setup(maxSources = 4, forwardRegistry = {
+  track: vi.fn(async () => undefined),
+  release: vi.fn(async () => true),
+}) {
   const children: FakeProcess[] = []
   const sockets: PassThrough[] = []
   const runAdb = vi.fn(async () => '')
@@ -53,6 +56,7 @@ function setup(maxSources = 4) {
     freePort: async () => 40123 + sockets.length,
     maxSources,
     idleGraceMs: 5,
+    forwardRegistry: forwardRegistry as never,
     spawn: vi.fn(() => {
       const child = new FakeProcess()
       children.push(child)
@@ -112,7 +116,8 @@ describe('shared embedded scrcpy sources', () => {
     unsubscribeLate()
     await new Promise(resolve => setTimeout(resolve, 10))
     await vi.waitFor(() => expect(runAdb).toHaveBeenCalledWith(
-      ['-s', 'private-one', 'forward', '--remove', 'tcp:40123'], expect.any(AbortSignal),
+      ['-s', 'private-one', 'forward', '--no-rebind', 'tcp:40123', expect.stringMatching(/^localabstract:scrcpy_/u)],
+      expect.any(AbortSignal),
     ))
     await streams.dispose()
   })
@@ -146,5 +151,51 @@ describe('shared embedded scrcpy sources', () => {
       .rejects.toThrow('stream_capacity_wait')
     await expect(streams.status()).resolves.toMatchObject({ activeSources: 1, maxSources: 1 })
     await streams.dispose()
+  })
+
+  it('starts a fresh source when a subscriber arrives while the old entry is still closing', async () => {
+    let releaseCleanup!: () => void
+    const cleanupGate = new Promise<void>(resolve => { releaseCleanup = resolve })
+    const forwardRegistry = {
+      track: vi.fn(async () => undefined),
+      release: vi.fn()
+        .mockImplementationOnce(async () => cleanupGate)
+        .mockResolvedValue(true),
+    }
+    const { streams, sockets } = setup(4, forwardRegistry)
+    const device = { id: 'opaque', serial: 'private', label: 'Pixel' }
+    const unsubscribe = await streams.subscribe(device, sink())
+    await vi.waitFor(() => expect(sockets).toHaveLength(1))
+
+    unsubscribe()
+    await vi.waitFor(() => expect(forwardRegistry.release).toHaveBeenCalledTimes(1))
+    await streams.subscribe(device, sink())
+    await vi.waitFor(() => expect(sockets).toHaveLength(2))
+
+    releaseCleanup()
+    await streams.dispose()
+  })
+
+  it('waits for an already-running entry cleanup during disposal', async () => {
+    let releaseCleanup!: () => void
+    const cleanupGate = new Promise<void>(resolve => { releaseCleanup = resolve })
+    const forwardRegistry = {
+      track: vi.fn(async () => undefined),
+      release: vi.fn(async () => cleanupGate),
+    }
+    const { streams, sockets } = setup(4, forwardRegistry)
+    const unsubscribe = await streams.subscribe({ id: 'opaque', serial: 'private', label: 'Pixel' }, sink())
+    await vi.waitFor(() => expect(sockets).toHaveLength(1))
+
+    unsubscribe()
+    await vi.waitFor(() => expect(forwardRegistry.release).toHaveBeenCalledTimes(1))
+    let disposed = false
+    const disposal = streams.dispose().then(() => { disposed = true })
+    await new Promise(resolve => setTimeout(resolve, 0))
+    expect(disposed).toBe(false)
+
+    releaseCleanup()
+    await disposal
+    expect(disposed).toBe(true)
   })
 })

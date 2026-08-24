@@ -209,6 +209,7 @@ The plugin checks for its managed Chromium only when a task actually calls `brow
 | `apiKeyEnv` | Harness credential reference; default `COREMATE_MOBILE_API_KEY`. |
 | `commandTimeoutMs` | Base timeout for local ADB processes and browser actions; default 15 seconds. |
 | `maxOperations` | Maximum `phone_control` or `browser_control` calls in one child task; default 100. |
+| `maxParallelDevices` | Maximum selected phones processed concurrently by one OpenGUI task; default 4, range 1–16. |
 | `contextWindow` | Declared model context capacity; default 262,144 tokens. |
 | `maxTokens` | Declared maximum model output; default 32,768 tokens. |
 | `streamIdleTimeoutMs` | Maximum interval without a model stream event; default 300 seconds. |

@@ -1,6 +1,6 @@
 import type { ClientContext, ISessions } from '@deepseek-ai/dsh-client-runtime/client'
 import { describe, expect, it, vi } from 'vitest'
-import { coremateTriggerSource } from '../src/client/coremate-trigger.ts'
+import { coremateTriggerSource, isUntitledSession } from '../src/client/coremate-trigger.ts'
 
 function setup(result: { ok: true, value: { matched: boolean } } | { ok: false, error: { message: string } } = { ok: true, value: { matched: true } }) {
   const command = vi.fn(async () => result)
@@ -19,6 +19,13 @@ function setup(result: { ok: true, value: { matched: boolean } } | { ok: false, 
 }
 
 describe('native @OpenGUI trigger', () => {
+  it('recognizes DSH default session titles as untitled', () => {
+    expect(isUntitledSession(undefined)).toBe(true)
+    expect(isUntitledSession('')).toBe(true)
+    expect(isUntitledSession('New Session')).toBe(true)
+    expect(isUntitledSession('新会话')).toBe(true)
+    expect(isUntitledSession('Existing task')).toBe(false)
+  })
   it('offers one leading, case-insensitive menu candidate', async () => {
     const { source, session } = setup()
     await expect(source.candidates(session, { query: 'open', position: 'leading', signal: new AbortController().signal }))
@@ -71,7 +78,7 @@ describe('native @OpenGUI trigger', () => {
       query: 'OpenGUI', position: 'leading', signal: new AbortController().signal,
     })
     const qa = source.onPick({ candidate: scenes[1]!, session, position: 'leading', via: 'menu', span: { start: 0, end: 9, draftRev: 2 } })
-    expect(qa).toEqual({ text: '@OpenGUI 作为测试，帮我走查当前 APP，先产出测试用例，再按用例逐项执行并汇总问题。' })
+    expect(qa).toEqual({ text: '@OpenGUI 作为测试，帮我走查当前已连接 Android 手机上的 APP，先产出测试用例，再按用例逐项执行并汇总问题。' })
 
     const spaced = source.matchSpace?.(session, '@oPeNgUi')
     expect(spaced).toEqual({ claim: expect.objectContaining({ token: '@oPeNgUi ' }) })

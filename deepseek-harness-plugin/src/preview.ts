@@ -1,10 +1,12 @@
 import { createHash } from 'node:crypto'
 import sharp from 'sharp'
 import type { FleetDevice } from './device-fleet.ts'
+import { AsyncSemaphore } from './concurrency.ts'
 
 const PREVIEW_CACHE_MS = 1_500
 const PREVIEW_WIDTH = 720
 const PREVIEW_QUALITY = 60
+const PREVIEW_CACHE_LIMIT = 16
 
 export interface PhonePreviewImage {
   readonly data: Buffer
@@ -13,41 +15,74 @@ export interface PhonePreviewImage {
 
 export type CapturePhonePreview = (serial: string, signal: AbortSignal) => Promise<Buffer>
 
+interface PreviewOperation {
+  readonly controller: AbortController
+  readonly promise: Promise<PhonePreviewImage>
+  readonly waiters: Set<symbol>
+}
+
 /** Bounded, single-flight ADB preview encoder shared by every browser tab. */
 export class PhonePreview {
   private readonly cache = new Map<string, { at: number, image: PhonePreviewImage }>()
-  private readonly pending = new Map<string, Promise<PhonePreviewImage>>()
-  private readonly waiters: Array<() => void> = []
-  private active = 0
+  private readonly pending = new Map<string, PreviewOperation>()
+  private readonly permits: AsyncSemaphore
 
   constructor(
     private readonly capture: CapturePhonePreview,
-    private readonly concurrency = 2,
+    concurrency = 2,
     private readonly now: () => number = Date.now,
+    permits?: AsyncSemaphore,
   ) {
     if (!Number.isSafeInteger(concurrency) || concurrency < 1) {
       throw new Error('coremate-mobile: preview concurrency must be a positive integer')
     }
+    this.permits = permits ?? new AsyncSemaphore(concurrency)
   }
 
   async read(device: FleetDevice, signal: AbortSignal): Promise<PhonePreviewImage> {
     const cached = this.cache.get(device.id)
-    if (cached !== undefined && this.now() - cached.at < PREVIEW_CACHE_MS) return cached.image
-    const pending = this.pending.get(device.id)
-    if (pending !== undefined) return pending
-    const operation = this.captureAndEncode(device, signal)
-    this.pending.set(device.id, operation)
+    if (cached !== undefined && this.now() - cached.at < PREVIEW_CACHE_MS) {
+      this.cache.delete(device.id)
+      this.cache.set(device.id, cached)
+      return cached.image
+    }
+    let operation = this.pending.get(device.id)
+    if (operation === undefined) {
+      const controller = new AbortController()
+      const promise = this.captureAndEncode(device, controller.signal)
+      operation = { controller, promise, waiters: new Set() }
+      this.pending.set(device.id, operation)
+      void promise.finally(() => {
+        if (this.pending.get(device.id) === operation) this.pending.delete(device.id)
+      }).catch(() => {})
+    }
+    const waiter = Symbol('preview-waiter')
+    operation.waiters.add(waiter)
     try {
-      const image = await operation
+      const image = await this.waitFor(operation, signal)
+      this.cache.delete(device.id)
       this.cache.set(device.id, { at: this.now(), image })
+      while (this.cache.size > PREVIEW_CACHE_LIMIT) this.cache.delete(this.cache.keys().next().value!)
       return image
     } finally {
-      if (this.pending.get(device.id) === operation) this.pending.delete(device.id)
+      operation.waiters.delete(waiter)
+      if (operation.waiters.size === 0 && !operation.controller.signal.aborted) {
+        operation.controller.abort(new Error('coremate-mobile: phone preview has no remaining waiters'))
+      }
     }
   }
 
+  private async waitFor(operation: PreviewOperation, signal: AbortSignal): Promise<PhonePreviewImage> {
+    signal.throwIfAborted()
+    return await new Promise<PhonePreviewImage>((resolveImage, rejectImage) => {
+      const onAbort = (): void => rejectImage(signal.reason)
+      signal.addEventListener('abort', onAbort, { once: true })
+      void operation.promise.then(resolveImage, rejectImage).finally(() => signal.removeEventListener('abort', onAbort))
+    })
+  }
+
   private async captureAndEncode(device: FleetDevice, signal: AbortSignal): Promise<PhonePreviewImage> {
-    const release = await this.acquire(signal)
+    const release = await this.permits.acquire(signal)
     try {
       const source = await this.capture(device.serial, signal)
       const data = await sharp(source, { failOn: 'error', limitInputPixels: false })
@@ -63,31 +98,4 @@ export class PhonePreview {
     }
   }
 
-  private async acquire(signal: AbortSignal): Promise<() => void> {
-    if (signal.aborted) throw signal.reason
-    if (this.active < this.concurrency) {
-      this.active += 1
-      return () => this.release()
-    }
-    await new Promise<void>((resolve, reject) => {
-      const ready = (): void => {
-        signal.removeEventListener('abort', aborted)
-        this.active += 1
-        resolve()
-      }
-      const aborted = (): void => {
-        const index = this.waiters.indexOf(ready)
-        if (index >= 0) this.waiters.splice(index, 1)
-        reject(signal.reason)
-      }
-      this.waiters.push(ready)
-      signal.addEventListener('abort', aborted, { once: true })
-    })
-    return () => this.release()
-  }
-
-  private release(): void {
-    this.active -= 1
-    this.waiters.shift()?.()
-  }
 }

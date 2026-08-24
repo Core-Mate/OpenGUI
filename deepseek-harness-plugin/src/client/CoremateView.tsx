@@ -2,13 +2,16 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import {
   DEVICE_SELECTION_PATH,
+  DEVICE_STREAM_ENABLE_PATH,
+  DEVICE_STREAM_STATUS_PATH,
   MIRROR_START_PATH,
   MIRROR_STOP_PATH,
 } from '../mirror-contract.ts'
 import type { MirrorDeviceStatus, MirrorStatus } from '../mirror-contract.ts'
+import type { ScrcpyStreamStatus } from '../scrcpy-stream.ts'
 import { BrowserInstallPrompt } from './BrowserInstallPrompt.tsx'
 import { OpenGuiMark } from './OpenGuiMark.tsx'
-import { postMirrorStatus, readMirrorStatus } from './MirrorButton.tsx'
+import { mirrorBusy, mirrorLabel, mirrorProgress, postMirrorStatus, readMirrorStatus } from './MirrorButton.tsx'
 import { TaskStopButton } from './TaskStopButton.tsx'
 import { PhoneStream } from './PhoneStream.tsx'
 
@@ -18,11 +21,8 @@ const OPENGUI_WEBSITE_URL = 'https://opengui.ai/'
 
 const rootStyle: CSSProperties = {
   width: '100%',
-  height: 'calc(100dvh - 74px)',
   margin: 0,
   padding: '16px clamp(16px, 2vw, 32px) 180px',
-  overflowY: 'auto',
-  scrollbarGutter: 'stable both-edges',
   boxSizing: 'border-box',
   containerType: 'inline-size',
   color: 'var(--dsw-alias-label-primary, #27272a)',
@@ -153,6 +153,8 @@ export function CoremateView({ coremateSessionId }: { readonly coremateSessionId
   const seenDevices = useRef(new Set<string>())
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string>()
+  const [streamStatus, setStreamStatus] = useState<ScrcpyStreamStatus>()
+  const [streamGeneration, setStreamGeneration] = useState(0)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -162,7 +164,9 @@ export function CoremateView({ coremateSessionId }: { readonly coremateSessionId
         const next = await readMirrorStatus(controller.signal)
         setStatus(next)
         setExpanded(current => {
-          const value = new Set(current)
+          const connectedIds = new Set(next.devices.map(device => device.id))
+          const value = new Set([...current].filter(id => connectedIds.has(id)))
+          seenDevices.current = new Set([...seenDevices.current].filter(id => connectedIds.has(id)))
           for (const device of next.devices) {
             if (seenDevices.current.has(device.id)) continue
             seenDevices.current.add(device.id)
@@ -184,6 +188,32 @@ export function CoremateView({ coremateSessionId }: { readonly coremateSessionId
     }
   }, [])
 
+  useEffect(() => {
+    const controller = new AbortController()
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const poll = async (): Promise<void> => {
+      try {
+        const response = await fetch(DEVICE_STREAM_STATUS_PATH, { cache: 'no-store', signal: controller.signal })
+        if (response.ok) setStreamStatus(await response.json() as ScrcpyStreamStatus)
+      } catch { /* stream support is optional; each card retains screenshot fallback */ }
+      finally {
+        if (!controller.signal.aborted) timer = setTimeout(poll, document.hidden ? 5_000 : 1_500)
+      }
+    }
+    void poll()
+    return () => {
+      controller.abort()
+      if (timer !== undefined) clearTimeout(timer)
+    }
+  }, [])
+
+  const enableStream = useCallback(async (): Promise<void> => {
+    const response = await fetch(DEVICE_STREAM_ENABLE_PATH, { method: 'POST', headers: { Accept: 'application/json' } })
+    if (!response.ok) throw new Error(`启用实时画面失败 (${response.status})`)
+    setStreamStatus(await response.json() as ScrcpyStreamStatus)
+    setStreamGeneration(value => value + 1)
+  }, [])
+
   const mutate = useCallback(async (path: string, ids: readonly string[]): Promise<void> => {
     setPending(true)
     try {
@@ -198,7 +228,6 @@ export function CoremateView({ coremateSessionId }: { readonly coremateSessionId
 
   const selected = status?.devices.filter(device => device.selected).map(device => device.id) ?? []
   const wallItems = buildDeviceWallItems(status?.devices ?? [])
-  const anyExpanded = status?.devices.some(device => expanded.has(device.id)) ?? false
   return (
     <main style={rootStyle} lang="zh-CN" data-coremate-view>
       <style>{`
@@ -230,13 +259,13 @@ export function CoremateView({ coremateSessionId }: { readonly coremateSessionId
         </div>
       </header>
 
-      <BrowserInstallPrompt />
+      <div style={{ position: 'sticky', top: 0, zIndex: 10 }}><BrowserInstallPrompt /></div>
 
       <section aria-label="设备照片墙" style={gridStyle} data-coremate-device-wall>
         {wallItems.map(item => {
           if (item.kind === 'connect-more') {
             return (
-              <aside key="connect-more" style={{ ...connectStyle, minHeight: anyExpanded ? 'min(56vh, 620px)' : 360 }} data-coremate-connect-more>
+              <aside key="connect-more" style={connectStyle} data-coremate-connect-more>
                 <div>
                   <span aria-hidden="true" style={{ display: 'inline-grid', placeItems: 'center', width: 48, height: 48, marginBottom: 16, border: '1px solid currentColor', borderRadius: 999, fontSize: 30, fontWeight: 300, lineHeight: 1 }}>+</span>
                   <h2 style={{ margin: '0 0 8px', fontSize: 17, lineHeight: 1.35, fontWeight: 720 }}>连接更多设备</h2>
@@ -252,7 +281,7 @@ export function CoremateView({ coremateSessionId }: { readonly coremateSessionId
           const active = mirrorActive(device)
           const open = expanded.has(device.id)
           return (
-            <article key={device.id} style={{ ...deviceStyle, alignSelf: open ? 'stretch' : 'start' }} data-coremate-device-card>
+            <article key={device.id} style={deviceStyle} data-coremate-device-card>
                 <div style={deviceHeaderStyle}>
                   <label style={{ display: 'flex', flex: '1 1 92px', alignItems: 'center', gap: 7, minWidth: 0, cursor: status?.selectionLocked === true ? 'not-allowed' : 'pointer' }}>
                     <input
@@ -265,16 +294,25 @@ export function CoremateView({ coremateSessionId }: { readonly coremateSessionId
                     <span aria-label={device.connected ? '在线' : '已断开'} title={device.connected ? '在线' : '已断开'} style={{ width: 6, height: 6, flex: '0 0 auto', borderRadius: 999, background: device.connected ? '#16a34a' : '#a1a1aa' }} />
                   </label>
                   <div style={{ display: 'flex', flex: '0 0 auto', gap: 6 }}>
-                    <button data-coremate-press type="button" style={actionStyle} aria-expanded={open} onClick={() => setExpanded(current => {
+                    <button data-coremate-press type="button" style={actionStyle} aria-label={`${open ? '收起' : '展开'} ${device.label} 画面`} aria-expanded={open} onClick={() => setExpanded(current => {
                       const next = new Set(current)
                       if (next.has(device.id)) next.delete(device.id)
                       else next.add(device.id)
                       return next
                     })}>{open ? '收起' : '展开'}</button>
-                    <button data-coremate-press type="button" style={{ ...actionStyle, color: active ? '#b45309' : actionStyle.color }} disabled={pending || !device.connected} onClick={() => void mutate(active ? MIRROR_STOP_PATH : MIRROR_START_PATH, [device.id])}>{active ? '关闭窗口' : '独立窗口'}</button>
+                    <button
+                      data-coremate-press
+                      type="button"
+                      style={{ ...actionStyle, color: active ? '#b45309' : actionStyle.color }}
+                      aria-label={mirrorLabel(device)}
+                      aria-busy={mirrorBusy(device)}
+                      disabled={pending || device.phase === 'unsupported' || (!device.connected && !active)}
+                      onClick={() => void mutate(active ? MIRROR_STOP_PATH : MIRROR_START_PATH, [device.id])}
+                    >{mirrorProgress(device) ?? (active ? '关闭窗口' : '独立窗口')}</button>
                   </div>
                 </div>
-                <PhoneStream device={device} expanded={open} />
+                {device.message === undefined ? null : <div role="status" style={{ padding: '0 12px 8px', color: device.phase === 'error' ? '#b91c1c' : 'var(--dsw-alias-label-secondary, #52525b)', fontSize: 11 }}>{device.message}</div>}
+                <PhoneStream device={device} expanded={open} streamStatus={streamStatus} streamGeneration={streamGeneration} enableStream={enableStream} />
             </article>
           )
         })}

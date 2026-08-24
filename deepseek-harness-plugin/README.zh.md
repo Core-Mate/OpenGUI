@@ -211,6 +211,7 @@ OpenGUI 任务运行时，输入框右侧会出现方形“停止 OpenGUI 操作
 | `apiKeyEnv` | Harness 凭据引用；默认 `COREMATE_MOBILE_API_KEY`。 |
 | `commandTimeoutMs` | 每个本地 ADB 进程及浏览器动作的基础超时；默认 15 秒。 |
 | `maxOperations` | 单次子任务允许的 `phone_control` 或 `browser_control` 调用上限；默认 100 次。 |
+| `maxParallelDevices` | 单个 OpenGUI 任务同时处理的已选手机上限；默认 4，范围 1–16。 |
 | `contextWindow` | 声明的模型上下文容量；默认 262,144 token。 |
 | `maxTokens` | 声明的最大模型输出；默认 32,768 token。 |
 | `streamIdleTimeoutMs` | 模型 stream 无新事件的最长时间；默认 300 秒。 |

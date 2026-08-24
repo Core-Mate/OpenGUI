@@ -81,6 +81,78 @@ describe('OpenGUI active-task new-session bridge', () => {
     expect(original).not.toHaveBeenCalled()
   })
 
+  it('does not let a delayed create steal focus after the user navigates elsewhere', async () => {
+    const listState = {
+      current: 'session-owner',
+      byId: {
+        'session-owner': { blank: true },
+        'session-other': { blank: false },
+      } as Record<string, { blank: boolean }>,
+    }
+    let release!: () => void
+    const gate = new Promise<void>(resolve => { release = resolve })
+    const open = vi.fn()
+    const workspace = {
+      list: { getSnapshot: () => ({ items: [{ workspaceId: 'workspace-1', sessionIds: ['session-owner', 'session-other'] }] }) },
+      startSession: vi.fn(),
+    }
+    installActiveTaskSessionBridge({
+      sessions: {
+        list: { getSnapshot: () => listState },
+        create: async () => { await gate; return 'session-fresh' },
+        open,
+      },
+      workspaces: workspace,
+    } as never, {
+      getSnapshot: () => ({ task: { active: true, ownerSessionId: 'session-owner' } }),
+      isConsumedSession: () => false,
+      setBridgeError: vi.fn(),
+    } as never)
+
+    workspace.startSession()
+    listState.current = 'session-other'
+    release()
+    await new Promise(resolve => setTimeout(resolve, 0))
+    expect(open).not.toHaveBeenCalled()
+  })
+
+  it('queues a new-session request from a different origin in the same workspace', async () => {
+    const listState = {
+      current: 'session-owner',
+      byId: {
+        'session-owner': { blank: true },
+        'session-other': { blank: true },
+      } as Record<string, { blank: boolean }>,
+    }
+    let releaseFirst!: () => void
+    const firstGate = new Promise<void>(resolve => { releaseFirst = resolve })
+    const create = vi.fn()
+      .mockImplementationOnce(async () => { await firstGate; return 'session-first' })
+      .mockResolvedValueOnce('session-second')
+    const open = vi.fn()
+    const workspace = {
+      list: { getSnapshot: () => ({ items: [{ workspaceId: 'workspace-1', sessionIds: ['session-owner', 'session-other'] }] }) },
+      startSession: vi.fn(),
+    }
+    installActiveTaskSessionBridge({
+      sessions: { list: { getSnapshot: () => listState }, create, open },
+      workspaces: workspace,
+    } as never, {
+      getSnapshot: () => ({ task: { active: true, ownerSessionId: listState.current } }),
+      isConsumedSession: () => false,
+      setBridgeError: vi.fn(),
+    } as never)
+
+    workspace.startSession()
+    listState.current = 'session-other'
+    workspace.startSession()
+    releaseFirst()
+
+    await vi.waitFor(() => expect(create).toHaveBeenCalledTimes(2))
+    await vi.waitFor(() => expect(open).toHaveBeenCalledWith('session-second'))
+    expect(open).not.toHaveBeenCalledWith('session-first')
+  })
+
   it('preserves the native New Session path outside the active blank owner', () => {
     const original = vi.fn()
     const workspace = {

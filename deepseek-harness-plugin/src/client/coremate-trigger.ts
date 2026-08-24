@@ -16,8 +16,13 @@ export interface CoremateLaunchTracker {
   finishLaunch(error?: string): void
 }
 
-function taskTitle(task: string): string {
+export function taskTitle(task: string): string {
   return `OpenGUI · ${Array.from(task).slice(0, 24).join('')}`
+}
+
+export function isUntitledSession(title: string | undefined): boolean {
+  const value = title?.trim()
+  return value === undefined || value.length === 0 || /^(?:new session|新会话)$/iu.test(value)
 }
 
 function launchFailure(reason: unknown): string {
@@ -31,8 +36,8 @@ export const COREMATE_SCENES = [
   },
   {
     name: 'QA 助手',
-    description: '走查当前 APP，先产出测试用例，再逐项执行并汇总问题',
-    prompt: '作为测试，帮我走查当前 APP，先产出测试用例，再按用例逐项执行并汇总问题。',
+    description: '走查当前已连接 Android 手机上的 APP，再逐项执行并汇总问题',
+    prompt: '作为测试，帮我走查当前已连接 Android 手机上的 APP，先产出测试用例，再按用例逐项执行并汇总问题。',
   },
   {
     name: '运营助手',
@@ -72,7 +77,7 @@ export function coremateCommandClaim(
         return { kind: 'error', text: '已有 OpenGUI 任务正在启动或执行，请等待完成后再试。' }
       }
       const row = sessions.list.getSnapshot().byId[session.sessionId]
-      if (row?.title === undefined || row.title.trim().length === 0) {
+      if (isUntitledSession(row?.title)) {
         void binding.session.rename(taskTitle(task)).catch(() => {})
       }
       try {

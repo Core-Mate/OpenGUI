@@ -25,8 +25,29 @@ export function installActiveTaskSessionBridge(ctx: ClientContext, store: Corema
   const workspaces = ctx.workspaces as unknown as IWorkspaces
   const original = workspaces.startSession
   const callOriginal = (workspaceId?: WorkspaceId): void => original.call(workspaces, workspaceId)
-  let pending: Promise<void> | undefined
+  let pending: { target: WorkspaceId, origin: SessionId, operation: Promise<void> } | undefined
+  let queued: { target: WorkspaceId, origin: SessionId, generation: number } | undefined
+  let generation = 0
   let disposed = false
+
+  const createAndMaybeOpen = (target: WorkspaceId, origin: SessionId, requestGeneration: number): void => {
+    store.setBridgeError(undefined)
+    const operation = (async (): Promise<void> => {
+      // SessionRuntime.create projects the new row and binding before resolving.
+      // The raw Host RPC does not, which leaves this browser unable to open it.
+      const id = await sessions.create({ workspaceId: target })
+      const current = sessions.list.getSnapshot().current
+      if (!disposed && generation === requestGeneration && current === origin) sessions.open(id)
+    })().catch(error => {
+      if (!disposed) store.setBridgeError(error instanceof Error ? error.message : String(error))
+    }).finally(() => {
+      if (pending?.operation === operation) pending = undefined
+      const next = queued
+      queued = undefined
+      if (!disposed && next !== undefined) createAndMaybeOpen(next.target, next.origin, next.generation)
+    })
+    pending = { target, origin, operation }
+  }
 
   workspaces.startSession = (workspaceId?: WorkspaceId): void => {
     const list = sessions.list.getSnapshot()
@@ -40,19 +61,13 @@ export function installActiveTaskSessionBridge(ctx: ClientContext, store: Corema
     }
     const target = workspaceId ?? ownerWorkspace(workspaces, current)
     if (target === undefined) { callOriginal(workspaceId); return }
-    if (pending !== undefined) return
-    store.setBridgeError(undefined)
-    const operation = (async (): Promise<void> => {
-      // SessionRuntime.create projects the new row and binding before resolving.
-      // The raw Host RPC does not, which leaves this browser unable to open it.
-      const id = await sessions.create({ workspaceId: target })
-      if (!disposed) sessions.open(id)
-    })().catch(error => {
-      if (!disposed) store.setBridgeError(error instanceof Error ? error.message : String(error))
-    }).finally(() => {
-      if (pending === operation) pending = undefined
-    })
-    pending = operation
+    if (pending?.target === target && pending.origin === current) return
+    const requestGeneration = ++generation
+    if (pending !== undefined) {
+      queued = { target, origin: current, generation: requestGeneration }
+      return
+    }
+    createAndMaybeOpen(target, current, requestGeneration)
   }
 
   return () => {

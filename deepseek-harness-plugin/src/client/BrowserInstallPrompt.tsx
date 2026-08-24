@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import {
   BROWSER_INSTALL_APPROVE_PATH,
@@ -69,7 +69,7 @@ export function browserInstallPresentation(status?: BrowserInstallStatus): Brows
       : undefined
     return {
       kind: 'progress',
-      label: percent === undefined ? '正在下载托管浏览器…' : `正在下载托管浏览器：${percent}%`,
+      label: '正在下载托管浏览器…',
       ...(percent === undefined ? {} : { percent }),
     }
   }
@@ -79,6 +79,7 @@ export function browserInstallPresentation(status?: BrowserInstallStatus): Brows
 
 /** Inline first-use consent and progress for the plugin-managed browser. */
 export function BrowserInstallPrompt(): JSX.Element | null {
+  const panel = useRef<HTMLElement>(null)
   const [status, setStatus] = useState<BrowserInstallStatus>()
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string>()
@@ -120,10 +121,13 @@ export function BrowserInstallPrompt(): JSX.Element | null {
   }, [])
 
   const presentation = browserInstallPresentation(status)
+  useEffect(() => {
+    if (presentation.kind === 'confirmation') panel.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }, [presentation.kind])
   if (presentation.kind === 'hidden') return null
   if (presentation.kind === 'confirmation' && status !== undefined) {
     return (
-      <section style={panelStyle} role="alert" data-coremate-browser-install="awaiting-confirmation">
+      <section ref={panel} style={panelStyle} role="alert" data-coremate-browser-install="awaiting-confirmation">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
           <div style={{ flex: '1 1 260px', minWidth: 0 }}>
             <strong style={{ display: 'block', marginBottom: 4, fontSize: 14 }}>启用托管浏览器</strong>

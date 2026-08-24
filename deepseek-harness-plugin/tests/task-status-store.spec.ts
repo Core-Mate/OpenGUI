@@ -41,4 +41,10 @@ describe('OpenGUI client task status store', () => {
     expect(store.getSnapshot().launching).toBe(false)
     expect(store.beginLaunch()).toBe(false)
   })
+
+  it('marks a direct slash session consumed before the first Host poll', () => {
+    const store = new CoremateTaskStatusStore()
+    store.markConsumedSession('slash-owner')
+    expect(store.isConsumedSession('slash-owner')).toBe(true)
+  })
 })

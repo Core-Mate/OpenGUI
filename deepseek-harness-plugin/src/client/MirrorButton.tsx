@@ -83,7 +83,7 @@ const messageStyle: CSSProperties = {
   overflowWrap: 'anywhere',
 }
 
-function mirrorLabel(device: MirrorDeviceStatus): string {
+export function mirrorLabel(device: MirrorDeviceStatus): string {
   switch (device.phase) {
     case 'downloading': {
       const percent = device.downloadedBytes !== undefined && device.totalBytes
@@ -102,7 +102,7 @@ function mirrorLabel(device: MirrorDeviceStatus): string {
   }
 }
 
-function progressFor(device: MirrorDeviceStatus): string | undefined {
+export function mirrorProgress(device: MirrorDeviceStatus): string | undefined {
   if (device.phase === 'downloading') {
     return device.downloadedBytes !== undefined && device.totalBytes
       ? `${Math.min(100, Math.round((device.downloadedBytes / device.totalBytes) * 100))}%`
@@ -122,7 +122,7 @@ function WindowIcon({ active }: { active: boolean }): JSX.Element {
   )
 }
 
-function isBusy(device: MirrorDeviceStatus): boolean {
+export function mirrorBusy(device: MirrorDeviceStatus): boolean {
   return device.phase === 'downloading' || device.phase === 'extracting' || device.phase === 'launching'
 }
 
@@ -195,10 +195,10 @@ export function MirrorButton(): JSX.Element | null {
         {status.devices.length === 0
           ? <span style={messageStyle}>未检测到已授权的 Android 手机</span>
           : status.devices.map(device => {
-            const busy = isBusy(device)
+            const busy = mirrorBusy(device)
             const mirrorActive = busy || device.phase === 'running'
             const mirrorDisabled = pending || device.phase === 'unsupported' || (!device.connected && !mirrorActive)
-            const progress = progressFor(device)
+            const progress = mirrorProgress(device)
             return (
             <div
               key={device.id}

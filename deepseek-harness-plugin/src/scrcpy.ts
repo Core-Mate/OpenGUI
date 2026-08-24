@@ -1,7 +1,7 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto'
 import { spawn } from 'node:child_process'
 import type { ChildProcess } from 'node:child_process'
-import { chmod, lstat, mkdir, mkdtemp, open, readFile, realpath, rename, rm, writeFile } from 'node:fs/promises'
+import { chmod, lstat, mkdir, mkdtemp, open, readFile, realpath, rename, rm, stat, writeFile } from 'node:fs/promises'
 import { constants } from 'node:fs'
 import { homedir } from 'node:os'
 import { connect, createServer } from 'node:net'
@@ -10,6 +10,8 @@ import { basename, join, resolve, sep } from 'node:path'
 import { x as extractTar } from 'tar'
 import type { FleetDevice, FleetDeviceView } from './device-fleet.ts'
 import type { MirrorDeviceStatus, MirrorPhase, MirrorStatus } from './mirror-contract.ts'
+import { OwnedForwardRegistry } from './forward-registry.ts'
+import type { OwnedForward } from './forward-registry.ts'
 import { extractSafeZip } from './secure-zip.ts'
 
 export const SCRCPY_VERSION = '4.1'
@@ -76,6 +78,13 @@ interface InstallProgress {
   totalBytes?: number
 }
 
+interface ScrcpyInstallJob {
+  readonly controller: AbortController
+  promise: Promise<InstalledScrcpy>
+  readonly waiters: Map<symbol, (progress: InstallProgress) => void>
+  latest: InstallProgress | undefined
+}
+
 export interface ScrcpyInstallerOptions {
   cacheDir?: string
   fetch?: typeof globalThis.fetch
@@ -85,7 +94,7 @@ export interface ScrcpyInstallerOptions {
 export class ScrcpyInstaller {
   private readonly cacheDir: string
   private readonly fetchImpl: typeof globalThis.fetch
-  private active: Promise<InstalledScrcpy> | undefined
+  private readonly active = new Map<string, ScrcpyInstallJob>()
 
   constructor(options: ScrcpyInstallerOptions = {}) {
     this.cacheDir = options.cacheDir ?? defaultScrcpyCacheDir()
@@ -121,13 +130,50 @@ export class ScrcpyInstaller {
     signal: AbortSignal,
     progress: (progress: InstallProgress) => void,
   ): Promise<InstalledScrcpy> {
-    if (this.active !== undefined) return this.active
-    const operation = this.install(asset, signal, progress)
-    this.active = operation
-    void operation.finally(() => {
-      if (this.active === operation) this.active = undefined
-    }).catch(() => {})
-    return operation
+    signal.throwIfAborted()
+    let job = this.active.get(asset.key)
+    if (job === undefined) {
+      const controller = new AbortController()
+      const waiters = new Map<symbol, (value: InstallProgress) => void>()
+      const created: ScrcpyInstallJob = {
+        controller,
+        waiters,
+        latest: undefined,
+        promise: Promise.resolve(undefined as never),
+      }
+      created.promise = this.install(asset, controller.signal, value => {
+        created.latest = value
+        for (const notify of created.waiters.values()) notify(value)
+      })
+      this.active.set(asset.key, created)
+      void created.promise.finally(() => {
+        if (this.active.get(asset.key) === created) this.active.delete(asset.key)
+      }).catch(() => {})
+      job = created
+    }
+    return this.waitFor(job, signal, progress)
+  }
+
+  private async waitFor(
+    job: ScrcpyInstallJob,
+    signal: AbortSignal,
+    progress: (progress: InstallProgress) => void,
+  ): Promise<InstalledScrcpy> {
+    const id = Symbol('scrcpy-installer-waiter')
+    job.waiters.set(id, progress)
+    if (job.latest !== undefined) progress(job.latest)
+    try {
+      return await new Promise<InstalledScrcpy>((resolveJob, rejectJob) => {
+        const onAbort = (): void => rejectJob(signal.reason)
+        signal.addEventListener('abort', onAbort, { once: true })
+        void job.promise.then(resolveJob, rejectJob).finally(() => signal.removeEventListener('abort', onAbort))
+      })
+    } finally {
+      job.waiters.delete(id)
+      if (job.waiters.size === 0 && !job.controller.signal.aborted) {
+        job.controller.abort(new Error('coremate-mobile: scrcpy installation has no remaining waiters'))
+      }
+    }
   }
 
   private async install(
@@ -143,7 +189,12 @@ export class ScrcpyInstaller {
     const suffix = asset.archive === 'zip' ? '.zip' : '.tar.gz'
     const archivePath = join(assetDir, `.download-${randomUUID()}${suffix}`)
     const staging = await mkdtemp(join(assetDir, '.extract-'))
+    const releaseLock = await this.acquireInstallLock(join(assetDir, '.install.lock'), signal).catch(async error => {
+      await rm(staging, { recursive: true, force: true }).catch(() => undefined)
+      throw error
+    })
     try {
+      if (await this.isInstalled(asset)) return this.paths(asset)
       await this.download(asset, archivePath, signal, progress)
       signal.throwIfAborted()
       progress({ phase: 'extracting' })
@@ -173,9 +224,23 @@ export class ScrcpyInstaller {
       }), { encoding: 'utf8', mode: 0o600 })
 
       const destination = this.paths(asset).root
+      const quarantine = join(assetDir, `.quarantine-${randomUUID()}`)
+      let quarantined = false
       try {
+        try {
+          await lstat(destination)
+          await rename(destination, quarantine)
+          quarantined = true
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
+        }
         await rename(extractedRoot, destination)
+        if (quarantined) await rm(quarantine, { recursive: true, force: true })
       } catch (error) {
+        if (quarantined) {
+          await rm(destination, { recursive: true, force: true }).catch(() => undefined)
+          await rename(quarantine, destination).catch(() => undefined)
+        }
         if (!(await this.isInstalled(asset))) throw error
       }
       return this.paths(asset)
@@ -184,6 +249,37 @@ export class ScrcpyInstaller {
         rm(archivePath, { force: true }),
         rm(staging, { recursive: true, force: true }),
       ])
+      await releaseLock()
+    }
+  }
+
+  private async acquireInstallLock(path: string, signal: AbortSignal): Promise<() => Promise<void>> {
+    while (true) {
+      signal.throwIfAborted()
+      try {
+        const handle = await open(path, constants.O_CREAT | constants.O_EXCL | constants.O_WRONLY, 0o600)
+        await handle.writeFile(`${process.pid}\n${Date.now()}\n`)
+        return async () => {
+          await handle.close().catch(() => undefined)
+          await rm(path, { force: true }).catch(() => undefined)
+        }
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error
+        const age = await stat(path).then(value => Date.now() - value.mtimeMs).catch(() => 0)
+        if (age > 120_000) {
+          await rm(path, { force: true }).catch(() => undefined)
+          continue
+        }
+        await new Promise<void>((resolveWait, rejectWait) => {
+          const timer = setTimeout(() => { cleanup(); resolveWait() }, 50)
+          const onAbort = (): void => { cleanup(); rejectWait(signal.reason) }
+          const cleanup = (): void => {
+            clearTimeout(timer)
+            signal.removeEventListener('abort', onAbort)
+          }
+          signal.addEventListener('abort', onAbort, { once: true })
+        })
+      }
     }
   }
 
@@ -325,6 +421,8 @@ interface ScrcpyTextConnection {
   sequence: bigint
   readBuffer: Buffer
   closed: boolean
+  closing: Promise<void> | undefined
+  readonly forward: OwnedForward
   readonly waiters: Map<string, {
     resolve: () => void
     reject: (error: Error) => void
@@ -340,6 +438,7 @@ export interface ScrcpyTextInputOptions {
   spawn?: typeof spawn
   connect?: typeof connect
   freePort?: () => Promise<number>
+  forwardRegistry?: OwnedForwardRegistry
 }
 
 /** Persistent, vendor-neutral UTF-8 text input over scrcpy's acknowledged control protocol. */
@@ -349,6 +448,7 @@ export class ScrcpyTextInput {
   private readonly spawnImpl: typeof spawn
   private readonly connectImpl: typeof connect
   private readonly freePort: () => Promise<number>
+  private readonly forwardRegistry: OwnedForwardRegistry
   private readonly active = new Map<string, ScrcpyTextConnection>()
   private readonly starting = new Map<string, Promise<ScrcpyTextConnection>>()
   private readonly lifetime = new AbortController()
@@ -359,6 +459,7 @@ export class ScrcpyTextInput {
     this.spawnImpl = options.spawn ?? spawn
     this.connectImpl = options.connect ?? connect
     this.freePort = options.freePort ?? availableTcpPort
+    this.forwardRegistry = options.forwardRegistry ?? new OwnedForwardRegistry()
   }
 
   async paste(serial: string, text: string, signal: AbortSignal): Promise<void> {
@@ -404,7 +505,7 @@ export class ScrcpyTextInput {
         })
       })
     } catch (error) {
-      this.close(connection, error instanceof Error ? error : new Error(String(error)))
+      await this.close(connection, error instanceof Error ? error : new Error(String(error)))
       throw error
     }
   }
@@ -412,7 +513,9 @@ export class ScrcpyTextInput {
   async dispose(): Promise<void> {
     if (!this.lifetime.signal.aborted) this.lifetime.abort(new Error('coremate-mobile: scrcpy text input disposed'))
     await Promise.allSettled(this.starting.values())
-    for (const connection of [...this.active.values()]) this.close(connection, new Error('coremate-mobile: scrcpy text input disposed'))
+    await Promise.allSettled([...this.active.values()].map(connection => (
+      this.close(connection, new Error('coremate-mobile: scrcpy text input disposed'))
+    )))
   }
 
   private async connection(serial: string, signal: AbortSignal): Promise<ScrcpyTextConnection> {
@@ -438,9 +541,17 @@ export class ScrcpyTextInput {
     signal.throwIfAborted()
     const port = await this.freePort()
     const scid = (randomBytes(4).readUInt32BE(0) & 0x7fffffff).toString(16).padStart(8, '0')
+    const forward: OwnedForward = { serial, port, scid, kind: 'text-input' }
     await this.options.runAdb(['-s', serial, 'push', installed.server, SCRCPY_REMOTE_SERVER], signal)
-    await this.options.runAdb(['-s', serial, 'forward', '--remove', `tcp:${port}`], signal).catch(() => undefined)
-    await this.options.runAdb(['-s', serial, 'forward', `tcp:${port}`, `localabstract:scrcpy_${scid}`], signal)
+    try {
+      await this.forwardRegistry.track(forward)
+      await this.options.runAdb([
+        '-s', serial, 'forward', '--no-rebind', `tcp:${port}`, `localabstract:scrcpy_${scid}`,
+      ], signal)
+    } catch (error) {
+      await this.forwardRegistry.release(forward, this.options.runAdb).catch(() => false)
+      throw error
+    }
 
     const child = this.spawnImpl(this.options.adbPath(), [
       '-s', serial, 'shell', ...buildScrcpyControlServerArgs(scid),
@@ -462,19 +573,21 @@ export class ScrcpyTextInput {
         sequence: BigInt(Date.now()),
         readBuffer: Buffer.alloc(0),
         closed: false,
+        closing: undefined,
+        forward,
         waiters: new Map(),
       }
       socket.on('data', chunk => this.onData(connection, Buffer.from(chunk)))
       const serverDetail = (): string => stderr.trim() ? `: ${stderr.trim()}` : ''
-      socket.once('error', error => this.close(connection, new Error(`${error.message}${serverDetail()}`, { cause: error })))
-      socket.once('close', () => this.close(connection, new Error(`coremate-mobile: scrcpy control socket closed${serverDetail()}`)))
-      child.once('exit', (code, exitSignal) => this.close(connection, new Error(
+      socket.once('error', error => { void this.close(connection, new Error(`${error.message}${serverDetail()}`, { cause: error })) })
+      socket.once('close', () => { void this.close(connection, new Error(`coremate-mobile: scrcpy control socket closed${serverDetail()}`)) })
+      child.once('exit', (code, exitSignal) => { void this.close(connection, new Error(
         `coremate-mobile: scrcpy control server exited (code=${String(code)}, signal=${String(exitSignal)})${serverDetail()}`,
-      )))
+      )) })
       return connection
     } catch (error) {
-      child.kill('SIGTERM')
-      await this.removeForward(serial, port)
+      await terminateChildProcess(child)
+      await this.forwardRegistry.release(forward, this.options.runAdb)
       const detail = stderr.trim()
       throw new Error(`coremate-mobile: failed to start acknowledged scrcpy text input${detail ? `: ${detail}` : ''}`, { cause: error })
     }
@@ -493,12 +606,13 @@ export class ScrcpyTextInput {
         waiter.resolve()
       }
     } catch (error) {
-      this.close(connection, error instanceof Error ? error : new Error(String(error)))
+      void this.close(connection, error instanceof Error ? error : new Error(String(error)))
     }
   }
 
-  private close(connection: ScrcpyTextConnection, error: Error): void {
-    if (connection.closed) return
+  private close(connection: ScrcpyTextConnection, error: Error): Promise<void> {
+    if (connection.closing !== undefined) return connection.closing
+    if (connection.closed) return Promise.resolve()
     connection.closed = true
     if (this.active.get(connection.serial) === connection) this.active.delete(connection.serial)
     for (const waiter of connection.waiters.values()) {
@@ -507,13 +621,11 @@ export class ScrcpyTextInput {
     }
     connection.waiters.clear()
     connection.socket.destroy()
-    if (connection.process.exitCode === null && !connection.process.killed) connection.process.kill('SIGTERM')
-    void this.removeForward(connection.serial, connection.port)
-  }
-
-  private async removeForward(serial: string, port: number): Promise<void> {
-    const cleanupSignal = new AbortController().signal
-    await this.options.runAdb(['-s', serial, 'forward', '--remove', `tcp:${port}`], cleanupSignal).catch(() => undefined)
+    connection.closing = (async () => {
+      await terminateChildProcess(connection.process)
+      await this.forwardRegistry.release(connection.forward, this.options.runAdb)
+    })()
+    return connection.closing
   }
 }
 
@@ -543,6 +655,20 @@ async function waitForChildSpawn(child: ChildProcess, signal: AbortSignal): Prom
     child.once('error', onError)
     signal.addEventListener('abort', onAbort, { once: true })
   })
+}
+
+async function terminateChildProcess(child: ChildProcess): Promise<void> {
+  if (child.exitCode !== null) return
+  const exited = new Promise<void>(resolveExit => child.once('exit', () => resolveExit()))
+  if (!child.killed) child.kill('SIGTERM')
+  const graceful = await Promise.race([
+    exited.then(() => true),
+    new Promise<false>(resolveGrace => setTimeout(() => resolveGrace(false), 2_000)),
+  ])
+  if (!graceful && child.exitCode === null) {
+    child.kill('SIGKILL')
+    await Promise.race([exited, new Promise(resolveKill => setTimeout(resolveKill, 500))])
+  }
 }
 
 async function connectScrcpyControl(
@@ -621,6 +747,8 @@ interface MirrorEntry {
   operation: Promise<void> | undefined
   controller: AbortController | undefined
   stderr: string
+  updatedAt: number
+  generation: number
 }
 
 /** Independent native scrcpy processes for connected phones, sharing one verified installation. */
@@ -648,6 +776,11 @@ export class ScrcpyMirror {
 
   status(connectedDevices: readonly FleetDeviceView[] = [], taskActive = false): MirrorStatus {
     const connected = new Map(connectedDevices.map(device => [device.id, device]))
+    const now = Date.now()
+    for (const [id, entry] of this.entries) {
+      if (connected.has(id) || entry.process !== undefined || entry.operation !== undefined) continue
+      if (entry.phase === 'idle' || now - entry.updatedAt > 5 * 60_000) this.entries.delete(id)
+    }
     const visible = new Map(connected)
     for (const entry of this.entries.values()) {
       if (entry.phase === 'idle' || visible.has(entry.device.id)) continue
@@ -682,9 +815,16 @@ export class ScrcpyMirror {
   requestStart(device: FleetDevice): void {
     if (this.disposed || this.asset === undefined) return
     const entry = this.entry(device)
+    if (entry === undefined) return
+    const generation = ++entry.generation
+    this.startRequested(entry, generation)
+  }
+
+  private startRequested(entry: MirrorEntry, generation: number): void {
+    if (this.disposed || this.asset === undefined || entry.generation !== generation) return
     if (entry.operation !== undefined) {
       if (entry.controller?.signal.aborted === true) {
-        void entry.operation.finally(() => { this.requestStart(device) }).catch(() => {})
+        void entry.operation.finally(() => { this.startRequested(entry, generation) }).catch(() => {})
       }
       return
     }
@@ -708,6 +848,7 @@ export class ScrcpyMirror {
       : [...this.entries.values()].filter(entry => entry.device.id === deviceId)
     const operations: Promise<void>[] = []
     for (const entry of entries) {
+      entry.generation += 1
       entry.controller?.abort(new Error('coremate-mobile: scrcpy launch cancelled'))
       const child = entry.process
       if (child !== undefined) await this.terminate(child)
@@ -734,9 +875,30 @@ export class ScrcpyMirror {
     await this.stop()
   }
 
-  private entry(device: FleetDevice): MirrorEntry {
+  /** Signal-path fallback used when the Host cannot await the normal async disposer. */
+  stopAllSync(): void {
+    for (const entry of this.entries.values()) {
+      entry.controller?.abort(new Error('coremate-mobile: Host is terminating'))
+      const child = entry.process
+      if (child !== undefined && child.exitCode === null && !child.killed) child.kill('SIGTERM')
+      entry.process = undefined
+      this.setStatus(entry, 'idle')
+    }
+  }
+
+  private entry(device: FleetDevice): MirrorEntry | undefined {
     const existing = this.entries.get(device.id)
     if (existing !== undefined) return existing
+    while (this.entries.size >= 32) {
+      const disposable = [...this.entries.entries()]
+        .filter(([, candidate]) => candidate.process === undefined && candidate.operation === undefined)
+        .sort((left, right) => left[1].updatedAt - right[1].updatedAt)[0]
+      if (disposable === undefined) {
+        this.onError(new Error('coremate-mobile: native mirror state capacity reached (32 devices)'))
+        return undefined
+      }
+      this.entries.delete(disposable[0])
+    }
     const created: MirrorEntry = {
       device,
       phase: 'idle',
@@ -747,6 +909,8 @@ export class ScrcpyMirror {
       operation: undefined,
       controller: undefined,
       stderr: '',
+      updatedAt: Date.now(),
+      generation: 0,
     }
     this.entries.set(device.id, created)
     return created
@@ -756,13 +920,15 @@ export class ScrcpyMirror {
     this.setStatus(entry, 'downloading')
     entry.totalBytes = asset.bytes
     if (this.installController.signal.aborted && !this.disposed) this.installController = new AbortController()
-    const installed = await this.installer.ensure(asset, this.installController.signal, (progress) => {
+    const installSignal = AbortSignal.any([signal, this.installController.signal])
+    const installed = await this.installer.ensure(asset, installSignal, (progress) => {
       for (const candidate of this.entries.values()) {
         if (candidate.operation === undefined || candidate.process !== undefined) continue
         candidate.phase = progress.phase
         candidate.downloadedBytes = progress.downloadedBytes
         candidate.totalBytes = progress.totalBytes
         candidate.message = undefined
+        candidate.updatedAt = Date.now()
       }
     })
     signal.throwIfAborted()
@@ -821,6 +987,7 @@ export class ScrcpyMirror {
     entry.downloadedBytes = undefined
     entry.totalBytes = undefined
     entry.message = message
+    entry.updatedAt = Date.now()
   }
 
   private async terminate(child: ScrcpyProcess): Promise<void> {

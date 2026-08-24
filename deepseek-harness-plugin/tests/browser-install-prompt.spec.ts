@@ -27,7 +27,7 @@ describe('OpenGUI workbench browser installation status', () => {
     expect(browserInstallPresentation(status('downloading', {
       downloadedBytes: 24,
       totalBytes: 100,
-    }))).toEqual({ kind: 'progress', label: '正在下载托管浏览器：24%', percent: 24 })
+    }))).toEqual({ kind: 'progress', label: '正在下载托管浏览器…', percent: 24 })
     expect(browserInstallPresentation(status('downloading'))).toEqual({
       kind: 'progress',
       label: '正在下载托管浏览器…',

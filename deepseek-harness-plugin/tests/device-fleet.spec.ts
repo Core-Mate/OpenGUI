@@ -63,4 +63,19 @@ describe('multi-phone device fleet', () => {
     })
     await expect(fleet.select(['id-a'], signal)).rejects.toThrow('disconnected or unknown')
   })
+
+  it('never resolves a frozen opaque id to a replacement phone', async () => {
+    let devices: AdbDevice[] = [{ serial: 'original', state: 'device', model: 'Pixel' }]
+    const ids = ['locked-original', 'new-arrival']
+    const fleet = new DeviceFleet(async () => devices, () => ids.shift()!)
+    const signal = new AbortController().signal
+    const locked = await fleet.selectedDevices(signal)
+    expect(locked[0]).toMatchObject({ id: 'locked-original', serial: 'original' })
+
+    devices = [{ serial: 'replacement', state: 'device', model: 'Pixel' }]
+    await expect(fleet.resolveConnected(['locked-original'], signal)).rejects.toThrow('disconnected or unknown')
+    expect((await fleet.snapshot(signal)).devices).toEqual([
+      { id: 'new-arrival', label: 'Pixel', model: 'Pixel', selected: true },
+    ])
+  })
 })

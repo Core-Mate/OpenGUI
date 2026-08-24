@@ -5,7 +5,7 @@ This directory was imported from the standalone
 repository.
 
 - Source branch: `main`
-- Source commit: `2675d3c2e3428595d1d6cdb016dd641dece75ebf`
+- Source commit: `7a77c0ab222121d466c23c92c5df24d680c7c3a1`
 - Import date: 2026-08-24
 
 The source commit is the migration baseline. Local uncommitted changes from the

@@ -23,6 +23,30 @@ describe('OpenGUI follow-up suggestions', () => {
     })
   })
 
+  it('parses and removes a valid trailer split across trailing text blocks', () => {
+    const blocks: ContentBlock[] = [
+      { type: 'text', text: '任务完成。\n<!--coremate-' },
+      { type: 'text', text: 'suggestions\n{"items":[{"label":"继续检查","prompt":"继续检查剩余页面"},' },
+      { type: 'text', text: '{"label":"整理报告","prompt":"整理完整报告"}]}\n-->' },
+    ]
+    expect(cleanCoremateSuggestionBlocks(blocks)).toEqual({
+      output: [{ type: 'text', text: '任务完成。' }],
+      suggestions: [
+        { label: '继续检查', prompt: '继续检查剩余页面' },
+        { label: '整理报告', prompt: '整理完整报告' },
+      ],
+    })
+  })
+
+  it('does not join a trailer across a non-text block', () => {
+    const blocks: ContentBlock[] = [
+      { type: 'text', text: '任务完成。\n<!--coremate-suggestions\n' },
+      { type: 'image', image: 'attachment:test' } as never,
+      { type: 'text', text: '{"items":[]}\n-->' },
+    ]
+    expect(cleanCoremateSuggestionBlocks(blocks)).toEqual({ output: blocks, suggestions: [] })
+  })
+
   it.each([
     ['missing marker', '任务完成。'],
     ['not final', `${valid}\n尾部文字`],

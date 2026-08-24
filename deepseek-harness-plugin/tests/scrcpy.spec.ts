@@ -119,6 +119,79 @@ describe('verified scrcpy installation', () => {
       .rejects.toThrow('scrcpy download checksum mismatch')
     expect(await installer.isInstalled(asset)).toBe(false)
   })
+
+  it('keeps a shared download alive when only one installer waiter cancels', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'coremate-scrcpy-shared-'))
+    temporary.push(root)
+    const source = join(root, 'source')
+    const archiveRoot = 'scrcpy-shared-v4.1'
+    await mkdir(join(source, archiveRoot), { recursive: true })
+    await Promise.all([
+      writeFile(join(source, archiveRoot, 'scrcpy'), 'native-client'),
+      writeFile(join(source, archiveRoot, 'scrcpy-server'), 'android-server'),
+    ])
+    const archive = join(root, 'fixture.tar.gz')
+    await createTar({ cwd: source, file: archive, gzip: true }, [archiveRoot])
+    const bytes = await readFile(archive)
+    let release!: () => void
+    const gate = new Promise<void>(resolve => { release = resolve })
+    const asset: ScrcpyAsset = {
+      key: 'shared-test', archive: 'tar.gz', archiveRoot, executable: 'scrcpy',
+      url: 'https://example.invalid/shared.tar.gz', bytes: bytes.byteLength,
+      sha256: createHash('sha256').update(bytes).digest('hex'),
+    }
+    const fetchMock = vi.fn(async () => {
+      await gate
+      return new Response(bytes)
+    })
+    const installer = new ScrcpyInstaller({ cacheDir: join(root, 'cache'), fetch: fetchMock as typeof fetch })
+    const cancelled = new AbortController()
+    const kept = new AbortController()
+    const first = installer.ensure(asset, cancelled.signal, () => {})
+    const second = installer.ensure(asset, kept.signal, () => {})
+
+    cancelled.abort(new Error('first device closed'))
+    await expect(first).rejects.toThrow('first device closed')
+    release()
+    await expect(second).resolves.toMatchObject({ executable: expect.stringContaining('scrcpy') })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('serializes two installer instances and replaces a corrupt partial cache atomically', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'coremate-scrcpy-lock-'))
+    temporary.push(root)
+    const source = join(root, 'source')
+    const archiveRoot = 'scrcpy-locked-v4.1'
+    await mkdir(join(source, archiveRoot), { recursive: true })
+    await Promise.all([
+      writeFile(join(source, archiveRoot, 'scrcpy'), 'valid-client'),
+      writeFile(join(source, archiveRoot, 'scrcpy-server'), 'valid-server'),
+    ])
+    const archive = join(root, 'fixture.tar.gz')
+    await createTar({ cwd: source, file: archive, gzip: true }, [archiveRoot])
+    const bytes = await readFile(archive)
+    const asset: ScrcpyAsset = {
+      key: 'locked-test', archive: 'tar.gz', archiveRoot, executable: 'scrcpy',
+      url: 'https://example.invalid/locked.tar.gz', bytes: bytes.byteLength,
+      sha256: createHash('sha256').update(bytes).digest('hex'),
+    }
+    const cacheDir = join(root, 'cache')
+    const corrupt = join(cacheDir, `v${SCRCPY_VERSION}`, asset.key, archiveRoot)
+    await mkdir(corrupt, { recursive: true })
+    await writeFile(join(corrupt, 'scrcpy'), 'partial')
+    const fetchMock = vi.fn(async () => new Response(bytes))
+    const first = new ScrcpyInstaller({ cacheDir, fetch: fetchMock as typeof fetch })
+    const second = new ScrcpyInstaller({ cacheDir, fetch: fetchMock as typeof fetch })
+
+    const [one, two] = await Promise.all([
+      first.ensure(asset, new AbortController().signal, () => {}),
+      second.ensure(asset, new AbortController().signal, () => {}),
+    ])
+    expect(one).toEqual(two)
+    await expect(readFile(one.executable, 'utf8')).resolves.toBe('valid-client')
+    await expect(readFile(one.server, 'utf8')).resolves.toBe('valid-server')
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
 })
 
 class FakeInstaller extends ScrcpyInstaller {
@@ -240,6 +313,25 @@ describe('always-available native mirror', () => {
     await mirror.dispose()
   })
 
+  it('terminates native windows synchronously when the Host receives SIGTERM', async () => {
+    const child = new FakeProcess()
+    const mirror = new ScrcpyMirror({
+      asset: SCRCPY_ASSETS['darwin-arm64']!,
+      installer: new FakeInstaller({ root: '/cache', executable: '/cache/scrcpy', server: '/cache/server' }),
+      adbPath: () => '/adb',
+      spawn: () => {
+        queueMicrotask(() => { child.emit('spawn') })
+        return child
+      },
+    })
+    mirror.requestStart({ id: 'phone', serial: 'serial', label: 'Pixel' })
+    await vi.waitFor(() => expect(mirror.status([{ id: 'phone', label: 'Pixel', selected: true }]).devices[0]?.phase).toBe('running'))
+    mirror.stopAllSync()
+    expect(child.killed).toBe(true)
+    expect(mirror.status([{ id: 'phone', label: 'Pixel', selected: true }]).devices[0]?.phase).toBe('idle')
+    await mirror.dispose()
+  })
+
   it('waits for process exit and escalates a mirror that ignores SIGTERM', async () => {
     const child = new StubbornProcess()
     const mirror = new ScrcpyMirror({
@@ -281,6 +373,29 @@ describe('always-available native mirror', () => {
     mirror.requestStart(device)
     await vi.waitFor(() => { expect(installer.signal?.aborted).toBe(false) })
     await mirror.stop(device.id)
+    await mirror.dispose()
+  })
+
+  it('does not revive a queued mirror start after a later stop', async () => {
+    const installer = new WaitingInstaller()
+    const ensure = vi.spyOn(installer, 'ensure')
+    const mirror = new ScrcpyMirror({
+      asset: SCRCPY_ASSETS['linux-x64']!,
+      installer,
+      adbPath: () => '/adb',
+    })
+    const device = { id: 'phone', serial: 'serial', label: 'Pixel' }
+
+    mirror.requestStart(device)
+    await vi.waitFor(() => { expect(installer.signal).toBeDefined() })
+    const firstStop = mirror.stop(device.id)
+    mirror.requestStart(device)
+    const finalStop = mirror.stop(device.id)
+    await Promise.all([firstStop, finalStop])
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    expect(ensure).toHaveBeenCalledTimes(1)
+    expect(mirror.status([{ id: device.id, label: device.label, selected: true }]).devices[0]?.phase).toBe('idle')
     await mirror.dispose()
   })
 

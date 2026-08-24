@@ -1,6 +1,6 @@
 /** Interactive, conversation-local setup for the OpenGUI control model. */
 
-import type { CommandInvocation } from '@deepseek-ai/dsh-commands'
+import type { Agent } from '@deepseek-ai/dsh-agent'
 import { credentialRef } from '@deepseek-ai/dsh-credentials'
 import { assertUsableApiKey } from '@deepseek-ai/dsh-llm'
 import type {
@@ -39,6 +39,11 @@ export interface PhoneConfigurationServices {
   readonly updateSettings: (patch: PhoneModelConfigurationPatch) => Promise<void>
 }
 
+export interface PhoneConfigurationInteraction {
+  readonly agent: Agent
+  readonly signal: AbortSignal
+}
+
 function answerText(answer: AskUserQuestionAnswer, id: string): string {
   const item = answer.answers.find(candidate => candidate.id === id)
   return (item?.custom ?? item?.selected[0] ?? '').trim()
@@ -46,7 +51,7 @@ function answerText(answer: AskUserQuestionAnswer, id: string): string {
 
 async function askOne(
   services: PhoneConfigurationServices,
-  invocation: CommandInvocation,
+  invocation: PhoneConfigurationInteraction,
   question: AskUserQuestionItem,
 ): Promise<string> {
   const answer = await services.ask({
@@ -63,7 +68,7 @@ async function askOne(
 
 async function askBaseURL(
   services: PhoneConfigurationServices,
-  invocation: CommandInvocation,
+  invocation: PhoneConfigurationInteraction,
 ): Promise<string> {
   let question = '请输入兼容 OpenAI 协议的 Base URL，例如 https://gateway.example/v1。'
   while (true) {
@@ -85,7 +90,7 @@ async function askBaseURL(
 
 async function askIntroduction(
   services: PhoneConfigurationServices,
-  invocation: CommandInvocation,
+  invocation: PhoneConfigurationInteraction,
 ): Promise<void> {
   while (true) {
     const value = await askOne(services, invocation, {
@@ -105,7 +110,7 @@ async function askIntroduction(
 
 async function askApi(
   services: PhoneConfigurationServices,
-  invocation: CommandInvocation,
+  invocation: PhoneConfigurationInteraction,
 ): Promise<MobileApi> {
   while (true) {
     const value = await askOne(services, invocation, {
@@ -125,7 +130,7 @@ async function askApi(
 
 async function askModel(
   services: PhoneConfigurationServices,
-  invocation: CommandInvocation,
+  invocation: PhoneConfigurationInteraction,
 ): Promise<string> {
   return askOne(services, invocation, {
     id: 'model',
@@ -137,7 +142,7 @@ async function askModel(
 
 async function askApiKey(
   services: PhoneConfigurationServices,
-  invocation: CommandInvocation,
+  invocation: PhoneConfigurationInteraction,
   ref: ReturnType<typeof credentialRef>,
 ): Promise<string> {
   let detail = `请输入 ${ref}。答案不会写入聊天记录或模型上下文；提交后会保存到 Harness 凭据存储。输入时文字仍可见。`
@@ -164,7 +169,7 @@ async function askApiKey(
 export async function configurePhoneModel(
   config: PhoneModelConfiguration,
   services: PhoneConfigurationServices,
-  invocation: CommandInvocation,
+  invocation: PhoneConfigurationInteraction,
 ): Promise<boolean> {
   const baseURL = config.baseURL?.trim()
   const model = config.model?.trim()

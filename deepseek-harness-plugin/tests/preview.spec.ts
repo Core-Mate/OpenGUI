@@ -51,4 +51,38 @@ describe('bounded phone previews', () => {
     expect(peak).toBe(2)
     expect(capture).toHaveBeenCalledTimes(2)
   })
+
+  it('lets one HTTP waiter cancel without aborting a shared device capture', async () => {
+    let release!: () => void
+    const gate = new Promise<void>(resolve => { release = resolve })
+    const source = await png('#224466')
+    const capture = vi.fn(async (_serial: string, signal: AbortSignal) => {
+      await gate
+      signal.throwIfAborted()
+      return source
+    })
+    const preview = new PhonePreview(capture)
+    const cancelled = new AbortController()
+    const kept = new AbortController()
+    const first = preview.read(device, cancelled.signal)
+    const second = preview.read(device, kept.signal)
+
+    cancelled.abort(new Error('tab hidden'))
+    await expect(first).rejects.toThrow('tab hidden')
+    release()
+    await expect(second).resolves.toMatchObject({ etag: expect.any(String) })
+    expect(capture).toHaveBeenCalledTimes(1)
+  })
+
+  it('bounds the encoded preview cache to the 16 most recently used devices', async () => {
+    const source = await png('#667788')
+    const capture = vi.fn(async () => source)
+    const preview = new PhonePreview(capture)
+    const signal = new AbortController().signal
+    for (let index = 0; index < 17; index += 1) {
+      await preview.read({ ...device, id: `device-${index}`, serial: `serial-${index}` }, signal)
+    }
+    await preview.read({ ...device, id: 'device-0', serial: 'serial-0' }, signal)
+    expect(capture).toHaveBeenCalledTimes(18)
+  })
 })

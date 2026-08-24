@@ -1,7 +1,7 @@
 import type { CommandInvocation } from '@deepseek-ai/dsh-commands'
 import type { ContentBlock } from '@deepseek-ai/dsh-llm'
 import { describe, expect, it, vi } from 'vitest'
-import { CoremateTaskCoordinator } from '../src/phone-task.ts'
+import { CoremateTaskCoordinator, OpenGuiTaskManager } from '../src/phone-task.ts'
 
 const invocation = (rawInput: string, signal = new AbortController().signal): CommandInvocation => ({
   commandId: 'command-test' as CommandInvocation['commandId'],
@@ -13,6 +13,44 @@ const invocation = (rawInput: string, signal = new AbortController().signal): Co
 const result = (runId: string, output: ContentBlock[] = [{ type: 'text', text: 'done' }]) => ({ runId, output })
 
 describe('OpenGUI task entry points', () => {
+  it('admits one root task while allowing only explicitly bound nested agents', async () => {
+    const manager = new OpenGuiTaskManager<{ targets: string[] }>()
+    let release!: () => void
+    const gate = new Promise<void>(resolve => { release = resolve })
+    const router = {}
+    const stranger = {}
+    const running = manager.runRoot(invocation('').agent, new AbortController().signal, 'routing', async lease => {
+      lease.bindAgent(router)
+      lease.context = { targets: ['phone-a'] }
+      await gate
+      return 'done'
+    })
+
+    await vi.waitFor(() => expect(manager.state().phase).toBe('routing'))
+    expect(manager.nestedLease(router)?.context).toEqual({ targets: ['phone-a'] })
+    expect(manager.nestedLease(stranger)).toBeUndefined()
+    await expect(manager.runRoot(invocation('').agent, new AbortController().signal, 'running', async () => 'second'))
+      .rejects.toThrow('another OpenGUI task is already running')
+    release()
+    await expect(running).resolves.toBe('done')
+    expect(manager.state()).toEqual({ active: false, phase: 'idle', selectionLocked: false })
+  })
+
+  it('attributes the root task to the actual session rather than the resident agent id', async () => {
+    const manager = new OpenGuiTaskManager()
+    let release!: () => void
+    const gate = new Promise<void>(resolve => { release = resolve })
+    const parent = { id: 'resident-agent', session: { id: 'actual-session' } } as CommandInvocation['agent']
+    const running = manager.runRoot(parent, new AbortController().signal, 'running', async () => {
+      await gate
+      return 'done'
+    })
+    await vi.waitFor(() => expect(manager.state().active).toBe(true))
+    expect(manager.state().ownerSessionId).toBe('actual-session')
+    release()
+    await running
+  })
+
   it('publishes /opengui metadata and forwards trimmed input to the shared runner', async () => {
     const start = vi.fn(async () => result('run-1', [
       { type: 'text', text: 'opened ' },

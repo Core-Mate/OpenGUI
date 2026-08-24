@@ -1,9 +1,8 @@
 import type {
-  ConversationMatch,
   ConversationNodeDefinition,
   ConversationTurnDataMap,
 } from '@deepseek-ai/dsh-client-runtime/client'
-import { parseCoremateSuggestions, type CoremateSuggestion } from '../suggestions.ts'
+import { cleanCoremateSuggestionBlocks, type CoremateSuggestion } from '../suggestions.ts'
 
 interface TurnTailOwnerProps {
   readonly turn: {
@@ -19,6 +18,7 @@ interface CommandContextState {
   readonly name: string
   readonly runSeq: number
   readonly doneSeq?: number
+  readonly doneKind?: 'success' | 'error'
 }
 
 /** Immutable evidence consumed by the turn-tail selector. */
@@ -44,7 +44,7 @@ declare module '@deepseek-ai/dsh-client-runtime/client' {
 interface PromotionTurnState {
   readonly turn: number
   readonly attributed: boolean
-  readonly completed: boolean
+  readonly success: boolean
 }
 
 interface SuggestionTurnState {
@@ -52,23 +52,12 @@ interface SuggestionTurnState {
   readonly items: readonly CoremateSuggestion[]
 }
 
-function assistantText(match: ConversationMatch): string {
-  if (match.event.type !== 'assistant/message') return ''
-  return match.event.data.message.content
-    .map(block => block.type === 'text' ? block.text : '')
-    .join('')
-}
-
 /** Attach validated hidden follow-ups to their owning Turn. */
 export const coremateSuggestionDefinition: ConversationNodeDefinition<SuggestionTurnState> = {
   kind: 'coremate-suggestions',
   match(event) {
     if (event.type !== 'assistant/message') return null
-    const text = event.data.message.content
-      .filter(block => block.type === 'text')
-      .map(block => block.type === 'text' ? block.text : '')
-      .join('')
-    return parseCoremateSuggestions(text).suggestions.length > 0
+    return cleanCoremateSuggestionBlocks(event.data.message.content).suggestions.length > 0
       ? { id: String(event.seq), role: 'start' }
       : null
   },
@@ -76,7 +65,7 @@ export const coremateSuggestionDefinition: ConversationNodeDefinition<Suggestion
     if (match.event.type !== 'assistant/message') throw new Error('OpenGUI suggestions require assistant/message')
     return {
       turn: match.event.data.turn,
-      items: parseCoremateSuggestions(assistantText(match)).suggestions,
+      items: cleanCoremateSuggestionBlocks(match.event.data.message.content).suggestions,
     }
   },
   update(context) {
@@ -93,10 +82,6 @@ export const coremateSuggestionDefinition: ConversationNodeDefinition<Suggestion
   },
 }
 
-function completed(match: ConversationMatch): boolean {
-  return match.event.type === 'turn/end' && match.event.data.reason.kind === 'completed'
-}
-
 /** Track whether the nearest direct command is still running. */
 export const coremateCommandContextDefinition: ConversationNodeDefinition<CommandContextState> = {
   kind: COMMAND_CONTEXT_KIND,
@@ -111,37 +96,41 @@ export const coremateCommandContextDefinition: ConversationNodeDefinition<Comman
   },
   update(context, match) {
     if (match.event.type !== 'command/done') return context.state
-    return { ...context.state, doneSeq: match.event.seq }
+    return { ...context.state, doneSeq: match.event.seq, doneKind: match.event.data.kind }
   },
   publication: () => 'none',
 }
 
-/** Attribute completed parent-chat turns to a live direct /opengui command. */
+/** Publish only the final assistant message named by a successful direct command. */
 export const corematePromotionDefinition: ConversationNodeDefinition<PromotionTurnState> = {
   kind: 'coremate-promotion',
   match(event) {
-    if (event.type === 'turn/start') return { id: String(event.data.turn), role: 'start' }
-    if (event.type === 'turn/end') return { id: String(event.data.turn), role: 'update' }
+    if (event.type === 'assistant/message') return { id: String(event.seq), role: 'start' }
+    if (event.type === 'command/done' && event.data.sourceEventSeq !== undefined) {
+      return { id: String(event.data.sourceEventSeq), role: 'update' }
+    }
     return null
   },
   start(_context, match, reader) {
-    if (match.event.type !== 'turn/start') throw new Error('OpenGUI promotion requires turn/start')
+    if (match.event.type !== 'assistant/message') throw new Error('OpenGUI promotion requires assistant/message')
     const command = reader.previous<CommandContextState>(COMMAND_CONTEXT_KIND)
-    const turnSeq = match.event.seq
+    const messageSeq = match.event.seq
     return {
       turn: match.event.data.turn,
       attributed: command !== undefined && ['opengui', 'coremate'].includes(command.state.name)
-        && command.state.runSeq < turnSeq
-        && (command.state.doneSeq === undefined || turnSeq < command.state.doneSeq),
-      completed: false,
+        && command.state.runSeq < messageSeq
+        && (command.state.doneSeq === undefined || messageSeq < command.state.doneSeq),
+      success: false,
     }
   },
   update(context, match) {
-    return completed(match) ? { ...context.state, completed: true } : context.state
+    return match.event.type === 'command/done'
+      ? { ...context.state, success: match.event.data.kind === 'success' }
+      : context.state
   },
-  publication: match => match.event.type === 'turn/end' ? 'immediate' : 'none',
+  publication: match => match.event.type === 'command/done' ? 'immediate' : 'none',
   buildLocationData(context, scope) {
-    if (scope !== 'turn' || context.state?.attributed !== true || context.state.completed !== true) return null
+    if (scope !== 'turn' || context.state?.attributed !== true || context.state.success !== true) return null
     return {
       kind: 'turn',
       turn: context.state.turn,
