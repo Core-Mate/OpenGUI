@@ -7,6 +7,7 @@
 </p>
 
 <p align="center">
+  <a href="#deepseek-harnessでopenguiを使う"><img src="https://img.shields.io/badge/INSTALL-DEEPSEEK_HARNESS_PLUGIN-6f42c1?style=for-the-badge" alt="DeepSeek Harnessプラグインをインストール"></a>
   <a href="./skills/open-gui-bootstrap/SKILL.md"><img src="https://img.shields.io/badge/BOOTSTRAP-WITH_CLAUDE_OR_CODEX-ffb000?style=for-the-badge" alt="Claude または Codex でブートストラップ"></a>
   <img src="https://img.shields.io/badge/SYSTEM-MULTI_ROLE_OPERATOR-1f6feb?style=for-the-badge" alt="マルチロールオペレーターシステム">
   <img src="https://img.shields.io/badge/TASKS-UP_TO_12_HOURS-cf222e?style=for-the-badge" alt="最大12時間のタスク">
@@ -22,6 +23,11 @@
   OpenGUI は、AI エージェントが実機上の Android アプリ UI を見て、理解し、操作できるようにします。
 </p>
 
+<p align="center">
+  <strong>推奨：DeepSeek HarnessでOpenGUIを直接使えます。</strong><br>
+  Codexに1つのプロンプトを送るだけで、検証済みプラグインのダウンロード、DSHへのインストール、DSHの起動まで進みます。バックエンド一式のデプロイは不要です。
+</p>
+
 ## Demo
 
 <p align="center">
@@ -30,9 +36,44 @@
 
 OpenGUI は実際の Android アプリ UI を読み取り、次のステップを計画し、モバイル操作を実行して、構造化された結果を返します。
 
-## Quick Start
+## DeepSeek HarnessでOpenGUIを使う
 
-OpenGUI を最も早く試す方法は、Claude Code または Codex にブートストラップを任せることです。
+macOSでは、固定バージョンのインストーラーSkillをCodexに実行させる方法が最短です。Node.js 22.19以降または24以降が必要で、互換性のあるDSHバージョンは自動的にインストールされます。次の内容を1つのプロンプトとして送信します：
+
+```text
+Install and run the OpenGUI installer Skill from https://github.com/Core-Mate/OpenGUI/tree/dsh-coremate-mobile-v0.1.5/deepseek-harness-plugin/skills/opengui-coremate-install for my DSH web profile. Only ask me for phone-side authorization and model credentials.
+```
+
+Skillは公開ReleaseのパッケージとチェックサムをダウンロードしてSHA-256を検証し、OpenGUIプラグインだけをインストールします。必要な場合はDSHを起動して開き、既存のプラグインと設定は保持します。DSHがすでに起動していた場合は、一度再起動するとプラグインが読み込まれます。LinuxまたはWindowsでは、[手動パッケージガイド](./deepseek-harness-plugin/README.md#1-download-the-release-package)を使用してください。
+
+インストール後、DSHでワークスペースを追加または選択し、認証済みのAndroidスマートフォンを接続して選択してから、次を送信します：
+
+```text
+@OpenGUI Open Settings and report the Android version
+```
+
+このプラグインは、OpenGUIバックエンド一式を必要とせず、DSHにスマートフォンとブラウザの操作機能を追加します。[ユースケース](./deepseek-harness-plugin/docs/use-cases.md)を確認するか、[v0.1.5リリースパッケージ](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.5)をダウンロードできます。
+
+主なユースケース：
+
+- 許可されたデバイスでのUI自動操作テストと回帰テスト
+- 投稿、メッセージ送信、アカウント変更の前に人が確認するソーシャルメディア管理とリード調査
+- アカウント所有者とゲームのルールが自動化を認めている場合の反復的なゲームテストとゲーム内ワークフロー
+
+GUI操作向けの現在の推奨順：
+
+| 優先度 | モデルファミリー | ガイダンス |
+|---|---|---|
+| 1 | Doubao VLM | ビジュアルGUI操作の第一候補です。 |
+| 2 | Qwen VLM | 実用的な代替候補ですが、一部のソーシャルメディア向けプロンプトは安全ポリシーの影響を受けやすい場合があります。 |
+| 3 | OpenAIのビジョン対応モデル | 利用できますが、スクリーンショットを多用するタスクでは一般にコストが高くなります。 |
+| 4 | Grokのビジョン対応モデル | 現時点では実験的な選択肢です。ツール利用と操作の安定性には、さらに検証が必要です。 |
+
+モデルの提供状況、料金、ポリシーは、バージョンや地域によって異なります。どのプロバイダーを選ぶ場合も、画像入力とツール呼び出しの両方に対応したモデルが必要です。
+
+## OpenGUIスタック一式を実行する
+
+OpenGUIのバックエンドとAndroidクライアント一式を実行する場合は、Claude CodeまたはCodexにブートストラップを任せることができます。
 
 ```text
 Read ./skills/open-gui-bootstrap/SKILL.md and help me run OpenGUI. Only ask me for phone-side actions.
@@ -146,6 +187,7 @@ OpenGUI は、明示的なオーケストレーションレイヤーを持つモ
 - 実行リカバリーと失敗レポートを改善する。
 - Android GUI Agent の信頼性 benchmark タスクを追加する。
 - モデル設定とコスト削減プロファイルのドキュメントを拡充する。
+- OpenGUIの技術スタック一式を自分で運用したくないチーム向けに、ホスト型OpenGUI Agentサービスを提供する。
 
 ## OpenGUI の使い方
 
@@ -297,6 +339,10 @@ flowchart LR
 - [CLAUDE.md](./CLAUDE.md)
 
 ## コミュニティ / サポート
+
+[OpenGUI Discordコミュニティ](https://discord.gg/pqHHw7XgJ3)では、GUIエージェント技術、実際のユースケース、リリース情報について話し合えます。確認済みのWeChatコミュニティへの参加方法は、準備ができ次第ここで公開します。
+
+ホスト型OpenGUI Agentサービスの開始後、コミュニティメンバーはAgentのトライアルクレジットを申請できるようになります。提供数、申請条件、有効期間はサービス開始時に案内します。
 
 特に有用なプロジェクトフィードバック:
 

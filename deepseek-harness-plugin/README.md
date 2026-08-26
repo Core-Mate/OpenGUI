@@ -25,13 +25,13 @@ The examples use the `web` profile and the default `$DSH_HOME=~/.dsh`. Substitut
 
 ### macOS: install with the Codex Skill
 
-Ask Codex to install the repository skill from `skills/opengui-coremate-install`, then invoke `$opengui-coremate-install`. The Skill downloads and verifies the pinned `v0.1.5` package from the public Release, preserves the rest of the `web` profile, and starts DSH only when it is not already running. GitHub login is not required.
+Ask Codex to install the repository skill from [`deepseek-harness-plugin/skills/opengui-coremate-install`](./skills/opengui-coremate-install), then invoke `$opengui-coremate-install`. The Skill downloads and verifies the pinned `v0.1.5` package from the public OpenGUI Release, preserves the rest of the `web` profile, and starts DSH only when it is not already running. GitHub login is not required.
 
 If DSH is already listening on port 3080, the installer leaves that process untouched and reports that a manual restart is required. The manual package flow below remains available on every supported host.
 
 ### 1. Download the release package
 
-Download these files from [GitHub Releases](https://github.com/Core-Mate/Coremate-Mobile-Plugin/releases):
+Download these files from the [public OpenGUI Release](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.5):
 
 - `dsh-coremate-mobile-0.1.5.tgz`
 - `dsh-coremate-mobile-0.1.5.tgz.sha256`
@@ -227,15 +227,17 @@ For profile-specific isolation, you can instead add this to `$DSH_HOME/profiles/
 
 This is an advanced option: a profile patch replaces the target row's entire `config`, and a matching section in `$DSH_HOME/settings.yaml` still has higher precedence. Never put the API key in the patch.
 
-## Install from Git (development)
+## Install from a source checkout (development)
 
-Production installations should pin a release tag or commit SHA instead of following the movable `main` branch:
+Production installations should use the prebuilt release package above. For development, clone the public OpenGUI release tag and install the plugin directory:
 
 ```sh
-dsh plugin --profile web add 'git+https://github.com/Core-Mate/Coremate-Mobile-Plugin.git#v0.1.5'
+git clone --branch dsh-coremate-mobile-v0.1.5 --depth 1 https://github.com/Core-Mate/OpenGUI.git
+cd OpenGUI/deepseek-harness-plugin
+dsh plugin --profile web add "$(pwd)"
 ```
 
-The public repository can be fetched without GitHub authentication. Git installation runs the package's `prepare` build, so the profile allowlist must also contain `dsh-coremate-mobile: true`. Only grant installation-script permission to reviewed, pinned source. See the [developer integration and verification record](docs/research/deepseek-harness-plugin-integration.md) for the full semantics.
+The public repository can be fetched without GitHub authentication. Source installation runs the package's `prepare` build, so the profile allowlist must also contain `dsh-coremate-mobile: true`. Only grant installation-script permission to reviewed, pinned source. See the [developer integration and verification record](docs/research/deepseek-harness-plugin-integration.md) for the full semantics.
 
 ```yaml
 allowBuilds:

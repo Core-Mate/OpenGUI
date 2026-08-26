@@ -7,6 +7,7 @@
 </p>
 
 <p align="center">
+  <a href="#在-deepseek-harness-中使用-opengui"><img src="https://img.shields.io/badge/INSTALL-DEEPSEEK_HARNESS_PLUGIN-6f42c1?style=for-the-badge" alt="安装 DeepSeek Harness 插件"></a>
   <a href="./skills/open-gui-bootstrap/SKILL.md"><img src="https://img.shields.io/badge/BOOTSTRAP-WITH_CLAUDE_OR_CODEX-ffb000?style=for-the-badge" alt="Bootstrap with Claude or Codex"></a>
   <img src="https://img.shields.io/badge/SYSTEM-MULTI_ROLE_OPERATOR-1f6feb?style=for-the-badge" alt="Multi-role operator system">
   <img src="https://img.shields.io/badge/TASKS-UP_TO_12_HOURS-cf222e?style=for-the-badge" alt="Tasks up to 12 hours">
@@ -22,6 +23,11 @@
   OpenGUI 让 AI Agent 能够看懂、理解并操作真实 Android 设备上的 App 界面。
 </p>
 
+<p align="center">
+  <strong>推荐：直接在 DeepSeek Harness 中使用 OpenGUI。</strong><br>
+  只需把一段话发给 Codex，它会下载并校验插件、安装到 DSH，再打开 DSH，不需要先部署完整后端。
+</p>
+
 ## Demo
 
 <p align="center">
@@ -30,9 +36,44 @@
 
 OpenGUI 会读取真实 Android App 界面，规划下一步操作，执行移动端动作，并返回结构化结果。
 
-## Quick Start
+## 在 DeepSeek Harness 中使用 OpenGUI
 
-最快的试用方式，是让 Claude Code 或 Codex 帮你完成启动。
+macOS 上最短的路径，是让 Codex 运行固定版本的安装 Skill。环境需要 Node.js 22.19+ 或 24+，兼容的 DSH 版本会自动安装。把下面整段作为一条消息发给 Codex：
+
+```text
+请安装并运行这个 OpenGUI 安装 Skill：https://github.com/Core-Mate/OpenGUI/tree/dsh-coremate-mobile-v0.1.5/deepseek-harness-plugin/skills/opengui-coremate-install，把插件安装到我的 DSH web profile。只在需要手机端授权或模型凭据时询问我。
+```
+
+Skill 会下载公开 Release 的插件包和校验文件，验证 SHA-256，只安装 OpenGUI 插件，在需要时启动并打开 DSH，同时保留其他 DSH 插件和设置。如果 DSH 原本正在运行，重启一次即可加载插件。Linux 或 Windows 用户可按[手动安装说明](./deepseek-harness-plugin/README.zh.md#1-下载发布包)操作。
+
+安装完成后，在 DSH 中添加或选择工作区，连接并选择已授权的 Android 手机，然后发送：
+
+```text
+@OpenGUI 打开设置并报告 Android 版本
+```
+
+插件可以直接为 DSH 增加手机与浏览器操作能力，不需要部署完整的 OpenGUI 后端。你还可以查看更多[使用场景](./deepseek-harness-plugin/docs/use-cases.zh.md)，或下载 [v0.1.5 安装包](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.5)。
+
+适合的使用场景包括：
+
+- 在已授权设备上执行自动化操作测试和回归测试
+- 管理社媒账号和挖掘线索，在发布、私信或修改账号前由人工确认
+- 在账号所有者和游戏规则允许自动化的前提下，执行重复性游戏测试和游戏内流程
+
+针对 GUI 操作，我们目前的模型推荐顺序是：
+
+| 优先级 | 模型系列 | 使用建议 |
+|---|---|---|
+| 1 | 豆包 VLM | 视觉 GUI 操作的首选。 |
+| 2 | 千问 VLM | 可作为备选，但部分社媒任务更容易受到模型安全策略限制。 |
+| 3 | OpenAI 视觉模型 | 能力可用，但截图密集型任务的成本通常更高。 |
+| 4 | Grok 视觉模型 | 目前作为实验选项，工具调用和操作稳定性还需要更多验证。 |
+
+具体模型的可用性、价格和策略会随版本及地区变化。无论选择哪家模型，都需要同时支持图片输入和工具调用。
+
+## 运行完整 OpenGUI 技术栈
+
+如果要运行完整的 OpenGUI 后端和 Android 客户端，可以让 Claude Code 或 Codex 帮你完成启动。
 
 ```text
 Read ./skills/open-gui-bootstrap/SKILL.md and help me run OpenGUI. Only ask me for phone-side actions.
@@ -147,6 +188,7 @@ OpenGUI 采用的是一套分层清晰的移动 operator system。
 - 提升执行恢复和失败反馈能力。
 - 增加 Android GUI Agent 可靠性 benchmark 任务。
 - 完善模型配置和省钱混用方案文档。
+- 推出托管版 OpenGUI Agent 服务，让不想自行部署完整技术栈的团队也能使用 GUI 操作能力。
 
 ## 怎么使用 OpenGUI
 
@@ -297,6 +339,10 @@ flowchart LR
 - [CLAUDE.md](./CLAUDE.md)
 
 ## 社区 / 支持
+
+欢迎加入 [OpenGUI Discord 社区](https://discord.gg/pqHHw7XgJ3)，讨论 GUI Agent 技术方向、分享真实使用场景并获取版本动态。经过验证的微信群入口准备好后，也会在这里公开。
+
+托管版 OpenGUI Agent 服务开放后，社区成员还可以申请 Agent 体验额度。具体名额、领取条件和有效期将随服务一同公布。
 
 最有价值的项目反馈包括：
 

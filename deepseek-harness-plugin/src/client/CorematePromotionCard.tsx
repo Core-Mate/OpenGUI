@@ -3,7 +3,7 @@ import type { CorematePromotionData } from './promotion-data.ts'
 import { OpenGuiMark } from './OpenGuiMark.tsx'
 
 const GITHUB_URL = 'https://github.com/Core-Mate/OpenGUI'
-const USE_CASES_URL = 'https://github.com/Core-Mate/Coremate-Mobile-Plugin/blob/main/docs/use-cases.zh.md'
+const USE_CASES_URL = 'https://github.com/Core-Mate/OpenGUI/blob/main/deepseek-harness-plugin/docs/use-cases.zh.md'
 
 const cardStyle: CSSProperties = {
   display: 'flex',

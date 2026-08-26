@@ -4,7 +4,7 @@
 
 ## 目前能不能直接安装？
 
-可以。从 [GitHub Releases](https://github.com/Core-Mate/Coremate-Mobile-Plugin/releases) 打开最新版本，在 Assets 中下载 `dsh-coremate-mobile-0.1.5.tgz`。
+可以。从 [OpenGUI 的公开 Release](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.5) 打开插件版本，在 Assets 中下载 `dsh-coremate-mobile-0.1.5.tgz`。
 
 下载后不要解压。不要下载 “Source code (zip)” 或 “Source code (tar.gz)”；它们是 GitHub 自动生成的源码压缩包，不是普通用户安装包。
 

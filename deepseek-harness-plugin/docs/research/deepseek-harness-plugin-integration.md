@@ -107,24 +107,19 @@ pnpm dsh plugin --profile web add ../Deepseek-ai
 
 本地 checkout 安装不需要授权插件自己的 `prepare`；但必须保证 checkout 中已有可加载的 `lib/index.js`。如果 pnpm 同样要求处理 `@google/genai` 和 `protobufjs`，沿用方案一的两个 `false` 决定。相对路径锚定、初始化和安装后 bundle 对账由[官方 CLI 插件实现](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.1.0-rc.7/apps/cli/src/plugin.ts)定义；本地 checkout 无需允许插件自己的构建脚本由[官方 CLI 行为参考](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.1.0-rc.7/apps/cli/reference/README.zh.md#插件管理)明确说明。
 
-## 方案三：直接从 Git 安装
+## 方案三：从公开 tag 的源码 checkout 安装
 
-推荐固定 release tag 或 commit SHA，不要让生产安装跟随可移动的 `main`：
-
-```sh
-cd /Users/panda/Documents/Projects/Deepseek-harness
-pnpm dsh plugin --profile web add \
-  'git+https://github.com/Core-Mate/Coremate-Mobile-Plugin.git#<commit-sha>'
-```
-
-私有仓库也可以使用已配置的 SSH：
+插件迁入 OpenGUI monorepo 后，不应把仓库根目录当作插件包直接交给 DSH。开发验证应固定插件 release tag，checkout 后安装其中的 `deepseek-harness-plugin` 目录：
 
 ```sh
-pnpm dsh plugin --profile web add \
-  'git+ssh://git@github.com/Core-Mate/Coremate-Mobile-Plugin.git#<commit-sha>'
+git clone --branch dsh-coremate-mobile-v0.1.5 --depth 1 \
+  https://github.com/Core-Mate/OpenGUI.git
+cd OpenGUI/deepseek-harness-plugin
+pnpm build
+dsh plugin --profile web add "$(pwd)"
 ```
 
-Git 依赖取得的是源码。pnpm 不会因为包有 `build` 脚本就主动构建；当前插件依靠 `prepare: pnpm run build` 生成 `lib/`。pnpm 10 及以上默认阻止 Git 依赖的 `prepare`，所以首次 `add` 预期可能失败。失败后，把 pnpm 输出的**确切包键**合并到这个 profile 的工作区文件，不要覆盖原有字段：
+源码 checkout 不包含预先生成的 `lib/`，所以应先完成本地构建。若改用会触发 `prepare` 的安装方式，pnpm 10 及以上默认可能阻止安装期脚本。失败后，把 pnpm 输出的**确切包键**合并到这个 profile 的工作区文件，不要覆盖原有字段：
 
 ```yaml
 # $DSH_HOME/profiles/web/pnpm-workspace.yaml
@@ -140,9 +135,9 @@ allowBuilds:
   protobufjs: false
 ```
 
-然后原样重试 `add`。`dsh-coremate-mobile: true` 意味着在 agent 沙箱之外以当前用户身份运行仓库的安装期代码；只应对已审查并固定到 SHA 的源码授权。两个 `false` 则明确拒绝无关传递依赖的安装脚本。官方教程还指出，预构建 npm 包或 tarball 不需要允许插件自己的构建脚本。[官方 Git 安装与构建授权说明](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.1.0-rc.7/docs/user/develop/basic/publish.zh.md#从-github-安装构建脚本这道坎)。
+然后原样重试 `add`。`dsh-coremate-mobile: true` 意味着在 agent 沙箱之外以当前用户身份运行仓库的安装期代码；只应对已审查并固定版本的源码授权。两个 `false` 则明确拒绝无关传递依赖的安装脚本。官方教程还指出，预构建 npm 包或 tarball 不需要允许插件自己的构建脚本。[官方 Git 安装与构建授权说明](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.1.0-rc.7/docs/user/develop/basic/publish.zh.md#从-github-安装构建脚本这道坎)。
 
-Git 安装成功前必须现场确认以下事实：远端确实包含指定 commit/tag、当前机器能够认证私有仓库、安装期 `prepare` 能在没有相邻 Harness 源码的临时环境中完成。源码与 manifest 能证明设计意图，但不能替代这三项实时检查。
+源码安装成功前必须现场确认以下事实：远端确实包含指定 tag、本地构建能在没有相邻 Harness 源码的临时环境中完成、安装后的 profile 能实际装载插件。源码与 manifest 能证明设计意图，但不能替代这三项实时检查。
 
 ## 配置、settings 与凭据
 

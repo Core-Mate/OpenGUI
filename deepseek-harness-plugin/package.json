@@ -4,7 +4,8 @@
   "description": "Standalone DeepSeek Harness plugin for Android phone and managed local-browser control",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Core-Mate/Coremate-Mobile-Plugin.git"
+    "url": "git+https://github.com/Core-Mate/OpenGUI.git",
+    "directory": "deepseek-harness-plugin"
   },
   "type": "module",
   "main": "lib/index.js",
@@ -63,11 +64,11 @@
     }
   },
   "dependencies": {
-    "@deepseek-ai/schemastery": "^3.18.1",
-    "@earendil-works/pi-ai": "^0.82.1",
+    "@deepseek-ai/schemastery": "3.18.1",
+    "@earendil-works/pi-ai": "0.82.1",
     "puppeteer-core": "25.8.0",
-    "sharp": "^0.35.3",
-    "tar": "^7.5.22",
+    "sharp": "0.35.3",
+    "tar": "7.5.22",
     "yauzl": "3.4.0"
   },
   "peerDependencies": {
