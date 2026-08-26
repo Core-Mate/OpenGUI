@@ -1,3 +1,7 @@
+<p align="center">
+  <strong>语言切换：</strong><a href="./codex-remote-control.md">English</a> | <a href="./codex-remote-control.zh-CN.md">简体中文</a> | <a href="./codex-remote-control.ja-JP.md">日本語</a>
+</p>
+
 # 用 Codex 控制 Android 手机
 
 OpenGUI 让 Codex / Claude Code 可以把自然语言任务交给一台真实 Android 手机执行。Codex 不直接点坐标，也不直接处理 Android socket 协议；它通过 OpenGUI 后端创建任务，后端再把执行请求交给在线的 Android client。
@@ -35,7 +39,7 @@ flowchart LR
 本地手机控制应运行在连接 Android 手机的开发机上。这个环境需要能运行 Node.js 22、pnpm、Docker、Java 和 adb，并且已经拿到 OpenGUI 仓库：
 
 ```text
-https://github.com/Core-Mate/open-gui
+https://github.com/Core-Mate/OpenGUI
 ```
 
 可运行的 OpenGUI 仓库包含：
@@ -111,7 +115,7 @@ OpenGUI 的执行状态保存在后端。Android client 上传截图和设备状
 
 ## 故障处理
 
-仓库路径不对时，检查当前目录或子目录是否存在 `server/package.json` 和 `client/start.sh`。如果不存在，使用 `https://github.com/Core-Mate/open-gui` 获取可运行仓库。
+仓库路径不对时，检查当前目录或子目录是否存在 `server/package.json` 和 `client/start.sh`。如果不存在，使用 `https://github.com/Core-Mate/OpenGUI` 获取可运行仓库。
 
 `devices` 返回空时，检查 Android client 是否连上 backend：backend 是否运行，手机是否打开 OpenGUI App，USB debugging 是否授权，`adb reverse tcp:7777 tcp:7777` 是否执行，Accessibility Service 和悬浮窗权限是否开启。
 

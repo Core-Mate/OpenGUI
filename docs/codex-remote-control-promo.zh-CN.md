@@ -21,4 +21,4 @@
 读一下 ./skills/open-gui-bootstrap/SKILL.md，然后帮我把 OpenGUI 跑起来，只在必须时告诉我手机上要做什么。
 ```
 
-技术细节：[codex-remote-control.zh-CN.md](./docs/codex-remote-control.zh-CN.md)
+技术细节：[codex-remote-control.zh-CN.md](./codex-remote-control.zh-CN.md)

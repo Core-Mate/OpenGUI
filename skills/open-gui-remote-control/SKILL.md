@@ -49,7 +49,7 @@ If the user asks to install or bootstrap OpenGUI from scratch, use `open-gui-boo
 OpenGUI's runnable source checkout is:
 
 ```text
-https://github.com/Core-Mate/open-gui
+https://github.com/Core-Mate/OpenGUI
 ```
 
 The checkout must contain both:
@@ -91,8 +91,8 @@ find . -maxdepth 3 -type f -path '*/client/start.sh' -print
 If no runnable checkout exists and the user wants the agent to set it up locally, clone the public repository:
 
 ```bash
-git clone https://github.com/Core-Mate/open-gui.git
-cd open-gui
+git clone https://github.com/Core-Mate/OpenGUI.git
+cd OpenGUI
 ```
 
 If the destination already exists, do not overwrite it. Enter the existing directory, inspect `git status`, and pull only when the user asked for the latest code or when the checkout is clean enough to update safely.
@@ -181,7 +181,7 @@ Base URL priority:
 
 ### 1. Obtain the runnable checkout
 
-Find or clone `https://github.com/Core-Mate/open-gui`.
+Find or clone `https://github.com/Core-Mate/OpenGUI`.
 
 Then work from the repository root that contains both:
 
