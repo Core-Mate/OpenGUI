@@ -53,6 +53,34 @@ describe('coremate-mobile ADB policy', () => {
     })).toEqual(['shell', 'input', 'tap', '990', '155'])
   })
 
+  it('maps M153 model coordinates from the bounded screenshot back to the device', () => {
+    expect(actionCommand({
+      action: 'tap',
+      observationId: ObservationId('m153-observation'),
+      targetBBox: { left: 440, top: 990, right: 484, bottom: 1_058 },
+    }, {
+      width: 1_264,
+      height: 2_800,
+      screenshotWidth: 925,
+      screenshotHeight: 2_048,
+    })).toEqual(['shell', 'input', 'tap', '631', '1400'])
+
+    expect(actionCommand({
+      action: 'swipe',
+      observationId: ObservationId('m153-observation'),
+      x1: 462,
+      y1: 1_536,
+      x2: 462,
+      y2: 512,
+      durationMs: 300,
+    }, {
+      width: 1_264,
+      height: 2_800,
+      screenshotWidth: 925,
+      screenshotHeight: 2_048,
+    })).toEqual(['shell', 'input', 'swipe', '631', '2100', '631', '700', '300'])
+  })
+
   it('does not impose a fixed delay after every device mutation', () => {
     expect(Config({})).not.toHaveProperty('settleDelayMs')
   })

@@ -65,6 +65,16 @@ describe('standalone DeepSeek Harness bundle', () => {
     expect(clientSource).not.toContain("'shell.overlay'")
   })
 
+  it('prepares the model before waiting for an explicit phone selection', async () => {
+    const hostSource = await readFile(new URL('src/index.ts', root), 'utf8')
+    const prepareIndex = hostSource.indexOf('const route = await prepareTask(interaction)')
+    const deviceIndex = hostSource.indexOf('const targets = await waitForSelectedPhone(interaction)')
+
+    expect(prepareIndex).toBeGreaterThan(-1)
+    expect(deviceIndex).toBeGreaterThan(-1)
+    expect(prepareIndex).toBeLessThan(deviceIndex)
+  })
+
   it('keeps the stop glyph visible independently of the host foreground color', async () => {
     const stopButtonSource = await readFile(new URL('src/client/TaskStopButton.tsx', root), 'utf8')
 

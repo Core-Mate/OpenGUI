@@ -120,7 +120,7 @@ describe('OpenGUI task entry points', () => {
     expect(start).toHaveBeenCalledWith('open settings', call.agent, expect.any(AbortSignal), 'parent-chat', route)
   })
 
-  it('waits for a phone before resolving the model and locks selection only afterwards', async () => {
+  it('resolves the model before waiting for a phone and locks selection only afterwards', async () => {
     let allowPhone!: () => void
     const phoneReady = new Promise<void>(resolve => { allowPhone = resolve })
     const order: string[] = []
@@ -139,16 +139,16 @@ describe('OpenGUI task entry points', () => {
     })
     const running = coordinator.command(preflight, prepare).handler(invocation('检查手机'))
 
-    await vi.waitFor(() => { expect(preflight).toHaveBeenCalledTimes(1) })
+    await vi.waitFor(() => { expect(prepare).toHaveBeenCalledTimes(1) })
     expect(coordinator.state()).toEqual({ active: true, phase: 'waiting-for-device', selectionLocked: false, ownerSessionId: 'session-owner' })
-    expect(prepare).not.toHaveBeenCalled()
+    expect(preflight).toHaveBeenCalledTimes(1)
     allowPhone()
     await expect(running).resolves.toEqual({ kind: 'success', text: 'done' })
-    expect(order).toEqual(['preflight', 'prepare', 'start'])
+    expect(order).toEqual(['prepare', 'preflight', 'start'])
     expect(coordinator.state()).toEqual({ active: false, phase: 'idle', selectionLocked: false })
   })
 
-  it('can cancel while waiting for a phone without resolving a model or starting work', async () => {
+  it('can cancel while waiting for a phone after resolving the model without starting work', async () => {
     const prepare = vi.fn(async () => ({ provider: 'current', model: 'vision' }))
     const start = vi.fn(async () => result('unused'))
     const coordinator = new CoremateTaskCoordinator(start)
@@ -160,7 +160,7 @@ describe('OpenGUI task entry points', () => {
     await vi.waitFor(() => { expect(coordinator.state().phase).toBe('waiting-for-device') })
     expect(coordinator.cancel()).toBe(true)
     await expect(running).resolves.toEqual({ kind: 'error', text: 'coremate-mobile: OpenGUI task stopped by user' })
-    expect(prepare).not.toHaveBeenCalled()
+    expect(prepare).toHaveBeenCalledTimes(1)
     expect(start).not.toHaveBeenCalled()
   })
 

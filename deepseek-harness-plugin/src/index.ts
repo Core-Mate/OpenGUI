@@ -764,9 +764,9 @@ export function apply(ctx: Context, baseConfig: Config): void {
     interaction: TaskInteraction,
     operation: (lease: OpenGuiTaskLease<OpenGuiExecutionContext>) => Promise<CoremateTaskResult>,
   ): Promise<CoremateTaskResult> => tasks.runRoot<CoremateTaskResult>(interaction.agent, interaction.signal, 'waiting-for-device', async lease => {
+    const route = await prepareTask(interaction)
     const targets = await waitForSelectedPhone(interaction)
     lease.setPhase('routing')
-    const route = await prepareTask(interaction)
     lease.context = { targets, route }
     lease.setPhase('running')
     try {

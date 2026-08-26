@@ -177,7 +177,7 @@ Keep the phone unlocked and authorized for USB debugging, then send:
 /opengui Open Settings and report the Android version
 ```
 
-The native **OpenGUI** tab owns phone selection and status. One authorized phone is selected automatically. With multiple phones, check any subset in that workbench before sending `/opengui` or `@OpenGUI`. A non-empty task pauses before model routing until a phone is ready. Device selection remains editable while waiting, then locks after detection until the whole batch finishes.
+The native **OpenGUI** tab owns phone selection and status. One authorized phone is selected automatically. With multiple phones, check any subset in that workbench before sending `/opengui` or `@OpenGUI`. A non-empty task resolves the current-model choice or dedicated fallback setup before it waits for a phone, but it sends no provider request until the selected-device snapshot is ready. Device selection remains editable while waiting, then locks after detection until the whole batch finishes.
 
 The native **OpenGUI** tab is a full-width device wall. It renders every visible phone in Host order and appends one connection guide, without reserving empty slots. Connected phones expand automatically into a complete, low-latency H.264 view while the tab, card, and page remain visible. First use asks before downloading and verifying the pinned scrcpy server; unsupported browsers or stream failures fall back to an uncropped JPEG preview. Each phone can also be opened in an optional independent scrcpy window.
 
@@ -286,6 +286,7 @@ If you used a profile patch, also remove its `coremate-mobile` row. Leave `[]` w
 - Phone text accepts up to 500 Unicode characters. Safe ASCII uses `adb input text`; Chinese, emoji, and other Unicode text uses scrcpy's standard UTF-8 clipboard control message and must receive the matching device ACK. This is independent of the phone vendor and active input method, and never silently falls back to simulated keyboard typing.
 - `browser_control` exposes no arbitrary CDP, JavaScript execution, filesystem access, or non-HTTP(S) URL. Page mutations require the latest observation.
 - The current DSH route is proxied without copying credentials. Provider requests keep tool schemas, cancellation, streaming, and at most the latest phone screenshot.
+- Model-facing phone screenshots are JPEG quality 65 with preserved aspect ratio and a maximum 2048px long edge. Smaller frames are never enlarged; tap and swipe coordinates are mapped from that bounded screenshot back to the Android logical display size.
 - A capability failure never automatically retries a task that may already have caused phone or browser side effects.
 - Direct `/opengui` results are text-only; screenshots remain in the phone child session.
 - Native mirroring is view-only and opens only on the graphical computer running Harness; a headless Host cannot display the window.

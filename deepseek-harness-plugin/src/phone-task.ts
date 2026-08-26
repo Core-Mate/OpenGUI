@@ -60,7 +60,7 @@ export type CoremateTaskStart = (
 /** Resolve the model route before a non-empty direct command starts. */
 export type CoremateTaskPrepare = (invocation: CommandInvocation) => Promise<AgentOptions>
 
-/** Pause a non-empty command until its external prerequisites are ready. */
+/** Pause a non-empty command until its external device prerequisites are ready. */
 export type CoremateTaskPreflight = (invocation: CommandInvocation, signal: AbortSignal) => Promise<void>
 
 /** Convert an inherited-model capability failure into a safe next action. */
@@ -145,9 +145,9 @@ export class CoremateTaskCoordinator {
         if (task.length === 0) return { kind: 'success', text: OPENGUI_USAGE }
         try {
           const result = await this.tasks.runRoot(invocation.agent, invocation.signal, 'waiting-for-device', async lease => {
+            const agentOptions = await prepare?.({ ...invocation, signal: lease.signal })
             await preflight?.(invocation, lease.signal)
             lease.setPhase('routing')
-            const agentOptions = await prepare?.({ ...invocation, signal: lease.signal })
             lease.setPhase('running')
             try {
               return await this.start(task, invocation.agent, lease.signal, 'parent-chat', agentOptions)
