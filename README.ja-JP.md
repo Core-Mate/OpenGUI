@@ -40,7 +40,7 @@ Read ./skills/open-gui-bootstrap/SKILL.md and help me run OpenGUI. Only ask me f
 
 必要なもの:
 
-- Android スマートフォンまたはエミュレーター
+- Android 11（API 30）以降のスマートフォンまたはエミュレーター
 - USB デバッグの有効化
 - AccessibilityService の有効化
 - 実際のタスク実行に使うモデル API キー
@@ -131,7 +131,7 @@ OpenGUI は、明示的なオーケストレーションレイヤーを持つモ
 
 ## 現在の制限
 
-- Android 実機またはエミュレーターが必要です。
+- Android 11（API 30）以降の実機またはエミュレーターが必要です。
 - USB デバッグと AccessibilityService 権限が必要です。
 - 実行品質は、モデル、アプリ UI、ネットワーク状態、タスクの長さに依存します。
 - 現時点では OS レベルの常駐アシスタントではありません。タスクは手動、または設定済みのディスパッチ経路から起動します。

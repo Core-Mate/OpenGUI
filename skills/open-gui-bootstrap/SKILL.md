@@ -158,6 +158,7 @@ Expected behavior:
 
 - checks `adb` and Java
 - verifies a device is connected
+- installs only on Android 11 (API 30) or newer, matching the app's minimum SDK
 - runs `adb reverse tcp:7777 tcp:7777`
 - builds the debug APK
 - installs it
