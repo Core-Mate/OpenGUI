@@ -92,6 +92,12 @@ pnpm opengui -- do "現在の Android 画面を確認し、表示内容を簡潔
 pnpm opengui -- status <executionId> --json
 ```
 
+`do` のレスポンスには `executionId` が含まれます。実行中のタスクを停止できるように、この値を控えておいてください：
+
+```bash
+pnpm opengui -- cancel <executionId> --json
+```
+
 複数の端末がオンラインの場合は、最初に一覧を取得し、対象端末を指定します。
 
 ```bash

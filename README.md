@@ -66,6 +66,12 @@ pnpm opengui -- devices --json
 pnpm opengui -- do "Observe the current Android screen and summarize what you see" --json
 ```
 
+The task response includes an `executionId`. Keep it so you can stop the active task:
+
+```bash
+pnpm opengui -- cancel <executionId> --json
+```
+
 Manual setup guide: [`docs/get-started.md`](./docs/get-started.md).
 
 ## Recent Updates
@@ -171,6 +177,7 @@ cd server
 pnpm opengui -- devices --json
 pnpm opengui -- do "Observe the current Android screen and summarize what you see" --json
 pnpm opengui -- status <executionId> --json
+pnpm opengui -- cancel <executionId> --json
 ```
 
 Recommended profiles:

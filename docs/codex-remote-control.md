@@ -92,6 +92,12 @@ pnpm opengui -- do "Observe the current Android screen, briefly describe what yo
 pnpm opengui -- status <executionId> --json
 ```
 
+The `do` response includes an `executionId`. Keep it so you can stop the active task:
+
+```bash
+pnpm opengui -- cancel <executionId> --json
+```
+
 When multiple devices are online, list them first and target a specific device:
 
 ```bash

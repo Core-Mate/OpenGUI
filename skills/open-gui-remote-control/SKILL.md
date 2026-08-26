@@ -258,6 +258,12 @@ pnpm opengui -- run <taskId> --device <deviceId> --json
 
 Capture `executionId` from the response.
 
+Before continuing, make sure the user knows that the active execution can be stopped with:
+
+```bash
+pnpm opengui -- cancel <executionId> --json
+```
+
 ### 6. Poll status
 
 Poll until the execution reaches a terminal state:

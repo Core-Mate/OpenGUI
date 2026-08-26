@@ -65,6 +65,12 @@ pnpm opengui -- devices --json
 pnpm opengui -- do "观察当前手机屏幕，简要描述你看到了什么，然后结束" --json
 ```
 
+任务响应中会返回 `executionId`。请保留它，以便停止正在执行的任务：
+
+```bash
+pnpm opengui -- cancel <executionId> --json
+```
+
 手动安装指南：[`docs/get-started.md`](./docs/get-started.md)。
 
 ## 近期更新
@@ -169,6 +175,7 @@ cd server
 pnpm opengui -- devices --json
 pnpm opengui -- do "观察当前手机屏幕，简要描述你看到了什么，然后结束" --json
 pnpm opengui -- status <executionId> --json
+pnpm opengui -- cancel <executionId> --json
 ```
 
 推荐配置：
