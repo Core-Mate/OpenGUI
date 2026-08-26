@@ -92,6 +92,12 @@ pnpm opengui -- do "观察当前手机屏幕，简要描述你看到了什么，
 pnpm opengui -- status <executionId> --json
 ```
 
+`do` 的响应中会返回 `executionId`。请保留它，以便停止正在执行的任务：
+
+```bash
+pnpm opengui -- cancel <executionId> --json
+```
+
 多台设备在线时，先读取设备列表，再指定目标设备：
 
 ```bash

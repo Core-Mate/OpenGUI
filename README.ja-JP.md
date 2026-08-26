@@ -65,6 +65,12 @@ pnpm opengui -- devices --json
 pnpm opengui -- do "Observe the current Android screen and summarize what you see" --json
 ```
 
+タスクのレスポンスには `executionId` が含まれます。実行中のタスクを停止できるように、この値を控えておいてください：
+
+```bash
+pnpm opengui -- cancel <executionId> --json
+```
+
 手動セットアップガイド: [`docs/get-started.md`](./docs/get-started.md)
 
 ## 最近の更新
@@ -168,6 +174,7 @@ cd server
 pnpm opengui -- devices --json
 pnpm opengui -- do "Observe the current Android screen and summarize what you see" --json
 pnpm opengui -- status <executionId> --json
+pnpm opengui -- cancel <executionId> --json
 ```
 
 推奨プロファイル:
