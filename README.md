@@ -8,6 +8,7 @@
 </p>
 
 <p align="center">
+  <a href="#use-opengui-in-deepseek-harness"><img src="https://img.shields.io/badge/INSTALL-DEEPSEEK_HARNESS_PLUGIN-6f42c1?style=for-the-badge" alt="Install the DeepSeek Harness plugin"></a>
   <a href="./skills/open-gui-bootstrap/SKILL.md"><img src="https://img.shields.io/badge/BOOTSTRAP-WITH_CLAUDE_OR_CODEX-ffb000?style=for-the-badge" alt="Bootstrap with Claude or Codex"></a>
   <img src="https://img.shields.io/badge/SYSTEM-MULTI_ROLE_OPERATOR-1f6feb?style=for-the-badge" alt="Multi-role operator system">
   <img src="https://img.shields.io/badge/TASKS-UP_TO_12_HOURS-cf222e?style=for-the-badge" alt="Tasks up to 12 hours">
@@ -23,6 +24,11 @@
   OpenGUI helps AI agents see, understand, and operate Android app interfaces on real devices.
 </p>
 
+<p align="center">
+  <strong>Recommended: use OpenGUI directly in DeepSeek Harness.</strong><br>
+  Paste one prompt into Codex. It downloads the verified plugin, installs it into DSH, and opens DSH. No full backend deployment is required.
+</p>
+
 ## Demo
 
 <p align="center">
@@ -31,9 +37,44 @@
 
 OpenGUI reads a real Android app UI, plans the next step, takes mobile actions, and returns structured results.
 
-## Quick Start
+## Use OpenGUI in DeepSeek Harness
 
-The fastest way to try OpenGUI is to let Claude Code or Codex bootstrap it for you.
+The shortest path on macOS is to let Codex run the pinned installer Skill. It requires Node.js 22.19+ or 24+ and installs the compatible DSH version automatically. Paste this as one prompt:
+
+```text
+Install and run the OpenGUI installer Skill from https://github.com/Core-Mate/OpenGUI/tree/dsh-coremate-mobile-v0.1.5/deepseek-harness-plugin/skills/opengui-coremate-install for my DSH web profile. Only ask me for phone-side authorization and model credentials.
+```
+
+The Skill downloads the public release package and checksum, verifies SHA-256, installs only the OpenGUI plugin, starts DSH when needed, and opens DSH. It preserves unrelated DSH plugins and settings. If DSH was already running, restart it once to load the plugin. For Linux or Windows, use the [manual package guide](./deepseek-harness-plugin/README.md#1-download-the-release-package).
+
+After installation, add or select a DSH workspace, connect and select an authorized Android phone, then send:
+
+```text
+@OpenGUI Open Settings and report the Android version
+```
+
+The plugin adds phone and browser operation to DSH without requiring the full OpenGUI backend stack. See more [use cases](./deepseek-harness-plugin/docs/use-cases.md) or download the [v0.1.5 release package](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.5).
+
+Good fits include:
+
+- automated UI operation and regression testing on authorized devices
+- social media management and lead research, with human confirmation before publishing, messaging, or account changes
+- repetitive game testing and in-game workflows where the account owner and game rules permit automation
+
+For GUI execution, our current recommendation order is:
+
+| Priority | Model family | Guidance |
+|---|---|---|
+| 1 | Doubao VLM | Recommended first for visual GUI execution. |
+| 2 | Qwen VLM | A practical alternative, but some social media prompts may be more sensitive to model safety policies. |
+| 3 | OpenAI vision-capable models | Capable, but generally the higher-cost option for screenshot-heavy tasks. |
+| 4 | Grok vision-capable models | Experimental for this workflow; tool use and action reliability still need more validation. |
+
+Model availability, pricing, and policy behavior vary by version and region. Whichever provider you choose, the model must support both image input and tool calling.
+
+## Run the Full OpenGUI Stack
+
+To run the full OpenGUI backend and Android client, let Claude Code or Codex bootstrap it for you.
 
 ```text
 Read ./skills/open-gui-bootstrap/SKILL.md and help me run OpenGUI. Only ask me for phone-side actions.
@@ -149,6 +190,7 @@ The source code currently exposes these pieces:
 - Improve execution recovery and failure reporting.
 - Add benchmark tasks for Android GUI agent reliability.
 - Expand docs for model configuration and cost-saving profiles.
+- Launch a hosted OpenGUI Agent service for teams that want GUI operation without running the full stack themselves.
 
 ## How to Use OpenGUI
 
@@ -299,6 +341,10 @@ flowchart LR
 - [CLAUDE.md](./CLAUDE.md)
 
 ## Community / Support
+
+Join the [OpenGUI Discord community](https://discord.gg/pqHHw7XgJ3) to discuss GUI agent development, share real use cases, and get release updates. A verified WeChat community entry will be published here when it is ready.
+
+Community members will also be able to apply for trial Agent credits when the hosted OpenGUI Agent service opens. Availability, eligibility, and validity will be announced with the service.
 
 The most useful project feedback is:
 

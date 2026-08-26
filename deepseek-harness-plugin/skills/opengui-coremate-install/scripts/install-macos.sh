@@ -6,7 +6,7 @@ dsh_version="0.1.0-rc.7"
 profile="web"
 port="${COREMATE_INSTALL_PORT_OVERRIDE:-3080}"
 package_name="dsh-coremate-mobile"
-github_repository="Core-Mate/Coremate-Mobile-Plugin"
+github_repository="Core-Mate/OpenGUI"
 github_release_base="https://github.com/${github_repository}/releases/download"
 release_base="${COREMATE_INSTALL_RELEASE_BASE:-${github_release_base}}"
 dsh_home="${DSH_HOME:-${HOME}/.dsh}"
@@ -101,14 +101,15 @@ fi
 
 archive_name="${package_name}-${release_version}.tgz"
 checksum_name="${archive_name}.sha256"
-release_url="${release_base%/}/v${release_version}"
+release_tag="${package_name}-v${release_version}"
+release_url="${release_base%/}/${release_tag}"
 temporary="$(mktemp -d "${TMPDIR:-/tmp}/opengui-coremate-install.XXXXXX")"
 trap 'rm -rf "$temporary"' EXIT
 
 download() {
   local url="$1"
   local output="$2"
-  local args=(-fL --retry 3 --connect-timeout 15 --output "$output")
+  local args=(-fL --retry 3 --connect-timeout 15 --max-time 300 --output "$output")
   if [[ "$url" == https://* ]]; then args+=(--proto '=https' --tlsv1.2); fi
   curl "${args[@]}" "$url"
 }

@@ -20,7 +20,7 @@ async function fixture() {
   const root = await mkdtemp(join(tmpdir(), 'coremate-install-skill-'))
   roots.push(root)
   const bin = join(root, 'bin')
-  const release = join(root, 'release', 'v0.1.5')
+  const release = join(root, 'release', 'dsh-coremate-mobile-v0.1.5')
   const home = join(root, 'dsh-home')
   await Promise.all([mkdir(bin, { recursive: true }), mkdir(release, { recursive: true })])
   const archive = join(release, 'dsh-coremate-mobile-0.1.5.tgz')
@@ -56,6 +56,13 @@ async function run(value: Awaited<ReturnType<typeof fixture>>, extraEnv: Record<
 }
 
 describe('macOS installation Skill', () => {
+  it('downloads the namespaced plugin release from the public OpenGUI repository', async () => {
+    const source = await readFile(installer, 'utf8')
+    expect(source).toContain('github_repository="Core-Mate/OpenGUI"')
+    expect(source).toContain('release_tag="${package_name}-v${release_version}"')
+    expect(source).not.toContain('Coremate-Mobile-Plugin')
+  })
+
   it('installs and verifies a first release, then repeats without replacing profile files', async () => {
     const value = await fixture()
     const first = await run(value)

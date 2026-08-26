@@ -1,8 +1,8 @@
 # Source provenance
 
-This directory was imported from the standalone
-[`Core-Mate/Coremate-Mobile-Plugin`](https://github.com/Core-Mate/Coremate-Mobile-Plugin)
-repository.
+This directory was imported from the historical standalone
+`Core-Mate/Coremate-Mobile-Plugin` repository. The public source is now maintained
+in [`Core-Mate/OpenGUI/deepseek-harness-plugin`](https://github.com/Core-Mate/OpenGUI/tree/main/deepseek-harness-plugin).
 
 - Source branch: `main`
 - Source commit: `7a77c0ab222121d466c23c92c5df24d680c7c3a1`

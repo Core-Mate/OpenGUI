@@ -19,7 +19,7 @@ If port 3080 already belongs to DSH, the script preserves that process. Do not k
 
 ## First-run handoff
 
-Tell the user that opening DSH, selecting phones, and manually opening mirrors do not require separate model setup. `/opengui <task>` prefers the current DSH conversation model. A model that explicitly supports images runs without a prompt; an unknown model asks once for permission to reuse it; an explicitly incompatible model enters the dedicated visual-model fallback. An empty `/opengui` only prints usage. The legacy `/coremate` alias remains available for compatibility.
+Tell the user to add or select a DSH workspace, then connect and select an authorized phone. Opening DSH, selecting phones, and manually opening mirrors do not require separate model setup. `/opengui <task>` prefers the current DSH conversation model. A model that explicitly supports images runs without a prompt; an unknown model asks once for permission to reuse it; an explicitly incompatible model enters the dedicated visual-model fallback. An empty `/opengui` only prints usage. The legacy `/coremate` alias remains available for compatibility.
 
 The dedicated fallback still requires image input and tool calling. Its setup explains Base URL, API protocol, model ID, and API Key before asking for missing values.
 

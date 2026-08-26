@@ -9,6 +9,7 @@ describe('standalone DeepSeek Harness bundle', () => {
   it('publishes a patch that inserts only this external plugin', async () => {
     const packageJson = JSON.parse(await readFile(new URL('package.json', root), 'utf8')) as {
       name: string
+      repository: { type: string; url: string; directory: string }
       exports: Record<string, unknown>
       files: string[]
       dsh: { bundle: { patch: string }; client: { inject: string[]; platform: string } }
@@ -18,6 +19,11 @@ describe('standalone DeepSeek Harness bundle', () => {
 
     expect(fileURLToPath(patchPath)).toBe(fileURLToPath(new URL('cordis.patch.yml', root)))
     expect(packageJson.name).toBe('dsh-coremate-mobile')
+    expect(packageJson.repository).toEqual({
+      type: 'git',
+      url: 'git+https://github.com/Core-Mate/OpenGUI.git',
+      directory: 'deepseek-harness-plugin',
+    })
     expect(packageJson.exports['./client']).toBeDefined()
     expect(packageJson.files).toContain('lib/client.js')
     expect(packageJson.dsh.client).toEqual({
@@ -36,10 +42,11 @@ describe('standalone DeepSeek Harness bundle', () => {
   })
 
   it('keeps OpenGUI controls in its view while retaining task stop inside the composer', async () => {
-    const [clientSource, viewSource, noticeSource] = await Promise.all([
+    const [clientSource, viewSource, noticeSource, promotionSource] = await Promise.all([
       readFile(new URL('src/client/index.tsx', root), 'utf8'),
       readFile(new URL('src/client/CoremateView.tsx', root), 'utf8'),
       readFile(new URL('src/client/CoremateTaskNotice.tsx', root), 'utf8'),
+      readFile(new URL('src/client/CorematePromotionCard.tsx', root), 'utf8'),
     ])
 
     expect(clientSource).not.toContain("'conversation.composer.dock'")
@@ -53,6 +60,8 @@ describe('standalone DeepSeek Harness bundle', () => {
     expect(viewSource).toContain('data-coremate-connect-more')
     expect(viewSource).toContain('https://opengui.ai/')
     expect(noticeSource).toContain('请前往 OpenGUI Tab')
+    expect(promotionSource).toContain('https://github.com/Core-Mate/OpenGUI/blob/main/deepseek-harness-plugin/docs/use-cases.zh.md')
+    expect(promotionSource).not.toContain('Coremate-Mobile-Plugin')
     expect(clientSource).not.toContain("'shell.overlay'")
   })
 

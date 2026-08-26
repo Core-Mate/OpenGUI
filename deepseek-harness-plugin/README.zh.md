@@ -27,13 +27,13 @@
 
 ### macOS：通过 Codex Skill 安装
 
-让 Codex 从仓库的 `skills/opengui-coremate-install` 安装 Skill，然后调用 `$opengui-coremate-install`。Skill 会从公开 Release 下载并校验固定的 `v0.1.5` 安装包，保留 `web` profile 中的其他配置，并且只在 DSH 尚未运行时负责启动，不要求登录 GitHub。
+让 Codex 从仓库的 [`deepseek-harness-plugin/skills/opengui-coremate-install`](./skills/opengui-coremate-install) 安装 Skill，然后调用 `$opengui-coremate-install`。Skill 会从 OpenGUI 的公开 Release 下载并校验固定的 `v0.1.5` 安装包，保留 `web` profile 中的其他配置，并且只在 DSH 尚未运行时负责启动，不要求登录 GitHub。
 
 如果 3080 端口已有 DSH，安装器不会终止或重启该进程，只会提示需要手动重启。下面的手动安装方式仍适用于所有受支持的系统。
 
 ### 1. 下载发布包
 
-从 [GitHub Releases](https://github.com/Core-Mate/Coremate-Mobile-Plugin/releases) 下载：
+从 [OpenGUI 公开 Release](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.5) 下载：
 
 - `dsh-coremate-mobile-0.1.5.tgz`
 - `dsh-coremate-mobile-0.1.5.tgz.sha256`
@@ -229,15 +229,17 @@ OpenGUI 任务运行时，输入框右侧会出现方形“停止 OpenGUI 操作
 
 这是高级用法：profile patch 会替换目标行的整个 `config`，之后 `$DSH_HOME/settings.yaml` 中的同名 section 仍具有更高优先级。不要把 API Key 写入 patch。
 
-## 从 Git 安装（开发用途）
+## 从源码 checkout 安装（开发用途）
 
-发布环境应固定 release tag 或 commit SHA，不要跟随可移动的 `main`：
+生产环境应使用上面的预构建 Release 包。开发时可以 checkout OpenGUI 的公开 Release tag，再安装插件目录：
 
 ```sh
-dsh plugin --profile web add 'git+https://github.com/Core-Mate/Coremate-Mobile-Plugin.git#v0.1.5'
+git clone --branch dsh-coremate-mobile-v0.1.5 --depth 1 https://github.com/Core-Mate/OpenGUI.git
+cd OpenGUI/deepseek-harness-plugin
+dsh plugin --profile web add "$(pwd)"
 ```
 
-公开仓库无需 GitHub 登录即可拉取。Git 安装需要运行包内 `prepare` 构建，因此还要在 profile 的 `allowBuilds` 中明确允许 `dsh-coremate-mobile: true`。只应对已审查并固定版本的源码授予安装期脚本权限。详细语义见[开发者接入与实测记录](docs/research/deepseek-harness-plugin-integration.md)。
+公开仓库无需 GitHub 登录即可拉取。源码安装需要运行包内 `prepare` 构建，因此还要在 profile 的 `allowBuilds` 中明确允许 `dsh-coremate-mobile: true`。只应对已审查并固定版本的源码授予安装期脚本权限。详细语义见[开发者接入与实测记录](docs/research/deepseek-harness-plugin-integration.md)。
 
 ```yaml
 allowBuilds:

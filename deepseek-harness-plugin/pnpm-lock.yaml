@@ -9,19 +9,19 @@ importers:
   .:
     dependencies:
       '@deepseek-ai/schemastery':
-        specifier: ^3.18.1
+        specifier: 3.18.1
         version: 3.18.1
       '@earendil-works/pi-ai':
-        specifier: ^0.82.1
+        specifier: 0.82.1
         version: 0.82.1(ws@8.21.3)(zod@4.4.3)
       puppeteer-core:
         specifier: 25.8.0
         version: 25.8.0(yauzl@3.4.0)
       sharp:
-        specifier: ^0.35.3
+        specifier: 0.35.3
         version: 0.35.3(@types/node@24.13.3)
       tar:
-        specifier: ^7.5.22
+        specifier: 7.5.22
         version: 7.5.22
       yauzl:
         specifier: 3.4.0
