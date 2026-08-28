@@ -81,7 +81,7 @@ Read ./skills/open-gui-bootstrap/SKILL.md and help me run OpenGUI. Only ask me f
 
 你需要准备：
 
-- 一台 Android 手机或模拟器
+- 一台 Android 11（API 30）或更高版本的手机或模拟器
 - 已开启 USB 调试
 - 已开启 AccessibilityService
 - 用于真实任务执行的模型 API Key
@@ -173,7 +173,7 @@ OpenGUI 采用的是一套分层清晰的移动 operator system。
 
 ## 当前限制
 
-- 需要 Android 真机或模拟器。
+- 需要 Android 11（API 30）或更高版本的真机或模拟器。
 - 需要开启 USB 调试和 AccessibilityService 权限。
 - 执行质量会受到模型能力、App UI、网络状态和任务长度影响。
 - 目前还不是 OS 级常驻助手；任务需要手动触发，或通过已配置的派发入口触发。

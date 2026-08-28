@@ -82,7 +82,7 @@ Read ./skills/open-gui-bootstrap/SKILL.md and help me run OpenGUI. Only ask me f
 
 You will need:
 
-- an Android phone or emulator
+- an Android 11 (API 30) or newer phone or emulator
 - USB debugging enabled
 - AccessibilityService enabled
 - model API keys for real task execution
@@ -175,7 +175,7 @@ The source code currently exposes these pieces:
 
 ## Current Limitations
 
-- Requires an Android device or emulator.
+- Requires an Android 11 (API 30) or newer device or emulator.
 - Requires USB debugging and AccessibilityService permissions.
 - Execution quality depends on the model, app UI, network state, and task length.
 - Not an always-on OS-level assistant yet; tasks are currently triggered manually or through configured dispatch channels.

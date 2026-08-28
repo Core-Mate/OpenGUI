@@ -66,6 +66,10 @@ Useful endpoints after startup:
 
 ### 2. Connect a device and install the Android client
 
+The current Android client requires Android 11 (API 30) or newer. Android 9
+(API 28) and other older releases are not supported by the screenshot-based
+execution path. The client currently targets Android 15 (API 35).
+
 ```bash
 cd client
 ./start.sh
