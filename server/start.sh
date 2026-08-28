@@ -100,9 +100,10 @@ ENV_EXAMPLE=apps/backend/.env.example
 if [ ! -f "$ENV_FILE" ]; then
   if [ -f "$ENV_EXAMPLE" ]; then
     cp "$ENV_EXAMPLE" "$ENV_FILE"
-    warn ".env was created from .env.example. Please edit it and add your API keys:"
+    warn ".env was created from .env.example. Please edit it and add your model API key:"
     warn "  File: $ENV_FILE"
-    warn "  VLM_API_KEY, VLM_BASE_URL, VLM_MODEL"
+    warn "  VLM_API_KEY"
+    warn "The default VLM_BASE_URL and VLM_MODEL are ready to use. Change them only if you use another provider or model."
     warn "Run this script again after editing the file."
     exit 0
   else

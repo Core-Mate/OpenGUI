@@ -38,15 +38,16 @@ What `server/start.sh` does:
 - pushes schema and seeds default backend data
 - starts the backend on port `7777`
 
-Required keys for a practical first run:
+For the default first-run setup, add only your model API key:
 
 - `VLM_API_KEY`
-- `VLM_BASE_URL`
-- `VLM_MODEL`
 
 The backend currently uses the `VLM_*` variables as the shared
 OpenAI-compatible model configuration for graph agents. They are used by
 planning, supervision, summarization, and the executor vision path.
+
+`VLM_BASE_URL` and `VLM_MODEL` already have defaults in `.env.example`. Change
+them only when using a different OpenAI-compatible provider or model.
 
 Example:
 
@@ -56,8 +57,9 @@ VLM_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 VLM_MODEL=qwen3.6-plus
 ```
 
-The backend can start without these values, but real task execution will fail
-when the graph needs to call the model.
+The backend can start without `VLM_API_KEY`, but real task execution will fail
+when the graph needs to call the model. LangSmith tracing and IM channel
+credentials are optional for the first run.
 
 Useful endpoints after startup:
 
