@@ -114,16 +114,18 @@ Expected behavior:
 - pushes schema and seeds data
 - starts the backend
 
-If the first run exits after creating `.env`, ask only for the keys still missing. The default practical keys are:
+If the first run exits after creating `.env`, ask only for the values still missing. With the repository defaults, ask for:
 
-- `CLAUDE_API_KEY`
 - `VLM_API_KEY`
 
-Optional keys include:
+`VLM_BASE_URL` and `VLM_MODEL` already have defaults. Ask for replacements only when the user chooses another OpenAI-compatible provider or model.
 
-- `ANTHROPIC_API_KEY` for creator-agent flows
+Optional configuration includes:
+
+- LangSmith tracing variables
 - `FEISHU_APP_ID` / `FEISHU_APP_SECRET`
 - `TELEGRAM_BOT_TOKEN`
+- Discord bot variables
 
 ### 4. Route model providers
 
@@ -198,5 +200,5 @@ Keep updates short and operational.
 
 Good:
 
-- "The backend script created `.env` and stopped. I need `CLAUDE_API_KEY` and `VLM_API_KEY` to continue."
+- "The backend script created `.env` and stopped. Add `VLM_API_KEY` to continue with the default model settings."
 - "The APK is built. Connect the phone by USB and tap Allow on the debugging dialog. I will install it after that."
