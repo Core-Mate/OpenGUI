@@ -2,7 +2,7 @@
 
 This repository already contains the runnable backend and Android client.
 
-## Option 1: Bootstrap with Claude or Codex
+## Option 1: Bootstrap with Claude Code, Codex, or OpenCode
 
 Start with the bootstrap skill:
 
@@ -13,6 +13,12 @@ Recommended prompt:
 ```text
 Read ./skills/open-gui-bootstrap/SKILL.md and help me run OpenGUI. Only ask me for phone-side actions.
 ```
+
+The same prompt works in OpenCode. Because this repository keeps the Skill in
+the top-level `skills/` directory, specify the path explicitly as shown above.
+OpenCode's automatic discovery instead searches locations such as
+`.opencode/skills/` and `.agents/skills/`; see its [Agent Skills documentation](https://opencode.ai/docs/skills/).
+No OpenCode-specific OpenGUI configuration is required.
 
 The skill should use the repository scripts directly:
 
