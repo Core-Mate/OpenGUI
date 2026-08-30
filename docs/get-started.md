@@ -74,6 +74,12 @@ Useful endpoints after startup:
 
 ### 2. Connect a device and install the Android client
 
+Root access and an unlocked bootloader are not required. OpenGUI captures
+screenshots and performs gestures through Android's standard
+`AccessibilityService` APIs. ADB is used to install and launch the APK and to
+configure `adb reverse` for the local backend; it does not root or modify the
+Android system.
+
 The current Android client requires Android 11 (API 30) or newer. Android 9
 (API 28) and other older releases are not supported by the screenshot-based
 execution path. The client currently targets Android 15 (API 35).

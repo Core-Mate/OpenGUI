@@ -81,6 +81,8 @@ Read ./skills/open-gui-bootstrap/SKILL.md and help me run OpenGUI. Only ask me f
 
 Skill のパスを明示したこのプロンプトは OpenCode でも使用できます。このリポジトリでは Skill をトップレベルの `skills/` に配置しているため、OpenCode では自動検出に頼らず、上記のようにパスを指定してください。OpenCode が標準で検出する `.opencode/skills/` と `.agents/skills/` については、[Agent Skills ドキュメント](https://opencode.ai/docs/skills/)を参照してください。
 
+root 権限やブートローダーのアンロックは不要です。OpenGUI は Android 標準の `AccessibilityService` API を使ってスクリーンショットを取得し、タップ、スワイプ、テキスト入力、戻る、ホームなどの操作を実行します。ADB はローカルでの APK のインストールと起動、および `adb reverse` によるポート転送の設定にのみ使用され、端末を root 化したりシステムを変更したりすることはありません。
+
 必要なもの:
 
 - Android 11（API 30）以降のスマートフォンまたはエミュレーター
