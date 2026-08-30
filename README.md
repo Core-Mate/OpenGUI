@@ -95,7 +95,12 @@ You will need:
 - an Android 11 (API 30) or newer phone or emulator
 - USB debugging enabled
 - AccessibilityService enabled
+- overlay permission and battery optimization exemption enabled
 - model API keys for real task execution
+
+Permission names and menu locations vary across Android vendors. Complete the
+[Android permission setup guide](./docs/android-permissions.md) before running
+the first task.
 
 OpenGUI will use the repository scripts to start the backend and install the Android client:
 

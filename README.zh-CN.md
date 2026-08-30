@@ -87,8 +87,12 @@ Read ./skills/open-gui-bootstrap/SKILL.md and help me run OpenGUI. Only ask me f
 
 - 一台 Android 11（API 30）或更高版本的手机或模拟器
 - 已开启 USB 调试
-- 已开启 AccessibilityService
+- 已开启无障碍服务（AccessibilityService）
+- 已开启悬浮窗权限，并允许 OpenGUI 忽略电池优化
 - 用于真实任务执行的模型 API Key
+
+不同 Android 品牌使用的权限名称和设置入口并不一致。运行第一个任务前，请完成
+[Android 权限配置指南](./docs/android-permissions.zh-CN.md)中的检查清单。
 
 OpenGUI 会使用仓库内脚本启动后端，并安装 Android 客户端：
 

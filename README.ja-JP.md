@@ -87,8 +87,12 @@ root 権限やブートローダーのアンロックは不要です。OpenGUI �
 
 - Android 11（API 30）以降のスマートフォンまたはエミュレーター
 - USB デバッグの有効化
-- AccessibilityService の有効化
+- ユーザー補助サービス（AccessibilityService）の有効化
+- オーバーレイ権限の許可と OpenGUI のバッテリー最適化除外
 - 実際のタスク実行に使うモデル API キー
+
+権限名と設定場所は Android メーカーによって異なります。最初のタスクを実行する前に、
+[Android 権限設定ガイド](./docs/android-permissions.ja-JP.md)のチェックリストを完了してください。
 
 OpenGUI はリポジトリ内のスクリプトを使ってバックエンドを起動し、Android クライアントをインストールします:
 
