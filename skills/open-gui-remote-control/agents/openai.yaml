@@ -1,4 +1,4 @@
 interface:
   display_name: "OpenGUI Remote Control"
-  short_description: "Control an Android phone through OpenGUI from Codex or Claude Code."
-  default_prompt: "Use this skill when Codex or Claude Code should operate an Android phone through OpenGUI. First locate or clone the runnable https://github.com/Core-Mate/open-gui checkout, then prefer the server CLI with --json, list online devices first, dispatch tasks through the backend remote-control route, poll execution status, and ask the user only for phone-side permissions or missing secrets."
+  short_description: "Control Android through OpenGUI from coding agents."
+  default_prompt: "Use $open-gui-remote-control to operate an Android phone through the local OpenGUI backend and CLI."

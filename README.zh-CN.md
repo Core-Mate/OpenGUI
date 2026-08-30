@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="#在-deepseek-harness-中使用-opengui"><img src="https://img.shields.io/badge/INSTALL-DEEPSEEK_HARNESS_PLUGIN-6f42c1?style=for-the-badge" alt="安装 DeepSeek Harness 插件"></a>
-  <a href="./skills/open-gui-bootstrap/SKILL.md"><img src="https://img.shields.io/badge/BOOTSTRAP-WITH_CLAUDE_OR_CODEX-ffb000?style=for-the-badge" alt="Bootstrap with Claude or Codex"></a>
+  <a href="./skills/open-gui-bootstrap/SKILL.md"><img src="https://img.shields.io/badge/BOOTSTRAP-WITH_AI_AGENTS-ffb000?style=for-the-badge" alt="使用 Claude Code、Codex 或 OpenCode 启动"></a>
   <img src="https://img.shields.io/badge/SYSTEM-MULTI_ROLE_OPERATOR-1f6feb?style=for-the-badge" alt="Multi-role operator system">
   <img src="https://img.shields.io/badge/TASKS-UP_TO_12_HOURS-cf222e?style=for-the-badge" alt="Tasks up to 12 hours">
   <img src="https://img.shields.io/badge/MODELS-CLAUDE_OPUS_|_QWEN_|_DOUBAO_|_BYO_API-2f9e44?style=for-the-badge" alt="Recommended model profiles">
@@ -73,11 +73,13 @@ Skill 会下载公开 Release 的插件包和校验文件，验证 SHA-256，只
 
 ## 运行完整 OpenGUI 技术栈
 
-如果要运行完整的 OpenGUI 后端和 Android 客户端，可以让 Claude Code 或 Codex 帮你完成启动。
+如果要运行完整的 OpenGUI 后端和 Android 客户端，可以让 Claude Code、Codex 或 OpenCode 帮你完成启动。
 
 ```text
 Read ./skills/open-gui-bootstrap/SKILL.md and help me run OpenGUI. Only ask me for phone-side actions.
 ```
+
+这段显式指定 Skill 路径的提示词同样适用于 OpenCode。当前仓库把 Skill 放在顶层 `skills/` 目录，因此 OpenCode 用户应像上面一样明确提供路径，而不是依赖自动发现。OpenCode 原生支持的 `.opencode/skills/` 和 `.agents/skills/` 目录可参考其 [Agent Skills 文档](https://opencode.ai/docs/skills/)。
 
 你需要准备：
 
@@ -129,8 +131,8 @@ OpenGUI 让 AI 操作真实的 Android 手机。
 
 - **操作主流 Android App**：让 AI 在真实手机上执行 X、Reddit、Hacker News、Telegram、微信、微博、小红书等移动任务。
 - **运行现成工作流**：仓库已经包含可直接启动的后端、Android 客户端、待命派发链路，以及部分预置任务能力。
-- **让 Claude 或 Codex 帮你跑起来**：把 [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md) 交给模型，直接用自然语言描述目标，让它处理安装、构建、安装 APK 和本地排障。
-- **让 Codex 控制 Android App**：OpenGUI 启动后，把 [`skills/open-gui-remote-control/SKILL.md`](./skills/open-gui-remote-control/SKILL.md) 交给 Codex 或 Claude Code，用本地 CLI 列设备、下发任务并查询 execution 状态。
+- **让 AI 编码 Agent 帮你跑起来**：把 [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md) 交给 Claude Code、Codex 或 OpenCode，直接用自然语言描述目标，让它处理安装、构建、安装 APK 和本地排障。
+- **让 AI 编码 Agent 控制 Android App**：OpenGUI 启动后，把 [`skills/open-gui-remote-control/SKILL.md`](./skills/open-gui-remote-control/SKILL.md) 交给 Claude Code、Codex 或 OpenCode，用本地 CLI 列设备、下发任务并查询 execution 状态。
 - **把手机当成远程 worker 使用**：通过飞书、Telegram、Discord 或 REST API 下发任务，让设备保持待命，并从后端拿回结构化结果。
 - [加入 Discord 社区](https://discord.gg/pqHHw7XgJ3)
 
@@ -192,13 +194,13 @@ OpenGUI 采用的是一套分层清晰的移动 operator system。
 
 ## 怎么使用 OpenGUI
 
-### 1. 用 Claude 或 Codex 帮你跑起来
+### 1. 用 Claude Code、Codex 或 OpenCode 帮你跑起来
 
 优先从 [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md) 开始。
 
 推荐流程很简单：
 
-1. 把 skill 交给 Claude 或 Codex
+1. 把 Skill 交给 Claude Code、Codex 或 OpenCode
 2. 直接用自然语言描述目标
 3. 让模型处理后端 bootstrap、APK 构建、安装和本地排障
 
@@ -210,7 +212,7 @@ OpenGUI 采用的是一套分层清晰的移动 operator system。
 - 授予悬浮窗或电池权限
 - 提供 API Key 或机器人密钥
 
-后端和 Android client 跑起来后，可以继续使用 [`skills/open-gui-remote-control/SKILL.md`](./skills/open-gui-remote-control/SKILL.md)，让 Codex 或 Claude Code 通过本地 CLI 控制手机：
+后端和 Android client 跑起来后，可以继续使用 [`skills/open-gui-remote-control/SKILL.md`](./skills/open-gui-remote-control/SKILL.md)，让 Claude Code、Codex 或 OpenCode 通过本地 CLI 控制手机：
 
 ```bash
 cd server
