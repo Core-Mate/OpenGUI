@@ -1,0 +1,44 @@
+{
+  "name": "opengui",
+  "version": "0.1.6",
+  "description": "Control one to four local Android phones through bounded screenshots and allowlisted actions from Codex or DeepSeek Harness.",
+  "author": {
+    "name": "Core Mate",
+    "url": "https://github.com/Core-Mate"
+  },
+  "homepage": "https://opengui.ai/",
+  "repository": "https://github.com/Core-Mate/OpenGUI/tree/main/deepseek-harness-plugin",
+  "license": "MIT",
+  "keywords": [
+    "android",
+    "adb",
+    "device-control",
+    "codex",
+    "mcp",
+    "automation"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "OpenGUI",
+    "shortDescription": "Control local Android phones safely from Codex",
+    "longDescription": "OpenGUI gives Codex a local, USB-first Android control loop with bounded screenshots, frozen device sessions, observation freshness, allowlisted actions, cancellation, and a read-only device wall. Browser-only work stays in the native Codex Browser.",
+    "developerName": "Core Mate",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://opengui.ai/",
+    "privacyPolicyURL": "https://github.com/Core-Mate/OpenGUI/blob/main/deepseek-harness-plugin/docs/public-submission/privacy.md",
+    "termsOfServiceURL": "https://github.com/Core-Mate/OpenGUI/blob/main/deepseek-harness-plugin/docs/public-submission/terms.md",
+    "defaultPrompt": [
+      "Use OpenGUI to inspect and operate my connected Android phone.",
+      "Open the OpenGUI device wall for my connected phones.",
+      "Check why my Android phone is not authorized for OpenGUI."
+    ],
+    "brandColor": "#4F46E5",
+    "screenshots": []
+  }
+}

@@ -54,4 +54,4 @@ OpenGUI 通过当前 DSH 会话模型操作已授权的 Android 手机，并按�
 - OpenGUI Tab 的实时画面只读；需要单独放大查看时可手动打开“独立窗口”，任务完成不会自动关闭该窗口。
 - 点击任务完成卡片中的追问只会生成 `@OpenGUI` 草稿，请检查后再发送。
 
-需要帮助可加入 [OpenGUI Discord](https://discord.gg/pqHHw7XgJ3)。本版本的微信群入口仍是不可扫码占位，请勿扫描来历不明的二维码。
+需要帮助可加入 [OpenGUI Discord](https://discord.gg/pqHHw7XgJ3)，也可以在 OpenGUI 设备工作台扫描维护者提供的微信群二维码。

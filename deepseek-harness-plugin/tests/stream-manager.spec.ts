@@ -17,6 +17,12 @@ class MissingInstaller extends ReadyInstaller {
   override async isInstalled(): Promise<boolean> { return false }
 }
 
+class FailingInstaller extends ReadyInstaller {
+  override async ensure(): Promise<InstalledScrcpy> {
+    throw new Error('scrcpy failed at /private/tmp/secret')
+  }
+}
+
 class FakeProcess extends EventEmitter {
   exitCode: number | null = null
   killed = false
@@ -74,11 +80,27 @@ function setup(maxSources = 4, forwardRegistry = {
 }
 
 describe('shared embedded scrcpy sources', () => {
-  it('requires first-use approval when the verified asset is not cached', async () => {
+  it('keeps asynchronous stream failures private while retaining full diagnostic logs', async () => {
+    const diagnostic = vi.fn()
+    const target = sink()
+    const streams = new ScrcpyVideoStreams({
+      asset: SCRCPY_ASSETS['darwin-arm64']!, installer: new FailingInstaller(), adbPath: () => '/adb',
+      runAdb: async () => '', onError: diagnostic,
+    })
+    await streams.subscribe({ id: 'one', serial: 'private', label: 'Pixel' }, target)
+    await vi.waitFor(() => expect(target.sendText).toHaveBeenCalledWith(JSON.stringify({
+      type: 'error', message: '实时画面启动失败，已切换为截图预览。',
+    })))
+    expect(diagnostic).toHaveBeenCalledWith(expect.objectContaining({ message: 'scrcpy failed at /private/tmp/secret' }))
+    await streams.dispose()
+  })
+
+  it('automatically prepares first-use video without an approval gate', async () => {
     const streams = new ScrcpyVideoStreams({
       asset: SCRCPY_ASSETS['darwin-arm64']!, installer: new MissingInstaller(), adbPath: () => '/adb', runAdb: async () => '',
     })
-    await expect(streams.subscribe({ id: 'one', serial: 'private', label: 'Pixel' }, sink())).rejects.toThrow('stream_download_not_approved')
+    await expect(streams.subscribe({ id: 'one', serial: 'private', label: 'Pixel' }, sink())).resolves.toEqual(expect.any(Function))
+    await expect(streams.status()).resolves.toMatchObject({ supported: true, approved: true })
     expect(streams.approve()).toBe(true)
     await streams.dispose()
   })

@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import {
   DEVICE_SELECTION_PATH,
-  DEVICE_STREAM_ENABLE_PATH,
   DEVICE_STREAM_STATUS_PATH,
   MIRROR_START_PATH,
   MIRROR_STOP_PATH,
@@ -14,6 +13,7 @@ import { OpenGuiMark } from './OpenGuiMark.tsx'
 import { mirrorBusy, mirrorLabel, mirrorProgress, postMirrorStatus, readMirrorStatus } from './MirrorButton.tsx'
 import { TaskStopButton } from './TaskStopButton.tsx'
 import { PhoneStream } from './PhoneStream.tsx'
+import { WECHAT_GROUP_QR_DATA_URL } from './wechat-group-qr.ts'
 
 const DISCORD_URL = 'https://discord.gg/pqHHw7XgJ3'
 const OPENGUI_GITHUB_URL = 'https://github.com/Core-Mate/OpenGUI'
@@ -154,7 +154,7 @@ export function CoremateView({ coremateSessionId }: { readonly coremateSessionId
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string>()
   const [streamStatus, setStreamStatus] = useState<ScrcpyStreamStatus>()
-  const [streamGeneration, setStreamGeneration] = useState(0)
+  const [streamStatusError, setStreamStatusError] = useState<string>()
 
   useEffect(() => {
     const controller = new AbortController()
@@ -194,8 +194,15 @@ export function CoremateView({ coremateSessionId }: { readonly coremateSessionId
     const poll = async (): Promise<void> => {
       try {
         const response = await fetch(DEVICE_STREAM_STATUS_PATH, { cache: 'no-store', signal: controller.signal })
-        if (response.ok) setStreamStatus(await response.json() as ScrcpyStreamStatus)
-      } catch { /* stream support is optional; each card retains screenshot fallback */ }
+        if (!response.ok) throw new Error(`实时画面状态不可用 (${response.status})`)
+        setStreamStatus(await response.json() as ScrcpyStreamStatus)
+        setStreamStatusError(undefined)
+      } catch (reason) {
+        if (!controller.signal.aborted) {
+          setStreamStatus(undefined)
+          setStreamStatusError(reason instanceof Error ? reason.message : String(reason))
+        }
+      }
       finally {
         if (!controller.signal.aborted) timer = setTimeout(poll, document.hidden ? 5_000 : 1_500)
       }
@@ -205,13 +212,6 @@ export function CoremateView({ coremateSessionId }: { readonly coremateSessionId
       controller.abort()
       if (timer !== undefined) clearTimeout(timer)
     }
-  }, [])
-
-  const enableStream = useCallback(async (): Promise<void> => {
-    const response = await fetch(DEVICE_STREAM_ENABLE_PATH, { method: 'POST', headers: { Accept: 'application/json' } })
-    if (!response.ok) throw new Error(`启用实时画面失败 (${response.status})`)
-    setStreamStatus(await response.json() as ScrcpyStreamStatus)
-    setStreamGeneration(value => value + 1)
   }, [])
 
   const mutate = useCallback(async (path: string, ids: readonly string[]): Promise<void> => {
@@ -270,9 +270,21 @@ export function CoremateView({ coremateSessionId }: { readonly coremateSessionId
                   <span aria-hidden="true" style={{ display: 'inline-grid', placeItems: 'center', width: 48, height: 48, marginBottom: 16, border: '1px solid currentColor', borderRadius: 999, fontSize: 30, fontWeight: 300, lineHeight: 1 }}>+</span>
                   <h2 style={{ margin: '0 0 8px', fontSize: 17, lineHeight: 1.35, fontWeight: 720 }}>连接更多设备</h2>
                   <p style={bodyStyle}>连接 Android 手机并开启 USB 调试，授权后会自动出现在设备墙。</p>
-                  <p style={{ ...bodyStyle, marginTop: 14, fontSize: 12 }}>
-                    需要帮助可加入 <a href={DISCORD_URL} target="_blank" rel="noreferrer">Discord</a>。微信群二维码暂未开放。
-                  </p>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 16, marginTop: 18 }}>
+                    <p style={{ ...bodyStyle, flex: '1 1 132px', maxWidth: 188, fontSize: 12 }}>
+                      需要帮助可加入 <a href={DISCORD_URL} target="_blank" rel="noreferrer">Discord</a>，也可以微信扫码加入交流群。
+                    </p>
+                    <figure style={{ flex: '0 0 132px', margin: 0 }}>
+                      <img
+                        src={WECHAT_GROUP_QR_DATA_URL}
+                        alt="OpenGUI 微信交流群二维码"
+                        width={752}
+                        height={693}
+                        style={{ display: 'block', width: 132, height: 'auto', padding: 6, border: '1px solid var(--dsw-alias-border-l2, rgba(128,128,128,.28))', borderRadius: 8, background: '#fff', boxSizing: 'border-box' }}
+                      />
+                      <figcaption style={{ marginTop: 6, color: 'var(--dsw-alias-label-secondary, #52525b)', fontSize: 11, lineHeight: 1.4 }}>微信扫码入群</figcaption>
+                    </figure>
+                  </div>
                 </div>
               </aside>
             )
@@ -312,7 +324,7 @@ export function CoremateView({ coremateSessionId }: { readonly coremateSessionId
                   </div>
                 </div>
                 {device.message === undefined ? null : <div role="status" style={{ padding: '0 12px 8px', color: device.phase === 'error' ? '#b91c1c' : 'var(--dsw-alias-label-secondary, #52525b)', fontSize: 11 }}>{device.message}</div>}
-                <PhoneStream device={device} expanded={open} streamStatus={streamStatus} streamGeneration={streamGeneration} enableStream={enableStream} />
+                <PhoneStream device={device} expanded={open} streamStatus={streamStatus} streamStatusError={streamStatusError} />
             </article>
           )
         })}

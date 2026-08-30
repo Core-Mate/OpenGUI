@@ -13,8 +13,7 @@ import type { MobileApi } from './provider.ts'
 const PACKAGE_NAME = 'coremate-mobile'
 const RESPONSES_LABEL = 'Responses API（推荐）'
 const COMPLETIONS_LABEL = 'Chat Completions API'
-const START_LABEL = '开始配置'
-const DISCORD_URL = 'https://discord.gg/pqHHw7XgJ3'
+const CONFIRM_LABEL = '确认支持并保存'
 
 /** Configuration facts needed to decide which setup questions remain. */
 export interface PhoneModelConfiguration {
@@ -44,6 +43,10 @@ export interface PhoneConfigurationInteraction {
   readonly signal: AbortSignal
 }
 
+export type PhoneConfigurationResult =
+  | { readonly status: 'ready', readonly changed: boolean }
+  | { readonly status: 'cancelled' }
+
 function answerText(answer: AskUserQuestionAnswer, id: string): string {
   const item = answer.answers.find(candidate => candidate.id === id)
   return (item?.custom ?? item?.selected[0] ?? '').trim()
@@ -60,9 +63,7 @@ async function askOne(
     signal: invocation.signal,
   })
   const value = answerText(answer, question.id)
-  if (value.length === 0) {
-    throw new Error(`coremate-mobile: OpenGUI 模型配置已取消（未填写${question.header ?? question.id}）`)
-  }
+  if (value.length === 0) return ''
   return value
 }
 
@@ -77,6 +78,7 @@ async function askBaseURL(
       header: 'OpenGUI 端点',
       question,
     })
+    if (value.length === 0) return ''
     try {
       const parsed = new URL(value)
       if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') throw new Error('只支持 HTTP 或 HTTPS')
@@ -88,30 +90,10 @@ async function askBaseURL(
   }
 }
 
-async function askIntroduction(
-  services: PhoneConfigurationServices,
-  invocation: PhoneConfigurationInteraction,
-): Promise<void> {
-  while (true) {
-    const value = await askOne(services, invocation, {
-      id: 'introduction',
-      header: 'OpenGUI 专用模型',
-      question: '当前 DSH 模型不适合这项任务，请配置一个支持图片输入和工具调用的视觉模型。',
-      detail: [
-        'Base URL 是模型服务地址；协议决定调用 Responses 或 Chat Completions；模型 ID 指定视觉模型；API Key 用于鉴权。',
-        `需要帮助：加入 Discord ${DISCORD_URL}。`,
-        '微信群：二维码暂未开放，这是占位入口；请先加入 Discord。',
-      ].join('\n\n'),
-      options: [{ label: START_LABEL, description: '配置专用视觉模型。' }],
-    })
-    if (value === START_LABEL || value === 'start') return
-  }
-}
-
 async function askApi(
   services: PhoneConfigurationServices,
   invocation: PhoneConfigurationInteraction,
-): Promise<MobileApi> {
+): Promise<MobileApi | undefined> {
   while (true) {
     const value = await askOne(services, invocation, {
       id: 'api',
@@ -123,6 +105,7 @@ async function askApi(
         { label: COMPLETIONS_LABEL, description: '使用 /chat/completions 接口。' },
       ],
     })
+    if (value.length === 0) return undefined
     if (value === RESPONSES_LABEL || value === 'openai-responses') return 'openai-responses'
     if (value === COMPLETIONS_LABEL || value === 'openai-completions') return 'openai-completions'
   }
@@ -140,11 +123,28 @@ async function askModel(
   })
 }
 
+async function askCapabilityConfirmation(
+  services: PhoneConfigurationServices,
+  invocation: PhoneConfigurationInteraction,
+): Promise<boolean> {
+  const value = await askOne(services, invocation, {
+    id: 'capabilityConfirmation',
+    header: '确认模型能力',
+    question: '请确认这个模型同时支持图片输入和工具调用。',
+    detail: '确认后才会保存上面的完整配置。',
+    options: [
+      { label: CONFIRM_LABEL, description: '保存配置并继续当前任务。' },
+      { label: '取消本次任务', description: '不保存任何配置。' },
+    ],
+  })
+  return value === CONFIRM_LABEL
+}
+
 async function askApiKey(
   services: PhoneConfigurationServices,
   invocation: PhoneConfigurationInteraction,
   ref: ReturnType<typeof credentialRef>,
-): Promise<string> {
+): Promise<string | undefined> {
   let detail = `请输入 ${ref}。答案不会写入聊天记录或模型上下文；提交后会保存到 Harness 凭据存储。输入时文字仍可见。`
   while (true) {
     const value = await askOne(services, invocation, {
@@ -153,6 +153,7 @@ async function askApiKey(
       question: 'OpenGUI 模型服务的 API Key 是什么？',
       detail,
     })
+    if (value.length === 0) return undefined
     try {
       return assertUsableApiKey(value, PACKAGE_NAME, ref)
     } catch (error) {
@@ -170,28 +171,41 @@ export async function configurePhoneModel(
   config: PhoneModelConfiguration,
   services: PhoneConfigurationServices,
   invocation: PhoneConfigurationInteraction,
-): Promise<boolean> {
-  const baseURL = config.baseURL?.trim()
-  const model = config.model?.trim()
+  force = false,
+): Promise<PhoneConfigurationResult> {
+  const baseURL = force ? undefined : config.baseURL?.trim()
+  const model = force ? undefined : config.model?.trim()
   const ref = credentialRef(config.apiKeyEnv)
-  const storedKey = await services.resolveCredential(ref)
-  if (baseURL && model && storedKey !== undefined) return false
-
-  await askIntroduction(services, invocation)
+  const storedKey = force ? undefined : await services.resolveCredential(ref)
+  if (baseURL && model && storedKey !== undefined) return { status: 'ready', changed: false }
 
   const fromScratch = !baseURL && !model
   const patch: PhoneModelConfigurationPatch = {}
   let apiKey: string | undefined
 
-  if (!baseURL) patch.baseURL = await askBaseURL(services, invocation)
-  if (fromScratch) patch.api = await askApi(services, invocation)
-  if (!model) patch.model = await askModel(services, invocation)
-  if (storedKey === undefined) apiKey = await askApiKey(services, invocation, ref)
+  if (!baseURL) {
+    patch.baseURL = await askBaseURL(services, invocation)
+    if (!patch.baseURL) return { status: 'cancelled' }
+  }
+  if (fromScratch) {
+    const api = await askApi(services, invocation)
+    if (!api) return { status: 'cancelled' }
+    patch.api = api
+  }
+  if (!model) {
+    patch.model = await askModel(services, invocation)
+    if (!patch.model) return { status: 'cancelled' }
+  }
+  if (storedKey === undefined) {
+    apiKey = await askApiKey(services, invocation, ref)
+    if (!apiKey) return { status: 'cancelled' }
+  }
+  if (!await askCapabilityConfirmation(services, invocation)) return { status: 'cancelled' }
 
   // Collect and validate the complete draft before either durable write. The
   // two provider-owned stores cannot commit atomically, so put the credential
   // first: a settings route never becomes active before its key is available.
   if (apiKey !== undefined) await services.storeCredential(ref, apiKey)
   if (Object.keys(patch).length > 0) await services.updateSettings(patch)
-  return true
+  return { status: 'ready', changed: true }
 }

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-release_version="0.1.5"
+release_version="0.1.6"
 dsh_version="0.1.0-rc.7"
 profile="web"
 port="${COREMATE_INSTALL_PORT_OVERRIDE:-3080}"
@@ -10,6 +10,7 @@ github_repository="Core-Mate/OpenGUI"
 github_release_base="https://github.com/${github_repository}/releases/download"
 release_base="${COREMATE_INSTALL_RELEASE_BASE:-${github_release_base}}"
 dsh_home="${DSH_HOME:-${HOME}/.dsh}"
+launch_agents_dir="${COREMATE_INSTALL_LAUNCH_AGENTS_DIR_OVERRIDE:-${HOME}/Library/LaunchAgents}"
 start_runtime=true
 open_browser=true
 
@@ -166,41 +167,111 @@ NODE
 
 printf 'Installed and verified %s v%s in %s.\n' "$package_name" "$release_version" "$profile_dir"
 
-if [[ "$runtime_running" == true ]]; then
-  printf 'DSH is already running at http://127.0.0.1:%s. It was not restarted; restart it manually to load v%s.\n' "$port" "$release_version"
-elif [[ "$start_runtime" == true ]]; then
+if [[ "$start_runtime" == true ]]; then
   command -v launchctl >/dev/null 2>&1 || { printf 'Required command not found: launchctl\n' >&2; exit 1; }
+  command -v plutil >/dev/null 2>&1 || { printf 'Required command not found: plutil\n' >&2; exit 1; }
   mkdir -p "${dsh_home}/logs"
+  mkdir -p "$launch_agents_dir"
   log_path="${dsh_home}/logs/opengui-coremate-web.log"
   dsh_command[0]="$(command -v "${dsh_command[0]}")"
-  job_label="com.coremate.opengui.web.${UID}.$$"
-  launchctl submit -l "$job_label" -o "$log_path" -e "$log_path" -- \
-    /usr/bin/env "PATH=${PATH}" "DSH_HOME=${dsh_home}" \
-    "${dsh_command[@]}" --profile "$profile" --host 127.0.0.1 --port "$port" --no-open
+  canonical_dsh_home="$(cd "$dsh_home" && pwd -P)"
+  default_dsh_home="$(cd "$HOME" && pwd -P)/.dsh"
+  job_label="com.coremate.opengui.web"
+  if [[ "$canonical_dsh_home" != "$default_dsh_home" || "$port" != "3080" ]]; then
+    label_hash="$(printf '%s\n%s\n' "$canonical_dsh_home" "$port" | shasum -a 256 | awk '{print substr($1,1,12)}')"
+    job_label="${job_label}.${label_hash}"
+  fi
+  plist_path="${launch_agents_dir}/${job_label}.plist"
+  plist_temporary="${temporary}/${job_label}.plist"
+  node --input-type=module - "$plist_temporary" "$job_label" "$log_path" "$canonical_dsh_home" "$PATH" \
+    "${dsh_command[@]}" --profile "$profile" --host 127.0.0.1 --port "$port" --no-open <<'NODE'
+import { chmod, writeFile } from 'node:fs/promises'
+
+const [output, label, logPath, workingDirectory, path, ...args] = process.argv.slice(2)
+const escape = value => value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&apos;')
+const strings = args.map(value => `    <string>${escape(value)}</string>`).join('\n')
+const plist = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>${escape(label)}</string>
+  <key>ProgramArguments</key>
+  <array>
+${strings}
+  </array>
+  <key>WorkingDirectory</key>
+  <string>${escape(workingDirectory)}</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>DSH_HOME</key>
+    <string>${escape(workingDirectory)}</string>
+    <key>PATH</key>
+    <string>${escape(path)}</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>ThrottleInterval</key>
+  <integer>10</integer>
+  <key>ProcessType</key>
+  <string>Interactive</string>
+  <key>StandardOutPath</key>
+  <string>${escape(logPath)}</string>
+  <key>StandardErrorPath</key>
+  <string>${escape(logPath)}</string>
+</dict>
+</plist>
+`
+await writeFile(output, plist, { encoding: 'utf8', mode: 0o600 })
+await chmod(output, 0o600)
+NODE
+  plutil -lint "$plist_temporary" >/dev/null
+
+  service_target="gui/${UID}/${job_label}"
+  managed_runtime=false
+  if launchctl print "$service_target" >/dev/null 2>&1; then managed_runtime=true; fi
+  if [[ "$managed_runtime" == true ]]; then
+    launchctl bootout "$service_target" >/dev/null 2>&1 || true
+    runtime_running=false
+  fi
+  install -m 0600 "$plist_temporary" "$plist_path"
   printf '%s\n' "$job_label" > "${dsh_home}/logs/opengui-coremate-web.job"
-  ready=false
-  for _ in {1..60}; do
-    if curl -fsS --max-time 2 "http://127.0.0.1:${port}" | grep -q '__DSH_BOOT__'; then
-      ready=true
-      break
+
+  if [[ "$runtime_running" == true ]]; then
+    printf 'DSH is already running at http://127.0.0.1:%s and is not managed by OpenGUI; leaving it untouched. The LaunchAgent will take over after the next login.\n' "$port"
+  else
+    launchctl bootstrap "gui/${UID}" "$plist_path"
+    launchctl kickstart -k "$service_target"
+    ready=false
+    for _ in {1..60}; do
+      if curl -fsS --max-time 2 "http://127.0.0.1:${port}" | grep -q '__DSH_BOOT__'; then
+        ready=true
+        break
+      fi
+      sleep 1
+    done
+    if [[ "$ready" != true ]]; then
+      launchctl bootout "$service_target" >/dev/null 2>&1 || true
+      printf 'DSH did not become ready; inspect %s.\n' "$log_path" >&2
+      exit 1
     fi
     sleep 1
-  done
-  if [[ "$ready" != true ]]; then
-    launchctl remove "$job_label" >/dev/null 2>&1 || true
-    printf 'DSH did not become ready; inspect %s.\n' "$log_path" >&2
-    exit 1
+    runtime_pid="$(lsof -nP -t -iTCP:"$port" -sTCP:LISTEN | head -n 1)"
+    if [[ -z "$runtime_pid" ]] || ! curl -fsS --max-time 2 "http://127.0.0.1:${port}" | grep -q '__DSH_BOOT__'; then
+      launchctl bootout "$service_target" >/dev/null 2>&1 || true
+      printf 'DSH exited after startup; inspect %s.\n' "$log_path" >&2
+      exit 1
+    fi
+    printf 'DSH is ready at http://127.0.0.1:%s (PID %s, LaunchAgent %s).\n' "$port" "$runtime_pid" "$job_label"
   fi
-  sleep 1
-  runtime_pid="$(lsof -nP -t -iTCP:"$port" -sTCP:LISTEN | head -n 1)"
-  if [[ -z "$runtime_pid" ]] || ! curl -fsS --max-time 2 "http://127.0.0.1:${port}" | grep -q '__DSH_BOOT__'; then
-    launchctl remove "$job_label" >/dev/null 2>&1 || true
-    printf 'DSH exited after startup; inspect %s.\n' "$log_path" >&2
-    exit 1
-  fi
-  printf 'DSH is ready at http://127.0.0.1:%s (PID %s).\n' "$port" "$runtime_pid"
 else
-  printf 'DSH was not running and --no-start was selected.\n'
+  if [[ "$runtime_running" == true ]]; then
+    printf 'DSH is already running at http://127.0.0.1:%s. It was not restarted; restart it manually to load v%s.\n' "$port" "$release_version"
+  else
+    printf 'DSH was not running and --no-start was selected.\n'
+  fi
 fi
 
 if [[ "$open_browser" == true && ( "$runtime_running" == true || "$start_runtime" == true ) ]]; then

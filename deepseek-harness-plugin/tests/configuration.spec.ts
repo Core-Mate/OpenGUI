@@ -46,31 +46,22 @@ describe('OpenGUI interactive model configuration', () => {
   it('asks for a new route one item at a time and persists the credential before activating settings', async () => {
     const events: string[] = []
     const io = services({
-      introduction: '开始配置',
       baseURL: 'https://gateway.example/v1',
       api: 'Responses API（推荐）',
       model: 'vision-model',
       apiKey: 'sk-phone',
+      capabilityConfirmation: '确认支持并保存',
     }, events)
 
-    await expect(configurePhoneModel(emptyConfig(), io, invocation())).resolves.toBe(true)
+    await expect(configurePhoneModel(emptyConfig(), io, invocation())).resolves.toEqual({ status: 'ready', changed: true })
     expect(io.ask.mock.calls.map(call => (call[0] as AskUserQuestionRequest).questions[0]?.id))
-      .toEqual(['introduction', 'baseURL', 'api', 'model', 'apiKey'])
+      .toEqual(['baseURL', 'api', 'model', 'apiKey', 'capabilityConfirmation'])
     expect((io.ask.mock.calls[0]?.[0] as AskUserQuestionRequest).questions[0]).toMatchObject({
-      id: 'introduction',
-      header: 'OpenGUI 专用模型',
-      question: '当前 DSH 模型不适合这项任务，请配置一个支持图片输入和工具调用的视觉模型。',
-      detail: expect.stringContaining('https://discord.gg/pqHHw7XgJ3'),
-      options: [{ label: '开始配置', description: '配置专用视觉模型。' }],
-    })
-    expect((io.ask.mock.calls[0]?.[0] as AskUserQuestionRequest).questions[0]?.detail)
-      .toContain('微信群：二维码暂未开放，这是占位入口')
-    expect((io.ask.mock.calls[1]?.[0] as AskUserQuestionRequest).questions[0]).toMatchObject({
       id: 'baseURL',
       header: 'OpenGUI 端点',
       question: '请输入兼容 OpenAI 协议的 Base URL，例如 https://gateway.example/v1。',
     })
-    expect((io.ask.mock.calls[1]?.[0] as AskUserQuestionRequest).questions[0]?.detail).toBeUndefined()
+    expect((io.ask.mock.calls[0]?.[0] as AskUserQuestionRequest).questions[0]?.detail).toBeUndefined()
     expect(events).toEqual([
       'credential:sk-phone',
       'settings:{"baseURL":"https://gateway.example/v1","api":"openai-responses","model":"vision-model"}',
@@ -81,47 +72,64 @@ describe('OpenGUI interactive model configuration', () => {
     const io = services({}, [], 'sk-existing')
     const config = { ...emptyConfig(), baseURL: 'https://gateway.example/v1', model: 'vision-model' }
 
-    await expect(configurePhoneModel(config, io, invocation())).resolves.toBe(false)
+    await expect(configurePhoneModel(config, io, invocation())).resolves.toEqual({ status: 'ready', changed: false })
     expect(io.ask).not.toHaveBeenCalled()
     expect(io.storeCredential).not.toHaveBeenCalled()
     expect(io.updateSettings).not.toHaveBeenCalled()
   })
 
   it('preserves an existing endpoint and protocol while asking only for missing model and key', async () => {
-    const io = services({ introduction: '开始配置', model: 'vision-model', apiKey: 'sk-phone' })
+    const io = services({ model: 'vision-model', apiKey: 'sk-phone', capabilityConfirmation: '确认支持并保存' })
     const config = { ...emptyConfig(), baseURL: 'https://gateway.example/v1', api: 'openai-completions' as const }
 
-    await expect(configurePhoneModel(config, io, invocation())).resolves.toBe(true)
+    await expect(configurePhoneModel(config, io, invocation())).resolves.toEqual({ status: 'ready', changed: true })
     expect(io.ask.mock.calls.map(call => (call[0] as AskUserQuestionRequest).questions[0]?.id))
-      .toEqual(['introduction', 'model', 'apiKey'])
+      .toEqual(['model', 'apiKey', 'capabilityConfirmation'])
     expect(io.updateSettings).toHaveBeenCalledWith({ model: 'vision-model' })
   })
 
   it('re-asks an invalid endpoint before continuing', async () => {
     const endpointReplies = ['not-a-url', 'https://gateway.example/v1']
     const io = services({
-      introduction: '开始配置',
       baseURL: 'unused',
       api: 'Responses API（推荐）',
       model: 'vision-model',
       apiKey: 'sk-phone',
+      capabilityConfirmation: '确认支持并保存',
     })
     io.ask.mockImplementation(async (request: AskUserQuestionRequest) => {
       const question = request.questions[0]
       if (question === undefined) throw new Error('missing question')
       const value = question.id === 'baseURL' ? endpointReplies.shift() : {
-        introduction: '开始配置', api: 'Responses API（推荐）', model: 'vision-model', apiKey: 'sk-phone',
+        api: 'Responses API（推荐）', model: 'vision-model', apiKey: 'sk-phone', capabilityConfirmation: '确认支持并保存',
       }[question.id]
       if (value === undefined) throw new Error(`missing reply for ${question.id}`)
       return answer(question.id, value, question.options !== undefined)
     })
 
-    await expect(configurePhoneModel(emptyConfig(), io, invocation())).resolves.toBe(true)
+    await expect(configurePhoneModel(emptyConfig(), io, invocation())).resolves.toEqual({ status: 'ready', changed: true })
     expect(io.ask.mock.calls.map(call => (call[0] as AskUserQuestionRequest).questions[0]?.id))
-      .toEqual(['introduction', 'baseURL', 'baseURL', 'api', 'model', 'apiKey'])
-    expect((io.ask.mock.calls[2]?.[0] as AskUserQuestionRequest).questions[0]).toMatchObject({
+      .toEqual(['baseURL', 'baseURL', 'api', 'model', 'apiKey', 'capabilityConfirmation'])
+    expect((io.ask.mock.calls[1]?.[0] as AskUserQuestionRequest).questions[0]).toMatchObject({
       question: 'Base URL 无效：Invalid URL。请重新输入 HTTP/HTTPS 地址。',
     })
-    expect((io.ask.mock.calls[2]?.[0] as AskUserQuestionRequest).questions[0]?.detail).toBeUndefined()
+    expect((io.ask.mock.calls[1]?.[0] as AskUserQuestionRequest).questions[0]?.detail).toBeUndefined()
+  })
+
+  it.each(['baseURL', 'api', 'model', 'apiKey', 'capabilityConfirmation'])('cancels with zero writes when %s is skipped', async skipped => {
+    const events: string[] = []
+    const io = services({
+      baseURL: 'https://gateway.example/v1',
+      api: 'Responses API（推荐）',
+      model: 'vision-model',
+      apiKey: 'sk-phone',
+      capabilityConfirmation: '确认支持并保存',
+      [skipped]: '',
+    }, events)
+
+    await expect(configurePhoneModel(emptyConfig(), io, invocation())).resolves.toEqual({ status: 'cancelled' })
+    expect(events).toEqual([])
+    expect(io.storeCredential).not.toHaveBeenCalled()
+    expect(io.updateSettings).not.toHaveBeenCalled()
   })
 })

@@ -1,7 +1,7 @@
 {
   "name": "dsh-coremate-mobile",
-  "version": "0.1.5",
-  "description": "Standalone DeepSeek Harness plugin for Android phone and managed local-browser control",
+  "version": "0.1.6",
+  "description": "Dual-host OpenGUI plugin for DeepSeek Harness and Codex Android control",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Core-Mate/OpenGUI.git",
@@ -9,6 +9,9 @@
   },
   "type": "module",
   "main": "lib/index.js",
+  "bin": {
+    "opengui-codex": "./lib/codex-cli.js"
+  },
   "types": "lib/types/index.d.ts",
   "exports": {
     ".": {
@@ -27,9 +30,15 @@
     "./package.json": "./package.json"
   },
   "files": [
+    ".codex-plugin",
+    ".mcp.json",
     "assets",
+    "codex-public",
     "cordis.patch.yml",
     "docs",
+    "skills",
+    "lib/codex-cli.js",
+    "lib/codex-mcp.js",
     "lib/index.js",
     "lib/invariant.js",
     "lib/client.js",
@@ -37,10 +46,13 @@
     "lib/types/**/*.d.ts"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json && tsdown",
+    "build": "tsc -p tsconfig.json && tsdown && node scripts/finalize-codex-bundle.mjs",
+    "codex:cli": "node lib/codex-cli.js",
+    "codex:validate": "node scripts/validate-codex-plugin.mjs",
+    "codex:stage-public": "node scripts/stage-public-codex-plugin.mjs",
     "dev:auto-reload": "node scripts/dev-auto-reload.mjs install",
     "test": "vitest run",
-    "check": "pnpm run test && pnpm run build",
+    "check": "pnpm run test && pnpm run build && pnpm run codex:validate",
     "prepare": "pnpm run build && node scripts/dev-auto-reload.mjs install --if-linked"
   },
   "engines": {

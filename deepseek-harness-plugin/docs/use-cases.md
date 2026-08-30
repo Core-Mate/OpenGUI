@@ -54,4 +54,4 @@ The router decides whether to call the phone agent, browser agent, or both in se
 - Native mirrors are read-only and open only after an eye button is clicked.
 - Completion suggestions create an `@OpenGUI` draft. Review it before submitting.
 
-For help, join the [OpenGUI Discord](https://discord.gg/pqHHw7XgJ3). The WeChat entry in this release is explicitly non-scannable; do not trust unofficial QR codes.
+For help, join the [OpenGUI Discord](https://discord.gg/pqHHw7XgJ3), or scan the maintainer-provided WeChat group QR code in the OpenGUI device workbench.

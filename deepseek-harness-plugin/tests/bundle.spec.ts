@@ -66,13 +66,23 @@ describe('standalone DeepSeek Harness bundle', () => {
   })
 
   it('prepares the model before waiting for an explicit phone selection', async () => {
-    const hostSource = await readFile(new URL('src/index.ts', root), 'utf8')
+    const [hostSource, configurationSource] = await Promise.all([
+      readFile(new URL('src/index.ts', root), 'utf8'),
+      readFile(new URL('src/configuration.ts', root), 'utf8'),
+    ])
     const prepareIndex = hostSource.indexOf('const route = await prepareTask(interaction)')
     const deviceIndex = hostSource.indexOf('const targets = await waitForSelectedPhone(interaction)')
 
     expect(prepareIndex).toBeGreaterThan(-1)
     expect(deviceIndex).toBeGreaterThan(-1)
     expect(prepareIndex).toBeLessThan(deviceIndex)
+    expect(hostSource).toContain('当前模型没有注明是否支持图片输入和工具调用。它是否具备这些能力？')
+    expect(hostSource).toContain("status: 'cancelled' as const")
+    expect(hostSource).toContain("status: 'completed' as const")
+    expect(hostSource).toContain('本次 OpenGUI 任务未执行')
+    expect(configurationSource).not.toContain('开始配置')
+    expect(configurationSource.indexOf('await askCapabilityConfirmation'))
+      .toBeLessThan(configurationSource.indexOf('await services.storeCredential'))
   })
 
   it('keeps the stop glyph visible independently of the host foreground color', async () => {
@@ -90,7 +100,11 @@ describe('standalone DeepSeek Harness bundle', () => {
       readFile(new URL('src/client/coremate-trigger.ts', root), 'utf8'),
     ])
 
-    expect(view).toContain('<PhoneStream device={device} expanded={open} streamStatus={streamStatus} streamGeneration={streamGeneration} enableStream={enableStream} />')
+    expect(view).toContain('<PhoneStream device={device} expanded={open} streamStatus={streamStatus} streamStatusError={streamStatusError} />')
+    expect(stream).not.toContain('首次启用实时画面需要下载并校验 scrcpy')
+    expect(stream).toContain('正在准备实时画面')
+    expect(stream).toContain("() => fallback('实时画面解码失败，已切换为截图预览。')")
+    expect(stream).not.toContain('error.message}`')
     expect(stream).toContain("value.type === 'waiting') fallback(value.message ?? '实时画面正在等待空位', true)")
     expect(stream).toContain("websocket.onerror = () => fallback('实时画面连接失败，已切换为截图预览。', true)")
     expect(view).not.toContain('height: 360')

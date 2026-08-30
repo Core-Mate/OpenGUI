@@ -9,7 +9,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   buildScrcpyControlServerArgs,
   buildSetClipboardControlMessage,
-  parseScrcpyDeviceMessages,
+  defaultScrcpyCacheDir, legacyScrcpyCacheDirs, parseScrcpyDeviceMessages,
   resolveScrcpyAsset, SCRCPY_ASSETS, SCRCPY_VERSION, ScrcpyInstaller, ScrcpyMirror,
 } from '../src/scrcpy.ts'
 import type { InstalledScrcpy, ScrcpyAsset } from '../src/scrcpy.ts'
@@ -67,6 +67,36 @@ describe('acknowledged Unicode text input', () => {
 })
 
 describe('verified scrcpy installation', () => {
+  it('uses a per-user cache and discovers verified legacy DSH caches', async () => {
+    expect(defaultScrcpyCacheDir('darwin', {}, '/Users/tester')).toBe('/Users/tester/Library/Caches/OpenGUI/scrcpy')
+    expect(defaultScrcpyCacheDir('linux', { XDG_CACHE_HOME: '/cache' }, '/home/tester')).toBe('/cache/opengui/scrcpy')
+    expect(defaultScrcpyCacheDir('win32', { LOCALAPPDATA: 'C:\\Local' }, 'C:\\Users\\tester'))
+      .toContain('OpenGUI')
+    expect(legacyScrcpyCacheDirs({ DSH_HOME: '/tmp/preview-home' }, '/Users/tester')).toEqual([
+      '/tmp/preview-home/cache/coremate-mobile/scrcpy',
+      '/Users/tester/.dsh/cache/coremate-mobile/scrcpy',
+    ])
+
+    const root = await mkdtemp(join(tmpdir(), 'coremate-scrcpy-legacy-'))
+    temporary.push(root)
+    const asset = SCRCPY_ASSETS['darwin-arm64']!
+    const legacy = join(root, 'legacy')
+    const primary = join(root, 'shared')
+    const installedRoot = join(legacy, `v${SCRCPY_VERSION}`, asset.key, asset.archiveRoot)
+    await mkdir(installedRoot, { recursive: true })
+    await Promise.all([
+      writeFile(join(installedRoot, asset.executable), 'native-client'),
+      writeFile(join(installedRoot, 'scrcpy-server'), 'android-server'),
+      writeFile(join(installedRoot, '.coremate-install.json'), JSON.stringify({ version: SCRCPY_VERSION, sha256: asset.sha256 })),
+    ])
+    const fetchMock = vi.fn()
+    const installer = new ScrcpyInstaller({ cacheDir: primary, fallbackCacheDirs: [legacy], fetch: fetchMock as typeof fetch })
+
+    await expect(installer.ensure(asset, new AbortController().signal, () => {}))
+      .resolves.toMatchObject({ root: installedRoot })
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
   it('downloads, verifies, extracts, marks, and reuses an official-shaped archive', async () => {
     const root = await mkdtemp(join(tmpdir(), 'coremate-scrcpy-install-'))
     temporary.push(root)

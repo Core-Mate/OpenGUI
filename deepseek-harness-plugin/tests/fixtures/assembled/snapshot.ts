@@ -22,16 +22,20 @@ const ctx = await boot('coremate-mobile-snapshot', rootConfigPath, [
   ...loadOverlayPatches('coremate-mobile-snapshot', profilePatchPath),
 ], undefined, import.meta.url)
 
-const snapshot = async (): Promise<unknown> => ({
-  commands: ctx.commands.list({} as Parameters<typeof ctx.commands.list>[0])
-    .filter(command => ['opengui', 'coremate'].includes(command.name)),
-  configurableProviders: ctx.llm.listConfigurableProviders()
-    .filter(provider => provider.provider === 'coremate-mobile'),
-  providers: ctx.llm.listProviders()
-    .filter(provider => ['coremate-inherited', 'coremate-mobile'].includes(provider.id)),
-  tools: (await ctx.systemPrompt.assemble()).tools
-    .filter(tool => ['phone_agent', 'phone_control', 'browser_agent', 'browser_control'].includes(tool.name)),
-})
+const snapshot = async (): Promise<unknown> => {
+  const assembly = await ctx.systemPrompt.assemble()
+  return {
+    commands: ctx.commands.list({} as Parameters<typeof ctx.commands.list>[0])
+      .filter(command => ['opengui', 'coremate'].includes(command.name)),
+    configurableProviders: ctx.llm.listConfigurableProviders()
+      .filter(provider => provider.provider === 'coremate-mobile'),
+    providers: ctx.llm.listProviders()
+      .filter(provider => ['coremate-inherited', 'coremate-mobile'].includes(provider.id)),
+    routingSections: assembly.sections.filter(section => section.name === 'tool:opengui-root-routing'),
+    tools: assembly.tools
+      .filter(tool => ['phone_agent', 'phone_control', 'browser_agent', 'browser_control'].includes(tool.name)),
+  }
+}
 
 try {
   const entry = [...ctx.loader.entries()].find(candidate => candidate.options.id === 'coremate-mobile')

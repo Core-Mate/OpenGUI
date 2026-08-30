@@ -17,6 +17,16 @@ export interface FleetDeviceView {
   readonly selected: boolean
 }
 
+/** Read-only connection state exposed by Codex device discovery. */
+export interface FleetDeviceStatusView {
+  readonly id: string
+  readonly label: string
+  readonly model?: string
+  readonly state: string
+  readonly connected: boolean
+  readonly authorized: boolean
+}
+
 export interface DeviceFleetSnapshot {
   readonly devices: readonly FleetDeviceView[]
   readonly selectedDeviceIds: readonly string[]
@@ -49,19 +59,9 @@ export class DeviceFleet {
 
   async snapshot(signal: AbortSignal): Promise<DeviceFleetSnapshot> {
     const devices = await this.discover(signal)
+    this.syncRecords(devices, false)
     const authorized = devices.filter(device => device.state === 'device')
       .toSorted((a, b) => a.serial.localeCompare(b.serial))
-    const connectedSerials = new Set(authorized.map(device => device.serial))
-    for (const [serial, record] of this.records) {
-      if (connectedSerials.has(serial)) continue
-      this.records.delete(serial)
-      this.selected.delete(record.id)
-    }
-    for (const device of authorized) {
-      if (!this.records.has(device.serial)) {
-        this.records.set(device.serial, { id: this.createId(), serial: device.serial })
-      }
-    }
 
     // Preserve the single-phone experience. With multiple phones, an explicit
     // choice is required unless a prior still-connected choice already exists.
@@ -94,6 +94,33 @@ export class DeviceFleet {
       devices: views,
       selectedDeviceIds: views.filter(device => device.selected).map(device => device.id),
     }
+  }
+
+  /** List every ADB row, including unauthorized and offline devices, without exposing serials. */
+  async inspect(signal: AbortSignal): Promise<readonly FleetDeviceStatusView[]> {
+    const devices = (await this.discover(signal)).toSorted((a, b) => a.serial.localeCompare(b.serial))
+    this.syncRecords(devices, true)
+    const modelCounts = new Map<string, number>()
+    for (const device of devices) {
+      const model = displayModel(device) ?? 'Android phone'
+      modelCounts.set(model, (modelCounts.get(model) ?? 0) + 1)
+    }
+    const modelIndexes = new Map<string, number>()
+    return devices.map((device): FleetDeviceStatusView => {
+      const record = this.records.get(device.serial)!
+      const model = displayModel(device)
+      const base = model ?? 'Android phone'
+      const index = (modelIndexes.get(base) ?? 0) + 1
+      modelIndexes.set(base, index)
+      return {
+        id: record.id,
+        label: (modelCounts.get(base) ?? 0) > 1 ? `${base} ${index}` : base,
+        ...(model === undefined ? {} : { model }),
+        state: device.state,
+        connected: true,
+        authorized: device.state === 'device',
+      }
+    })
   }
 
   async select(deviceIds: readonly string[], signal: AbortSignal): Promise<DeviceFleetSnapshot> {
@@ -141,5 +168,24 @@ export class DeviceFleet {
         ...(view.model === undefined ? {} : { model: view.model }),
       }
     })
+  }
+
+
+  private syncRecords(devices: readonly AdbDevice[], includeUnavailable: boolean): void {
+    const connectedSerials = new Set(devices.map(device => device.serial))
+    for (const [serial, record] of this.records) {
+      if (connectedSerials.has(serial)) continue
+      this.records.delete(serial)
+      this.selected.delete(record.id)
+    }
+    const candidates = includeUnavailable ? devices : devices.filter(device => device.state === 'device')
+    for (const device of candidates.toSorted((a, b) => {
+      const authorization = Number(b.state === 'device') - Number(a.state === 'device')
+      return authorization === 0 ? a.serial.localeCompare(b.serial) : authorization
+    })) {
+      if (!this.records.has(device.serial)) {
+        this.records.set(device.serial, { id: this.createId(), serial: device.serial })
+      }
+    }
   }
 }

@@ -2,8 +2,10 @@ import { createServer } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import type { Context } from '@deepseek-ai/cordis'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { DEVICE_PREVIEW_PATH, DEVICE_SELECTION_PATH, PHONE_TASK_STATUS_PATH } from '../src/mirror-contract.ts'
-import { installMirrorHttp } from '../src/mirror-http.ts'
+import {
+  DEVICE_PREVIEW_PATH, DEVICE_SELECTION_PATH, DEVICE_STREAM_ENABLE_PATH, DEVICE_STREAM_STATUS_PATH, PHONE_TASK_STATUS_PATH,
+} from '../src/mirror-contract.ts'
+import { installMirrorHttp, publicStreamError } from '../src/mirror-http.ts'
 
 const servers: ReturnType<typeof createServer>[] = []
 
@@ -62,7 +64,7 @@ async function setup(options: { selectionLocked?: boolean } = {}) {
     { isActive: () => state().active, state, cancel: () => false },
     browser as never,
     { read: previewRead } as never,
-    { status: async () => ({ supported: true, cached: true }), approve: () => true, subscribe: vi.fn() } as never,
+    { status: async () => ({ supported: true, cached: true, approved: true, phase: 'ready' }), approve: () => true, subscribe: vi.fn() } as never,
   )
   const server = createServer((request, response) => {
     const path = new URL(request.url ?? '/', 'http://localhost').pathname
@@ -77,6 +79,18 @@ async function setup(options: { selectionLocked?: boolean } = {}) {
 }
 
 describe('OpenGUI local preview HTTP surface', () => {
+  it('keeps the legacy enable route idempotent while reporting automatic readiness', async () => {
+    const { base } = await setup()
+    const status = await fetch(`${base}${DEVICE_STREAM_STATUS_PATH}`, { headers: { Origin: base } })
+    expect(status.status).toBe(200)
+    await expect(status.json()).resolves.toMatchObject({ supported: true, approved: true, phase: 'ready' })
+    const enabled = await fetch(`${base}${DEVICE_STREAM_ENABLE_PATH}`, { method: 'POST', headers: { Origin: base } })
+    expect(enabled.status).toBe(202)
+    expect(publicStreamError('private /tmp/path scrcpy failure')).toEqual({
+      type: 'error', message: '实时画面启动失败，已切换为截图预览。',
+    })
+  })
+
   it('serves opaque same-origin JPEG previews with ETag revalidation', async () => {
     const { base, device, previewRead } = await setup()
     const url = `${base}${DEVICE_PREVIEW_PATH}?id=${device.id}`

@@ -34,10 +34,15 @@ jobs:
           import { readFileSync } from 'node:fs'
 
           const pkg = JSON.parse(readFileSync('package.json', 'utf8'))
+          const codex = JSON.parse(readFileSync('.codex-plugin/plugin.json', 'utf8'))
+          const publicCodex = JSON.parse(readFileSync('codex-public/.codex-plugin/plugin.json', 'utf8'))
           const expectedTag = `dsh-coremate-mobile-v${pkg.version}`
           if (expectedTag !== process.env.GITHUB_REF_NAME) {
             throw new Error(`tag ${process.env.GITHUB_REF_NAME} does not match ${expectedTag}`)
           }
+          if (codex.version !== pkg.version || publicCodex.version !== pkg.version) throw new Error('Codex manifest versions are out of sync')
+          if (codex.name !== 'opengui' || publicCodex.name !== 'opengui') throw new Error('Codex public identity is out of sync')
+          if (codex.mcpServers !== './.mcp.json' || 'mcpServers' in publicCodex) throw new Error('local/public Codex transport boundary is invalid')
           const installer = readFileSync('skills/opengui-coremate-install/scripts/install-macos.sh', 'utf8')
           const skill = readFileSync('skills/opengui-coremate-install/SKILL.md', 'utf8')
           const agent = readFileSync('skills/opengui-coremate-install/agents/openai.yaml', 'utf8')
@@ -71,10 +76,17 @@ jobs:
           tar -tzf "release-assets/$archive" > "$RUNNER_TEMP/archive-files.txt"
           tar -tvzf "release-assets/$archive" > "$RUNNER_TEMP/archive-verbose.txt"
           grep -Fx 'package/lib/index.js' "$RUNNER_TEMP/archive-files.txt"
+          grep -Fx 'package/lib/codex-mcp.js' "$RUNNER_TEMP/archive-files.txt"
+          grep -Fx 'package/lib/codex-cli.js' "$RUNNER_TEMP/archive-files.txt"
+          grep -Fx 'package/.codex-plugin/plugin.json' "$RUNNER_TEMP/archive-files.txt"
+          grep -Fx 'package/.mcp.json' "$RUNNER_TEMP/archive-files.txt"
+          grep -Fx 'package/skills/control/SKILL.md' "$RUNNER_TEMP/archive-files.txt"
+          grep -Fx 'package/codex-public/.codex-plugin/plugin.json' "$RUNNER_TEMP/archive-files.txt"
           grep -Fx 'package/cordis.patch.yml' "$RUNNER_TEMP/archive-files.txt"
           grep -Fx 'package/assets/platform-tools/win32-x64/adb.exe' "$RUNNER_TEMP/archive-files.txt"
           grep -Fx 'package/assets/platform-tools/win32-x64/AdbWinApi.dll' "$RUNNER_TEMP/archive-files.txt"
           grep -Fx 'package/assets/platform-tools/win32-x64/AdbWinUsbApi.dll' "$RUNNER_TEMP/archive-files.txt"
+          grep -E '^-rwxr-xr-x .* package/lib/codex-cli.js$' "$RUNNER_TEMP/archive-verbose.txt"
           grep -E '^-rwxr-xr-x .* package/assets/platform-tools/darwin/adb$' "$RUNNER_TEMP/archive-verbose.txt"
           grep -E '^-rwxr-xr-x .* package/assets/platform-tools/linux-x64/adb$' "$RUNNER_TEMP/archive-verbose.txt"
           (
@@ -142,7 +154,9 @@ jobs:
 
           Download both the \`.tgz\` package and its \`.sha256\` file. The recommended macOS path is the [Codex installer Skill](https://github.com/Core-Mate/OpenGUI/tree/${GITHUB_REF_NAME}/deepseek-harness-plugin/skills/opengui-coremate-install).
 
-          The plugin supports \`/opengui\`, \`@OpenGUI\`, delegated phone and browser tasks, multi-device selection, and read-only phone mirroring. It requires DeepSeek Harness \`0.1.0-rc.7\` and a model with image input and tool calling.
+          The package supports DeepSeek Harness through \`/opengui\` and \`@OpenGUI\`, and Codex through the \`opengui:control\` Skill plus seven local stdio MCP tools. Both hosts share the same bounded Android execution runtime, multi-device locking, cancellation, and read-only device-wall support.
+
+          The public plugin-directory materials remain Skills-only and do not add a hosted phone-control gateway. DeepSeek Harness integration requires \`0.1.0-rc.7\`; Codex local control requires the packaged Node runtime and a locally authorized Android device.
           EOF
             gh release create "$GITHUB_REF_NAME" --draft --verify-tag \
               --title "dsh-coremate-mobile v${version}" \

@@ -114,6 +114,7 @@ export interface ScrcpyStreamSink {
 export interface ScrcpyStreamStatus {
   supported: boolean
   cached: boolean
+  /** @deprecated Kept true on supported Hosts for one client-compatibility release. */
   approved: boolean
   phase: 'idle' | 'downloading' | 'extracting' | 'ready' | 'error'
   version: string
@@ -173,7 +174,6 @@ export class ScrcpyVideoStreams {
   private readonly forwardRegistry: OwnedForwardRegistry
   private readonly entries = new Map<string, StreamEntry>()
   private readonly lifetime = new AbortController()
-  private approved = false
   private phase: ScrcpyStreamStatus['phase'] = 'idle'
   private downloadedBytes: number | undefined
   private message: string | undefined
@@ -191,9 +191,8 @@ export class ScrcpyVideoStreams {
   }
 
   approve(): boolean {
-    if (this.asset === undefined) return false
-    this.approved = true
-    return true
+    // Compatibility endpoint: first-use preparation is automatic now.
+    return this.asset !== undefined
   }
 
   async status(): Promise<ScrcpyStreamStatus> {
@@ -202,7 +201,7 @@ export class ScrcpyVideoStreams {
     return {
       supported: this.asset !== undefined,
       cached,
-      approved: cached || this.approved,
+      approved: this.asset !== undefined,
       phase: cached && this.phase === 'idle' ? 'ready' : this.phase,
       version: SCRCPY_VERSION,
       ...(this.asset === undefined ? {} : { totalBytes: this.asset.bytes }),
@@ -217,9 +216,6 @@ export class ScrcpyVideoStreams {
     if (this.lifetime.signal.aborted) throw new Error('stream_disposed')
     const asset = this.asset
     if (asset === undefined) throw new Error('stream_unsupported')
-    const installed = await this.installer.isInstalled(asset)
-    if (!installed && !this.approved) throw new Error('stream_download_not_approved')
-
     let entry = this.entries.get(device.id)
     if (entry?.closed === true) {
       if (this.entries.get(device.id) === entry) this.entries.delete(device.id)
@@ -414,9 +410,8 @@ export class ScrcpyVideoStreams {
     return closing
   }
 
-  private publicError(error: unknown): string {
-    const message = error instanceof Error ? error.message : String(error)
-    return message.replaceAll(/(?:[A-Za-z]:\\|\/)[^\s:]+/gu, '<local-path>')
+  private publicError(_error: unknown): string {
+    return '实时画面启动失败，已切换为截图预览。'
   }
 }
 

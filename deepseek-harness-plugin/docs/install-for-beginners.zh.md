@@ -4,7 +4,7 @@
 
 ## 目前能不能直接安装？
 
-可以。从 [OpenGUI 的公开 Release](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.5) 打开插件版本，在 Assets 中下载 `dsh-coremate-mobile-0.1.5.tgz`。
+可以。从 [OpenGUI 的公开 Release](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.6) 打开插件版本，在 Assets 中下载 `dsh-coremate-mobile-0.1.6.tgz`。
 
 下载后不要解压。不要下载 “Source code (zip)” 或 “Source code (tar.gz)”；它们是 GitHub 自动生成的源码压缩包，不是普通用户安装包。
 
@@ -13,7 +13,7 @@
 开始前确认以下事项：
 
 1. 电脑已经能启动官方 DeepSeek Harness；当前已验证版本为 `0.1.0-rc.7`。
-2. 已下载 `dsh-coremate-mobile-0.1.5.tgz`，并且没有解压。
+2. 已下载 `dsh-coremate-mobile-0.1.6.tgz`，并且没有解压。
 3. 电脑能访问公开的 GitHub Releases；不需要登录 GitHub。
 4. Node.js 版本为 `22.19.x`，或 `24` 及以上。如果 `node --version` 不在这个范围，请先切换到受支持版本。
 5. Harness 当前对话里已选择一个模型。该模型最好支持图片输入和工具调用；如果不兼容，OpenGUI 会在第一次真实任务时引导配置专用视觉模型。
@@ -42,9 +42,9 @@ npx @deepseek-ai/dsh@0.1.0-rc.7 --help
 npx @deepseek-ai/dsh@0.1.0-rc.7 plugin --profile web add 
 ```
 
-找到下载好的 `dsh-coremate-mobile-0.1.5.tgz`，用鼠标把它拖进终端窗口，终端会自动填入文件路径，然后按回车。
+找到下载好的 `dsh-coremate-mobile-0.1.6.tgz`，用鼠标把它拖进终端窗口，终端会自动填入文件路径，然后按回车。
 
-看到 `dsh-coremate-mobile 0.1.5` 和安装完成信息，表示插件文件已经加入 Harness。此时还没有证明插件能够启动；第五步会进行实际装载验证。
+看到 `dsh-coremate-mobile 0.1.6` 和安装完成信息，表示插件文件已经加入 Harness。此时还没有证明插件能够启动；第五步会进行实际装载验证。
 
 ### 如果出现 `ERR_PNPM_IGNORED_BUILDS`
 
@@ -110,7 +110,9 @@ Usage: /opengui <task>
 
 执行期间不要拔掉 USB 线，也不要同时发送第二个 `/opengui` 任务。
 
-OpenGUI 默认复用当前 DSH 会话模型。当前模型明确支持图片时会直接执行；能力信息不明确时只询问一次是否继续复用；明确不支持图片时，才会解释 Base URL、协议、模型 ID 和 API Key，并引导配置专用视觉模型。API Key 只保存到 Harness 凭据存储，不会成为聊天消息。
+OpenGUI 默认复用当前 DSH 会话模型。当前模型明确支持图片时会直接执行；自定义模型遗漏能力声明时，只会询它是否支持图片和工具调用，确认后自动补全当前模型并继续；明确不支持图片时，才会引导配置专用视觉模型。只有选择专用模型后才会出现 Base URL、协议、模型 ID 和 API Key。API Key 只保存到 Harness 凭据存储，不会成为聊天消息。
+
+跳过任何一步都会安全取消本次任务，不调用模型、不操作手机、不保存半套配置。工作台画面和手动投屏不受影响，下次提交任务时会重新询问。
 
 如果当前模型在执行过程中实际报告不支持图片或工具调用，OpenGUI 不会自动重跑原任务，以免重复手机操作。完成专用模型配置后，请手动重新提交任务。
 
@@ -118,7 +120,13 @@ OpenGUI 默认复用当前 DSH 会话模型。当前模型明确支持图片时�
 
 ## 怎样卸载？
 
-在终端执行：
+如果通过 macOS 安装 Skill 安装，在仓库中执行：
+
+```sh
+./skills/opengui-coremate-install/scripts/uninstall-macos.sh
+```
+
+这个脚本会停止并删除 OpenGUI 自己的后台启动项，再移除插件，不会删除设置、密钥和缓存。其他安装方式可在终端执行：
 
 ```sh
 npx @deepseek-ai/dsh@0.1.0-rc.7 plugin --profile web remove dsh-coremate-mobile

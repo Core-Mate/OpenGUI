@@ -60,10 +60,29 @@ export function resolveScrcpyAsset(platform = process.platform, arch = process.a
   return SCRCPY_ASSETS[`${platform}-${arch}`]
 }
 
-export function defaultScrcpyCacheDir(): string {
-  const configured = process.env.DSH_HOME?.trim()
-  const dshHome = configured ? resolve(configured) : join(homedir(), '.dsh')
-  return join(dshHome, 'cache', 'coremate-mobile', 'scrcpy')
+export function defaultScrcpyCacheDir(
+  platform = process.platform,
+  environment: NodeJS.ProcessEnv = process.env,
+  home = homedir(),
+): string {
+  if (platform === 'darwin') return join(home, 'Library', 'Caches', 'OpenGUI', 'scrcpy')
+  if (platform === 'win32') {
+    const localAppData = environment.LOCALAPPDATA?.trim()
+    return join(localAppData ? resolve(localAppData) : join(home, 'AppData', 'Local'), 'OpenGUI', 'Cache', 'scrcpy')
+  }
+  const xdgCache = environment.XDG_CACHE_HOME?.trim()
+  return join(xdgCache ? resolve(xdgCache) : join(home, '.cache'), 'opengui', 'scrcpy')
+}
+
+/** Previous profile-scoped locations remain read-only fallbacks for a no-download upgrade. */
+export function legacyScrcpyCacheDirs(
+  environment: NodeJS.ProcessEnv = process.env,
+  home = homedir(),
+): string[] {
+  const configured = environment.DSH_HOME?.trim()
+  const roots = [configured ? resolve(configured) : undefined, join(home, '.dsh')]
+  return [...new Set(roots.filter((root): root is string => root !== undefined)
+    .map(root => join(root, 'cache', 'coremate-mobile', 'scrcpy')))]
 }
 
 export interface InstalledScrcpy {
@@ -87,22 +106,26 @@ interface ScrcpyInstallJob {
 
 export interface ScrcpyInstallerOptions {
   cacheDir?: string
+  fallbackCacheDirs?: readonly string[]
   fetch?: typeof globalThis.fetch
 }
 
 /** Atomic, verified first-use installation of one official scrcpy archive. */
 export class ScrcpyInstaller {
   private readonly cacheDir: string
+  private readonly fallbackCacheDirs: readonly string[]
   private readonly fetchImpl: typeof globalThis.fetch
   private readonly active = new Map<string, ScrcpyInstallJob>()
 
   constructor(options: ScrcpyInstallerOptions = {}) {
     this.cacheDir = options.cacheDir ?? defaultScrcpyCacheDir()
+    this.fallbackCacheDirs = options.fallbackCacheDirs
+      ?? (options.cacheDir === undefined ? legacyScrcpyCacheDirs() : [])
     this.fetchImpl = options.fetch ?? globalThis.fetch
   }
 
-  paths(asset: ScrcpyAsset): InstalledScrcpy {
-    const root = join(this.cacheDir, `v${SCRCPY_VERSION}`, asset.key, asset.archiveRoot)
+  paths(asset: ScrcpyAsset, cacheDir = this.cacheDir): InstalledScrcpy {
+    const root = join(cacheDir, `v${SCRCPY_VERSION}`, asset.key, asset.archiveRoot)
     return {
       root,
       executable: join(root, asset.executable),
@@ -111,7 +134,18 @@ export class ScrcpyInstaller {
   }
 
   async isInstalled(asset: ScrcpyAsset): Promise<boolean> {
-    const paths = this.paths(asset)
+    return await this.findInstalled(asset) !== undefined
+  }
+
+  private async findInstalled(asset: ScrcpyAsset): Promise<InstalledScrcpy | undefined> {
+    for (const cacheDir of [this.cacheDir, ...this.fallbackCacheDirs]) {
+      const paths = this.paths(asset, cacheDir)
+      if (await this.isInstalledAt(asset, paths)) return paths
+    }
+    return undefined
+  }
+
+  private async isInstalledAt(asset: ScrcpyAsset, paths: InstalledScrcpy): Promise<boolean> {
     const marker = join(paths.root, '.coremate-install.json')
     try {
       const [executable, server, raw] = await Promise.all([
@@ -181,7 +215,8 @@ export class ScrcpyInstaller {
     signal: AbortSignal,
     progress: (progress: InstallProgress) => void,
   ): Promise<InstalledScrcpy> {
-    if (await this.isInstalled(asset)) return this.paths(asset)
+    const existing = await this.findInstalled(asset)
+    if (existing !== undefined) return existing
     signal.throwIfAborted()
 
     const assetDir = join(this.cacheDir, `v${SCRCPY_VERSION}`, asset.key)
@@ -194,7 +229,8 @@ export class ScrcpyInstaller {
       throw error
     })
     try {
-      if (await this.isInstalled(asset)) return this.paths(asset)
+      const installed = await this.findInstalled(asset)
+      if (installed !== undefined) return installed
       await this.download(asset, archivePath, signal, progress)
       signal.throwIfAborted()
       progress({ phase: 'extracting' })
@@ -241,7 +277,7 @@ export class ScrcpyInstaller {
           await rm(destination, { recursive: true, force: true }).catch(() => undefined)
           await rename(quarantine, destination).catch(() => undefined)
         }
-        if (!(await this.isInstalled(asset))) throw error
+        if (!(await this.isInstalledAt(asset, this.paths(asset)))) throw error
       }
       return this.paths(asset)
     } finally {
@@ -516,6 +552,16 @@ export class ScrcpyTextInput {
     await Promise.allSettled([...this.active.values()].map(connection => (
       this.close(connection, new Error('coremate-mobile: scrcpy text input disposed'))
     )))
+  }
+
+  /** Close one device's reusable text channel and release its owned ADB forward. */
+  async release(serial: string): Promise<void> {
+    const pending = this.starting.get(serial)
+    if (pending !== undefined) await pending.catch(() => undefined)
+    const connection = this.active.get(serial)
+    if (connection !== undefined) {
+      await this.close(connection, new Error('coremate-mobile: scrcpy text input session released'))
+    }
   }
 
   private async connection(serial: string, signal: AbortSignal): Promise<ScrcpyTextConnection> {

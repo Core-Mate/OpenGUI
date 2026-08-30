@@ -42,12 +42,14 @@ describe('OpenGUI assembled snapshot', () => {
           "commands": [],
           "configurableProviders": [],
           "providers": [],
+          "routingSections": [],
           "tools": [],
         },
         "before": {
           "commands": [],
           "configurableProviders": [],
           "providers": [],
+          "routingSections": [],
           "tools": [],
         },
         "entry": null,
@@ -59,6 +61,7 @@ describe('OpenGUI assembled snapshot', () => {
           "commands": [],
           "configurableProviders": [],
           "providers": [],
+          "routingSections": [],
           "tools": [],
         },
         "before": {
@@ -94,6 +97,12 @@ describe('OpenGUI assembled snapshot', () => {
             {
               "id": "coremate-mobile",
               "name": "OpenGUI model",
+            },
+          ],
+          "routingSections": [
+            {
+              "name": "tool:opengui-root-routing",
+              "text": "When phone_agent is available, every request to inspect, operate, test, or coordinate an Android phone, mobile app, or mobile game must use phone_agent. This routing is based on the user's intent; the user does not need to mention OpenGUI, @OpenGUI, or /opengui. Never substitute Bash, shell commands, raw adb, or another UI-control path. If phone_agent cannot start, report the OpenGUI connection or configuration problem instead of bypassing it.",
             },
           ],
           "tools": [

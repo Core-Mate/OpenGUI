@@ -3,45 +3,58 @@ import {
   currentModelCapability,
   decideModelRouting,
   inheritedCapabilityFailure,
+  migratedLegacyTrust,
 } from '../src/model-routing.ts'
 
-const currentFirst = { modelStrategy: 'current-first' as const, trustUnknownCurrentModels: false }
+const currentFirst = { modelStrategy: 'current-first' as const, trustUnknownCurrentModels: false, trustedCurrentModels: [] }
 const route = { provider: 'openai', model: 'gpt-vision' }
 
 describe('OpenGUI current-model routing decisions', () => {
   it('uses a model that explicitly accepts images without asking', () => {
     expect(currentModelCapability(['text', 'image'])).toBe('supported')
-    expect(decideModelRouting(currentFirst, route, 'supported')).toEqual({ kind: 'inherit', ...route })
+    expect(decideModelRouting(currentFirst, route, 'ready')).toEqual({ kind: 'inherit', ...route })
   })
 
   it('sends explicitly text-only models to the dedicated fallback', () => {
     expect(currentModelCapability(['text'])).toBe('unsupported')
-    expect(decideModelRouting(currentFirst, route, 'unsupported')).toEqual({
+    expect(decideModelRouting(currentFirst, route, 'text-only')).toEqual({
       kind: 'dedicated',
       reason: 'unsupported',
     })
   })
 
-  it('asks once for unknown capability and trusts later model changes globally', () => {
+  it('asks for unknown capability and scopes trust to one exact route', () => {
     expect(currentModelCapability(undefined)).toBe('unknown')
-    expect(decideModelRouting(currentFirst, route, 'unknown')).toEqual({ kind: 'confirm', ...route })
+    expect(decideModelRouting(currentFirst, route, 'unknown-unpatchable')).toEqual({ kind: 'confirm', ...route })
     expect(decideModelRouting(
-      { modelStrategy: 'current-first', trustUnknownCurrentModels: true },
+      { modelStrategy: 'current-first', trustUnknownCurrentModels: false, trustedCurrentModels: ['["openai","gpt-vision"]'] },
+      route,
+      'unknown-unpatchable',
+    )).toEqual({ kind: 'inherit', ...route })
+    expect(decideModelRouting(
+      { modelStrategy: 'current-first', trustUnknownCurrentModels: true, trustedCurrentModels: ['["openai","gpt-vision"]'] },
       { provider: 'another', model: 'new-model' },
-      'unknown',
-    )).toEqual({ kind: 'inherit', provider: 'another', model: 'new-model' })
+      'unknown-unpatchable',
+    )).toEqual({ kind: 'confirm', provider: 'another', model: 'new-model' })
   })
 
   it('honors an explicit dedicated strategy and missing parent route', () => {
     expect(decideModelRouting(
-      { modelStrategy: 'dedicated', trustUnknownCurrentModels: true },
+      { modelStrategy: 'dedicated', trustUnknownCurrentModels: true, trustedCurrentModels: [] },
       route,
-      'supported',
+      'ready',
     )).toEqual({ kind: 'dedicated', reason: 'selected' })
-    expect(decideModelRouting(currentFirst, {}, 'unknown')).toEqual({
+    expect(decideModelRouting(currentFirst, {}, 'unknown-unpatchable')).toEqual({
       kind: 'dedicated',
       reason: 'missing-current',
     })
+  })
+
+  it('migrates legacy global trust only to the active unknown route', () => {
+    const legacy = { modelStrategy: 'current-first' as const, trustUnknownCurrentModels: true, trustedCurrentModels: [] }
+    expect(migratedLegacyTrust(legacy, route, 'unknown-patchable')).toEqual(['["openai","gpt-vision"]'])
+    expect(migratedLegacyTrust(legacy, { provider: 'another', model: 'new-model' }, 'ready')).toBeUndefined()
+    expect(migratedLegacyTrust({ ...legacy, trustUnknownCurrentModels: false }, route, 'unknown-unpatchable')).toBeUndefined()
   })
 
   it('recognizes provider image and tool capability errors without matching ordinary failures', () => {

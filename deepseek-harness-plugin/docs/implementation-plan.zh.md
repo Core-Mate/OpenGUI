@@ -22,11 +22,11 @@
 ## 非目标
 
 - 不修改 DeepSeek Harness 源码。
-- 不替换 `dsh-coremate-mobile` 包名、settings namespace、缓存目录或内部 HTTP 路由。
+- 不替换 `dsh-coremate-mobile` 包名、settings namespace 或内部 HTTP 路由；仅把无用户数据的画面组件迁移为用户级共享缓存，并兼容读取旧缓存。
 - 不引入托管网关、平台代付或预配置视觉模型。
 - 不自动打开独立 scrcpy 窗口，也不增加显式“浏览器模式”选择器。
 - 不在本轮迁移历史会话中的 `CoreMate` 标题。
-- 不把本方案等同于 v0.1.5 发布完成；本地 HTTP/WebSocket 信任边界、实机验收、tag、Release 和安装包校验仍是独立发布门禁。
+- 不把本方案等同于 v0.1.6 发布完成；本地 HTTP/WebSocket 信任边界、实机验收、tag、Release 和安装包校验仍是独立发布门禁。
 
 ## 总体架构
 
@@ -85,7 +85,7 @@ session bridge 对异步创建使用 generation 检查：如果用户在创建�
 
 ### 4. 实时画面状态机
 
-scrcpy 安装/批准状态提升到 OpenGUI Tab，由全部设备卡共享；用户批准一次后统一刷新 generation，避免每张卡各自持有过期状态。
+画面组件安装状态提升到 OpenGUI Tab，由全部设备卡共享。设备卡可见且在线时自动准备实时画面，不再要求普通用户理解或批准底层组件。
 
 设备卡只有同时满足“已展开、在 viewport 内、页面可见、设备在线”时才保持 H.264 WebSocket。WebCodecs 的配置检查、同步异常、异步 decoder error、坏包、WebSocket error 和服务端 error 都进入同一个 fatal 路径：关闭 decoder 与 socket，显示错误，并启动 JPEG fallback。
 

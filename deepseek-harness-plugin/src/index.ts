@@ -4,7 +4,6 @@
  * @module dsh-coremate-mobile
  */
 
-import { createHash } from 'node:crypto'
 import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import type { CommandDefinition, CommandInvocation, CommandResult } from '@deepseek-ai/dsh-commands'
@@ -22,18 +21,13 @@ import type { ImageAttachmentRef } from '@deepseek-ai/dsh-attachment'
 import { AttachmentId } from '@deepseek-ai/dsh-attachment'
 import type { SubagentResult, SubagentRun } from '@deepseek-ai/dsh-subagent'
 import {
-  actionCommand,
   assertAdbReady,
-  canUseAdbInputText,
   managedAdbPath,
-  normalizePhoneAction,
   parseDevices,
-  parseScreenSize,
   runAdb,
-  textInputCommands,
 } from './adb.ts'
-import type { ObservationId, PhoneCoordinateSpace } from './adb.ts'
-import { encodePhoneScreenshot } from './image.ts'
+import type { ObservationId } from './adb.ts'
+import { encodePhoneScreenshotFrame } from './image.ts'
 import { configurePhoneModel } from './configuration.ts'
 import { DeviceFleet } from './device-fleet.ts'
 import type { FleetDevice } from './device-fleet.ts'
@@ -43,8 +37,10 @@ import { relayNestedTaskProgress, relayPhoneTaskProgress } from './phone-progres
 import { OpenGuiTaskManager, OPENGUI_USAGE } from './phone-task.ts'
 import type { CoremateTaskPresentation, CoremateTaskResult, OpenGuiTaskLease } from './phone-task.ts'
 import { resolveMobileProfile, type MobileApi } from './provider.ts'
-import { latestPhoneScreenshotMessages, PhoneExecutionState, PhoneOperationQueue, waitForPhoneUi } from './runtime.ts'
+import { latestPhoneScreenshotMessages } from './runtime.ts'
 import { PhonePreview } from './preview.ts'
+import { PhoneController } from './phone-controller.ts'
+import type { RawPhoneObservation } from './phone-controller.ts'
 import { resolveScrcpyAsset, ScrcpyInstaller, ScrcpyMirror, ScrcpyTextInput } from './scrcpy.ts'
 import { ScrcpyVideoStreams } from './scrcpy-stream.ts'
 import { BrowserController } from './browser-control.ts'
@@ -57,11 +53,20 @@ import {
   InheritedModelAdapter,
 } from './inherited-model.ts'
 import {
-  currentModelCapability,
   decideModelRouting,
   inheritedCapabilityFailure,
+  migratedLegacyTrust,
   type CoremateModelStrategy,
 } from './model-routing.ts'
+import {
+  classifyModelCapability,
+  declareCurrentModelVision,
+  modelRouteKey,
+  withdrawVisionDeclaration,
+  type ModelCapability,
+  type ModelRoute,
+  type VisionDeclaration,
+} from './model-capability.ts'
 import { cleanCoremateSuggestionBlocks, COREMATE_SUGGESTION_INSTRUCTION } from './suggestions.ts'
 import { AsyncSemaphore } from './concurrency.ts'
 
@@ -76,7 +81,10 @@ export const inject = ['llm', 'settings', 'tools', 'subagents', 'systemPrompt', 
 
 const PROVIDER = 'coremate-mobile'
 const NS = settingsNamespace('coremate-mobile')
+const LLM_PI_AI_NS = settingsNamespace('llm-pi-ai')
 const API_KEY_ENV = 'COREMATE_MOBILE_API_KEY'
+const CANCELLED_TEXT = '本次 OpenGUI 任务未执行；当前模型尚未配置。手机画面和手动投屏不受影响，下次提交时会重新询问。'
+const ROOT_ROUTING_PROMPT = `When phone_agent is available, every request to inspect, operate, test, or coordinate an Android phone, mobile app, or mobile game must use phone_agent. This routing is based on the user's intent; the user does not need to mention OpenGUI, @OpenGUI, or /opengui. Never substitute Bash, shell commands, raw adb, or another UI-control path. If phone_agent cannot start, report the OpenGUI connection or configuration problem instead of bypassing it.`
 
 /** Pi-ai route that keeps durable phone history intact while bounding model-facing image history. */
 class PhonePiAiAdapter extends PiAiAdapter {
@@ -99,6 +107,10 @@ export interface Config {
   modelStrategy?: CoremateModelStrategy
   /** Reuse models whose image capability metadata is absent without asking again. */
   trustUnknownCurrentModels?: boolean
+  /** Exact provider/model routes the user confirmed when metadata is unavailable. */
+  trustedCurrentModels?: string[]
+  /** Plugin-owned image declarations, retained so a capability failure can safely undo them. */
+  visionDeclarations?: string[]
   /** Maximum duration of each local ADB process. */
   commandTimeoutMs?: number
   /** Maximum phone-control operations in one child task. */
@@ -120,6 +132,8 @@ const DEFAULT_CONFIG = {
   apiKeyEnv: API_KEY_ENV,
   modelStrategy: 'current-first',
   trustUnknownCurrentModels: false,
+  trustedCurrentModels: [],
+  visionDeclarations: [],
   commandTimeoutMs: 15_000,
   maxOperations: 100,
   maxParallelDevices: 4,
@@ -127,7 +141,7 @@ const DEFAULT_CONFIG = {
   maxTokens: 32_768,
   streamIdleTimeoutMs: 300_000,
 } as const satisfies Required<Pick<Config,
-  'api' | 'apiKeyEnv' | 'modelStrategy' | 'trustUnknownCurrentModels' | 'commandTimeoutMs' | 'maxOperations' | 'maxParallelDevices' | 'contextWindow' | 'maxTokens' | 'streamIdleTimeoutMs'>>
+  'api' | 'apiKeyEnv' | 'modelStrategy' | 'trustUnknownCurrentModels' | 'trustedCurrentModels' | 'visionDeclarations' | 'commandTimeoutMs' | 'maxOperations' | 'maxParallelDevices' | 'contextWindow' | 'maxTokens' | 'streamIdleTimeoutMs'>>
 
 export const Config: z<Config> = z.object({
   baseURL: z.string(),
@@ -136,6 +150,8 @@ export const Config: z<Config> = z.object({
   apiKeyEnv: z.string().role('credential-ref').default(DEFAULT_CONFIG.apiKeyEnv),
   modelStrategy: z.union(['current-first', 'dedicated'] as const).default(DEFAULT_CONFIG.modelStrategy),
   trustUnknownCurrentModels: z.boolean().default(DEFAULT_CONFIG.trustUnknownCurrentModels),
+  trustedCurrentModels: z.array(z.string()).default(DEFAULT_CONFIG.trustedCurrentModels),
+  visionDeclarations: z.array(z.string()).default(DEFAULT_CONFIG.visionDeclarations),
   commandTimeoutMs: z.number().step(1).min(1_000).max(120_000).default(DEFAULT_CONFIG.commandTimeoutMs),
   maxOperations: z.number().step(1).min(1).max(10_000).default(DEFAULT_CONFIG.maxOperations),
   maxParallelDevices: z.number().step(1).min(1).max(16).default(DEFAULT_CONFIG.maxParallelDevices),
@@ -145,11 +161,20 @@ export const Config: z<Config> = z.object({
   adbPath: z.string(),
 })
 
+class OpenGuiTaskCancelled extends Error {
+  constructor(message = CANCELLED_TEXT) {
+    super(message)
+    this.name = 'OpenGuiTaskCancelled'
+  }
+}
+
 type ResolvedConfig = Config & {
   api: NonNullable<Config['api']>
   apiKeyEnv: string
   modelStrategy: CoremateModelStrategy
   trustUnknownCurrentModels: boolean
+  trustedCurrentModels: string[]
+  visionDeclarations: string[]
   commandTimeoutMs: number
   maxOperations: number
   maxParallelDevices: number
@@ -164,6 +189,8 @@ function resolvedConfig(config: Config): ResolvedConfig {
     apiKeyEnv: config.apiKeyEnv ?? DEFAULT_CONFIG.apiKeyEnv,
     modelStrategy: config.modelStrategy ?? DEFAULT_CONFIG.modelStrategy,
     trustUnknownCurrentModels: config.trustUnknownCurrentModels ?? DEFAULT_CONFIG.trustUnknownCurrentModels,
+    trustedCurrentModels: [...(config.trustedCurrentModels ?? DEFAULT_CONFIG.trustedCurrentModels)],
+    visionDeclarations: [...(config.visionDeclarations ?? DEFAULT_CONFIG.visionDeclarations)],
     commandTimeoutMs: config.commandTimeoutMs ?? DEFAULT_CONFIG.commandTimeoutMs,
     maxOperations: config.maxOperations ?? DEFAULT_CONFIG.maxOperations,
     maxParallelDevices: config.maxParallelDevices ?? DEFAULT_CONFIG.maxParallelDevices,
@@ -304,12 +331,6 @@ async function settleForeground(run: SubagentRun, progress?: ForegroundProgress)
   }
 }
 
-function currentPackage(output: string): string {
-  return output.match(/(?:mCurrentFocus|mFocusedApp)=[^\n]*?\bu\d+\s+([A-Za-z0-9._]+)\//u)?.[1]
-    ?? output.match(/(?:topResumedActivity|mResumedActivity)[^\n]*?\bu\d+\s+([A-Za-z0-9._]+)\//u)?.[1]
-    ?? ''
-}
-
 function imageRef(image: PhoneObservation['image'] | BrowserImage): ImageAttachmentRef {
   return {
     attachmentId: AttachmentId(image.attachmentId),
@@ -342,17 +363,17 @@ interface PhoneObservation {
   }
 }
 
-interface StoredObservation {
-  value: PhoneObservation
-  fingerprint: string
-}
-
 /**
  * Register model routing, delegation, and ADB control.
  * @param ctx Harness plugin context.
  * @param baseConfig Initial plugin configuration before settings overrides.
  */
 export function apply(ctx: Context, baseConfig: Config): void {
+  ctx.systemPrompt.section({
+    name: 'tool:opengui-root-routing',
+    order: 120,
+    text: ROOT_ROUTING_PROMPT,
+  })
   let current = (): Config => baseConfig
   let lastRaw: Config | undefined
   let lastProfile: ResolvedPiAiProviderProfile | undefined
@@ -379,9 +400,8 @@ export function apply(ctx: Context, baseConfig: Config): void {
     resolveApiKey,
     resolveAttachments: () => ctx.get('attachments'),
   })
-  const observations = new WeakMap<object, StoredObservation>()
-  const executionState = new PhoneExecutionState()
-  const operationQueue = new PhoneOperationQueue()
+  const hostedObservations = new WeakMap<object, PhoneObservation>()
+  let phoneController!: PhoneController
   const managedBrowser = new ManagedBrowser()
   const browserController = new BrowserController({
     async saveImage(data, imageName) {
@@ -446,7 +466,7 @@ export function apply(ctx: Context, baseConfig: Config): void {
           await child.dispose()
           throw new Error('coremate-mobile: a phone task requires a local child agent')
         }
-        executionState.assignTarget(child.localAgent, target.serial)
+        phoneController.assignTarget(child.localAgent, target.serial)
         return { target, result: await settleForeground(child, foregroundProgress) }
       }
       let results: { target: FleetDevice, result: CoremateTaskResult }[]
@@ -597,7 +617,7 @@ export function apply(ctx: Context, baseConfig: Config): void {
 
   type TaskInteraction = Pick<CommandInvocation, 'agent' | 'signal'>
 
-  const dedicatedAgentOptions = async (invocation: TaskInteraction): Promise<AgentOptions> => {
+  const dedicatedAgentOptions = async (invocation: TaskInteraction, force = false): Promise<AgentOptions> => {
     const questions = ctx.get('userQuestions')
     const credentials = ctx.get('credentials')
     const initial = resolvedConfig(current())
@@ -605,20 +625,21 @@ export function apply(ctx: Context, baseConfig: Config): void {
     const initialKey = credentials === undefined
       ? undefined
       : await credentials.resolve(credentialRef(initial.apiKeyEnv))
-    if (initialProfile !== undefined && initial.model?.trim() && initialKey !== undefined) {
+    if (!force && initialProfile !== undefined && initial.model?.trim() && initialKey !== undefined) {
       return { provider: PROVIDER, model: initial.model.trim(), maxTokens: initial.maxTokens }
     }
     if (questions === undefined || credentials === undefined) {
       throw new Error('coremate-mobile: 当前 Host 不支持对话式配置；请在 settings.yaml 和凭据存储中配置 OpenGUI 模型')
     }
 
-    const changed = await configurePhoneModel(initial, {
+    const configured = await configurePhoneModel(initial, {
       ask: request => questions.ask(request),
       resolveCredential: async ref => (await credentials.resolve(ref))?.value,
       storeCredential: (ref, secret) => credentials.set(ref, secret),
       updateSettings: patch => ctx.settings.update(NS, patch),
-    }, invocation)
-    if (changed) refreshRoute()
+    }, invocation, force)
+    if (configured.status === 'cancelled') throw new OpenGuiTaskCancelled()
+    if (configured.changed) refreshRoute()
     const value = resolvedConfig(current())
     const active = profile()
     const key = await credentials.resolve(credentialRef(value.apiKeyEnv))
@@ -631,7 +652,7 @@ export function apply(ctx: Context, baseConfig: Config): void {
 
   const inheritedOptions = (options: AgentOptions): AgentOptions => inheritedAgentOptions(options)
 
-  const currentCapability = async (options: AgentOptions, signal: AbortSignal) => {
+  const upstreamRoute = (options: AgentOptions): ModelRoute | undefined => {
     let provider = options.provider?.trim()
     let model = options.model?.trim()
     if (provider === INHERITED_PROVIDER && model) {
@@ -639,14 +660,63 @@ export function apply(ctx: Context, baseConfig: Config): void {
       provider = decoded.provider
       model = decoded.model
     }
-    if (!provider || !model) return 'unknown' as const
-    if (provider === PROVIDER) return 'supported' as const
+    return provider && model ? { provider, model } : undefined
+  }
+
+  const currentCapability = async (options: AgentOptions, signal: AbortSignal): Promise<ModelCapability> => {
+    const route = upstreamRoute(options)
+    if (route === undefined) return 'unknown-unpatchable'
+    if (route.provider === PROVIDER) return 'ready'
+    let modalities: readonly ('text' | 'image')[] | undefined
     try {
-      const info = await ctx.llm.resolveModelInfo(provider, model, signal)
-      return currentModelCapability(info.inputModalities)
+      const info = await ctx.llm.resolveModelInfo(route.provider, route.model, signal)
+      modalities = info.inputModalities
     } catch (error) {
       ctx.logger.debug(error instanceof Error ? error : new Error(String(error)))
-      return 'unknown' as const
+    }
+    const piAiDescriptor = ctx.settings.describe().find(item => item.ns === LLM_PI_AI_NS)
+    const piAiSettings = piAiDescriptor?.user ?? piAiDescriptor?.base
+    return classifyModelCapability({
+      ...route,
+      ...(modalities === undefined ? {} : { resolvedModalities: modalities }),
+      configurableProviders: ctx.llm.listConfigurableProviders(),
+      piAiUser: piAiSettings,
+    })
+  }
+
+  const parseVisionDeclaration = (value: string): VisionDeclaration | undefined => {
+    try {
+      const parsed = JSON.parse(value) as Partial<VisionDeclaration>
+      return typeof parsed.routeKey === 'string' && typeof parsed.after === 'string'
+        ? { routeKey: parsed.routeKey, after: parsed.after }
+        : undefined
+    } catch {
+      return undefined
+    }
+  }
+
+  const rememberVisionDeclaration = async (declaration: VisionDeclaration): Promise<void> => {
+    const value = resolvedConfig(current())
+    const retained = value.visionDeclarations
+      .map(parseVisionDeclaration)
+      .filter((item): item is VisionDeclaration => item !== undefined && item.routeKey !== declaration.routeKey)
+    await ctx.settings.update(NS, {
+      visionDeclarations: [...retained, declaration].map(item => JSON.stringify(item)),
+    })
+  }
+
+  const waitForVisionDeclaration = async (route: ModelRoute, signal: AbortSignal): Promise<void> => {
+    const deadline = Date.now() + 3_000
+    while (true) {
+      if (signal.aborted) throw signal.reason
+      try {
+        const info = await ctx.llm.resolveModelInfo(route.provider, route.model, signal)
+        if (info.inputModalities?.includes('image')) return
+      } catch (error) {
+        ctx.logger.debug(error instanceof Error ? error : new Error(String(error)))
+      }
+      if (Date.now() >= deadline) throw new Error('coremate-mobile: DSH 模型配置已保存，但热更新未及时生效；请重新提交任务')
+      await new Promise(resolve => setTimeout(resolve, 50))
     }
   }
 
@@ -684,7 +754,7 @@ export function apply(ctx: Context, baseConfig: Config): void {
         signal,
       })
       if (answerValue(answer, 'deviceConnection') !== '重新检测') {
-        throw new Error('coremate-mobile: OpenGUI task cancelled while waiting for a phone')
+        throw new OpenGuiTaskCancelled('本次 OpenGUI 任务已取消；未调用模型，也未操作设备。')
       }
     }
   }
@@ -694,36 +764,90 @@ export function apply(ctx: Context, baseConfig: Config): void {
     if (configuring) throw new Error('coremate-mobile: OpenGUI 模型配置正在另一条命令中进行')
     configuring = true
     try {
-      const value = resolvedConfig(current())
+      let value = resolvedConfig(current())
       const capability = await currentCapability(invocation.agent.options, invocation.signal)
+      const route = upstreamRoute(invocation.agent.options)
+      const migrated = migratedLegacyTrust(value, route, capability)
+      if (migrated !== undefined) {
+        const trustedCurrentModels = [...migrated]
+        await ctx.settings.update(NS, { trustUnknownCurrentModels: false, trustedCurrentModels })
+        value = { ...value, trustUnknownCurrentModels: false, trustedCurrentModels }
+      }
       const decision = decideModelRouting(value, invocation.agent.options, capability)
       if (decision.kind === 'inherit') return inheritedOptions(invocation.agent.options)
-      if (decision.kind === 'dedicated') return dedicatedAgentOptions(invocation)
 
       const questions = ctx.get('userQuestions')
+      if (decision.kind === 'dedicated') {
+        if (decision.reason !== 'unsupported') return dedicatedAgentOptions(invocation)
+        if (questions === undefined) {
+          throw new Error('coremate-mobile: 当前模型只能处理文字，请配置 OpenGUI 视觉模型')
+        }
+        const answer = await questions.ask({
+          questions: [{
+            id: 'textOnlyModel',
+            header: '需要视觉模型',
+            question: '当前模型只能处理文字，无法查看手机或网页画面。',
+            options: [
+              { label: '配置视觉模型', description: '为 OpenGUI 单独配置支持图片和工具调用的模型。' },
+              { label: '取消本次任务', description: '不调用模型，也不操作设备。' },
+            ],
+          }],
+          agent: invocation.agent,
+          signal: invocation.signal,
+        })
+        if (answerValue(answer, 'textOnlyModel') !== '配置视觉模型') throw new OpenGuiTaskCancelled()
+        const dedicated = await dedicatedAgentOptions(invocation)
+        await ctx.settings.update(NS, { modelStrategy: 'dedicated' })
+        return dedicated
+      }
       if (questions === undefined) {
-        throw new Error('coremate-mobile: 当前模型未声明图片能力，并且当前 Host 不支持执行前确认')
+        throw new Error('coremate-mobile: 当前模型未声明图片和工具能力，并且当前 Host 不支持执行前确认')
       }
       const answer = await questions.ask({
         questions: [{
           id: 'currentModel',
-          header: 'OpenGUI 模型',
-          question: `当前 DSH 模型 ${decision.provider}/${decision.model} 未声明图片输入能力，是否继续使用？`,
-          detail: 'OpenGUI 会把手机或浏览器截图发送给当前模型，并允许它调用受限控制工具。',
+          header: '确认当前模型',
+          question: '当前模型没有注明是否支持图片输入和工具调用。它是否具备这些能力？',
+          detail: `当前模型：${decision.provider}/${decision.model}。这里只记住这一个模型，切换模型后会重新判断。`,
           options: [
-            { label: '始终使用当前模型', description: '本次及以后切换模型时都优先复用当前 DSH 模型。' },
+            { label: '支持，自动补全并继续', description: '仅补全当前模型的能力声明，然后继续原任务。' },
             { label: '配置专用视觉模型', description: '改用单独的视觉模型处理 OpenGUI 任务。' },
           ],
         }],
         agent: invocation.agent,
         signal: invocation.signal,
       })
-      if (answerValue(answer, 'currentModel') === '始终使用当前模型') {
-        await ctx.settings.update(NS, { trustUnknownCurrentModels: true })
+      const selection = answerValue(answer, 'currentModel')
+      if (selection === '支持，自动补全并继续') {
+        const confirmedRoute = { provider: decision.provider, model: decision.model }
+        if (capability === 'unknown-patchable') {
+          const services = {
+            describe: () => ctx.settings.describe(),
+            mutate: (ns: typeof LLM_PI_AI_NS, ops: Parameters<typeof ctx.settings.mutate>[1], revision?: number) => ctx.settings.mutate(ns, ops, revision),
+            currentRoute: () => upstreamRoute(invocation.agent.options),
+          }
+          const declaration = await declareCurrentModelVision(services, confirmedRoute)
+          if (declaration !== undefined) {
+            try {
+              await rememberVisionDeclaration(declaration)
+            } catch (error) {
+              await withdrawVisionDeclaration(services, confirmedRoute, declaration).catch(rollbackError => {
+                ctx.logger.warn(rollbackError instanceof Error ? rollbackError : new Error(String(rollbackError)))
+              })
+              throw error
+            }
+          }
+          await waitForVisionDeclaration(confirmedRoute, invocation.signal)
+        } else {
+          const trustedCurrentModels = [...new Set([...value.trustedCurrentModels, modelRouteKey(confirmedRoute)])]
+          await ctx.settings.update(NS, { trustedCurrentModels, trustUnknownCurrentModels: false })
+        }
         return inheritedOptions(invocation.agent.options)
       }
+      if (selection !== '配置专用视觉模型') throw new OpenGuiTaskCancelled()
+      const dedicated = await dedicatedAgentOptions(invocation)
       await ctx.settings.update(NS, { modelStrategy: 'dedicated' })
-      return dedicatedAgentOptions(invocation)
+      return dedicated
     } finally {
       configuring = false
     }
@@ -734,16 +858,38 @@ export function apply(ctx: Context, baseConfig: Config): void {
     invocation: TaskInteraction,
     options: AgentOptions,
   ): Promise<string | undefined> => {
-    if (options.provider !== INHERITED_PROVIDER || !inheritedCapabilityFailure(error)) return undefined
+    if (!inheritedCapabilityFailure(error)) return undefined
+    const failedRoute = upstreamRoute(options)
+    if (failedRoute !== undefined) {
+      const value = resolvedConfig(current())
+      const routeKey = modelRouteKey(failedRoute)
+      const declaration = value.visionDeclarations
+        .map(parseVisionDeclaration)
+        .find(item => item?.routeKey === routeKey)
+      if (declaration !== undefined) {
+        await withdrawVisionDeclaration({
+          describe: () => ctx.settings.describe(),
+          mutate: (ns, ops, revision) => ctx.settings.mutate(ns, ops, revision),
+          currentRoute: () => failedRoute,
+        }, failedRoute, declaration).catch(withdrawalError => {
+          ctx.logger.warn(withdrawalError instanceof Error ? withdrawalError : new Error(String(withdrawalError)))
+        })
+      }
+      await ctx.settings.update(NS, {
+        trustUnknownCurrentModels: false,
+        trustedCurrentModels: value.trustedCurrentModels.filter(item => item !== routeKey),
+        visionDeclarations: value.visionDeclarations.filter(item => parseVisionDeclaration(item)?.routeKey !== routeKey),
+      })
+    }
     const questions = ctx.get('userQuestions')
     if (questions === undefined) {
-      return `当前 DSH 模型无法处理 OpenGUI 的图片或工具请求，原任务未自动重试：${error.message}`
+      return `当前模型无法处理 OpenGUI 的图片或工具请求。为避免重复操作，原任务未自动重试；它可能已产生部分操作。`
     }
     const answer = await questions.ask({
       questions: [{
         id: 'capabilityFallback',
         header: '当前模型不兼容',
-        question: '是否切换到 OpenGUI 专用视觉模型？',
+        question: options.provider === PROVIDER ? '是否重新配置 OpenGUI 视觉模型？' : '是否切换到 OpenGUI 专用视觉模型？',
         detail: '为避免重复手机操作，原任务不会自动重试；完成配置后请重新提交。',
         options: [
           { label: '配置专用视觉模型', description: '保存回退模型，之后重新提交原任务。' },
@@ -754,11 +900,11 @@ export function apply(ctx: Context, baseConfig: Config): void {
       signal: invocation.signal,
     })
     if (answerValue(answer, 'capabilityFallback') !== '配置专用视觉模型') {
-      return `当前 DSH 模型无法处理 OpenGUI 的图片或工具请求，原任务未自动重试：${error.message}`
+      return '当前模型无法处理 OpenGUI 的图片或工具请求。为避免重复操作，原任务未自动重试；它可能已产生部分操作。'
     }
+    await dedicatedAgentOptions(invocation, options.provider === PROVIDER)
     await ctx.settings.update(NS, { modelStrategy: 'dedicated' })
-    await dedicatedAgentOptions(invocation)
-    return '当前 DSH 模型不兼容；专用视觉模型已配置。为避免重复操作，原任务未自动重试，请重新提交。'
+    return '视觉模型已配置。为避免重复操作，原任务未自动重试，请重新提交。'
   }
   const runRootTask = async (
     interaction: TaskInteraction,
@@ -799,6 +945,7 @@ export function apply(ctx: Context, baseConfig: Config): void {
           ...(result.sourceEventSeq === undefined ? {} : { sourceEventSeq: result.sourceEventSeq }),
         }
       } catch (error) {
+        if (error instanceof OpenGuiTaskCancelled) return { kind: 'success', text: error.message }
         return { kind: 'error', text: error instanceof Error ? error.message : String(error) }
       }
     },
@@ -835,6 +982,26 @@ export function apply(ctx: Context, baseConfig: Config): void {
   }
   process.prependListener('SIGTERM', cleanupForTermination)
   const mediaPermits = new AsyncSemaphore(2)
+  phoneController = new PhoneController({
+    runAdb: run,
+    discoverTarget: async (signal) => {
+      const selected = await fleet.selectedDevices(signal)
+      if (selected.length !== 1) {
+        throw new Error('coremate-mobile: this phone agent was not bound to exactly one selected device')
+      }
+      return selected[0]!.serial
+    },
+    validateTarget: async (serial, signal) => {
+      const devices = parseDevices(String(await run(['devices', '-l'], signal)))
+      if (!devices.some(device => device.serial === serial && device.state === 'device')) {
+        throw new Error('coremate-mobile: a phone locked to this task disconnected or lost USB authorization')
+      }
+    },
+    pasteUnicode: (serial, text, signal) => textInput.paste(serial, text, signal),
+    encodeScreenshot: encodePhoneScreenshotFrame,
+    maxOperations: () => resolvedConfig(current()).maxOperations,
+    mediaPermits,
+  })
   const preview = new PhonePreview(async (serial, signal) => {
     const value = await run(['-s', serial, 'exec-out', 'screencap', '-p'], signal, true)
     return Buffer.isBuffer(value) ? value : Buffer.from(value)
@@ -862,59 +1029,34 @@ export function apply(ctx: Context, baseConfig: Config): void {
       if (cleanup.retained > 0) ctx.logger.warn(new Error(`coremate-mobile: ${cleanup.retained} owned ADB forwards remain for next-start recovery`))
     }
   }, 'coremate-mobile native scrcpy mirror lifecycle')
-  const targetFor = async (agent: object, signal: AbortSignal): Promise<string> => {
-    return executionState.resolveTarget(agent, async () => {
-      const selected = await fleet.selectedDevices(signal)
-      if (selected.length !== 1) {
-        throw new Error('coremate-mobile: this phone agent was not bound to exactly one selected device')
-      }
-      return selected[0]!.serial
-    })
-  }
-  const observe = async (agent: object, serial: string, signal: AbortSignal): Promise<PhoneObservation> => {
-    const releaseMedia = await mediaPermits.acquire(signal)
-    try {
-      const [sizeRaw, focusRaw, pngRaw] = await Promise.all([
-        run(['-s', serial, 'shell', 'wm', 'size'], signal),
-        run(['-s', serial, 'shell', 'dumpsys', 'window', 'windows'], signal),
-        run(['-s', serial, 'exec-out', 'screencap', '-p'], signal, true),
-      ])
-    const screen = parseScreenSize(String(sizeRaw))
-    const png = Buffer.isBuffer(pngRaw) ? pngRaw : Buffer.from(pngRaw)
-    const jpeg = await encodePhoneScreenshot(png)
-    const fingerprint = createHash('sha256').update(jpeg).digest('hex')
-    const previous = observations.get(agent)
-    const unchanged = previous?.fingerprint === fingerprint ? previous : undefined
-    const image: PhoneObservation['image'] = unchanged === undefined
-      ? await ctx.attachments.saveImage({
-        data: jpeg,
+  const hostObservation = async (agent: object, raw: RawPhoneObservation): Promise<PhoneObservation> => {
+    const previous = hostedObservations.get(agent)
+    const image = raw.unchangedFromObservationId !== undefined
+      && previous?.observationId === raw.unchangedFromObservationId
+      ? previous.image
+      : await ctx.attachments.saveImage({
+        data: raw.image.data,
         mediaType: 'image/jpeg',
-        name: `phone-${serial}-${Date.now()}.jpg`,
+        name: raw.image.name,
       }).then(ref => ({
         attachmentId: ref.attachmentId,
         mediaType: 'image/jpeg' as const,
         bytes: ref.bytes,
         width: ref.width,
         height: ref.height,
-        name: ref.name ?? `phone-${serial}.jpg`,
+        name: ref.name ?? raw.image.name,
       }))
-      : unchanged.value.image
-    const observationId = executionState.nextObservationId(agent)
     const value: PhoneObservation = {
-      observationId,
-      ...(unchanged === undefined ? {} : { unchangedFromObservationId: unchanged.value.observationId }),
-      serial,
-      width: screen.width,
-      height: screen.height,
-      foregroundPackage: currentPackage(String(focusRaw)),
+      observationId: raw.observationId,
+      ...(raw.unchangedFromObservationId === undefined ? {} : { unchangedFromObservationId: raw.unchangedFromObservationId }),
+      serial: raw.serial,
+      width: raw.width,
+      height: raw.height,
+      foregroundPackage: raw.foregroundPackage,
       image,
     }
-      observations.set(agent, { value, fingerprint })
-      executionState.recordObservation(agent, { observationId, screenshotFingerprint: fingerprint })
-      return value
-    } finally {
-      releaseMedia()
-    }
+    hostedObservations.set(agent, value)
+    return value
   }
 
   ctx.tools.register(defineTool({
@@ -983,45 +1125,7 @@ export function apply(ctx: Context, baseConfig: Config): void {
       if (agent === undefined || header?.origin !== 'subagent' || header.parentSession === undefined || !isCoremateExecutionProvider(route?.provider)) {
         throw new Error('coremate-mobile: phone_control is restricted to a coremate-mobile child subagent')
       }
-      return operationQueue.run(agent, async () => {
-        executionState.beginOperation(agent, resolvedConfig(current()).maxOperations)
-        const action = normalizePhoneAction(args)
-        const before = action.action === 'observe' ? undefined : executionState.current(agent, action.observationId)
-        if (action.action === 'observe') {
-          const serial = await targetFor(agent, exec.signal)
-          return observe(agent, serial, exec.signal)
-        }
-        const stored = observations.get(agent)
-        if (stored === undefined || stored.value.observationId !== action.observationId || before === undefined) {
-          throw new Error('coremate-mobile: current phone observation is unavailable')
-        }
-        const screen: PhoneCoordinateSpace = {
-          width: stored.value.width,
-          height: stored.value.height,
-          screenshotWidth: stored.value.image.width,
-          screenshotHeight: stored.value.image.height,
-        }
-        const command = action.action === 'text' ? undefined : actionCommand(action, screen)
-        if (action.action === 'wait') {
-          await waitForPhoneUi(action.waitMs, exec.signal)
-          const serial = await targetFor(agent, exec.signal)
-          return observe(agent, serial, exec.signal)
-        }
-        const scrcpyText = action.action === 'text' && !canUseAdbInputText(action.text)
-        const commands = action.action === 'text'
-          ? scrcpyText ? [] : textInputCommands(action.text)
-          : command === undefined ? [] : [command]
-        if (commands.length === 0 && !scrcpyText) throw new Error('coremate-mobile: action did not resolve to a device command')
-        const signature = JSON.stringify(scrcpyText ? ['scrcpy-text', action.text] : commands)
-        executionState.assertActionAllowed(agent, signature)
-        const serial = await targetFor(agent, exec.signal)
-        if (scrcpyText) await textInput.paste(serial, action.text, exec.signal)
-        else for (const candidate of commands) await run(['-s', serial, ...candidate], exec.signal)
-        const after = await observe(agent, serial, exec.signal)
-        const afterState = executionState.current(agent, after.observationId)
-        executionState.recordActionResult(agent, signature, before.screenshotFingerprint, afterState.screenshotFingerprint)
-        return after
-      })
+      return hostObservation(agent, await phoneController.execute(agent, args, exec.signal))
     },
   }))
 
@@ -1101,7 +1205,8 @@ export function apply(ctx: Context, baseConfig: Config): void {
       schema: {
         type: 'object', additionalProperties: false,
         properties: {
-          runId: { type: 'string', required: true },
+          status: { type: 'string', required: true, enum: ['completed', 'cancelled'] },
+          runId: { type: 'string' },
           output: { type: 'array', required: true, items: { type: 'json' } },
         },
       },
@@ -1111,10 +1216,15 @@ export function apply(ctx: Context, baseConfig: Config): void {
     async execute(args, exec) {
       if (exec.agent === undefined) throw new Error('coremate-mobile: phone_agent requires a calling agent')
       const nested = tasks.nestedLease(exec.agent, exec.signal)
-      const result = nested === undefined
-        ? await runRootTask({ agent: exec.agent, signal: exec.signal }, lease => executePhoneTask(args.task, exec.agent!, lease, { nestedUnderCallId: exec.callId }))
-        : await executePhoneTask(args.task, exec.agent, nested, { nestedUnderCallId: exec.callId })
-      return { runId: result.runId, output: result.output as unknown as JsonValue[] }
+      try {
+        const result = nested === undefined
+          ? await runRootTask({ agent: exec.agent, signal: exec.signal }, lease => executePhoneTask(args.task, exec.agent!, lease, { nestedUnderCallId: exec.callId }))
+          : await executePhoneTask(args.task, exec.agent, nested, { nestedUnderCallId: exec.callId })
+        return { status: 'completed' as const, runId: result.runId, output: result.output as unknown as JsonValue[] }
+      } catch (error) {
+        if (!(error instanceof OpenGuiTaskCancelled)) throw error
+        return { status: 'cancelled' as const, output: [{ type: 'text', text: error.message }] as unknown as JsonValue[] }
+      }
     },
   }))
 
@@ -1126,7 +1236,8 @@ export function apply(ctx: Context, baseConfig: Config): void {
       schema: {
         type: 'object', additionalProperties: false,
         properties: {
-          runId: { type: 'string', required: true },
+          status: { type: 'string', required: true, enum: ['completed', 'cancelled'] },
+          runId: { type: 'string' },
           output: { type: 'array', required: true, items: { type: 'json' } },
         },
       },
@@ -1136,10 +1247,15 @@ export function apply(ctx: Context, baseConfig: Config): void {
     async execute(args, exec) {
       if (exec.agent === undefined) throw new Error('coremate-mobile: browser_agent requires a calling agent')
       const nested = tasks.nestedLease(exec.agent, exec.signal)
-      const result = nested === undefined
-        ? await runRootTask({ agent: exec.agent, signal: exec.signal }, lease => executeBrowserTask(args.task, exec.agent!, lease, { nestedUnderCallId: exec.callId }))
-        : await executeBrowserTask(args.task, exec.agent, nested, { nestedUnderCallId: exec.callId })
-      return { runId: result.runId, output: result.output as unknown as JsonValue[] }
+      try {
+        const result = nested === undefined
+          ? await runRootTask({ agent: exec.agent, signal: exec.signal }, lease => executeBrowserTask(args.task, exec.agent!, lease, { nestedUnderCallId: exec.callId }))
+          : await executeBrowserTask(args.task, exec.agent, nested, { nestedUnderCallId: exec.callId })
+        return { status: 'completed' as const, runId: result.runId, output: result.output as unknown as JsonValue[] }
+      } catch (error) {
+        if (!(error instanceof OpenGuiTaskCancelled)) throw error
+        return { status: 'cancelled' as const, output: [{ type: 'text', text: error.message }] as unknown as JsonValue[] }
+      }
     },
   }))
 }

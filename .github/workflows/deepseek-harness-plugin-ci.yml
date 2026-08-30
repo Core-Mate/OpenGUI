@@ -4,10 +4,12 @@ on:
   push:
     paths:
       - 'deepseek-harness-plugin/**'
+      - '.agents/plugins/marketplace.json'
       - '.github/workflows/deepseek-harness-plugin-ci.yml'
   pull_request:
     paths:
       - 'deepseek-harness-plugin/**'
+      - '.agents/plugins/marketplace.json'
       - '.github/workflows/deepseek-harness-plugin-ci.yml'
 
 permissions:
@@ -43,6 +45,13 @@ jobs:
           tar -tzf "$archive" > "$RUNNER_TEMP/archive-files.txt"
           tar -tvzf "$archive" > "$RUNNER_TEMP/archive-verbose.txt"
           grep -Fx 'package/lib/index.js' "$RUNNER_TEMP/archive-files.txt"
+          grep -Fx 'package/lib/codex-mcp.js' "$RUNNER_TEMP/archive-files.txt"
+          grep -Fx 'package/lib/codex-cli.js' "$RUNNER_TEMP/archive-files.txt"
+          grep -Fx 'package/.codex-plugin/plugin.json' "$RUNNER_TEMP/archive-files.txt"
+          grep -Fx 'package/.mcp.json' "$RUNNER_TEMP/archive-files.txt"
+          grep -Fx 'package/skills/control/SKILL.md' "$RUNNER_TEMP/archive-files.txt"
+          grep -Fx 'package/codex-public/.codex-plugin/plugin.json' "$RUNNER_TEMP/archive-files.txt"
           grep -Fx 'package/cordis.patch.yml' "$RUNNER_TEMP/archive-files.txt"
+          grep -E '^-rwxr-xr-x .* package/lib/codex-cli.js$' "$RUNNER_TEMP/archive-verbose.txt"
           grep -E '^-rwxr-xr-x .* package/assets/platform-tools/darwin/adb$' "$RUNNER_TEMP/archive-verbose.txt"
           grep -E '^-rwxr-xr-x .* package/assets/platform-tools/linux-x64/adb$' "$RUNNER_TEMP/archive-verbose.txt"

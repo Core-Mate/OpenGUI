@@ -6,6 +6,31 @@ English | [中文](README.zh.md)
 
 The plugin does not modify DeepSeek Harness and does not depend on CoreMateDesktop2, system Chrome, Python, or Hermes CLI. Chromium is installed on demand only after the first browser task receives user approval.
 
+## Codex plugin
+
+The same source directory is also a Codex plugin named `opengui`. Its repo marketplace entry is [`../.agents/plugins/marketplace.json`](../.agents/plugins/marketplace.json), and its local stdio MCP exposes these interfaces:
+
+- `opengui_list_devices`
+- `opengui_open_session`
+- `opengui_observe`
+- `opengui_act`
+- `opengui_status`
+- `opengui_cancel`
+- `opengui_close_session`
+
+Use the `opengui:control` Skill for Android tasks. It freezes one to four authorized phones, requires the latest screenshot observation for every mutation, asks again before send/publish/purchase/delete effects, and closes the session after the task. Open the returned loopback `deviceWallUrl` in the native Codex Browser for a read-only multi-device wall. Website-only work should use the native Codex Browser instead of the Android adapter.
+
+The repo marketplace loads the Skill and local MCP together. The public-directory template under [`codex-public`](./codex-public) is intentionally Skills-only and does not introduce a hosted phone-control gateway.
+
+Install the local Codex plugin from the OpenGUI repository root:
+
+```sh
+codex plugin marketplace add /absolute/path/to/OpenGUI
+codex plugin add opengui@opengui-local
+```
+
+Before a public-directory submission, run `pnpm run build`, then use `pnpm codex:stage-public -- /absolute/path/to/an/empty/output-directory` to stage a Skills-only review bundle without MCP configuration.
+
 ## Requirements and support
 
 Before installing, confirm that:
@@ -25,16 +50,16 @@ The examples use the `web` profile and the default `$DSH_HOME=~/.dsh`. Substitut
 
 ### macOS: install with the Codex Skill
 
-Ask Codex to install the repository skill from [`deepseek-harness-plugin/skills/opengui-coremate-install`](./skills/opengui-coremate-install), then invoke `$opengui-coremate-install`. The Skill downloads and verifies the pinned `v0.1.5` package from the public OpenGUI Release, preserves the rest of the `web` profile, and starts DSH only when it is not already running. GitHub login is not required.
+Ask Codex to install the repository skill from [`deepseek-harness-plugin/skills/opengui-coremate-install`](./skills/opengui-coremate-install), then invoke `$opengui-coremate-install`. The Skill downloads and verifies the pinned `v0.1.6` package from the public OpenGUI Release, preserves the rest of the `web` profile, and installs a per-user LaunchAgent so DSH returns after a crash or login. GitHub login is not required.
 
-If DSH is already listening on port 3080, the installer leaves that process untouched and reports that a manual restart is required. The manual package flow below remains available on every supported host.
+If port 3080 belongs to an OpenGUI-managed DSH, the installer safely reloads that LaunchAgent. It never terminates an unowned DSH process; in that case the new LaunchAgent takes over after the next login. The manual package flow below remains available on every supported host.
 
 ### 1. Download the release package
 
-Download these files from the [public OpenGUI Release](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.5):
+Download these files from the [public OpenGUI Release](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.6):
 
-- `dsh-coremate-mobile-0.1.5.tgz`
-- `dsh-coremate-mobile-0.1.5.tgz.sha256`
+- `dsh-coremate-mobile-0.1.6.tgz`
+- `dsh-coremate-mobile-0.1.6.tgz.sha256`
 
 Do not extract the `.tgz`, and do not use GitHub's automatically generated source archives.
 
@@ -42,18 +67,18 @@ From the directory containing both files, verify the package:
 
 ```sh
 # Linux
-sha256sum -c dsh-coremate-mobile-0.1.5.tgz.sha256
+sha256sum -c dsh-coremate-mobile-0.1.6.tgz.sha256
 
 # macOS
-shasum -a 256 -c dsh-coremate-mobile-0.1.5.tgz.sha256
+shasum -a 256 -c dsh-coremate-mobile-0.1.6.tgz.sha256
 ```
 
-On Windows PowerShell, run `Get-FileHash .\dsh-coremate-mobile-0.1.5.tgz -Algorithm SHA256` and `Get-Content .\dsh-coremate-mobile-0.1.5.tgz.sha256`, then confirm that the displayed hashes match.
+On Windows PowerShell, run `Get-FileHash .\dsh-coremate-mobile-0.1.6.tgz -Algorithm SHA256` and `Get-Content .\dsh-coremate-mobile-0.1.6.tgz.sha256`, then confirm that the displayed hashes match.
 
 ### 2. Install into a Harness profile
 
 ```sh
-dsh plugin --profile web add /absolute/path/dsh-coremate-mobile-0.1.5.tgz
+dsh plugin --profile web add /absolute/path/dsh-coremate-mobile-0.1.6.tgz
 ```
 
 If you run the official CLI through `npx`, replace `dsh` in the commands with:
@@ -106,7 +131,9 @@ Run the first task with text after the command:
 
 You can also choose the native `@OpenGUI` candidate and type the same task. A bare `@OpenGUI` behaves like an empty `/opengui` and only shows usage. Both paths delegate to the same command lifecycle.
 
-OpenGUI reuses the current DSH provider, model, and output-token limit. A model that explicitly declares image input runs without a prompt. If capability metadata is absent, OpenGUI asks once whether to trust the current model; accepting is remembered globally even after switching providers or models. A model that explicitly rejects images enters the dedicated fallback setup instead.
+OpenGUI reuses the current DSH provider, model, and output-token limit. A model that explicitly declares image input runs without a prompt. When a custom model merely omits its capability declaration, OpenGUI asks whether it supports image input and tool calling; confirmation patches only that exact provider/model and resumes the original task. A model that explicitly declares text-only input enters the dedicated fallback setup. Switching provider or model always triggers a fresh capability decision.
+
+Skipping the capability question or any setup step cancels the task normally: OpenGUI makes no model call or device action and stores no partial setup. The phone canvas and manual mirror remain available, and the next task asks again.
 
 If the inherited model later returns an image- or tool-capability error, OpenGUI does not retry the task because that could repeat phone or browser side effects. It offers to configure the fallback and asks the user to resubmit after configuration.
 
@@ -179,7 +206,7 @@ Keep the phone unlocked and authorized for USB debugging, then send:
 
 The native **OpenGUI** tab owns phone selection and status. One authorized phone is selected automatically. With multiple phones, check any subset in that workbench before sending `/opengui` or `@OpenGUI`. A non-empty task resolves the current-model choice or dedicated fallback setup before it waits for a phone, but it sends no provider request until the selected-device snapshot is ready. Device selection remains editable while waiting, then locks after detection until the whole batch finishes.
 
-The native **OpenGUI** tab is a full-width device wall. It renders every visible phone in Host order and appends one connection guide, without reserving empty slots. Connected phones expand automatically into a complete, low-latency H.264 view while the tab, card, and page remain visible. First use asks before downloading and verifying the pinned scrcpy server; unsupported browsers or stream failures fall back to an uncropped JPEG preview. Each phone can also be opened in an optional independent scrcpy window.
+The native **OpenGUI** tab is a full-width device wall. It renders every visible phone in Host order and appends one connection guide, without reserving empty slots. A connected phone shows an uncropped JPEG preview immediately while OpenGUI prepares its low-latency H.264 view in the background, then switches automatically. Unsupported browsers and stream failures keep the screenshot preview available with a retry action. Each phone can also be opened in an optional independent mirror window.
 
 Selecting `@OpenGUI` opens the native input menu with free-form, QA, operations, and game-assistant choices. A scene only fills the composer and never submits automatically. A non-empty OpenGUI submission releases the composer immediately while the task continues in its owner session. Starting another DSH session opens a genuinely blank conversation; the original task keeps running there, with a compact link back from the new session.
 
@@ -202,7 +229,7 @@ The plugin checks for its managed Chromium only when a task actually calls `brow
 | Key | Meaning |
 |---|---|
 | `modelStrategy` | `current-first` (default) reuses the receiving DSH model; `dedicated` always uses the fallback below. |
-| `trustUnknownCurrentModels` | When `true`, reuse models with absent image-capability metadata without asking again. Default `false`; the Web UI can remember consent globally. |
+| `trustUnknownCurrentModels` | Deprecated compatibility switch. On first use after upgrading, it migrates trust only for the exact active provider/model and then turns itself off. |
 | `baseURL` | Optional dedicated fallback's OpenAI-compatible HTTP/HTTPS endpoint. Prefer HTTPS because requests contain credentials, prompts, and screenshots. |
 | `api` | Dedicated fallback protocol: `openai-responses` (default) or `openai-completions`. |
 | `model` | Dedicated fallback model; it must support image input and tool calling. |
@@ -232,7 +259,7 @@ This is an advanced option: a profile patch replaces the target row's entire `co
 Production installations should use the prebuilt release package above. For development, clone the public OpenGUI release tag and install the plugin directory:
 
 ```sh
-git clone --branch dsh-coremate-mobile-v0.1.5 --depth 1 https://github.com/Core-Mate/OpenGUI.git
+git clone --branch dsh-coremate-mobile-v0.1.6 --depth 1 https://github.com/Core-Mate/OpenGUI.git
 cd OpenGUI/deepseek-harness-plugin
 dsh plugin --profile web add "$(pwd)"
 ```
@@ -261,11 +288,19 @@ When requesting help, include the host OS and architecture, Harness version, plu
 
 Every connected phone has an always-visible eye button beside its device label. No OpenGUI task or operation selection is required. Clicking one eye opens an independent read-only scrcpy window for that device on the **computer running Harness**; clicking it again closes the window. Click several eyes to display several phones at once. If the Web UI is open on another computer, the native windows do not appear on that browser computer.
 
-On the first mirror or Unicode phone-text action, the plugin downloads the pinned, reviewed official scrcpy v4.1 asset for the Harness Host (about 11–18 MB), verifies its built-in SHA-256, and atomically extracts it under `$DSH_HOME/cache/coremate-mobile/scrcpy`. Later actions reuse the cache. The mirror client is forced to use the plugin's managed ADB, the eye button's device serial, `--no-control`, and `--no-audio`. OpenGUI task completion does not close mirrors; toggling the eye off, disconnecting the device, scrcpy exit, or plugin disposal ends the corresponding window.
+On the first embedded view, mirror, or Unicode phone-text action, the plugin downloads the pinned, reviewed official scrcpy v4.1 asset for the Harness Host (about 11–18 MB), verifies its built-in SHA-256, and atomically installs it in the current user's OpenGUI cache. macOS uses `~/Library/Caches/OpenGUI/scrcpy`; Linux follows `$XDG_CACHE_HOME` (or `~/.cache`), and Windows uses `%LOCALAPPDATA%`. Verified legacy `$DSH_HOME/cache/coremate-mobile/scrcpy` installations remain reusable without copying or downloading again. The mirror client is forced to use the plugin's managed ADB, the eye button's device serial, `--no-control`, and `--no-audio`.
 
-Official prebuilt clients cover macOS arm64/x64, Linux x64, and Windows x64. Other Host architectures show an unsupported state. A failed download can be retried; checksum-mismatched content is never executed. To reclaim the cache, stop Harness completely and remove the `scrcpy` cache directory above.
+Official prebuilt clients cover macOS arm64/x64, Linux x64, and Windows x64. Other Host architectures show an unsupported state. A failed download can be retried; checksum-mismatched content is never executed. To reclaim the cache, stop Harness completely and remove the platform-specific OpenGUI cache above.
 
 ## Uninstall
+
+macOS Skill installations can use the matching lifecycle script:
+
+```sh
+./skills/opengui-coremate-install/scripts/uninstall-macos.sh
+```
+
+It removes only the matching plugin and LaunchAgent. Settings, credentials, and caches are preserved.
 
 ```sh
 dsh plugin --profile web remove dsh-coremate-mobile
@@ -273,7 +308,7 @@ dsh plugin --profile web remove dsh-coremate-mobile
 
 If you used the recommended settings configuration, remove the `coremate-mobile` section from `$DSH_HOME/settings.yaml`; remove the credential only after confirming it is no longer used.
 
-Uninstall does not delete downloaded scrcpy or Chromium caches. To reclaim them, stop Harness and remove `$DSH_HOME/cache/coremate-mobile/scrcpy` and `$DSH_HOME/cache/coremate-mobile/browser`.
+Uninstall does not delete downloaded phone-view or Chromium caches. To reclaim them, stop Harness and remove the platform-specific OpenGUI `scrcpy` cache, any legacy `$DSH_HOME/cache/coremate-mobile/scrcpy`, and `$DSH_HOME/cache/coremate-mobile/browser`.
 
 If you used a profile patch, also remove its `coremate-mobile` row. Leave `[]` when the file has no other rows. A stale patch causes `entry "coremate-mobile" not found` on the next start.
 

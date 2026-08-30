@@ -1,0 +1,41 @@
+{
+  "name": "opengui",
+  "version": "0.1.6",
+  "description": "Guide Codex through safe local Android control with OpenGUI's packaged CLI and bounded observation workflow.",
+  "author": {
+    "name": "Core Mate",
+    "url": "https://github.com/Core-Mate"
+  },
+  "homepage": "https://opengui.ai/",
+  "repository": "https://github.com/Core-Mate/OpenGUI/tree/main/deepseek-harness-plugin",
+  "license": "MIT",
+  "keywords": [
+    "android",
+    "device-control",
+    "codex",
+    "automation"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "OpenGUI",
+    "shortDescription": "Safely operate local Android phones from Codex",
+    "longDescription": "OpenGUI teaches Codex a bounded local Android workflow with frozen device sessions, fresh screenshot observations, allowlisted actions, explicit confirmation for consequential effects, cancellation, and cleanup. This public package contains Skills only and does not add a hosted control gateway.",
+    "developerName": "Core Mate",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://opengui.ai/",
+    "privacyPolicyURL": "https://github.com/Core-Mate/OpenGUI/blob/main/deepseek-harness-plugin/docs/public-submission/privacy.md",
+    "termsOfServiceURL": "https://github.com/Core-Mate/OpenGUI/blob/main/deepseek-harness-plugin/docs/public-submission/terms.md",
+    "defaultPrompt": [
+      "Use OpenGUI to inspect and operate my connected Android phone.",
+      "Use OpenGUI to diagnose my Android USB authorization.",
+      "Use OpenGUI to coordinate two connected Android phones."
+    ],
+    "brandColor": "#4F46E5",
+    "screenshots": []
+  }
+}

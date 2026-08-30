@@ -20,9 +20,11 @@ The schemas form a stable part of the Host request prefix until the plugin is mo
 
 An empty command returns usage before model routing. A non-empty command starts a restricted routing child outside the parent model. By default, an internal `coremate-inherited` adapter forwards that child to the receiving conversation's provider, model, and output-token limit without copying credentials. The routing child can call only `phone_agent` and `browser_agent`, and both control layers receive the same resolved route.
 
-A model that declares image input is inherited without a prompt. Missing capability metadata requires one global confirmation unless it was previously trusted; an explicit lack of image support selects the dedicated fallback. Choosing the fallback changes `modelStrategy` to `dedicated` without deleting any existing endpoint or credential values.
+A model that declares image input is inherited without a prompt. If a writable custom model omits `input`, OpenGUI asks whether it supports image input and tool calling, patches only the current provider/model with `input: [text, image]`, and resumes the same task. An unknown non-writable route is trusted only by its exact provider/model identity. Explicit text-only metadata selects the dedicated fallback.
 
-The command spends one routing model request while actual control remains isolated. Control screenshots stay out of the parent model context and final command text; users can inspect them only in the live nested tool cards. If the inherited provider reports an image or tool-capability error, the task is not automatically retried because it may already have caused side effects.
+The dedicated setup has no introductory gate. It asks for endpoint, protocol, model ID, and credential only after the user chooses it, then writes the complete draft after a final capability confirmation. Skipping any step cancels normally with no partial configuration, model call, or device action.
+
+Only after capability admission does the command spend a routing model request; actual control remains isolated. Control screenshots stay out of the parent model context and final command text. If a provider reports an image or tool-capability error, the task is not automatically retried because it may already have caused side effects. Exact-route trust is cleared, and a still-unchanged image declaration added by OpenGUI is withdrawn.
 
 The control child's `phone_control` / `browser_control` calls stream live as nested activity beneath the outer delegation call, including arguments and visible tool results. Hidden reasoning, system prompts, and model configuration are not projected into the parent conversation.
 
