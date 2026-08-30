@@ -8,7 +8,7 @@ import {
 import type { ScrcpyStreamStatus } from '../scrcpy-stream.ts'
 import { createCoremateVideoDecoder } from './video-decoder.ts'
 
-type StreamMode = 'checking' | 'consent' | 'connecting' | 'video' | 'fallback'
+type StreamMode = 'checking' | 'connecting' | 'video' | 'fallback'
 
 const viewportStyle: CSSProperties = {
   position: 'relative',
@@ -41,8 +41,27 @@ function streamUrl(deviceId: string): string {
   return url.href
 }
 
-function megabytes(bytes?: number): string {
-  return bytes === undefined ? '' : `${Math.ceil(bytes / 1024 / 1024)} MB`
+export function preparationMessage(status?: ScrcpyStreamStatus): string {
+  if (status?.phase === 'downloading') {
+    const downloaded = status.downloadedBytes
+    const total = status.totalBytes
+    const percent = downloaded === undefined || total === undefined || total === 0
+      ? undefined
+      : Math.min(100, Math.floor(downloaded / total * 100))
+    return percent === undefined ? '正在准备实时画面…' : `正在准备实时画面… ${percent}%`
+  }
+  if (status?.phase === 'extracting') return '正在完成实时画面准备…'
+  return '正在连接手机实时画面…'
+}
+
+export function streamFallbackMessage(
+  status: ScrcpyStreamStatus | undefined,
+  statusError: string | undefined,
+): string | undefined {
+  if (status === undefined) return statusError === undefined ? undefined : '实时画面服务暂时不可用，当前使用截图预览。'
+  if (!status.supported) return '当前电脑不支持内嵌实时画面，当前使用截图预览。'
+  if (status.phase === 'error') return '实时画面准备失败，当前使用截图预览。'
+  return undefined
 }
 
 function usePageVisible(): boolean {
@@ -123,11 +142,10 @@ interface PhoneStreamProps {
   readonly device: MirrorDeviceStatus
   readonly expanded: boolean
   readonly streamStatus: ScrcpyStreamStatus | undefined
-  readonly streamGeneration: number
-  readonly enableStream: () => Promise<void>
+  readonly streamStatusError: string | undefined
 }
 
-export function PhoneStream({ device, expanded, streamStatus, streamGeneration, enableStream }: PhoneStreamProps): JSX.Element {
+export function PhoneStream({ device, expanded, streamStatus, streamStatusError }: PhoneStreamProps): JSX.Element {
   const root = useRef<HTMLDivElement>(null)
   const canvas = useRef<HTMLCanvasElement>(null)
   const [inViewport, setInViewport] = useState(true)
@@ -135,6 +153,8 @@ export function PhoneStream({ device, expanded, streamStatus, streamGeneration, 
   const [mode, setMode] = useState<StreamMode>('checking')
   const [error, setError] = useState<string>()
   const [retry, setRetry] = useState(0)
+  const streamSupported = streamStatus?.supported
+  const streamFailed = streamStatus?.phase === 'error'
 
   useEffect(() => {
     const node = root.current
@@ -173,14 +193,14 @@ export function PhoneStream({ device, expanded, streamStatus, streamGeneration, 
       try {
         setMode('checking')
         const next = streamStatus
+        const unavailable = streamFallbackMessage(next, streamStatusError)
+        if (unavailable !== undefined) { fallback(unavailable, true); return }
         if (next === undefined) return
-        if (!next.supported) throw new Error('当前电脑不支持内嵌实时画面')
-        if (!next.approved) { setMode('consent'); return }
         setMode('connecting')
         player = createCoremateVideoDecoder(
           canvas.current!,
           () => { setError(undefined); setMode('video') },
-          error => fallback(new Error(`实时画面解码失败，已切换为截图预览：${error.message}`)),
+          () => fallback('实时画面解码失败，已切换为截图预览。'),
         )
         websocket = new WebSocket(streamUrl(device.id))
         websocket.binaryType = 'arraybuffer'
@@ -190,7 +210,7 @@ export function PhoneStream({ device, expanded, streamStatus, streamGeneration, 
               const value = JSON.parse(event.data) as { type?: string; width?: number; height?: number; message?: string }
               if (value.type === 'session' && value.width !== undefined && value.height !== undefined) player?.session(value.width, value.height)
               if (value.type === 'waiting') fallback(value.message ?? '实时画面正在等待空位', true)
-              if (value.type === 'error') fallback(value.message ?? '实时画面启动失败', true)
+              if (value.type === 'error') fallback(value.message ?? '实时画面启动失败，当前使用截图预览。', true)
               return
             }
             const bytes = new Uint8Array(event.data as ArrayBuffer)
@@ -220,34 +240,31 @@ export function PhoneStream({ device, expanded, streamStatus, streamGeneration, 
       websocket?.close(1000, 'preview hidden')
       player?.close()
     }
-  }, [device.connected, device.id, retry, shouldStream, streamGeneration, streamStatus?.approved, streamStatus?.supported])
+  }, [device.connected, device.id, retry, shouldStream, streamFailed, streamStatusError, streamSupported])
 
-  const enable = useCallback(async (): Promise<void> => {
-    try {
-      setMode('connecting')
-      await enableStream()
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : String(reason))
-      setMode('fallback')
-    }
-  }, [enableStream])
+  const retryNow = useCallback((): void => {
+    setError(undefined)
+    setRetry(value => value + 1)
+  }, [])
 
   if (!expanded) return <div ref={root} style={viewportStyle} data-coremate-preview="collapsed"><span style={{ color: 'oklch(76% 0.01 92)', fontSize: 12 }}>画面已收起</span></div>
   if (!device.connected) return <div ref={root} style={viewportStyle} data-coremate-preview="disconnected"><div style={overlayStyle}>设备已断开</div></div>
   return (
     <div ref={root} style={viewportStyle} data-coremate-preview={mode}>
-      {mode === 'fallback' ? <ScreenshotFallback device={device} active={shouldStream} /> : <canvas ref={canvas} aria-label={`${device.label} 实时画面`} style={{ display: 'block', width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: 'min(72vh, 820px)', objectFit: 'contain' }} />}
+      <canvas ref={canvas} aria-label={`${device.label} 实时画面`} style={{ display: mode === 'video' ? 'block' : 'none', width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: 'min(72vh, 820px)', objectFit: 'contain' }} />
+      {mode === 'video' ? null : <ScreenshotFallback device={device} active={shouldStream} />}
       {!shouldStream && mode !== 'fallback' ? <div style={overlayStyle}>画面已暂停，回到此处后自动继续</div> : null}
-      {mode === 'checking' || mode === 'connecting' ? <div role="status" style={overlayStyle}>{mode === 'checking' ? '正在检查实时画面…' : '正在连接手机实时画面…'}</div> : null}
-      {mode === 'consent' ? (
-        <div style={overlayStyle}>
-          <div>
-            <p style={{ margin: '0 0 12px' }}>首次启用实时画面需要下载并校验 scrcpy {streamStatus?.version}（{megabytes(streamStatus?.totalBytes)}）。</p>
-            <button type="button" data-coremate-press onClick={() => { void enable() }} style={{ minHeight: 40, padding: '0 14px', border: 0, borderRadius: 8, color: '#171717', background: '#f1bf1f', font: 'inherit', fontWeight: 700, cursor: 'pointer' }}>启用实时画面</button>
-          </div>
-        </div>
+      {shouldStream && (mode === 'checking' || mode === 'connecting') ? (
+        <span role="status" style={{ position: 'absolute', left: '50%', bottom: 12, translate: '-50% 0', maxWidth: 'calc(100% - 24px)', padding: '5px 9px', borderRadius: 999, color: '#fff', background: 'rgba(0,0,0,.72)', fontSize: 11, whiteSpace: 'nowrap' }}>
+          {mode === 'checking' ? '正在检查实时画面…' : preparationMessage(streamStatus)}
+        </span>
       ) : null}
-      {error !== undefined && mode !== 'video' ? <span role="status" style={{ position: 'absolute', right: 10, bottom: 10, maxWidth: '75%', padding: '4px 8px', borderRadius: 7, color: '#fff', background: 'rgba(127,29,29,.82)', fontSize: 11 }}>{error}</span> : null}
+      {error !== undefined && mode !== 'video' ? (
+        <span role="status" style={{ position: 'absolute', right: 10, bottom: 10, maxWidth: '75%', padding: '4px 8px', borderRadius: 7, color: '#fff', background: 'rgba(127,29,29,.88)', fontSize: 11 }}>
+          {error}{' '}
+          <button type="button" data-coremate-press onClick={retryNow} style={{ padding: 0, border: 0, color: '#fff', background: 'transparent', font: 'inherit', fontWeight: 700, textDecoration: 'underline', cursor: 'pointer' }}>立即重试</button>
+        </span>
+      ) : null}
     </div>
   )
 }

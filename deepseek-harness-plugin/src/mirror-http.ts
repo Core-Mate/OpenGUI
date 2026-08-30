@@ -77,6 +77,12 @@ function rejectUpgrade(socket: Duplex, status: number, message: string): void {
   socket.end(`HTTP/1.1 ${status} ${message}\r\nConnection: close\r\nContent-Length: 0\r\n\r\n`)
 }
 
+export function publicStreamError(code: string): { type: 'waiting' | 'error', message: string } {
+  if (code === 'stream_capacity_wait') return { type: 'waiting', message: '实时画面数量已达上限，正在等待空位。' }
+  if (code === 'stream_unsupported') return { type: 'error', message: '当前电脑暂不支持实时画面，已切换为截图预览。' }
+  return { type: 'error', message: '实时画面启动失败，已切换为截图预览。' }
+}
+
 async function readJson(request: IncomingMessage): Promise<Record<string, unknown>> {
   const chunks: Buffer[] = []
   let bytes = 0
@@ -169,9 +175,7 @@ export function installMirrorHttp(
                 sink.onClose(unsubscribe)
               } catch (error) {
                 const code = error instanceof Error ? error.message : 'stream_failed'
-                sink.sendText(JSON.stringify(code === 'stream_capacity_wait'
-                  ? { type: 'waiting', message: '实时画面已达 4 台上限，正在等待空位。' }
-                  : { type: 'error', message: code }))
+                sink.sendText(JSON.stringify(publicStreamError(code)))
                 sink.close(1013, 'stream unavailable')
               }
             } catch {

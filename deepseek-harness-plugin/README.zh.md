@@ -27,16 +27,16 @@
 
 ### macOS：通过 Codex Skill 安装
 
-让 Codex 从仓库的 [`deepseek-harness-plugin/skills/opengui-coremate-install`](./skills/opengui-coremate-install) 安装 Skill，然后调用 `$opengui-coremate-install`。Skill 会从 OpenGUI 的公开 Release 下载并校验固定的 `v0.1.5` 安装包，保留 `web` profile 中的其他配置，并且只在 DSH 尚未运行时负责启动，不要求登录 GitHub。
+让 Codex 从仓库的 [`deepseek-harness-plugin/skills/opengui-coremate-install`](./skills/opengui-coremate-install) 安装 Skill，然后调用 `$opengui-coremate-install`。Skill 会从 OpenGUI 的公开 Release 下载并校验固定的 `v0.1.6` 安装包，保留 `web` profile 中的其他配置，并安装用户级 LaunchAgent，让 DSH 在异常退出或重新登录后自动恢复；不要求登录 GitHub。
 
-如果 3080 端口已有 DSH，安装器不会终止或重启该进程，只会提示需要手动重启。下面的手动安装方式仍适用于所有受支持的系统。
+如果 3080 端口属于 OpenGUI 管理的 DSH，安装器会安全更新并重启对应 LaunchAgent；如果属于其他 DSH 进程，安装器绝不会强制终止它，新 LaunchAgent 会在下次登录后接管。下面的手动安装方式仍适用于所有受支持的系统。
 
 ### 1. 下载发布包
 
-从 [OpenGUI 公开 Release](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.5) 下载：
+从 [OpenGUI 公开 Release](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.6) 下载：
 
-- `dsh-coremate-mobile-0.1.5.tgz`
-- `dsh-coremate-mobile-0.1.5.tgz.sha256`
+- `dsh-coremate-mobile-0.1.6.tgz`
+- `dsh-coremate-mobile-0.1.6.tgz.sha256`
 
 不要解压 `.tgz`，也不要下载 GitHub 自动生成的 Source code 压缩包。
 
@@ -44,18 +44,18 @@
 
 ```sh
 # Linux
-sha256sum -c dsh-coremate-mobile-0.1.5.tgz.sha256
+sha256sum -c dsh-coremate-mobile-0.1.6.tgz.sha256
 
 # macOS
-shasum -a 256 -c dsh-coremate-mobile-0.1.5.tgz.sha256
+shasum -a 256 -c dsh-coremate-mobile-0.1.6.tgz.sha256
 ```
 
-Windows PowerShell 可分别执行 `Get-FileHash .\dsh-coremate-mobile-0.1.5.tgz -Algorithm SHA256` 和 `Get-Content .\dsh-coremate-mobile-0.1.5.tgz.sha256`，确认两者显示的哈希一致。
+Windows PowerShell 可分别执行 `Get-FileHash .\dsh-coremate-mobile-0.1.6.tgz -Algorithm SHA256` 和 `Get-Content .\dsh-coremate-mobile-0.1.6.tgz.sha256`，确认两者显示的哈希一致。
 
 ### 2. 安装到 Harness profile
 
 ```sh
-dsh plugin --profile web add /绝对路径/dsh-coremate-mobile-0.1.5.tgz
+dsh plugin --profile web add /绝对路径/dsh-coremate-mobile-0.1.6.tgz
 ```
 
 如果使用 `npx` 启动官方 CLI，可将命令中的 `dsh` 替换为：
@@ -181,7 +181,7 @@ Usage: /opengui <task>
 
 手机选择和状态统一放在原生 **OpenGUI** Tab。只有一台已授权手机时会自动选中；有多台时，可在工作台中勾选任意一台或多台后再发送 `/opengui` 或 `@OpenGUI`。非空任务会先确定当前模型或完成专用回退配置，再等待手机；在选定设备快照就绪前不会向 provider 发起模型请求。等待期间仍可连接、选择和投屏，检测成功后才锁定本次设备快照，直到整批结束。
 
-原生 **OpenGUI** Tab 是全宽设备照片墙。界面按 Host 顺序展示全部可见手机，并在末尾追加唯一的连接说明卡，不会为凑列数预留空卡。新检测到的手机默认展开完整、低延迟的 H.264 实时画面；只有 Tab、设备卡和页面都可见时才保持连接。首次使用会先征得同意，再下载并校验固定版本的 scrcpy server；浏览器不支持或视频流失败时，会降级为不裁切的 JPEG 截图预览。每台手机还可按需打开独立的 scrcpy 窗口。
+原生 **OpenGUI** Tab 是全宽设备照片墙。界面按 Host 顺序展示全部可见手机，并在末尾追加唯一的连接说明卡，不会为凑列数预留空卡。新检测到的手机先立即展示完整截图，后台自动准备低延迟实时画面，完成后无缝切换；普通用户不需要理解或批准底层组件。浏览器不支持或视频流失败时会继续显示截图，并提供重试。每台手机还可按需打开独立投屏窗口。
 
 选中 `@OpenGUI` 后，原生输入菜单会显示自由描述、QA、运营和手游四个选项；场景只填入草稿，不会自动发送。提交非空 OpenGUI 任务后，输入框会立即恢复，任务继续写入所属会话。此时新建 DSH 会话会进入真正的空白对话，原任务仍在原会话运行，新会话中会提供紧凑的返回入口。
 
@@ -234,7 +234,7 @@ OpenGUI 任务运行时，输入框右侧会出现方形“停止 OpenGUI 操作
 生产环境应使用上面的预构建 Release 包。开发时可以 checkout OpenGUI 的公开 Release tag，再安装插件目录：
 
 ```sh
-git clone --branch dsh-coremate-mobile-v0.1.5 --depth 1 https://github.com/Core-Mate/OpenGUI.git
+git clone --branch dsh-coremate-mobile-v0.1.6 --depth 1 https://github.com/Core-Mate/OpenGUI.git
 cd OpenGUI/deepseek-harness-plugin
 dsh plugin --profile web add "$(pwd)"
 ```
@@ -263,11 +263,17 @@ allowBuilds:
 
 每台已连接手机的设备项右侧常驻一个眼睛图标，不需要先运行 OpenGUI 任务，也不要求勾选为操作目标。点击某台的眼睛后，插件会在**运行 Harness 的电脑**上为该设备打开独立的只读 scrcpy 窗口；再次点击关闭。可依次点击多台手机的眼睛，同时显示多个投屏窗口。从另一台电脑访问 Web 界面时，窗口不会出现在浏览器所在电脑。
 
-首次投屏或首次输入 Unicode 手机文本时，插件会按 Harness 主机的平台下载固定、已审核的官方 scrcpy v4.1 资产（约 11–18 MB），校验内置 SHA-256 后再原子解压到 `$DSH_HOME/cache/coremate-mobile/scrcpy`。后续直接复用缓存。投屏客户端强制使用随包 ADB、眼睛所对应设备的 serial、`--no-control` 和 `--no-audio`；OpenGUI 任务结束不会关闭投屏，关闭眼睛、设备断开、scrcpy 退出或插件卸载时才会结束对应窗口。
+首次显示实时画面、投屏或输入 Unicode 手机文本时，插件会在后台下载固定、已审核的官方 scrcpy v4.1 资产（约 11–18 MB），校验内置 SHA-256 后原子安装到当前系统用户的 OpenGUI 缓存。macOS 使用 `~/Library/Caches/OpenGUI/scrcpy`，Linux 遵循 `$XDG_CACHE_HOME`（默认 `~/.cache`），Windows 使用 `%LOCALAPPDATA%`；旧 `$DSH_HOME/cache/coremate-mobile/scrcpy` 中已校验的缓存仍可直接复用，不复制也不重复下载。
 
-官方预构建客户端覆盖 macOS arm64/x64、Linux x64 和 Windows x64。其他主机架构会在按钮上显示不支持。下载失败可直接重试；校验失败的内容绝不会执行。若不再需要缓存，可在 Harness 完全停止后删除上述 `scrcpy` 缓存目录。
+官方预构建客户端覆盖 macOS arm64/x64、Linux x64 和 Windows x64。其他主机架构会显示不支持。下载失败可直接重试；校验失败的内容绝不会执行。若不再需要缓存，可在 Harness 完全停止后删除对应系统的 OpenGUI 缓存目录。
 
 ## 卸载
+
+通过 macOS Skill 安装时，优先运行配套卸载脚本；它只移除对应插件和 LaunchAgent，保留设置、凭据和缓存：
+
+```sh
+./skills/opengui-coremate-install/scripts/uninstall-macos.sh
+```
 
 ```sh
 dsh plugin --profile web remove dsh-coremate-mobile
@@ -275,7 +281,7 @@ dsh plugin --profile web remove dsh-coremate-mobile
 
 如果使用了推荐的 settings 配置，删除 `$DSH_HOME/settings.yaml` 中的 `coremate-mobile` section；确认不再使用后，再删除对应凭据。
 
-卸载不会自动删除已下载的 scrcpy 或 Chromium 缓存；需要释放空间时，可在 Harness 停止后删除 `$DSH_HOME/cache/coremate-mobile/scrcpy` 和 `$DSH_HOME/cache/coremate-mobile/browser`。
+卸载不会自动删除手机画面或 Chromium 缓存；需要释放空间时，可在 Harness 停止后删除对应系统的 OpenGUI `scrcpy` 缓存、旧 `$DSH_HOME/cache/coremate-mobile/scrcpy` 和 `$DSH_HOME/cache/coremate-mobile/browser`。
 
 如果使用了 profile patch，还必须删除其中的 `coremate-mobile` 行；文件没有其他条目时保留 `[]`。残留 patch 会导致下次启动出现 `entry "coremate-mobile" not found`。
 

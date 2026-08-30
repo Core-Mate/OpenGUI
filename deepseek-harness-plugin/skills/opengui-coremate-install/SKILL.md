@@ -1,11 +1,11 @@
 ---
 name: opengui-coremate-install
-description: Install the pinned OpenGUI v0.1.5 release into a DeepSeek Harness web profile on macOS. Use when the user asks to download, install, update, open, or verify OpenGUI for DSH.
+description: Install the pinned OpenGUI v0.1.6 release into a DeepSeek Harness web profile on macOS. Use when the user asks to download, install, update, open, or verify OpenGUI for DSH.
 ---
 
 # Install OpenGUI
 
-Install and verify the signed-off `v0.1.5` release without replacing unrelated DSH plugins or settings.
+Install and verify the signed-off `v0.1.6` release without replacing unrelated DSH plugins or settings.
 
 ## Run the installer
 
@@ -15,11 +15,13 @@ Install and verify the signed-off `v0.1.5` release without replacing unrelated D
 
 The script checks the host Node version, pins DSH to `0.1.0-rc.7`, downloads both the release tarball and checksum from the public GitHub Release, verifies SHA-256, installs only `dsh-coremate-mobile` into the `web` profile, and validates the package, bundle, Client entry, and `/opengui` command. GitHub authentication is not required.
 
-If port 3080 already belongs to DSH, the script preserves that process. Do not kill or restart it automatically. Explain that the plugin is installed and the existing DSH process must be restarted when the user is ready. When DSH is not running, the script starts it and verifies `http://127.0.0.1:3080`.
+The script installs a user LaunchAgent with `KeepAlive` so DSH returns after a crash or login. It may safely reload an instance already owned by that exact LaunchAgent. If port 3080 belongs to any other DSH process, preserve it: the installer writes the LaunchAgent but defers takeover until the next login. When DSH is not running, the script starts and verifies `http://127.0.0.1:3080`.
+
+For uninstall requests, run `scripts/uninstall-macos.sh`. It removes only the matching plugin and LaunchAgent; settings, credentials, unrelated DSH instances, and caches remain intact.
 
 ## First-run handoff
 
-Tell the user to add or select a DSH workspace, then connect and select an authorized phone. Opening DSH, selecting phones, and manually opening mirrors do not require separate model setup. `/opengui <task>` prefers the current DSH conversation model. A model that explicitly supports images runs without a prompt; an unknown model asks once for permission to reuse it; an explicitly incompatible model enters the dedicated visual-model fallback. An empty `/opengui` only prints usage. The legacy `/coremate` alias remains available for compatibility.
+Tell the user to add or select a DSH workspace, then connect and select an authorized phone. The workbench shows a screenshot immediately and prepares the live view in the background; do not ask the user to understand or approve the underlying phone-view component. Opening DSH, selecting phones, and manually opening mirrors do not require separate model setup. `/opengui <task>` prefers the current DSH conversation model. A model that explicitly supports images runs without a prompt; an unknown model asks once for permission to reuse it; an explicitly incompatible model enters the dedicated visual-model fallback. An empty `/opengui` only prints usage. The legacy `/coremate` alias remains available for compatibility.
 
 The dedicated fallback still requires image input and tool calling. Its setup explains Base URL, API protocol, model ID, and API Key before asking for missing values.
 

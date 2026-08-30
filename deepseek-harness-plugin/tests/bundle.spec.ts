@@ -90,7 +90,11 @@ describe('standalone DeepSeek Harness bundle', () => {
       readFile(new URL('src/client/coremate-trigger.ts', root), 'utf8'),
     ])
 
-    expect(view).toContain('<PhoneStream device={device} expanded={open} streamStatus={streamStatus} streamGeneration={streamGeneration} enableStream={enableStream} />')
+    expect(view).toContain('<PhoneStream device={device} expanded={open} streamStatus={streamStatus} streamStatusError={streamStatusError} />')
+    expect(stream).not.toContain('首次启用实时画面需要下载并校验 scrcpy')
+    expect(stream).toContain('正在准备实时画面')
+    expect(stream).toContain("() => fallback('实时画面解码失败，已切换为截图预览。')")
+    expect(stream).not.toContain('error.message}`')
     expect(stream).toContain("value.type === 'waiting') fallback(value.message ?? '实时画面正在等待空位', true)")
     expect(stream).toContain("websocket.onerror = () => fallback('实时画面连接失败，已切换为截图预览。', true)")
     expect(view).not.toContain('height: 360')

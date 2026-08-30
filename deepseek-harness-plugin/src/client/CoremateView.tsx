@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import {
   DEVICE_SELECTION_PATH,
-  DEVICE_STREAM_ENABLE_PATH,
   DEVICE_STREAM_STATUS_PATH,
   MIRROR_START_PATH,
   MIRROR_STOP_PATH,
@@ -154,7 +153,7 @@ export function CoremateView({ coremateSessionId }: { readonly coremateSessionId
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string>()
   const [streamStatus, setStreamStatus] = useState<ScrcpyStreamStatus>()
-  const [streamGeneration, setStreamGeneration] = useState(0)
+  const [streamStatusError, setStreamStatusError] = useState<string>()
 
   useEffect(() => {
     const controller = new AbortController()
@@ -194,8 +193,15 @@ export function CoremateView({ coremateSessionId }: { readonly coremateSessionId
     const poll = async (): Promise<void> => {
       try {
         const response = await fetch(DEVICE_STREAM_STATUS_PATH, { cache: 'no-store', signal: controller.signal })
-        if (response.ok) setStreamStatus(await response.json() as ScrcpyStreamStatus)
-      } catch { /* stream support is optional; each card retains screenshot fallback */ }
+        if (!response.ok) throw new Error(`实时画面状态不可用 (${response.status})`)
+        setStreamStatus(await response.json() as ScrcpyStreamStatus)
+        setStreamStatusError(undefined)
+      } catch (reason) {
+        if (!controller.signal.aborted) {
+          setStreamStatus(undefined)
+          setStreamStatusError(reason instanceof Error ? reason.message : String(reason))
+        }
+      }
       finally {
         if (!controller.signal.aborted) timer = setTimeout(poll, document.hidden ? 5_000 : 1_500)
       }
@@ -205,13 +211,6 @@ export function CoremateView({ coremateSessionId }: { readonly coremateSessionId
       controller.abort()
       if (timer !== undefined) clearTimeout(timer)
     }
-  }, [])
-
-  const enableStream = useCallback(async (): Promise<void> => {
-    const response = await fetch(DEVICE_STREAM_ENABLE_PATH, { method: 'POST', headers: { Accept: 'application/json' } })
-    if (!response.ok) throw new Error(`启用实时画面失败 (${response.status})`)
-    setStreamStatus(await response.json() as ScrcpyStreamStatus)
-    setStreamGeneration(value => value + 1)
   }, [])
 
   const mutate = useCallback(async (path: string, ids: readonly string[]): Promise<void> => {
@@ -312,7 +311,7 @@ export function CoremateView({ coremateSessionId }: { readonly coremateSessionId
                   </div>
                 </div>
                 {device.message === undefined ? null : <div role="status" style={{ padding: '0 12px 8px', color: device.phase === 'error' ? '#b91c1c' : 'var(--dsw-alias-label-secondary, #52525b)', fontSize: 11 }}>{device.message}</div>}
-                <PhoneStream device={device} expanded={open} streamStatus={streamStatus} streamGeneration={streamGeneration} enableStream={enableStream} />
+                <PhoneStream device={device} expanded={open} streamStatus={streamStatus} streamStatusError={streamStatusError} />
             </article>
           )
         })}

@@ -1,6 +1,6 @@
 {
   "name": "dsh-coremate-mobile",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Standalone DeepSeek Harness plugin for Android phone and managed local-browser control",
   "repository": {
     "type": "git",
