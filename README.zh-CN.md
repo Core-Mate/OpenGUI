@@ -81,6 +81,8 @@ Read ./skills/open-gui-bootstrap/SKILL.md and help me run OpenGUI. Only ask me f
 
 这段显式指定 Skill 路径的提示词同样适用于 OpenCode。当前仓库把 Skill 放在顶层 `skills/` 目录，因此 OpenCode 用户应像上面一样明确提供路径，而不是依赖自动发现。OpenCode 原生支持的 `.opencode/skills/` 和 `.agents/skills/` 目录可参考其 [Agent Skills 文档](https://opencode.ai/docs/skills/)。
 
+无需 Root，也无需解锁 Bootloader。OpenGUI 使用 Android 标准的 `AccessibilityService` API 获取截图，并执行点击、滑动、输入、返回和主页等操作。ADB 仅用于在本地安装和启动 APK，以及通过 `adb reverse` 配置端口转发；它不会 Root 或修改设备系统。
+
 你需要准备：
 
 - 一台 Android 11（API 30）或更高版本的手机或模拟器

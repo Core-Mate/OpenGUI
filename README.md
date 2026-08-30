@@ -85,6 +85,11 @@ This explicit prompt also works in OpenCode. The repository keeps the Skill in
 on automatic Skill discovery. See the [OpenCode Agent Skills documentation](https://opencode.ai/docs/skills/)
 for its native `.opencode/skills/` and `.agents/skills/` locations.
 
+Root access and an unlocked bootloader are not required. OpenGUI uses standard
+Android `AccessibilityService` APIs for screenshots and actions. ADB is used
+only to install and launch the APK and configure local port forwarding with
+`adb reverse`; it does not root the device or modify the Android system.
+
 You will need:
 
 - an Android 11 (API 30) or newer phone or emulator
