@@ -9,7 +9,7 @@
 
 <p align="center">
   <a href="#use-opengui-in-deepseek-harness"><img src="https://img.shields.io/badge/INSTALL-DEEPSEEK_HARNESS_PLUGIN-6f42c1?style=for-the-badge" alt="Install the DeepSeek Harness plugin"></a>
-  <a href="./skills/open-gui-bootstrap/SKILL.md"><img src="https://img.shields.io/badge/BOOTSTRAP-WITH_CLAUDE_OR_CODEX-ffb000?style=for-the-badge" alt="Bootstrap with Claude or Codex"></a>
+  <a href="./skills/open-gui-bootstrap/SKILL.md"><img src="https://img.shields.io/badge/BOOTSTRAP-WITH_AI_AGENTS-ffb000?style=for-the-badge" alt="Bootstrap with Claude Code, Codex, or OpenCode"></a>
   <img src="https://img.shields.io/badge/SYSTEM-MULTI_ROLE_OPERATOR-1f6feb?style=for-the-badge" alt="Multi-role operator system">
   <img src="https://img.shields.io/badge/TASKS-UP_TO_12_HOURS-cf222e?style=for-the-badge" alt="Tasks up to 12 hours">
   <img src="https://img.shields.io/badge/MODELS-CLAUDE_OPUS_|_QWEN_|_DOUBAO_|_BYO_API-2f9e44?style=for-the-badge" alt="Recommended model profiles">
@@ -74,18 +74,33 @@ Model availability, pricing, and policy behavior vary by version and region. Whi
 
 ## Run the Full OpenGUI Stack
 
-To run the full OpenGUI backend and Android client, let Claude Code or Codex bootstrap it for you.
+To run the full OpenGUI backend and Android client, let Claude Code, Codex, or OpenCode bootstrap it for you.
 
 ```text
 Read ./skills/open-gui-bootstrap/SKILL.md and help me run OpenGUI. Only ask me for phone-side actions.
 ```
+
+This explicit prompt also works in OpenCode. The repository keeps the Skill in
+`skills/`, so OpenCode users should include the path as shown instead of relying
+on automatic Skill discovery. See the [OpenCode Agent Skills documentation](https://opencode.ai/docs/skills/)
+for its native `.opencode/skills/` and `.agents/skills/` locations.
+
+Root access and an unlocked bootloader are not required. OpenGUI uses standard
+Android `AccessibilityService` APIs for screenshots and actions. ADB is used
+only to install and launch the APK and configure local port forwarding with
+`adb reverse`; it does not root the device or modify the Android system.
 
 You will need:
 
 - an Android 11 (API 30) or newer phone or emulator
 - USB debugging enabled
 - AccessibilityService enabled
+- overlay permission and battery optimization exemption enabled
 - model API keys for real task execution
+
+Permission names and menu locations vary across Android vendors. Complete the
+[Android permission setup guide](./docs/android-permissions.md) before running
+the first task.
 
 OpenGUI will use the repository scripts to start the backend and install the Android client:
 
@@ -130,8 +145,8 @@ You can use the same repository in four practical ways:
 
 - **Operate mainstream Android apps**: let AI handle mobile tasks inside X, Reddit, Hacker News, Telegram, WeChat, Weibo, Xiaohongshu, and other Android apps on a real phone.
 - **Run shipped workflows**: the repository already includes a runnable backend, Android client, standby dispatch path, and a set of built-in task capabilities.
-- **Let Claude or Codex bootstrap it for you**: point the model at [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md), describe the goal in plain language, and let it handle setup, build, install, and local debugging.
-- **Let Codex control Android apps**: after OpenGUI is running, point Codex or Claude Code at [`skills/open-gui-remote-control/SKILL.md`](./skills/open-gui-remote-control/SKILL.md) to list devices, dispatch tasks, and track executions through the local CLI.
+- **Let an AI coding agent bootstrap it for you**: point Claude Code, Codex, or OpenCode at [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md), describe the goal in plain language, and let it handle setup, build, install, and local debugging.
+- **Let an AI coding agent control Android apps**: after OpenGUI is running, point Claude Code, Codex, or OpenCode at [`skills/open-gui-remote-control/SKILL.md`](./skills/open-gui-remote-control/SKILL.md) to list devices, dispatch tasks, and track executions through the local CLI.
 - **Operate phones as remote workers**: dispatch tasks through Feishu, Telegram, Discord, or REST API, keep devices on standby, and get structured results back from the backend.
 
 - [Join the Discord community](https://discord.gg/pqHHw7XgJ3)
@@ -194,13 +209,13 @@ The source code currently exposes these pieces:
 
 ## How to Use OpenGUI
 
-### 1. With Claude or Codex
+### 1. With Claude Code, Codex, or OpenCode
 
 Start with [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md).
 
 The intended flow is simple:
 
-1. point Claude or Codex at the skill
+1. point Claude Code, Codex, or OpenCode at the skill
 2. describe the task in plain language
 3. let the model handle backend bootstrap, APK build, install, and local debugging
 
@@ -212,7 +227,7 @@ It should only stop for:
 - granting overlay or battery permissions
 - providing API keys or bot credentials
 
-After the backend and Android client are running, use [`skills/open-gui-remote-control/SKILL.md`](./skills/open-gui-remote-control/SKILL.md) to let Codex or Claude Code control the phone through the local CLI:
+After the backend and Android client are running, use [`skills/open-gui-remote-control/SKILL.md`](./skills/open-gui-remote-control/SKILL.md) to let Claude Code, Codex, or OpenCode control the phone through the local CLI:
 
 ```bash
 cd server

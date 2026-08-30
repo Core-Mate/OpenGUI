@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="#deepseek-harnessでopenguiを使う"><img src="https://img.shields.io/badge/INSTALL-DEEPSEEK_HARNESS_PLUGIN-6f42c1?style=for-the-badge" alt="DeepSeek Harnessプラグインをインストール"></a>
-  <a href="./skills/open-gui-bootstrap/SKILL.md"><img src="https://img.shields.io/badge/BOOTSTRAP-WITH_CLAUDE_OR_CODEX-ffb000?style=for-the-badge" alt="Claude または Codex でブートストラップ"></a>
+  <a href="./skills/open-gui-bootstrap/SKILL.md"><img src="https://img.shields.io/badge/BOOTSTRAP-WITH_AI_AGENTS-ffb000?style=for-the-badge" alt="Claude Code、Codex、OpenCode でブートストラップ"></a>
   <img src="https://img.shields.io/badge/SYSTEM-MULTI_ROLE_OPERATOR-1f6feb?style=for-the-badge" alt="マルチロールオペレーターシステム">
   <img src="https://img.shields.io/badge/TASKS-UP_TO_12_HOURS-cf222e?style=for-the-badge" alt="最大12時間のタスク">
   <img src="https://img.shields.io/badge/MODELS-CLAUDE_OPUS_|_QWEN_|_DOUBAO_|_BYO_API-2f9e44?style=for-the-badge" alt="推奨モデルプロファイル">
@@ -73,18 +73,26 @@ GUI操作向けの現在の推奨順：
 
 ## OpenGUIスタック一式を実行する
 
-OpenGUIのバックエンドとAndroidクライアント一式を実行する場合は、Claude CodeまたはCodexにブートストラップを任せることができます。
+OpenGUIのバックエンドとAndroidクライアント一式を実行する場合は、Claude Code、Codex、またはOpenCodeにブートストラップを任せることができます。
 
 ```text
 Read ./skills/open-gui-bootstrap/SKILL.md and help me run OpenGUI. Only ask me for phone-side actions.
 ```
 
+Skill のパスを明示したこのプロンプトは OpenCode でも使用できます。このリポジトリでは Skill をトップレベルの `skills/` に配置しているため、OpenCode では自動検出に頼らず、上記のようにパスを指定してください。OpenCode が標準で検出する `.opencode/skills/` と `.agents/skills/` については、[Agent Skills ドキュメント](https://opencode.ai/docs/skills/)を参照してください。
+
+root 権限やブートローダーのアンロックは不要です。OpenGUI は Android 標準の `AccessibilityService` API を使ってスクリーンショットを取得し、タップ、スワイプ、テキスト入力、戻る、ホームなどの操作を実行します。ADB はローカルでの APK のインストールと起動、および `adb reverse` によるポート転送の設定にのみ使用され、端末を root 化したりシステムを変更したりすることはありません。
+
 必要なもの:
 
 - Android 11（API 30）以降のスマートフォンまたはエミュレーター
 - USB デバッグの有効化
-- AccessibilityService の有効化
+- ユーザー補助サービス（AccessibilityService）の有効化
+- オーバーレイ権限の許可と OpenGUI のバッテリー最適化除外
 - 実際のタスク実行に使うモデル API キー
+
+権限名と設定場所は Android メーカーによって異なります。最初のタスクを実行する前に、
+[Android 権限設定ガイド](./docs/android-permissions.ja-JP.md)のチェックリストを完了してください。
 
 OpenGUI はリポジトリ内のスクリプトを使ってバックエンドを起動し、Android クライアントをインストールします:
 
@@ -129,8 +137,8 @@ OpenGUI は、AI が実際の Android スマートフォンを操作できるよ
 
 - **主要な Android アプリを操作**: X、Reddit、Hacker News、Telegram、WeChat、Weibo、小紅書などの Android アプリ上で、AI にモバイルタスクを実行させることができます。
 - **組み込みワークフローを実行**: バックエンド、Android クライアント、スタンバイディスパッチパス、組み込みタスク機能一式がすぐに実行可能な状態で含まれています。
-- **Claude や Codex にブートストラップさせる**: [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md) をモデルに指示し、目的を自然言語で説明すれば、セットアップ、ビルド、インストール、ローカルデバッグをモデルが処理します。
-- **Codex で Android アプリを操作**: OpenGUI の起動後、[`skills/open-gui-remote-control/SKILL.md`](./skills/open-gui-remote-control/SKILL.md) を Codex または Claude Code に渡すと、ローカル CLI 経由でデバイス一覧、タスクディスパッチ、execution 状態確認ができます。
+- **AI コーディングエージェントにブートストラップさせる**: [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md) を Claude Code、Codex、または OpenCode に渡し、目的を自然言語で説明すれば、セットアップ、ビルド、インストール、ローカルデバッグをエージェントが処理します。
+- **AI コーディングエージェントで Android アプリを操作**: OpenGUI の起動後、[`skills/open-gui-remote-control/SKILL.md`](./skills/open-gui-remote-control/SKILL.md) を Claude Code、Codex、または OpenCode に渡すと、ローカル CLI 経由でデバイス一覧、タスクディスパッチ、execution 状態確認ができます。
 - **リモートワーカーとしてスマートフォンを操作**: Feishu、Telegram、Discord、REST API 経由でタスクをディスパッチし、デバイスをスタンバイ状態に保ち、バックエンドから構造化された結果を受け取ることができます。
 
 ## 特徴
@@ -191,13 +199,13 @@ OpenGUI は、明示的なオーケストレーションレイヤーを持つモ
 
 ## OpenGUI の使い方
 
-### 1. Claude や Codex を使う場合
+### 1. Claude Code、Codex、または OpenCode を使う場合
 
 [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md) から始めてください。
 
 手順はシンプルです:
 
-1. Claude または Codex にスキルを指示する
+1. Claude Code、Codex、または OpenCode に Skill を指示する
 2. タスクを自然言語で説明する
 3. バックエンドのブートストラップ、APK ビルド、インストール、ローカルデバッグをモデルに任せる
 
@@ -209,7 +217,7 @@ OpenGUI は、明示的なオーケストレーションレイヤーを持つモ
 - オーバーレイまたはバッテリー権限の付与
 - API キーまたはボット認証情報の入力
 
-バックエンドと Android client が起動したら、[`skills/open-gui-remote-control/SKILL.md`](./skills/open-gui-remote-control/SKILL.md) を使って Codex または Claude Code にローカル CLI 経由でスマートフォンを操作させることができます:
+バックエンドと Android client が起動したら、[`skills/open-gui-remote-control/SKILL.md`](./skills/open-gui-remote-control/SKILL.md) を使って Claude Code、Codex、または OpenCode にローカル CLI 経由でスマートフォンを操作させることができます:
 
 ```bash
 cd server

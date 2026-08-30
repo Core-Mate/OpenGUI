@@ -152,6 +152,10 @@ jobs:
             cat > "$notes" <<EOF
           OpenGUI plugin for DeepSeek Harness v${version}.
 
+          Connected phones now show a screenshot immediately while OpenGUI prepares the live view in the background. Stream, decoder, and status failures keep the screenshot available with a retry action.
+
+          The macOS installer now runs DSH through a per-user LaunchAgent and includes a matching uninstall script. Verified phone-view caches are shared across DSH profiles, including existing \`~/.dsh\` caches.
+
           Download both the \`.tgz\` package and its \`.sha256\` file. The recommended macOS path is the [Codex installer Skill](https://github.com/Core-Mate/OpenGUI/tree/${GITHUB_REF_NAME}/deepseek-harness-plugin/skills/opengui-coremate-install).
 
           The package supports DeepSeek Harness through \`/opengui\` and \`@OpenGUI\`, and Codex through the \`opengui:control\` Skill plus seven local stdio MCP tools. Both hosts share the same bounded Android execution runtime, multi-device locking, cancellation, and read-only device-wall support.

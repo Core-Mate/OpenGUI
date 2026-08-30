@@ -4,7 +4,7 @@ Use this reference when executing the bootstrap workflow.
 
 ## Operating Principle
 
-Claude or Codex should behave like the installer and operator.
+The AI coding agent, including Claude Code, Codex, or OpenCode, should behave like the installer and operator.
 
 The user should only need to:
 
