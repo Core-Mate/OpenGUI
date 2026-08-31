@@ -122,7 +122,23 @@ pnpm opengui -- devices --json
 pnpm opengui -- do "Observe the current Android screen and summarize what you see" --json
 ```
 
-The task response includes an `executionId`. Keep it so you can stop the active task:
+`do` starts the execution asynchronously and returns after the execution is
+created; it does not stream progress or wait for completion. The response
+includes an `executionId`. Use it to check the current status:
+
+```bash
+pnpm opengui -- status <executionId> --json
+```
+
+`status` returns one snapshot, so run it again whenever you want an update.
+Check `executionStatus` and, when present, `statusMessage`, `currentStep`,
+`executionResult`, or `errorMessage`. `PENDING` means the execution is waiting
+to start on the phone, `RUNNING` means it is active, and `FINISHED` means it has
+completed. Fine-grained fields are not always present, so a `RUNNING` snapshot
+may not distinguish a model wait from a phone wait. If `do` itself does not
+return an `executionId`, treat that as a request or startup problem rather than
+normal asynchronous execution. Keep the same `executionId` if you need to stop
+the active task:
 
 ```bash
 pnpm opengui -- cancel <executionId> --json

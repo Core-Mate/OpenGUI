@@ -114,7 +114,13 @@ pnpm opengui -- devices --json
 pnpm opengui -- do "观察当前手机屏幕，简要描述你看到了什么，然后结束" --json
 ```
 
-任务响应中会返回 `executionId`。请保留它，以便停止正在执行的任务：
+`do` 会异步启动 execution，并在创建完成后返回；它不会持续输出进度，也不会等待任务结束。响应中会包含 `executionId`，使用它查询当前状态：
+
+```bash
+pnpm opengui -- status <executionId> --json
+```
+
+`status` 每次返回一个状态快照，需要更新时可以再次执行。请查看 `executionStatus`，以及返回结果中存在的 `statusMessage`、`currentStep`、`executionResult` 或 `errorMessage`。`PENDING` 表示 execution 正在等待手机端启动，`RUNNING` 表示正在执行，`FINISHED` 表示已经结束。细粒度字段不一定始终存在，因此 `RUNNING` 状态不一定能区分当前是在等待模型还是等待手机。如果 `do` 本身没有返回 `executionId`，应将其视为请求或启动异常，而不是正常的异步执行。需要停止正在执行的任务时，继续使用同一个 `executionId`：
 
 ```bash
 pnpm opengui -- cancel <executionId> --json
