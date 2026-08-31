@@ -43,6 +43,18 @@ export interface BrowserInstallStatus {
   message?: string
 }
 
+/** Release discovery and user-approved plugin update state exposed to the local client. */
+export interface PluginUpdateStatus {
+  phase: 'idle' | 'checking' | 'up-to-date' | 'available' | 'downloading' | 'verifying' | 'installing' | 'restart-required' | 'error'
+  currentVersion: string
+  latestVersion?: string
+  releaseUrl?: string
+  totalBytes?: number
+  downloadedBytes?: number
+  checkedAt?: string
+  message?: string
+}
+
 export const MIRROR_STATUS_PATH = '/coremate-mobile/mirror/status'
 export const DEVICE_SELECTION_PATH = '/coremate-mobile/devices/selection'
 export const DEVICE_PREVIEW_PATH = '/coremate-mobile/devices/preview'
@@ -56,3 +68,6 @@ export const PHONE_TASK_STOP_PATH = '/coremate-mobile/task/stop'
 export const BROWSER_INSTALL_STATUS_PATH = '/coremate-mobile/browser/install/status'
 export const BROWSER_INSTALL_APPROVE_PATH = '/coremate-mobile/browser/install/approve'
 export const BROWSER_INSTALL_DECLINE_PATH = '/coremate-mobile/browser/install/decline'
+export const PLUGIN_UPDATE_STATUS_PATH = '/coremate-mobile/plugin/update/status'
+export const PLUGIN_UPDATE_CHECK_PATH = '/coremate-mobile/plugin/update/check'
+export const PLUGIN_UPDATE_INSTALL_PATH = '/coremate-mobile/plugin/update/install'

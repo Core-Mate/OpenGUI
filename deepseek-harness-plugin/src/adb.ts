@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process'
-import { access, stat } from 'node:fs/promises'
+import { access, chmod, stat } from 'node:fs/promises'
 import { constants } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
@@ -317,10 +317,27 @@ export function managedAdbPath(override?: string): string {
  * Fail before device discovery if the packaged runtime is missing or unusable.
  * @param path Absolute ADB executable path.
  */
-export async function assertAdbReady(path: string): Promise<void> {
+export async function assertAdbReady(path: string, options: { readonly repairPermissions?: boolean } = {}): Promise<void> {
   const info = await stat(path).catch(() => undefined)
   if (info?.isFile() !== true) throw new Error(`coremate-mobile: bundled ADB runtime is missing at ${path}; reinstall the plugin`)
-  await access(path, process.platform === 'win32' ? constants.F_OK : constants.X_OK)
+  if (process.platform === 'win32') {
+    await access(path, constants.F_OK)
+    return
+  }
+  try {
+    await access(path, constants.X_OK)
+  } catch (error) {
+    if (options.repairPermissions === true) {
+      try {
+        await chmod(path, info.mode | 0o111)
+        await access(path, constants.X_OK)
+        return
+      } catch (repairError) {
+        throw new Error('opengui: bundled ADB is not executable and automatic permission repair failed; reinstall the plugin', { cause: repairError })
+      }
+    }
+    throw new Error('opengui: configured ADB executable is not executable; check adbPath or OPENGUI_ADB_PATH and its file permissions', { cause: error })
+  }
 }
 
 /** Process limits applied to every ADB invocation. */

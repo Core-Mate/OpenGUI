@@ -42,11 +42,12 @@ describe('standalone DeepSeek Harness bundle', () => {
   })
 
   it('keeps OpenGUI controls in its view while retaining task stop inside the composer', async () => {
-    const [clientSource, viewSource, noticeSource, promotionSource] = await Promise.all([
+    const [clientSource, viewSource, noticeSource, promotionSource, hostSource] = await Promise.all([
       readFile(new URL('src/client/index.tsx', root), 'utf8'),
       readFile(new URL('src/client/CoremateView.tsx', root), 'utf8'),
       readFile(new URL('src/client/CoremateTaskNotice.tsx', root), 'utf8'),
       readFile(new URL('src/client/CorematePromotionCard.tsx', root), 'utf8'),
+      readFile(new URL('src/index.ts', root), 'utf8'),
     ])
 
     expect(clientSource).not.toContain("'conversation.composer.dock'")
@@ -56,12 +57,16 @@ describe('standalone DeepSeek Harness bundle', () => {
     expect(clientSource).not.toContain("'coremate-mobile-browser-install'")
     expect(clientSource).not.toContain('MirrorButton')
     expect(viewSource).toContain('<BrowserInstallPrompt />')
+    expect(viewSource).toContain('<PluginUpdatePrompt />')
     expect(viewSource).toContain('data-coremate-device-wall')
     expect(viewSource).toContain('data-coremate-connect-more')
     expect(viewSource).toContain('https://opengui.ai/')
     expect(noticeSource).toContain('请前往 OpenGUI Tab')
     expect(promotionSource).toContain('https://github.com/Core-Mate/OpenGUI/blob/main/deepseek-harness-plugin/docs/use-cases.zh.md')
     expect(promotionSource).not.toContain('Coremate-Mobile-Plugin')
+    expect(viewSource).toContain('设备检测异常')
+    expect(viewSource).toContain('正在自动重试')
+    expect(hostSource).toContain('连接完成后点击“重新检测”')
     expect(clientSource).not.toContain("'shell.overlay'")
   })
 

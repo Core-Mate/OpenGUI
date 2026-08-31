@@ -208,6 +208,8 @@ The native **OpenGUI** tab owns phone selection and status. One authorized phone
 
 The native **OpenGUI** tab is a full-width device wall. It renders every visible phone in Host order and appends one connection guide, without reserving empty slots. A connected phone shows an uncropped JPEG preview immediately while OpenGUI prepares its low-latency H.264 view in the background, then switches automatically. Unsupported browsers and stream failures keep the screenshot preview available with a retry action. Each phone can also be opened in an optional independent mirror window.
 
+After startup, the plugin checks the public `Core-Mate/OpenGUI` GitHub Releases list in the background, at most once every six hours. It ignores Android APK, draft, and prerelease entries and considers only stable `dsh-coremate-mobile-v*` releases with a version-matched `.tgz` and `.sha256`. The OpenGUI tab offers **Update** only for a newer verified package. Installation is blocked while an OpenGUI task is active, keeps the current version intact on failure, and takes effect after Harness restarts.
+
 Selecting `@OpenGUI` opens the native input menu with free-form, QA, operations, and game-assistant choices. A scene only fills the composer and never submits automatically. A non-empty OpenGUI submission releases the composer immediately while the task continues in its owner session. Starting another DSH session opens a genuinely blank conversation; the original task keeps running there, with a compact link back from the new session.
 
 `/opengui` starts a restricted routing child that can call only `phone_agent`, `browser_agent`, or both sequentially when the task truly spans both targets. Phone work still creates one fixed-device child per selected phone. Only one OpenGUI task runs at a time, including tasks started through the legacy `/coremate` alias.
@@ -339,6 +341,6 @@ pnpm run check
 npm pack
 ```
 
-The [GitHub Release workflow](.github/workflows/release.yml) performs publishing. A tag must be `v` followed by the exact `package.json` version; never reuse an existing version tag. Compatibility is defined by `peerDependencies` in `package.json`.
+The repository-level [GitHub Release workflow](../.github/workflows/deepseek-harness-plugin-release.yml) performs publishing. A tag must be `dsh-coremate-mobile-v` followed by the exact `package.json` version; never reuse an existing version tag. Compatibility is defined by `peerDependencies` in `package.json`.
 
 See the [developer integration and verification record](docs/research/deepseek-harness-plugin-integration.md) for official Harness source setup, isolated-profile installation, configuration precedence, runtime verification, and removal evidence.

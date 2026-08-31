@@ -69,6 +69,7 @@ import {
 } from './model-capability.ts'
 import { cleanCoremateSuggestionBlocks, COREMATE_SUGGESTION_INSTRUCTION } from './suggestions.ts'
 import { AsyncSemaphore } from './concurrency.ts'
+import { PluginUpdateManager } from './plugin-update.ts'
 
 export { actionCommand, canUseAdbInputText, managedAdbPath, normalizePhoneAction, ObservationId, parseDevices, parseScreenSize, selectAuthorizedSerial, textInputCommands } from './adb.ts'
 export type { AdbDevice, PhoneAction, PhoneCoordinateSpace, ScreenSize, TargetBoundingBox } from './adb.ts'
@@ -418,8 +419,9 @@ export function apply(ctx: Context, baseConfig: Config): void {
   })
   const adbPath = (): string => managedAdbPath(resolvedConfig(current()).adbPath)
   const run = async (args: readonly string[], signal: AbortSignal, buffer = false): Promise<string | Buffer> => {
+    const configuredAdbPath = resolvedConfig(current()).adbPath?.trim()
     const path = adbPath()
-    await assertAdbReady(path)
+    await assertAdbReady(path, { repairPermissions: !configuredAdbPath })
     return runAdb(path, args, {
       signal,
       timeoutMs: resolvedConfig(current()).commandTimeoutMs,
@@ -743,8 +745,8 @@ export function apply(ctx: Context, baseConfig: Config): void {
         questions: [{
           id: 'deviceConnection',
           header: '连接 Android 手机',
-          question: 'OpenGUI 需要先检测到一台已授权并选中的手机。',
-          detail: `${failure.message}\n\n请连接 USB，开启 USB 调试并在手机上允许这台电脑。连接多台手机时，请前往 OpenGUI Tab 选择至少一台。`,
+          question: 'OpenGUI 尚未检测到可用手机。',
+          detail: `${failure.message}\n\n请确认 USB 调试已授权；连接完成后点击“重新检测”。连接多台手机时，请先在 OpenGUI Tab 至少选择一台。`,
           options: [
             { label: '重新检测', description: '保持任务暂停，重新检查手机连接与选择。' },
             { label: '取消任务', description: '结束本次 OpenGUI 任务，不调用模型。' },
@@ -1019,9 +1021,11 @@ export function apply(ctx: Context, baseConfig: Config): void {
     state: () => tasks.state(),
     cancel: (): boolean => tasks.cancel(),
   }
-  installMirrorHttp(ctx, mirror, fleet, taskControl, managedBrowser, preview, streams)
+  const updater = new PluginUpdateManager()
+  installMirrorHttp(ctx, mirror, fleet, taskControl, managedBrowser, updater, preview, streams)
   ctx.effect(function* () {
     yield async () => {
+      updater.dispose()
       process.off('SIGTERM', cleanupForTermination)
       await forwardRecovery
       await Promise.all([mirror.dispose(), textInput.dispose(), streams.dispose()])

@@ -7,6 +7,7 @@ import {
   DEVICE_PREVIEW_PATH, DEVICE_SELECTION_PATH, DEVICE_STREAM_ENABLE_PATH, DEVICE_STREAM_PATH, DEVICE_STREAM_STATUS_PATH,
   MIRROR_START_PATH, MIRROR_STATUS_PATH, MIRROR_STOP_PATH,
   PHONE_TASK_STATUS_PATH, PHONE_TASK_STOP_PATH,
+  PLUGIN_UPDATE_CHECK_PATH, PLUGIN_UPDATE_INSTALL_PATH, PLUGIN_UPDATE_STATUS_PATH,
 } from './mirror-contract.ts'
 import type { CoremateTaskState } from './phone-task.ts'
 import type { BrowserInstallStatus } from './browser.ts'
@@ -27,6 +28,13 @@ interface BrowserInstallControl {
   approveInstall(): boolean
   declineInstall(): boolean
   enableInstallPrompt(): () => void
+}
+
+interface PluginUpdateControl {
+  start(): void
+  status(): unknown
+  check(force?: boolean): Promise<void>
+  requestUpdate(): boolean
 }
 
 function sendJson(response: ServerResponse, status: number, value: unknown): void {
@@ -111,6 +119,7 @@ export function installMirrorHttp(
   fleet: DeviceFleet,
   coremateTasks: CoremateTaskControl,
   browser: BrowserInstallControl,
+  updater: PluginUpdateControl,
   preview: PhonePreview,
   streams: ScrcpyVideoStreams,
 ): void {
@@ -118,6 +127,7 @@ export function installMirrorHttp(
     httpCtx.effect(() => {
       const disposers: Array<() => void> = []
       disposers.push(browser.enableInstallPrompt())
+      updater.start()
       const signal = (): AbortSignal => AbortSignal.timeout(5_000)
       const status = async (snapshot?: DeviceFleetSnapshot) => {
         const task = coremateTasks.state()
@@ -135,8 +145,10 @@ export function installMirrorHttp(
             if (request.method !== 'GET') return sendJson(response, 405, { error: 'method_not_allowed' })
             try {
               sendJson(response, 200, await status())
-            } catch {
-              sendJson(response, 503, { error: 'device_discovery_failed' })
+            } catch (error) {
+              sendJson(response, 503, {
+                error: error instanceof Error ? error.message : '手机检测服务暂时不可用，请稍后重试。',
+              })
             }
           },
         }))
@@ -230,6 +242,36 @@ export function installMirrorHttp(
             if (!browser.declineInstall()) return sendJson(response, 409, { error: 'no_browser_installation_waiting' })
             coremateTasks.cancel()
             sendJson(response, 202, { accepted: true })
+          },
+        }))
+        disposers.push(httpCtx.webServer.register({
+          kind: 'exact',
+          path: PLUGIN_UPDATE_STATUS_PATH,
+          handler(request, response) {
+            if (request.method !== 'GET') return sendJson(response, 405, { error: 'method_not_allowed' })
+            if (!sameOriginRead(request)) return sendJson(response, 403, { error: 'same_origin_required' })
+            sendJson(response, 200, updater.status())
+          },
+        }))
+        disposers.push(httpCtx.webServer.register({
+          kind: 'exact',
+          path: PLUGIN_UPDATE_CHECK_PATH,
+          handler(request, response) {
+            if (request.method !== 'POST') return sendJson(response, 405, { error: 'method_not_allowed' })
+            if (!sameOriginMutation(request)) return sendJson(response, 403, { error: 'same_origin_required' })
+            void updater.check(true)
+            sendJson(response, 202, updater.status())
+          },
+        }))
+        disposers.push(httpCtx.webServer.register({
+          kind: 'exact',
+          path: PLUGIN_UPDATE_INSTALL_PATH,
+          handler(request, response) {
+            if (request.method !== 'POST') return sendJson(response, 405, { error: 'method_not_allowed' })
+            if (!sameOriginMutation(request)) return sendJson(response, 403, { error: 'same_origin_required' })
+            if (coremateTasks.isActive()) return sendJson(response, 409, { error: 'stop_the_active_opengui_task_before_updating' })
+            if (!updater.requestUpdate()) return sendJson(response, 409, { error: 'no_plugin_update_available' })
+            sendJson(response, 202, updater.status())
           },
         }))
         disposers.push(httpCtx.webServer.register({

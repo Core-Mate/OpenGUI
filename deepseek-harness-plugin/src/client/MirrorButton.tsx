@@ -128,8 +128,14 @@ export function mirrorBusy(device: MirrorDeviceStatus): boolean {
 
 export async function readMirrorStatus(signal?: AbortSignal): Promise<MirrorStatus> {
   const response = await fetch(MIRROR_STATUS_PATH, { cache: 'no-store', ...(signal === undefined ? {} : { signal }) })
-  if (!response.ok) throw new Error(`手机状态请求失败 (${response.status})`)
-  return await response.json() as MirrorStatus
+  const value: unknown = await response.json().catch(() => undefined)
+  if (!response.ok) {
+    const message = typeof value === 'object' && value !== null && 'error' in value && typeof value.error === 'string'
+      ? value.error
+      : `手机状态请求失败 (${response.status})`
+    throw new Error(message)
+  }
+  return value as MirrorStatus
 }
 
 export async function postMirrorStatus(path: string, deviceIds: readonly string[]): Promise<MirrorStatus> {
