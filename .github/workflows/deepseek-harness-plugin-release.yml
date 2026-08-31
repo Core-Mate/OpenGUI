@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   build:
-    if: github.actor == 'HarveySang'
+    if: github.actor == 'HarveySang' || github.actor == 'VicarDa'
     runs-on: ubuntu-latest
     defaults:
       run:
