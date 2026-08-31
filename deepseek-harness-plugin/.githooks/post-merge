@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root="$(git rev-parse --show-toplevel)"
-exec node "${repo_root}/scripts/dev-auto-reload.mjs" after-pull
+hook_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+plugin_root="$(cd "${hook_dir}/.." && pwd)"
+exec node "${plugin_root}/scripts/dev-auto-reload.mjs" after-pull

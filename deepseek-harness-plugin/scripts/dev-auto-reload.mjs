@@ -49,7 +49,8 @@ async function installHook(ifLinked) {
     throw new Error(`DSH profile ${profile} is not linked to ${repoRoot}`)
   }
   await chmod(hookPath, 0o755)
-  await run('git', ['config', 'core.hooksPath', '.githooks'])
+  const prefix = (await run('git', ['rev-parse', '--show-prefix'])).stdout.trim()
+  await run('git', ['config', 'core.hooksPath', `${prefix}.githooks`])
   log('installed the repository post-merge hook; future pulls will build and reload automatically')
 }
 

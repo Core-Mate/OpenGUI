@@ -1,5 +1,5 @@
 import { createServer } from 'node:http'
-import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { chmod, mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { execFile } from 'node:child_process'
@@ -16,10 +16,11 @@ afterEach(async () => {
   await Promise.all(roots.splice(0).map(root => rm(root, { recursive: true, force: true })))
 })
 
-async function fixture(linked = true) {
+async function fixture(linked = true, monorepo = false) {
   const root = await mkdtemp(join(tmpdir(), 'opengui-auto-reload-'))
   roots.push(root)
-  const repo = join(root, 'repo')
+  const gitRoot = join(root, 'repo')
+  const repo = monorepo ? join(gitRoot, 'deepseek-harness-plugin') : gitRoot
   const dshHome = join(root, 'dsh-home')
   const profile = join(dshHome, 'profiles', 'web')
   const bin = join(root, 'bin')
@@ -32,19 +33,23 @@ async function fixture(linked = true) {
   await writeFile(join(profile, 'package.json'), JSON.stringify({
     dependencies: { 'dsh-coremate-mobile': linked ? `link:${repo}` : 'file:/tmp/release.tgz' },
   }))
-  await exec('git', ['init', '-q'], { cwd: repo })
-  return { root, repo, dshHome, bin }
+  await exec('git', ['init', '-q'], { cwd: gitRoot })
+  return { root, repo, gitRoot, dshHome, bin }
 }
 
 describe('linked-checkout auto reload', () => {
   it('installs the versioned post-merge hook only for the linked DSH profile', async () => {
-    const value = await fixture()
+    const value = await fixture(true, true)
     await exec(process.execPath, [updater.pathname, 'install'], {
       cwd: value.repo,
       env: { ...process.env, OPENGUI_AUTO_RELOAD_REPO_ROOT: value.repo, DSH_HOME: value.dshHome },
     })
     const { stdout } = await exec('git', ['config', '--get', 'core.hooksPath'], { cwd: value.repo })
-    expect(stdout.trim()).toBe('.githooks')
+    expect(stdout.trim()).toBe('deepseek-harness-plugin/.githooks')
+    const { stdout: resolvedHooks } = await exec('git', [
+      'rev-parse', '--path-format=absolute', '--git-path', 'hooks',
+    ], { cwd: value.gitRoot })
+    expect(await realpath(resolvedHooks.trim())).toBe(await realpath(join(value.repo, '.githooks')))
 
     const packaged = await fixture(false)
     await exec(process.execPath, [updater.pathname, 'install', '--if-linked'], {
