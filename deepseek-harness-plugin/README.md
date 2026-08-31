@@ -50,16 +50,16 @@ The examples use the `web` profile and the default `$DSH_HOME=~/.dsh`. Substitut
 
 ### macOS: install with the Codex Skill
 
-Ask Codex to install the repository skill from [`deepseek-harness-plugin/skills/opengui-coremate-install`](./skills/opengui-coremate-install), then invoke `$opengui-coremate-install`. The Skill downloads and verifies the pinned `v0.1.6` package from the public OpenGUI Release, preserves the rest of the `web` profile, and installs a per-user LaunchAgent so DSH returns after a crash or login. GitHub login is not required.
+Ask Codex to install the repository skill from [`deepseek-harness-plugin/skills/opengui-coremate-install`](./skills/opengui-coremate-install), then invoke `$opengui-coremate-install`. The Skill downloads and verifies the pinned `v0.1.7` package from the public OpenGUI Release, preserves the rest of the `web` profile, and installs a per-user LaunchAgent so DSH returns after a crash or login. GitHub login is not required.
 
 If port 3080 belongs to an OpenGUI-managed DSH, the installer safely reloads that LaunchAgent. It never terminates an unowned DSH process; in that case the new LaunchAgent takes over after the next login. The manual package flow below remains available on every supported host.
 
 ### 1. Download the release package
 
-Download these files from the [public OpenGUI Release](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.6):
+Download these files from the [public OpenGUI Release](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.7):
 
-- `dsh-coremate-mobile-0.1.6.tgz`
-- `dsh-coremate-mobile-0.1.6.tgz.sha256`
+- `dsh-coremate-mobile-0.1.7.tgz`
+- `dsh-coremate-mobile-0.1.7.tgz.sha256`
 
 Do not extract the `.tgz`, and do not use GitHub's automatically generated source archives.
 
@@ -67,18 +67,18 @@ From the directory containing both files, verify the package:
 
 ```sh
 # Linux
-sha256sum -c dsh-coremate-mobile-0.1.6.tgz.sha256
+sha256sum -c dsh-coremate-mobile-0.1.7.tgz.sha256
 
 # macOS
-shasum -a 256 -c dsh-coremate-mobile-0.1.6.tgz.sha256
+shasum -a 256 -c dsh-coremate-mobile-0.1.7.tgz.sha256
 ```
 
-On Windows PowerShell, run `Get-FileHash .\dsh-coremate-mobile-0.1.6.tgz -Algorithm SHA256` and `Get-Content .\dsh-coremate-mobile-0.1.6.tgz.sha256`, then confirm that the displayed hashes match.
+On Windows PowerShell, run `Get-FileHash .\dsh-coremate-mobile-0.1.7.tgz -Algorithm SHA256` and `Get-Content .\dsh-coremate-mobile-0.1.7.tgz.sha256`, then confirm that the displayed hashes match.
 
 ### 2. Install into a Harness profile
 
 ```sh
-dsh plugin --profile web add /absolute/path/dsh-coremate-mobile-0.1.6.tgz
+dsh plugin --profile web add /absolute/path/dsh-coremate-mobile-0.1.7.tgz
 ```
 
 If you run the official CLI through `npx`, replace `dsh` in the commands with:
@@ -259,7 +259,7 @@ This is an advanced option: a profile patch replaces the target row's entire `co
 Production installations should use the prebuilt release package above. For development, clone the public OpenGUI release tag and install the plugin directory:
 
 ```sh
-git clone --branch dsh-coremate-mobile-v0.1.6 --depth 1 https://github.com/Core-Mate/OpenGUI.git
+git clone --branch dsh-coremate-mobile-v0.1.7 --depth 1 https://github.com/Core-Mate/OpenGUI.git
 cd OpenGUI/deepseek-harness-plugin
 dsh plugin --profile web add "$(pwd)"
 ```

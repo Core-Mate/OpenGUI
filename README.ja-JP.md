@@ -41,7 +41,7 @@ OpenGUI は実際の Android アプリ UI を読み取り、次のステップ�
 macOSでは、固定バージョンのインストーラーSkillをCodexに実行させる方法が最短です。Node.js 22.19以降または24以降が必要で、互換性のあるDSHバージョンは自動的にインストールされます。次の内容を1つのプロンプトとして送信します：
 
 ```text
-Install and run the OpenGUI installer Skill from https://github.com/Core-Mate/OpenGUI/tree/dsh-coremate-mobile-v0.1.5/deepseek-harness-plugin/skills/opengui-coremate-install for my DSH web profile. Only ask me for phone-side authorization and model credentials.
+Install and run the OpenGUI installer Skill from https://github.com/Core-Mate/OpenGUI/tree/dsh-coremate-mobile-v0.1.7/deepseek-harness-plugin/skills/opengui-coremate-install for my DSH web profile. Proceed autonomously, and only pause when I need to authorize or select a phone, add or select a DSH workspace, or provide fallback visual-model credentials.
 ```
 
 Skillは公開ReleaseのパッケージとチェックサムをダウンロードしてSHA-256を検証し、OpenGUIプラグインだけをインストールします。必要な場合はDSHを起動して開き、既存のプラグインと設定は保持します。DSHがすでに起動していた場合は、一度再起動するとプラグインが読み込まれます。LinuxまたはWindowsでは、[手動パッケージガイド](./deepseek-harness-plugin/README.md#1-download-the-release-package)を使用してください。
@@ -52,7 +52,7 @@ Skillは公開Releaseのパッケージとチェックサムをダウンロー�
 @OpenGUI Open Settings and report the Android version
 ```
 
-このプラグインは、OpenGUIバックエンド一式を必要とせず、DSHにスマートフォンとブラウザの操作機能を追加します。[ユースケース](./deepseek-harness-plugin/docs/use-cases.md)を確認するか、[v0.1.5リリースパッケージ](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.5)をダウンロードできます。
+このプラグインは、OpenGUIバックエンド一式を必要とせず、DSHにスマートフォンとブラウザの操作機能を追加します。[ユースケース](./deepseek-harness-plugin/docs/use-cases.md)を確認するか、[v0.1.7リリースパッケージ](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.7)をダウンロードできます。
 
 主なユースケース：
 
