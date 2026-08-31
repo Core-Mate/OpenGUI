@@ -41,7 +41,7 @@ OpenGUI 会读取真实 Android App 界面，规划下一步操作，执行移�
 macOS 上最短的路径，是让 Codex 运行固定版本的安装 Skill。环境需要 Node.js 22.19+ 或 24+，兼容的 DSH 版本会自动安装。把下面整段作为一条消息发给 Codex：
 
 ```text
-请安装并运行这个 OpenGUI 安装 Skill：https://github.com/Core-Mate/OpenGUI/tree/dsh-coremate-mobile-v0.1.5/deepseek-harness-plugin/skills/opengui-coremate-install，把插件安装到我的 DSH web profile。只在需要手机端授权或模型凭据时询问我。
+请安装并运行这个 OpenGUI 安装 Skill：https://github.com/Core-Mate/OpenGUI/tree/dsh-coremate-mobile-v0.1.7/deepseek-harness-plugin/skills/opengui-coremate-install，把插件安装到我的 DSH web profile。请自主完成安装，仅在需要我授权或选择手机、添加或选择 DSH workspace，或者提供备用视觉模型凭据时暂停并询问我。
 ```
 
 Skill 会下载公开 Release 的插件包和校验文件，验证 SHA-256，只安装 OpenGUI 插件，在需要时启动并打开 DSH，同时保留其他 DSH 插件和设置。如果 DSH 原本正在运行，重启一次即可加载插件。Linux 或 Windows 用户可按[手动安装说明](./deepseek-harness-plugin/README.zh.md#1-下载发布包)操作。
@@ -52,7 +52,7 @@ Skill 会下载公开 Release 的插件包和校验文件，验证 SHA-256，只
 @OpenGUI 打开设置并报告 Android 版本
 ```
 
-插件可以直接为 DSH 增加手机与浏览器操作能力，不需要部署完整的 OpenGUI 后端。你还可以查看更多[使用场景](./deepseek-harness-plugin/docs/use-cases.zh.md)，或下载 [v0.1.5 安装包](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.5)。
+插件可以直接为 DSH 增加手机与浏览器操作能力，不需要部署完整的 OpenGUI 后端。你还可以查看更多[使用场景](./deepseek-harness-plugin/docs/use-cases.zh.md)，或下载 [v0.1.7 安装包](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.7)。
 
 适合的使用场景包括：
 

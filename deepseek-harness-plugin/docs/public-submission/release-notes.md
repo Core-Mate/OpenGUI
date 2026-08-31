@@ -1,4 +1,4 @@
-# OpenGUI 0.1.6 Plugin Release Notes
+# OpenGUI 0.1.7 Plugin Release Notes
 
 - Adds a Codex plugin manifest, repo marketplace entry, and `opengui:control` Skill beside the existing DeepSeek Harness plugin.
 - Adds seven local stdio MCP interfaces and the equivalent persistent local CLI transport.

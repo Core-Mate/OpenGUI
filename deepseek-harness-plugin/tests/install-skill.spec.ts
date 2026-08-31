@@ -21,13 +21,13 @@ async function fixture() {
   const root = await mkdtemp(join(tmpdir(), 'coremate-install-skill-'))
   roots.push(root)
   const bin = join(root, 'bin')
-  const release = join(root, 'release', 'dsh-coremate-mobile-v0.1.6')
+  const release = join(root, 'release', 'dsh-coremate-mobile-v0.1.7')
   const home = join(root, 'dsh-home')
   await Promise.all([mkdir(bin, { recursive: true }), mkdir(release, { recursive: true })])
-  const archive = join(release, 'dsh-coremate-mobile-0.1.6.tgz')
+  const archive = join(release, 'dsh-coremate-mobile-0.1.7.tgz')
   await writeFile(archive, 'verified release fixture')
   const { stdout: checksum } = await exec('shasum', ['-a', '256', archive])
-  await writeFile(`${archive}.sha256`, `${checksum.trim().split(/\s+/u)[0]}  dsh-coremate-mobile-0.1.6.tgz\n`)
+  await writeFile(`${archive}.sha256`, `${checksum.trim().split(/\s+/u)[0]}  dsh-coremate-mobile-0.1.7.tgz\n`)
   await writeFile(join(bin, 'lsof'), `#!/usr/bin/env bash
 if [[ "\${FAKE_DSH_RUNNING:-0}" == "1" ]]; then
   [[ " $* " == *" -t "* ]] && printf '%s\\n' 4242
@@ -48,7 +48,7 @@ if [[ "\${1:-}" == "plugin" && "\${4:-}" == "remove" ]]; then rm -rf "\${DSH_HOM
 profile_dir="\${DSH_HOME}/profiles/web"
 mkdir -p "\${profile_dir}/node_modules/dsh-coremate-mobile/lib/types/client"
 printf '%s\\n' '{"dependencies":{"dsh-coremate-mobile":"file:fixture"},"dsh":{"profile":{"bundles":["dsh-coremate-mobile"]}}}' > "\${profile_dir}/package.json"
-printf '%s\\n' '{"name":"dsh-coremate-mobile","version":"0.1.6"}' > "\${profile_dir}/node_modules/dsh-coremate-mobile/package.json"
+printf '%s\\n' '{"name":"dsh-coremate-mobile","version":"0.1.7"}' > "\${profile_dir}/node_modules/dsh-coremate-mobile/package.json"
 printf '%s\\n' 'opengui command host with legacy coremate alias' > "\${profile_dir}/node_modules/dsh-coremate-mobile/lib/index.js"
 printf '%s\\n' 'client bundle' > "\${profile_dir}/node_modules/dsh-coremate-mobile/lib/client.js"
 printf '%s\\n' 'export {}' > "\${profile_dir}/node_modules/dsh-coremate-mobile/lib/types/client/index.d.ts"
@@ -88,7 +88,7 @@ describe('macOS installation Skill', () => {
   it('installs and verifies a first release, then repeats without replacing profile files', async () => {
     const value = await fixture()
     const first = await run(value)
-    expect(first.stdout).toContain('Installed and verified dsh-coremate-mobile v0.1.6')
+    expect(first.stdout).toContain('Installed and verified dsh-coremate-mobile v0.1.7')
     const marker = join(value.home, 'profiles', 'web', 'user-setting.txt')
     await writeFile(marker, 'keep me')
     const repeated = await run(value)

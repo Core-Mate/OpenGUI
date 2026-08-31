@@ -13,8 +13,8 @@ const publicPlugin = await json('codex-public/.codex-plugin/plugin.json')
 const mcp = await json('.mcp.json')
 const marketplace = await json('../.agents/plugins/marketplace.json')
 
-if (pkg.version !== '0.1.6' || plugin.version !== pkg.version || publicPlugin.version !== pkg.version) {
-  throw new Error('package, Codex, and public Skills-only versions must all be 0.1.6')
+if (pkg.version !== '0.1.7' || plugin.version !== pkg.version || publicPlugin.version !== pkg.version) {
+  throw new Error('package, Codex, and public Skills-only versions must all be 0.1.7')
 }
 if (pkg.name !== 'dsh-coremate-mobile' || plugin.name !== 'opengui' || publicPlugin.name !== 'opengui') {
   throw new Error('internal package identity or public OpenGUI identity changed unexpectedly')

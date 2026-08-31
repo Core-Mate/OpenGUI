@@ -1,6 +1,6 @@
 {
   "name": "dsh-coremate-mobile",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Dual-host OpenGUI plugin for DeepSeek Harness and Codex Android control",
   "repository": {
     "type": "git",

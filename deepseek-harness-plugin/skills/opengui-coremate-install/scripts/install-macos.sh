@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-release_version="0.1.6"
+release_version="0.1.7"
 dsh_version="0.1.0-rc.7"
 profile="web"
 port="${COREMATE_INSTALL_PORT_OVERRIDE:-3080}"

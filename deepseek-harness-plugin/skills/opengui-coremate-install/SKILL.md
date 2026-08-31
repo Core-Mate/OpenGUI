@@ -1,11 +1,11 @@
 ---
 name: opengui-coremate-install
-description: Install the pinned OpenGUI v0.1.6 release into a DeepSeek Harness web profile on macOS. Use when the user asks to download, install, update, open, or verify OpenGUI for DSH.
+description: Install the pinned OpenGUI v0.1.7 release into a DeepSeek Harness web profile on macOS. Use when the user asks to download, install, update, open, or verify OpenGUI for DSH.
 ---
 
 # Install OpenGUI
 
-Install and verify the signed-off `v0.1.6` release without replacing unrelated DSH plugins or settings.
+Install and verify the signed-off `v0.1.7` release without replacing unrelated DSH plugins or settings.
 
 ## Run the installer
 
