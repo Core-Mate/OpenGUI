@@ -100,14 +100,21 @@ describe('macOS installation Skill', () => {
 
   it('resolves the newest stable namespaced release when no version is specified', async () => {
     const value = await fixture()
-    const server = createServer((_request, response) => {
+    const server = createServer((request, response) => {
       response.setHeader('content-type', 'application/json')
+      const url = new URL(request.url ?? '/', `http://${request.headers.host}`)
+      if (url.searchParams.get('page') === '2') {
+        response.end(JSON.stringify([
+          { tag_name: 'dsh-coremate-mobile-v0.1.7', draft: false, prerelease: false },
+          { tag_name: 'dsh-coremate-mobile-v0.1.8', draft: true, prerelease: false },
+        ]))
+        return
+      }
+      response.setHeader('link', `<http://${request.headers.host}/releases?page=2>; rel="next"`)
       response.end(JSON.stringify([
         { tag_name: 'unrelated-v9.9.9', draft: false, prerelease: false },
         { tag_name: 'dsh-coremate-mobile-v0.2.0', draft: false, prerelease: true },
         { tag_name: 'dsh-coremate-mobile-v0.1.6', draft: false, prerelease: false },
-        { tag_name: 'dsh-coremate-mobile-v0.1.7', draft: false, prerelease: false },
-        { tag_name: 'dsh-coremate-mobile-v0.1.8', draft: true, prerelease: false },
       ]))
     })
     servers.push(server)

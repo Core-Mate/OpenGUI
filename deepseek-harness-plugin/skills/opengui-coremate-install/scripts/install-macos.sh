@@ -96,20 +96,52 @@ if [[ "$installed_dsh" != "$dsh_version" ]]; then
   exit 1
 fi
 
+temporary="$(mktemp -d "${TMPDIR:-/tmp}/opengui-coremate-install.XXXXXX")"
+trap 'rm -rf "$temporary"' EXIT
+
 if [[ -z "$release_version" ]]; then
   printf 'Resolving the latest stable OpenGUI plugin release...\n'
   api_args=(-fsSL --retry 3 --connect-timeout 15 --max-time 60
     -H 'Accept: application/vnd.github+json'
     -H 'X-GitHub-Api-Version: 2022-11-28')
   if [[ "$github_releases_api" == https://* ]]; then api_args+=(--proto '=https' --tlsv1.2); fi
+  releases_directory="${temporary}/releases"
+  mkdir -p "$releases_directory"
+  releases_url="$github_releases_api"
+  releases_page=1
+  while [[ -n "$releases_url" ]]; do
+    page_body="${releases_directory}/${releases_page}.json"
+    page_headers="${releases_directory}/${releases_page}.headers"
+    if ! curl "${api_args[@]}" --dump-header "$page_headers" --output "$page_body" "$releases_url"; then
+      printf 'Could not read OpenGUI plugin releases from GitHub. Check GitHub access or retry with --version VERSION.\n' >&2
+      exit 1
+    fi
+    if ! node -e '
+      const releases = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8"))
+      if (!Array.isArray(releases)) throw new Error("GitHub Releases response is not an array")
+    ' "$page_body"; then
+      printf 'GitHub returned an invalid Releases response. Retry with --version VERSION.\n' >&2
+      exit 1
+    fi
+    releases_url="$(node -e '
+      const headers = require("node:fs").readFileSync(process.argv[1], "utf8")
+      const link = headers.split(/\r?\n/u).find(line => /^link:/iu.test(line)) ?? ""
+      const next = link.replace(/^link:\s*/iu, "").split(",").map(value => value.trim())
+        .map(value => value.match(/^<([^>]+)>;\s*rel="([^"]+)"$/u))
+        .find(match => match?.[2]?.split(/\s+/u).includes("next"))
+      if (next) process.stdout.write(next[1])
+    ' "$page_headers")"
+    releases_page=$((releases_page + 1))
+  done
+
   if ! release_version="$(
-    curl "${api_args[@]}" "$github_releases_api" |
-      node --input-type=module -e '
+    node --input-type=module -e '
+        import { readFileSync, readdirSync } from "node:fs"
         const packageName = process.argv[1]
-        let input = ""
-        for await (const chunk of process.stdin) input += chunk
-        const releases = JSON.parse(input)
-        if (!Array.isArray(releases)) throw new Error("GitHub Releases response is not an array")
+        const directory = process.argv[2]
+        const releases = readdirSync(directory)
+          .filter(name => name.endsWith(".json"))
+          .flatMap(name => JSON.parse(readFileSync(`${directory}/${name}`, "utf8")))
         const pattern = new RegExp(`^${packageName}-v(\\d+)\\.(\\d+)\\.(\\d+)$`)
         const versions = releases.flatMap(release => {
           if (release?.draft || release?.prerelease || typeof release?.tag_name !== "string") return []
@@ -124,7 +156,7 @@ if [[ -z "$release_version" ]]; then
         })
         if (versions.length === 0) throw new Error(`No stable ${packageName} release was found`)
         process.stdout.write(versions[0].version)
-      ' "$package_name"
+      ' "$package_name" "$releases_directory"
   )"; then
     printf 'Could not resolve the latest stable OpenGUI plugin release. Check GitHub access or retry with --version VERSION.\n' >&2
     exit 1
@@ -151,8 +183,6 @@ archive_name="${package_name}-${release_version}.tgz"
 checksum_name="${archive_name}.sha256"
 release_tag="${package_name}-v${release_version}"
 release_url="${release_base%/}/${release_tag}"
-temporary="$(mktemp -d "${TMPDIR:-/tmp}/opengui-coremate-install.XXXXXX")"
-trap 'rm -rf "$temporary"' EXIT
 
 download() {
   local url="$1"
