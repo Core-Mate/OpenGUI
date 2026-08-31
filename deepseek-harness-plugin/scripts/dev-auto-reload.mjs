@@ -55,8 +55,14 @@ async function installHook(ifLinked) {
 
 async function changedFiles() {
   try {
-    const { stdout } = await run('git', ['diff', '--name-only', 'ORIG_HEAD..HEAD'])
-    return stdout.split(/\r?\n/u).filter(Boolean)
+    const [{ stdout }, { stdout: prefixOutput }] = await Promise.all([
+      run('git', ['diff', '--name-only', 'ORIG_HEAD..HEAD']),
+      run('git', ['rev-parse', '--show-prefix']),
+    ])
+    const prefix = prefixOutput.trim()
+    return stdout.split(/\r?\n/u).filter(Boolean).map(path => (
+      prefix !== '' && path.startsWith(prefix) ? path.slice(prefix.length) : path
+    ))
   } catch {
     return ['src/unknown']
   }
@@ -126,7 +132,7 @@ async function launchdLabel() {
     const rows = (await exec('launchctl', ['list'])).stdout.split(/\r?\n/u)
     for (const row of rows) {
       const match = /^\s*(\d+)\s+\S+\s+(\S+)\s*$/u.exec(row)
-      if (match && ancestors.has(match[1])) return match[2]
+      if (match && ancestors.has(match[1]) && !match[2].startsWith('application.')) return match[2]
     }
   } catch { /* unmanaged processes are left untouched */ }
   return undefined
