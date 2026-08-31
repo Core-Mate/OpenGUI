@@ -156,6 +156,10 @@ jobs:
 
           Connected phones now show a screenshot immediately while OpenGUI prepares the live view in the background. Stream, decoder, and status failures keep the screenshot available with a retry action.
 
+          Bundled ADB now repairs missing execute bits on macOS and Linux before discovery, while custom ADB paths remain untouched. Device-detection failures surface their actionable diagnostic in the OpenGUI workbench and retry automatically.
+
+          The OpenGUI tab checks this public repository for newer stable \`dsh-coremate-mobile-v*\` releases, ignores unrelated Android APK releases, verifies the matching package checksum, and offers a user-approved update action when Harness is idle.
+
           The macOS installer now runs DSH through a per-user LaunchAgent and includes a matching uninstall script. Verified phone-view caches are shared across DSH profiles, including existing \`~/.dsh\` caches.
 
           Download both the \`.tgz\` package and its \`.sha256\` file. The recommended macOS path is the stable [Codex installer Skill](https://github.com/Core-Mate/OpenGUI/tree/main/deepseek-harness-plugin/skills/opengui-coremate-install), which resolves the latest stable plugin release each time it runs.

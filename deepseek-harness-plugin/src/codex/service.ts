@@ -62,6 +62,7 @@ function codexStateDir(override?: string): string {
 /** Local USB/ADB Host adapter shared by the Codex MCP and CLI transports. */
 export class LocalAdbPhoneHost implements CodexPhoneHost {
   private readonly path: string
+  private readonly repairAdbPermissions: boolean
   private readonly timeoutMs: number
   private readonly fleet: DeviceFleet
   private readonly controller: PhoneController
@@ -71,7 +72,9 @@ export class LocalAdbPhoneHost implements CodexPhoneHost {
   private readonly previewPermits = new AsyncSemaphore(2)
 
   constructor(options: LocalAdbPhoneHostOptions = {}) {
-    this.path = managedAdbPath(options.adbPath ?? process.env.OPENGUI_ADB_PATH)
+    const configuredAdbPath = (options.adbPath ?? process.env.OPENGUI_ADB_PATH)?.trim()
+    this.path = managedAdbPath(configuredAdbPath)
+    this.repairAdbPermissions = !configuredAdbPath
     this.timeoutMs = options.commandTimeoutMs ?? COMMAND_TIMEOUT_MS
     const run = (args: readonly string[], signal: AbortSignal, buffer = false): Promise<string | Buffer> => this.run(args, signal, buffer)
     this.fleet = new DeviceFleet(async (signal) => parseDevices(String(await run(['devices', '-l'], signal))))
@@ -184,7 +187,7 @@ export class LocalAdbPhoneHost implements CodexPhoneHost {
   }
 
   private async run(args: readonly string[], signal: AbortSignal, buffer = false): Promise<string | Buffer> {
-    await assertAdbReady(this.path)
+    await assertAdbReady(this.path, { repairPermissions: this.repairAdbPermissions })
     return runAdb(this.path, args, {
       signal,
       timeoutMs: this.timeoutMs,

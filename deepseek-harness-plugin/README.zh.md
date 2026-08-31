@@ -210,6 +210,8 @@ Usage: /opengui <task>
 
 原生 **OpenGUI** Tab 是全宽设备照片墙。界面按 Host 顺序展示全部可见手机，并在末尾追加唯一的连接说明卡，不会为凑列数预留空卡。新检测到的手机先立即展示完整截图，后台自动准备低延迟实时画面，完成后无缝切换；普通用户不需要理解或批准底层组件。浏览器不支持或视频流失败时会继续显示截图，并提供重试。每台手机还可按需打开独立投屏窗口。
 
+插件启动后会在后台检查公开的 `Core-Mate/OpenGUI` GitHub Releases 列表，并将频率限制为每 6 小时最多一次。它会忽略 Android APK、草稿和预发布条目，只识别带版本匹配 `.tgz` 与 `.sha256` 的稳定 `dsh-coremate-mobile-v*` Release。只有发现更高版本时，OpenGUI Tab 才显示**更新**按钮；OpenGUI 任务运行期间禁止安装，失败时保留当前版本，成功后重启 Harness 生效。
+
 选中 `@OpenGUI` 后，原生输入菜单会显示自由描述、QA、运营和手游四个选项；场景只填入草稿，不会自动发送。提交非空 OpenGUI 任务后，输入框会立即恢复，任务继续写入所属会话。此时新建 DSH 会话会进入真正的空白对话，原任务仍在原会话运行，新会话中会提供紧凑的返回入口。
 
 `/opengui` 会启动一个受限的任务路由子任务，只能选择 `phone_agent`、`browser_agent`，或在确有必要时顺序调用两者。手机任务仍为每台已选手机创建一个绑定固定设备的子任务；普通对话也可以直接使用两个委派工具。同一时间只允许一个 OpenGUI 任务，包括通过旧 `/coremate` 别名启动的任务。
@@ -339,6 +341,6 @@ pnpm run check
 npm pack
 ```
 
-发布由 [GitHub Release workflow](.github/workflows/release.yml) 完成：tag 必须是 `v` 加 `package.json` 中的准确版本。不要重复使用已经存在的版本 tag。兼容范围以 `package.json` 的 `peerDependencies` 为准。
+发布由仓库级 [GitHub Release workflow](../.github/workflows/deepseek-harness-plugin-release.yml) 完成：tag 必须是 `dsh-coremate-mobile-v` 加 `package.json` 中的准确版本。不要重复使用已经存在的版本 tag。兼容范围以 `package.json` 的 `peerDependencies` 为准。
 
 完整的官方 Harness 源码准备、隔离 profile 安装、配置优先级、运行时验证和移除记录见[开发者接入与实测记录](docs/research/deepseek-harness-plugin-integration.md)。

@@ -13,6 +13,7 @@ import { OpenGuiMark } from './OpenGuiMark.tsx'
 import { mirrorBusy, mirrorLabel, mirrorProgress, postMirrorStatus, readMirrorStatus } from './MirrorButton.tsx'
 import { TaskStopButton } from './TaskStopButton.tsx'
 import { PhoneStream } from './PhoneStream.tsx'
+import { PluginUpdatePrompt } from './PluginUpdatePrompt.tsx'
 import { WECHAT_GROUP_QR_DATA_URL } from './wechat-group-qr.ts'
 
 const DISCORD_URL = 'https://discord.gg/pqHHw7XgJ3'
@@ -117,6 +118,22 @@ const connectStyle: CSSProperties = {
   background: 'color-mix(in srgb, var(--dsw-alias-bg-layer-1, #fff) 72%, transparent)',
   textAlign: 'center',
   boxSizing: 'border-box',
+}
+
+const detectionErrorStyle: CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: 'auto minmax(0, 1fr) auto',
+  alignItems: 'center',
+  gap: '6px 10px',
+  marginBottom: 16,
+  padding: '10px 12px',
+  border: '1px solid color-mix(in srgb, #dc2626 28%, transparent)',
+  borderRadius: 8,
+  color: '#991b1b',
+  background: 'color-mix(in srgb, #fee2e2 55%, var(--dsw-alias-bg-layer-1, #fff))',
+  fontSize: 12,
+  lineHeight: 1.5,
+  overflowWrap: 'anywhere',
 }
 
 export type DeviceWallItem =
@@ -252,14 +269,25 @@ export function CoremateView({ coremateSessionId }: { readonly coremateSessionId
           <a data-coremate-header-link href={OPENGUI_GITHUB_URL} target="_blank" rel="noreferrer" style={headerLinkStyle}>GitHub ↗</a>
           <a data-coremate-header-link href={OPENGUI_WEBSITE_URL} target="_blank" rel="noreferrer" style={headerLinkStyle}>官方网站 ↗</a>
           <span role="status" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, minHeight: 40, padding: '0 6px', color: 'var(--dsw-alias-label-secondary, #52525b)', fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>
-            <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: 999, background: status?.devices.some(device => device.connected) === true ? '#16a34a' : '#a1a1aa' }} />
-            {status === undefined ? '正在检测设备' : phaseLabel(status)}
+            <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: 999, background: error !== undefined ? '#dc2626' : status?.devices.some(device => device.connected) === true ? '#16a34a' : '#a1a1aa' }} />
+            {error !== undefined ? '设备检测异常' : status === undefined ? '正在检测设备' : phaseLabel(status)}
           </span>
           <TaskStopButton {...(coremateSessionId === undefined ? {} : { coremateSessionId })} />
         </div>
       </header>
 
-      <div style={{ position: 'sticky', top: 0, zIndex: 10 }}><BrowserInstallPrompt /></div>
+      <div style={{ position: 'sticky', top: 0, zIndex: 10 }}>
+        <PluginUpdatePrompt />
+        <BrowserInstallPrompt />
+      </div>
+
+      {error === undefined ? null : (
+        <div role="alert" style={detectionErrorStyle} data-coremate-detection-error>
+          <strong>设备检测异常</strong>
+          <span>{error}</span>
+          <span style={{ color: 'var(--dsw-alias-label-secondary, #52525b)', whiteSpace: 'nowrap' }}>正在自动重试…</span>
+        </div>
+      )}
 
       <section aria-label="设备照片墙" style={gridStyle} data-coremate-device-wall>
         {wallItems.map(item => {
@@ -330,7 +358,6 @@ export function CoremateView({ coremateSessionId }: { readonly coremateSessionId
         })}
       </section>
 
-      {error === undefined ? null : <p role="status" style={{ ...bodyStyle, color: '#b91c1c' }}>{error}</p>}
     </main>
   )
 }

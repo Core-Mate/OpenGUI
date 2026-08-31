@@ -1,6 +1,10 @@
-import { describe, expect, it } from 'vitest'
+import { chmod, mkdtemp, rm, stat, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { afterEach, describe, expect, it } from 'vitest'
 import {
   actionCommand,
+  assertAdbReady,
   normalizePhoneAction,
   ObservationId,
   parseDevices,
@@ -10,7 +14,35 @@ import {
 } from '../src/adb.ts'
 import { Config } from '../src/index.ts'
 
+const temporaryRoots: string[] = []
+
+afterEach(async () => {
+  await Promise.all(temporaryRoots.splice(0).map(root => rm(root, { recursive: true, force: true })))
+})
+
 describe('coremate-mobile ADB policy', () => {
+  it.skipIf(process.platform === 'win32')('repairs execute bits stripped from the packaged ADB runtime', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'opengui-adb-mode-'))
+    temporaryRoots.push(root)
+    const adb = join(root, 'adb')
+    await writeFile(adb, '#!/bin/sh\nexit 0\n')
+    await chmod(adb, 0o644)
+
+    await expect(assertAdbReady(adb, { repairPermissions: true })).resolves.toBeUndefined()
+    expect((await stat(adb)).mode & 0o111).toBe(0o111)
+  })
+
+  it.skipIf(process.platform === 'win32')('does not change permissions on a user-configured ADB path', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'opengui-custom-adb-mode-'))
+    temporaryRoots.push(root)
+    const adb = join(root, 'adb')
+    await writeFile(adb, '#!/bin/sh\nexit 0\n')
+    await chmod(adb, 0o644)
+
+    await expect(assertAdbReady(adb)).rejects.toThrow('configured ADB executable')
+    expect((await stat(adb)).mode & 0o111).toBe(0)
+  })
+
   it('accepts one or more authorized devices and deterministically picks the first serial', () => {
     const devices = parseDevices('List of devices attached\nzed device product:p model:Z\nignored unauthorized usb:1\nalpha device product:p model:A\noffline offline\n')
     expect(selectAuthorizedSerial(devices)).toBe('alpha')
