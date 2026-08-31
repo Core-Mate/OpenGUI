@@ -1,11 +1,11 @@
 ---
 name: opengui-coremate-install
-description: Install the pinned OpenGUI v0.1.7 release into a DeepSeek Harness web profile on macOS. Use when the user asks to download, install, update, open, or verify OpenGUI for DSH.
+description: Install the latest stable OpenGUI release into a DeepSeek Harness web profile on macOS. Use when the user asks to download, install, update, open, or verify OpenGUI for DSH.
 ---
 
 # Install OpenGUI
 
-Install and verify the signed-off `v0.1.7` release without replacing unrelated DSH plugins or settings.
+Install and verify the latest stable OpenGUI release without replacing unrelated DSH plugins or settings.
 
 ## Run the installer
 
@@ -13,7 +13,9 @@ Install and verify the signed-off `v0.1.7` release without replacing unrelated D
 2. Run `scripts/install-macos.sh` from this skill directory.
 3. Report the installed package version, profile path, runtime URL, and whether an existing DSH process still needs a manual restart.
 
-The script checks the host Node version, pins DSH to `0.1.0-rc.7`, downloads both the release tarball and checksum from the public GitHub Release, verifies SHA-256, installs only `dsh-coremate-mobile` into the `web` profile, and validates the package, bundle, Client entry, and `/opengui` command. GitHub authentication is not required.
+By default, the script resolves the highest stable `dsh-coremate-mobile-v*` release from the public GitHub Releases API. It ignores drafts, prereleases, and unrelated OpenGUI releases. Use `--version VERSION` only when the user explicitly requests a rollback or reproducible install.
+
+The script checks the host Node version, pins DSH to `0.1.0-rc.7`, downloads both the resolved release tarball and checksum, verifies SHA-256, installs only `dsh-coremate-mobile` into the `web` profile, and validates the package, bundle, Client entry, and `/opengui` command. GitHub authentication is not required.
 
 The script installs a user LaunchAgent with `KeepAlive` so DSH returns after a crash or login. It may safely reload an instance already owned by that exact LaunchAgent. If port 3080 belongs to any other DSH process, preserve it: the installer writes the LaunchAgent but defers takeover until the next login. When DSH is not running, the script starts and verifies `http://127.0.0.1:3080`.
 

@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-release_version="0.1.7"
 dsh_version="0.1.0-rc.7"
 profile="web"
 port="${COREMATE_INSTALL_PORT_OVERRIDE:-3080}"
 package_name="dsh-coremate-mobile"
 github_repository="Core-Mate/OpenGUI"
+release_version="${COREMATE_INSTALL_VERSION_OVERRIDE:-}"
 github_release_base="https://github.com/${github_repository}/releases/download"
+github_releases_api="${COREMATE_INSTALL_RELEASES_API_OVERRIDE:-https://api.github.com/repos/${github_repository}/releases?per_page=100}"
 release_base="${COREMATE_INSTALL_RELEASE_BASE:-${github_release_base}}"
 dsh_home="${DSH_HOME:-${HOME}/.dsh}"
 launch_agents_dir="${COREMATE_INSTALL_LAUNCH_AGENTS_DIR_OVERRIDE:-${HOME}/Library/LaunchAgents}"
@@ -15,11 +16,16 @@ start_runtime=true
 open_browser=true
 
 usage() {
-  printf '%s\n' 'Usage: install-macos.sh [--dsh-home PATH] [--release-base URL] [--no-start] [--no-open]'
+  printf '%s\n' 'Usage: install-macos.sh [--version VERSION] [--dsh-home PATH] [--release-base URL] [--no-start] [--no-open]'
 }
 
 while (($# > 0)); do
   case "$1" in
+    --version)
+      [[ $# -ge 2 ]] || { usage >&2; exit 2; }
+      release_version="$2"
+      shift 2
+      ;;
     --dsh-home)
       [[ $# -ge 2 ]] || { usage >&2; exit 2; }
       dsh_home="$2"
@@ -52,7 +58,7 @@ done
 
 platform="${COREMATE_INSTALL_PLATFORM_OVERRIDE:-$(uname -s)}"
 if [[ "$platform" != "Darwin" ]]; then
-  printf 'OpenGUI v%s installer supports macOS only; detected %s.\n' "$release_version" "$platform" >&2
+  printf 'The OpenGUI installer supports macOS only; detected %s.\n' "$platform" >&2
   exit 1
 fi
 
@@ -90,6 +96,79 @@ if [[ "$installed_dsh" != "$dsh_version" ]]; then
   exit 1
 fi
 
+temporary="$(mktemp -d "${TMPDIR:-/tmp}/opengui-coremate-install.XXXXXX")"
+trap 'rm -rf "$temporary"' EXIT
+
+if [[ -z "$release_version" ]]; then
+  printf 'Resolving the latest stable OpenGUI plugin release...\n'
+  api_args=(-fsSL --retry 3 --connect-timeout 15 --max-time 60
+    -H 'Accept: application/vnd.github+json'
+    -H 'X-GitHub-Api-Version: 2022-11-28')
+  if [[ "$github_releases_api" == https://* ]]; then api_args+=(--proto '=https' --tlsv1.2); fi
+  releases_directory="${temporary}/releases"
+  mkdir -p "$releases_directory"
+  releases_url="$github_releases_api"
+  releases_page=1
+  while [[ -n "$releases_url" ]]; do
+    page_body="${releases_directory}/${releases_page}.json"
+    page_headers="${releases_directory}/${releases_page}.headers"
+    if ! curl "${api_args[@]}" --dump-header "$page_headers" --output "$page_body" "$releases_url"; then
+      printf 'Could not read OpenGUI plugin releases from GitHub. Check GitHub access or retry with --version VERSION.\n' >&2
+      exit 1
+    fi
+    if ! node -e '
+      const releases = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8"))
+      if (!Array.isArray(releases)) throw new Error("GitHub Releases response is not an array")
+    ' "$page_body"; then
+      printf 'GitHub returned an invalid Releases response. Retry with --version VERSION.\n' >&2
+      exit 1
+    fi
+    releases_url="$(node -e '
+      const headers = require("node:fs").readFileSync(process.argv[1], "utf8")
+      const link = headers.split(/\r?\n/u).find(line => /^link:/iu.test(line)) ?? ""
+      const next = link.replace(/^link:\s*/iu, "").split(",").map(value => value.trim())
+        .map(value => value.match(/^<([^>]+)>;\s*rel="([^"]+)"$/u))
+        .find(match => match?.[2]?.split(/\s+/u).includes("next"))
+      if (next) process.stdout.write(next[1])
+    ' "$page_headers")"
+    releases_page=$((releases_page + 1))
+  done
+
+  if ! release_version="$(
+    node --input-type=module -e '
+        import { readFileSync, readdirSync } from "node:fs"
+        const packageName = process.argv[1]
+        const directory = process.argv[2]
+        const releases = readdirSync(directory)
+          .filter(name => name.endsWith(".json"))
+          .flatMap(name => JSON.parse(readFileSync(`${directory}/${name}`, "utf8")))
+        const pattern = new RegExp(`^${packageName}-v(\\d+)\\.(\\d+)\\.(\\d+)$`)
+        const versions = releases.flatMap(release => {
+          if (release?.draft || release?.prerelease || typeof release?.tag_name !== "string") return []
+          const match = release.tag_name.match(pattern)
+          return match ? [{ version: match.slice(1).join("."), parts: match.slice(1).map(Number) }] : []
+        })
+        versions.sort((left, right) => {
+          for (let index = 0; index < 3; index += 1) {
+            if (left.parts[index] !== right.parts[index]) return right.parts[index] - left.parts[index]
+          }
+          return 0
+        })
+        if (versions.length === 0) throw new Error(`No stable ${packageName} release was found`)
+        process.stdout.write(versions[0].version)
+      ' "$package_name" "$releases_directory"
+  )"; then
+    printf 'Could not resolve the latest stable OpenGUI plugin release. Check GitHub access or retry with --version VERSION.\n' >&2
+    exit 1
+  fi
+fi
+
+if [[ ! "$release_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  printf 'Invalid OpenGUI plugin version: %s. Expected a stable version such as 0.1.7.\n' "$release_version" >&2
+  exit 1
+fi
+printf 'Using OpenGUI plugin v%s.\n' "$release_version"
+
 runtime_running=false
 if lsof -nP -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1; then
   page="$(curl -fsS --max-time 3 "http://127.0.0.1:${port}" || true)"
@@ -104,8 +183,6 @@ archive_name="${package_name}-${release_version}.tgz"
 checksum_name="${archive_name}.sha256"
 release_tag="${package_name}-v${release_version}"
 release_url="${release_base%/}/${release_tag}"
-temporary="$(mktemp -d "${TMPDIR:-/tmp}/opengui-coremate-install.XXXXXX")"
-trap 'rm -rf "$temporary"' EXIT
 
 download() {
   local url="$1"
