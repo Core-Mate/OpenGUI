@@ -114,7 +114,13 @@ pnpm opengui -- devices --json
 pnpm opengui -- do "Observe the current Android screen and summarize what you see" --json
 ```
 
-タスクのレスポンスには `executionId` が含まれます。実行中のタスクを停止できるように、この値を控えておいてください：
+`do` は execution を非同期で開始し、execution の作成後に戻ります。進捗をストリーミングしたり、完了まで待機したりはしません。レスポンスに含まれる `executionId` を使って現在の状態を確認します。
+
+```bash
+pnpm opengui -- status <executionId> --json
+```
+
+`status` は実行時点のスナップショットを 1 回返します。更新を確認するには、もう一度実行してください。`executionStatus` と、レスポンスに含まれる場合は `statusMessage`、`currentStep`、`executionResult`、`errorMessage` を確認します。`PENDING` は端末側での開始待ち、`RUNNING` は実行中、`FINISHED` は終了済みを意味します。詳細なフィールドは常に含まれるとは限らないため、`RUNNING` だけではモデル待ちか端末待ちかを区別できない場合があります。`do` 自体が `executionId` を返さない場合は、通常の非同期実行ではなく、リクエストまたは起動の問題として確認してください。実行中のタスクを停止する場合も、同じ `executionId` を使用します。
 
 ```bash
 pnpm opengui -- cancel <executionId> --json
