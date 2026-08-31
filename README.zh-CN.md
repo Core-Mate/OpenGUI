@@ -12,7 +12,7 @@
   <img src="https://img.shields.io/badge/SYSTEM-MULTI_ROLE_OPERATOR-1f6feb?style=for-the-badge" alt="Multi-role operator system">
   <img src="https://img.shields.io/badge/TASKS-UP_TO_12_HOURS-cf222e?style=for-the-badge" alt="Tasks up to 12 hours">
   <img src="https://img.shields.io/badge/MODELS-CLAUDE_OPUS_|_QWEN_|_DOUBAO_|_BYO_API-2f9e44?style=for-the-badge" alt="Recommended model profiles">
-  <a href="./docs/get-started.md"><img src="https://img.shields.io/badge/MANUAL_SETUP-DOCS-4b4b4b?style=for-the-badge" alt="Manual setup docs"></a>
+  <a href="./docs/get-started.zh-CN.md"><img src="https://img.shields.io/badge/MANUAL_SETUP-DOCS-4b4b4b?style=for-the-badge" alt="手动安装文档"></a>
 </p>
 
 <p align="center">
@@ -120,7 +120,7 @@ pnpm opengui -- do "观察当前手机屏幕，简要描述你看到了什么，
 pnpm opengui -- cancel <executionId> --json
 ```
 
-手动安装指南：[`docs/get-started.md`](./docs/get-started.md)。
+手动安装指南：[`docs/get-started.zh-CN.md`](./docs/get-started.zh-CN.md)。
 
 ## 近期更新
 
@@ -284,7 +284,7 @@ cd client
 
 参考文档：
 
-- [docs/get-started.md](./docs/get-started.md)
+- [docs/get-started.zh-CN.md](./docs/get-started.zh-CN.md)
 - [server/start.sh](./server/start.sh)
 - [client/start.sh](./client/start.sh)
 - [server/apps/backend/README.md](./server/apps/backend/README.md)
@@ -338,7 +338,7 @@ flowchart LR
 ## 文档
 
 - [skills/open-gui-bootstrap/SKILL.md](./skills/open-gui-bootstrap/SKILL.md)
-- [docs/get-started.md](./docs/get-started.md)
+- [docs/get-started.zh-CN.md](./docs/get-started.zh-CN.md)
 - [server/apps/backend/README.md](./server/apps/backend/README.md)
 - [docs/DISCORD.zh-CN.md](./docs/DISCORD.zh-CN.md)
 - [client/README.md](./client/README.md)

@@ -1,3 +1,7 @@
+<p align="center">
+  <strong>Language:</strong> <a href="./get-started.md">English</a> | <a href="./get-started.zh-CN.md">简体中文</a> | <a href="./get-started.ja-JP.md">日本語</a>
+</p>
+
 # OpenGUI Getting Started
 
 This repository already contains the runnable backend and Android client.
@@ -97,6 +101,17 @@ What `client/start.sh` does:
 - builds the debug APK
 - installs the APK
 - launches `com.coremate.opengui/.login.SplashActivity`
+
+The `adb reverse` mapping belongs to the current ADB device connection. It may
+be lost after the phone is disconnected and reconnected, the phone reboots, or
+the ADB server restarts. If the Android client can no longer reach the local
+backend, reconnect the device and run:
+
+```bash
+adb reverse tcp:7777 tcp:7777
+```
+
+Running `client/start.sh` again also recreates the mapping.
 
 ### 3. Complete phone-side permissions
 
