@@ -39,10 +39,10 @@ OpenGUI reads a real Android app UI, plans the next step, takes mobile actions, 
 
 ## Use OpenGUI in DeepSeek Harness
 
-The shortest path on macOS is to let Codex run the pinned installer Skill. It requires Node.js 22.19+ or 24+ and installs the compatible DSH version automatically. Paste this as one prompt:
+The shortest path on macOS is to let Codex run the stable installer Skill from `main`. Each run resolves the latest stable OpenGUI plugin release, while an explicit version remains available for rollback. It requires Node.js 22.19+ or 24+ and installs the compatible DSH version automatically. Paste this as one prompt:
 
 ```text
-Install and run the OpenGUI installer Skill from https://github.com/Core-Mate/OpenGUI/tree/dsh-coremate-mobile-v0.1.7/deepseek-harness-plugin/skills/opengui-coremate-install for my DSH web profile. Proceed autonomously, and only pause when I need to authorize or select a phone, add or select a DSH workspace, or provide fallback visual-model credentials.
+Install and run the OpenGUI installer Skill from https://github.com/Core-Mate/OpenGUI/tree/main/deepseek-harness-plugin/skills/opengui-coremate-install for my DSH web profile. Install the latest stable release. Proceed autonomously, and only pause when I need to authorize or select a phone, add or select a DSH workspace, or provide fallback visual-model credentials.
 ```
 
 The Skill downloads the public release package and checksum, verifies SHA-256, installs only the OpenGUI plugin, starts DSH when needed, and opens DSH. It preserves unrelated DSH plugins and settings. If DSH was already running, restart it once to load the plugin. For Linux or Windows, use the [manual package guide](./deepseek-harness-plugin/README.md#1-download-the-release-package).

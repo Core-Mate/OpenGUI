@@ -50,7 +50,7 @@ The examples use the `web` profile and the default `$DSH_HOME=~/.dsh`. Substitut
 
 ### macOS: install with the Codex Skill
 
-Ask Codex to install the repository skill from [`deepseek-harness-plugin/skills/opengui-coremate-install`](./skills/opengui-coremate-install), then invoke `$opengui-coremate-install`. The Skill downloads and verifies the pinned `v0.1.7` package from the public OpenGUI Release, preserves the rest of the `web` profile, and installs a per-user LaunchAgent so DSH returns after a crash or login. GitHub login is not required.
+Ask Codex to install the repository skill from [`deepseek-harness-plugin/skills/opengui-coremate-install`](./skills/opengui-coremate-install), then invoke `$opengui-coremate-install`. The Skill resolves the latest stable namespaced plugin Release, downloads its package and checksum, preserves the rest of the `web` profile, and installs a per-user LaunchAgent so DSH returns after a crash or login. Drafts, prereleases, and unrelated OpenGUI releases are ignored. GitHub login is not required. Use `--version VERSION` only for rollback or a reproducible install.
 
 If port 3080 belongs to an OpenGUI-managed DSH, the installer safely reloads that LaunchAgent. It never terminates an unowned DSH process; in that case the new LaunchAgent takes over after the next login. The manual package flow below remains available on every supported host.
 

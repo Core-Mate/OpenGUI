@@ -60,8 +60,20 @@ printf '%s\\n' 'export {}' > "\${profile_dir}/node_modules/dsh-coremate-mobile/l
   return { root, bin, releaseBase: `file://${join(root, 'release')}`, home, archive, launchctlLog: join(root, 'launchctl.log') }
 }
 
-async function run(value: Awaited<ReturnType<typeof fixture>>, extraEnv: Record<string, string> = {}, start = false) {
-  return await exec('bash', [installer.pathname, '--dsh-home', value.home, '--release-base', value.releaseBase, ...(start ? [] : ['--no-start']), '--no-open'], {
+async function run(
+  value: Awaited<ReturnType<typeof fixture>>,
+  extraEnv: Record<string, string> = {},
+  start = false,
+  version: string | null = '0.1.7',
+) {
+  return await exec('bash', [
+    installer.pathname,
+    ...(version === null ? [] : ['--version', version]),
+    '--dsh-home', value.home,
+    '--release-base', value.releaseBase,
+    ...(start ? [] : ['--no-start']),
+    '--no-open',
+  ], {
     env: {
       ...process.env,
       PATH: `${value.bin}:${process.env.PATH ?? ''}`,
@@ -78,11 +90,37 @@ describe('macOS installation Skill', () => {
   it('downloads the namespaced plugin release from the public OpenGUI repository', async () => {
     const source = await readFile(installer, 'utf8')
     expect(source).toContain('github_repository="Core-Mate/OpenGUI"')
+    expect(source).toContain('/releases?per_page=100')
     expect(source).toContain('release_tag="${package_name}-v${release_version}"')
     expect(source).not.toContain('Coremate-Mobile-Plugin')
     expect(source).toContain('<key>KeepAlive</key>')
     expect(source).toContain('launchctl bootstrap')
     expect(source).not.toContain('launchctl submit')
+  })
+
+  it('resolves the newest stable namespaced release when no version is specified', async () => {
+    const value = await fixture()
+    const server = createServer((_request, response) => {
+      response.setHeader('content-type', 'application/json')
+      response.end(JSON.stringify([
+        { tag_name: 'unrelated-v9.9.9', draft: false, prerelease: false },
+        { tag_name: 'dsh-coremate-mobile-v0.2.0', draft: false, prerelease: true },
+        { tag_name: 'dsh-coremate-mobile-v0.1.6', draft: false, prerelease: false },
+        { tag_name: 'dsh-coremate-mobile-v0.1.7', draft: false, prerelease: false },
+        { tag_name: 'dsh-coremate-mobile-v0.1.8', draft: true, prerelease: false },
+      ]))
+    })
+    servers.push(server)
+    await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve))
+    const address = server.address()
+    if (address === null || typeof address === 'string') throw new Error('missing release API test port')
+
+    const result = await run(value, {
+      COREMATE_INSTALL_RELEASES_API_OVERRIDE: `http://127.0.0.1:${address.port}/releases`,
+    }, false, null)
+    expect(result.stdout).toContain('Resolving the latest stable OpenGUI plugin release')
+    expect(result.stdout).toContain('Using OpenGUI plugin v0.1.7')
+    expect(result.stdout).toContain('Installed and verified dsh-coremate-mobile v0.1.7')
   })
 
   it('installs and verifies a first release, then repeats without replacing profile files', async () => {

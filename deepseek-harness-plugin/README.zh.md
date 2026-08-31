@@ -52,7 +52,7 @@ codex plugin add opengui@opengui-local
 
 ### macOS：通过 Codex Skill 安装
 
-让 Codex 从仓库的 [`deepseek-harness-plugin/skills/opengui-coremate-install`](./skills/opengui-coremate-install) 安装 Skill，然后调用 `$opengui-coremate-install`。Skill 会从 OpenGUI 的公开 Release 下载并校验固定的 `v0.1.7` 安装包，保留 `web` profile 中的其他配置，并安装用户级 LaunchAgent，让 DSH 在异常退出或重新登录后自动恢复；不要求登录 GitHub。
+让 Codex 从仓库的 [`deepseek-harness-plugin/skills/opengui-coremate-install`](./skills/opengui-coremate-install) 安装 Skill，然后调用 `$opengui-coremate-install`。Skill 会解析最新的插件正式版 Release，下载并校验对应的安装包，忽略草稿、预发布版和 OpenGUI 的其他 Release；同时保留 `web` profile 中的其他配置，并安装用户级 LaunchAgent，让 DSH 在异常退出或重新登录后自动恢复。整个过程不要求登录 GitHub。只有回滚或需要可复现安装时才使用 `--version VERSION`。
 
 如果 3080 端口属于 OpenGUI 管理的 DSH，安装器会安全更新并重启对应 LaunchAgent；如果属于其他 DSH 进程，安装器绝不会强制终止它，新 LaunchAgent 会在下次登录后接管。下面的手动安装方式仍适用于所有受支持的系统。
 
