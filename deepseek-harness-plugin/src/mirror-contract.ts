@@ -23,6 +23,12 @@ export interface MirrorStatus {
   devices: MirrorDeviceStatus[]
 }
 
+/** Actual versions loaded by the local DSH Host process. */
+export interface RuntimeInfo {
+  dshVersion: string
+  openGuiVersion: string
+}
+
 /** Lightweight activity state used by the composer stop control. */
 export interface CoremateTaskStatus {
   active: boolean
@@ -71,3 +77,4 @@ export const BROWSER_INSTALL_DECLINE_PATH = '/coremate-mobile/browser/install/de
 export const PLUGIN_UPDATE_STATUS_PATH = '/coremate-mobile/plugin/update/status'
 export const PLUGIN_UPDATE_CHECK_PATH = '/coremate-mobile/plugin/update/check'
 export const PLUGIN_UPDATE_INSTALL_PATH = '/coremate-mobile/plugin/update/install'
+export const RUNTIME_INFO_PATH = '/coremate-mobile/runtime/info'

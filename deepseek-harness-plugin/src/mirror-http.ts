@@ -8,13 +8,16 @@ import {
   MIRROR_START_PATH, MIRROR_STATUS_PATH, MIRROR_STOP_PATH,
   PHONE_TASK_STATUS_PATH, PHONE_TASK_STOP_PATH,
   PLUGIN_UPDATE_CHECK_PATH, PLUGIN_UPDATE_INSTALL_PATH, PLUGIN_UPDATE_STATUS_PATH,
+  RUNTIME_INFO_PATH,
 } from './mirror-contract.ts'
+import type { RuntimeInfo } from './mirror-contract.ts'
 import type { CoremateTaskState } from './phone-task.ts'
 import type { BrowserInstallStatus } from './browser.ts'
 import type { DeviceFleet, DeviceFleetSnapshot } from './device-fleet.ts'
 import type { PhonePreview } from './preview.ts'
 import type { ScrcpyMirror } from './scrcpy.ts'
 import type { ScrcpyVideoStreams } from './scrcpy-stream.ts'
+import { runtimeInfo as readRuntimeInfo } from './package-info.ts'
 import { acceptStreamWebSocket } from './websocket.ts'
 
 interface CoremateTaskControl {
@@ -122,6 +125,7 @@ export function installMirrorHttp(
   updater: PluginUpdateControl,
   preview: PhonePreview,
   streams: ScrcpyVideoStreams,
+  runtime: RuntimeInfo = readRuntimeInfo(),
 ): void {
   ctx.inject(['webServer'], (httpCtx) => {
     httpCtx.effect(() => {
@@ -138,6 +142,14 @@ export function installMirrorHttp(
         }
       }
       try {
+        disposers.push(httpCtx.webServer.register({
+          kind: 'exact',
+          path: RUNTIME_INFO_PATH,
+          handler(request, response) {
+            if (request.method !== 'GET') return sendJson(response, 405, { error: 'method_not_allowed' })
+            sendJson(response, 200, runtime)
+          },
+        }))
         disposers.push(httpCtx.webServer.register({
           kind: 'exact',
           path: MIRROR_STATUS_PATH,

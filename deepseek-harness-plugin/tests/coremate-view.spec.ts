@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { MirrorDeviceStatus } from '../src/mirror-contract.ts'
-import { buildDeviceWallItems } from '../src/client/CoremateView.tsx'
+import { buildDeviceWallItems, runtimeVersionLabel } from '../src/client/CoremateView.tsx'
 import { preparationMessage, streamFallbackMessage } from '../src/client/PhoneStream.tsx'
 import { WECHAT_GROUP_QR_DATA_URL } from '../src/client/wechat-group-qr.ts'
 
@@ -15,6 +15,14 @@ function device(id: string, connected = true): MirrorDeviceStatus {
 }
 
 describe('OpenGUI device photo wall', () => {
+  it('keeps the compact runtime version label complete in every state', () => {
+    expect(runtimeVersionLabel()).toBe('DSH … · OpenGUI …')
+    expect(runtimeVersionLabel(undefined, true)).toBe('DSH 未知 · OpenGUI 未知')
+    expect(runtimeVersionLabel({ dshVersion: 'unknown', openGuiVersion: 'unknown' })).toBe('DSH 未知 · OpenGUI 未知')
+    expect(runtimeVersionLabel({ dshVersion: '0.1.0-rc.7', openGuiVersion: '0.1.10' }))
+      .toBe('DSH 0.1.0-rc.7 · OpenGUI 0.1.10')
+  })
+
   it('falls back deterministically when stream status cannot be read and hides implementation details', () => {
     expect(streamFallbackMessage(undefined, 'HTTP 503')).toBe('实时画面服务暂时不可用，当前使用截图预览。')
     expect(streamFallbackMessage({

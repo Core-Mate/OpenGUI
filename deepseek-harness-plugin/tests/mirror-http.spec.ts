@@ -4,7 +4,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   DEVICE_PREVIEW_PATH, DEVICE_SELECTION_PATH, DEVICE_STREAM_ENABLE_PATH, DEVICE_STREAM_STATUS_PATH, MIRROR_STATUS_PATH, PHONE_TASK_STATUS_PATH,
-  PLUGIN_UPDATE_INSTALL_PATH, PLUGIN_UPDATE_STATUS_PATH,
+  PLUGIN_UPDATE_INSTALL_PATH, PLUGIN_UPDATE_STATUS_PATH, RUNTIME_INFO_PATH,
 } from '../src/mirror-contract.ts'
 import { installMirrorHttp, publicStreamError } from '../src/mirror-http.ts'
 
@@ -77,6 +77,7 @@ async function setup(options: { selectionLocked?: boolean, fleetError?: Error } 
     updater,
     { read: previewRead } as never,
     { status: async () => ({ supported: true, cached: true, approved: true, phase: 'ready' }), approve: () => true, subscribe: vi.fn() } as never,
+    { dshVersion: '0.1.0-rc.7', openGuiVersion: '0.1.10' },
   )
   const server = createServer((request, response) => {
     const path = new URL(request.url ?? '/', 'http://localhost').pathname
@@ -91,6 +92,14 @@ async function setup(options: { selectionLocked?: boolean, fleetError?: Error } 
 }
 
 describe('OpenGUI local preview HTTP surface', () => {
+  it('reports the actual DSH and OpenGUI runtime versions without local paths', async () => {
+    const { base } = await setup()
+    const response = await fetch(`${base}${RUNTIME_INFO_PATH}`)
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({ dshVersion: '0.1.0-rc.7', openGuiVersion: '0.1.10' })
+  })
+
   it('preserves an actionable device-discovery failure for the local workbench', async () => {
     const failure = new Error('OpenGUI bundled ADB is missing execute permission.')
     const { base } = await setup({ fleetError: failure })

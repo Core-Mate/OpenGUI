@@ -5,8 +5,9 @@ import {
   DEVICE_STREAM_STATUS_PATH,
   MIRROR_START_PATH,
   MIRROR_STOP_PATH,
+  RUNTIME_INFO_PATH,
 } from '../mirror-contract.ts'
-import type { MirrorDeviceStatus, MirrorStatus } from '../mirror-contract.ts'
+import type { MirrorDeviceStatus, MirrorStatus, RuntimeInfo } from '../mirror-contract.ts'
 import type { ScrcpyStreamStatus } from '../scrcpy-stream.ts'
 import { BrowserInstallPrompt } from './BrowserInstallPrompt.tsx'
 import { OpenGuiMark } from './OpenGuiMark.tsx'
@@ -148,6 +149,15 @@ export function buildDeviceWallItems(devices: readonly MirrorDeviceStatus[]): De
   ]
 }
 
+export function runtimeVersionLabel(info?: RuntimeInfo, failed = false): string {
+  if (info !== undefined) {
+    const dshVersion = info.dshVersion === 'unknown' ? '未知' : info.dshVersion
+    const openGuiVersion = info.openGuiVersion === 'unknown' ? '未知' : info.openGuiVersion
+    return `DSH ${dshVersion} · OpenGUI ${openGuiVersion}`
+  }
+  return failed ? 'DSH 未知 · OpenGUI 未知' : 'DSH … · OpenGUI …'
+}
+
 function phaseLabel(status: MirrorStatus): string {
   const online = status.devices.filter(device => device.connected).length
   const deviceLabel = `${online} 台设备在线`
@@ -172,6 +182,20 @@ export function CoremateView({ coremateSessionId }: { readonly coremateSessionId
   const [error, setError] = useState<string>()
   const [streamStatus, setStreamStatus] = useState<ScrcpyStreamStatus>()
   const [streamStatusError, setStreamStatusError] = useState<string>()
+  const [runtime, setRuntime] = useState<RuntimeInfo>()
+  const [runtimeFailed, setRuntimeFailed] = useState(false)
+
+  useEffect(() => {
+    const controller = new AbortController()
+    void fetch(RUNTIME_INFO_PATH, { cache: 'no-store', signal: controller.signal })
+      .then(async response => {
+        if (!response.ok) throw new Error(`runtime info unavailable (${response.status})`)
+        setRuntime(await response.json() as RuntimeInfo)
+        setRuntimeFailed(false)
+      })
+      .catch(() => { if (!controller.signal.aborted) setRuntimeFailed(true) })
+    return () => controller.abort()
+  }, [])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -266,6 +290,12 @@ export function CoremateView({ coremateSessionId }: { readonly coremateSessionId
           <span>设备工作台</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end', gap: 6 }}>
+          <span
+            data-coremate-runtime-version
+            aria-label={`运行版本：${runtimeVersionLabel(runtime, runtimeFailed).replace(' · ', '，')}`}
+            title={runtimeFailed ? '版本信息暂时不可用' : '当前实际加载的 DSH 与 OpenGUI 版本'}
+            style={{ display: 'inline-flex', alignItems: 'center', minHeight: 40, padding: '0 6px', color: 'var(--dsw-alias-label-secondary, #52525b)', fontSize: 12, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}
+          >{runtimeVersionLabel(runtime, runtimeFailed)}</span>
           <a data-coremate-header-link href={OPENGUI_GITHUB_URL} target="_blank" rel="noreferrer" style={headerLinkStyle}>GitHub ↗</a>
           <a data-coremate-header-link href={OPENGUI_WEBSITE_URL} target="_blank" rel="noreferrer" style={headerLinkStyle}>官方网站 ↗</a>
           <span role="status" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, minHeight: 40, padding: '0 6px', color: 'var(--dsw-alias-label-secondary, #52525b)', fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>
