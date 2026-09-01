@@ -193,6 +193,48 @@ export interface OpenGuiTaskLease<Context = unknown> {
   capabilityFailure(): Error | undefined
 }
 
+/** Lifecycle hooks for preparing and executing one admitted OpenGUI root task. */
+export interface PreparedOpenGuiTaskHooks<Interaction, Route, Targets, Context, Result> {
+  prepare(interaction: Interaction): Promise<Route>
+  waitForTargets(interaction: Interaction): Promise<Targets>
+  context(route: Route, targets: Targets): Context
+  execute(lease: OpenGuiTaskLease<Context>): Promise<Result>
+  recover(error: Error, interaction: Interaction, route: Route): Promise<string | undefined>
+}
+
+/**
+ * Run every cancellable stage with the admitted task's fused lease signal.
+ * The caller's original signal alone cannot observe cancellation from the
+ * workbench stop control.
+ */
+export async function runPreparedOpenGuiTask<
+  Interaction extends { readonly signal: AbortSignal },
+  Route,
+  Targets,
+  Context,
+  Result,
+>(
+  interaction: Interaction,
+  lease: OpenGuiTaskLease<Context>,
+  hooks: PreparedOpenGuiTaskHooks<Interaction, Route, Targets, Context, Result>,
+): Promise<Result> {
+  const scopedInteraction = { ...interaction, signal: lease.signal }
+  const route = await hooks.prepare(scopedInteraction)
+  const targets = await hooks.waitForTargets(scopedInteraction)
+  lease.setPhase('routing')
+  lease.context = hooks.context(route, targets)
+  lease.setPhase('running')
+  try {
+    return await hooks.execute(lease)
+  } catch (error) {
+    if (error instanceof Error) {
+      const recovered = await hooks.recover(error, scopedInteraction, route)
+      if (recovered !== undefined) throw new Error(recovered)
+    }
+    throw error
+  }
+}
+
 interface ActiveOpenGuiTask<Context> {
   readonly controller: AbortController
   readonly agents: WeakSet<object>

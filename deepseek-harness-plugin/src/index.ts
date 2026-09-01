@@ -34,7 +34,7 @@ import type { FleetDevice } from './device-fleet.ts'
 import { OwnedForwardRegistry } from './forward-registry.ts'
 import { installMirrorHttp } from './mirror-http.ts'
 import { relayNestedTaskProgress, relayPhoneTaskProgress } from './phone-progress.ts'
-import { OpenGuiTaskManager, OPENGUI_USAGE } from './phone-task.ts'
+import { OpenGuiTaskManager, OPENGUI_USAGE, runPreparedOpenGuiTask } from './phone-task.ts'
 import type { CoremateTaskPresentation, CoremateTaskResult, OpenGuiTaskLease } from './phone-task.ts'
 import { resolveMobileProfile, type MobileApi } from './provider.ts'
 import { latestPhoneScreenshotMessages } from './runtime.ts'
@@ -911,22 +911,17 @@ export function apply(ctx: Context, baseConfig: Config): void {
   const runRootTask = async (
     interaction: TaskInteraction,
     operation: (lease: OpenGuiTaskLease<OpenGuiExecutionContext>) => Promise<CoremateTaskResult>,
-  ): Promise<CoremateTaskResult> => tasks.runRoot<CoremateTaskResult>(interaction.agent, interaction.signal, 'waiting-for-device', async lease => {
-    const route = await prepareTask(interaction)
-    const targets = await waitForSelectedPhone(interaction)
-    lease.setPhase('routing')
-    lease.context = { targets, route }
-    lease.setPhase('running')
-    try {
-      return await operation(lease)
-    } catch (error) {
-      if (error instanceof Error) {
-        const recovered = await recoverTask(error, interaction, route)
-        if (recovered !== undefined) throw new Error(recovered)
-      }
-      throw error
-    }
-  })
+  ): Promise<CoremateTaskResult> => tasks.runRoot<CoremateTaskResult>(interaction.agent, interaction.signal, 'waiting-for-device', lease => runPreparedOpenGuiTask(
+    interaction,
+    lease,
+    {
+      prepare: prepareTask,
+      waitForTargets: waitForSelectedPhone,
+      context: (route, targets) => ({ targets, route }),
+      execute: operation,
+      recover: recoverTask,
+    },
+  ))
 
   const directCommand = (commandName: 'opengui' | 'coremate'): CommandDefinition => ({
     name: commandName,

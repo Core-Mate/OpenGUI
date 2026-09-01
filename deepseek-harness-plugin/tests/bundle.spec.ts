@@ -71,16 +71,19 @@ describe('standalone DeepSeek Harness bundle', () => {
   })
 
   it('prepares the model before waiting for an explicit phone selection', async () => {
-    const [hostSource, configurationSource] = await Promise.all([
+    const [hostSource, taskSource, configurationSource] = await Promise.all([
       readFile(new URL('src/index.ts', root), 'utf8'),
+      readFile(new URL('src/phone-task.ts', root), 'utf8'),
       readFile(new URL('src/configuration.ts', root), 'utf8'),
     ])
-    const prepareIndex = hostSource.indexOf('const route = await prepareTask(interaction)')
-    const deviceIndex = hostSource.indexOf('const targets = await waitForSelectedPhone(interaction)')
+    const prepareIndex = taskSource.indexOf('const route = await hooks.prepare(scopedInteraction)')
+    const deviceIndex = taskSource.indexOf('const targets = await hooks.waitForTargets(scopedInteraction)')
 
     expect(prepareIndex).toBeGreaterThan(-1)
     expect(deviceIndex).toBeGreaterThan(-1)
     expect(prepareIndex).toBeLessThan(deviceIndex)
+    expect(taskSource).toContain('const scopedInteraction = { ...interaction, signal: lease.signal }')
+    expect(hostSource).toContain('lease => runPreparedOpenGuiTask(')
     expect(hostSource).toContain('当前模型没有注明是否支持图片输入和工具调用。它是否具备这些能力？')
     expect(hostSource).toContain("status: 'cancelled' as const")
     expect(hostSource).toContain("status: 'completed' as const")
