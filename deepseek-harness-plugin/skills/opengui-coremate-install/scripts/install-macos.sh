@@ -130,6 +130,20 @@ if ! is_supported_dsh_version "$dsh_version"; then
   exit 1
 fi
 
+credentials_file="${dsh_home}/.credentials.yaml"
+if [[ ( "$dsh_version" == "0.1.0-rc.7" || "$dsh_version" == "0.1.0-rc.8" ) && -f "$credentials_file" ]]; then
+  if node --input-type=module - "$credentials_file" <<'NODE'
+import { readFileSync } from 'node:fs'
+
+const text = readFileSync(process.argv[2], 'utf8')
+process.exit(/^version\s*:\s*1(?:\s*(?:#.*)?)?$/mu.test(text) ? 0 : 1)
+NODE
+  then
+    printf 'DSH %s cannot read the versioned credential store written by DSH 0.1.1 release candidates. No files were changed. Choose DSH 0.1.1-rc.1 or 0.1.1-rc.2, or use a separate --dsh-home for the older DSH version.\n' "$dsh_version" >&2
+    exit 1
+  fi
+fi
+
 detected_dsh_version=""
 if command -v dsh >/dev/null 2>&1; then
   detected_dsh_version="$(dsh -V 2>/dev/null || true)"
@@ -340,7 +354,7 @@ if [[ -z "$release_version" ]]; then
 fi
 
 if [[ ! "$release_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  printf 'Invalid OpenGUI plugin version: %s. Expected a stable version such as 0.1.12.\n' "$release_version" >&2
+  printf 'Invalid OpenGUI plugin version: %s. Expected a stable version such as 0.1.13.\n' "$release_version" >&2
   exit 1
 fi
 printf 'Using OpenGUI plugin v%s.\n' "$release_version"

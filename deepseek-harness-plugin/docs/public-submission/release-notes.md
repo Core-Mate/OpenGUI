@@ -1,5 +1,5 @@
-# OpenGUI 0.1.12 Plugin Release Notes
+# OpenGUI 0.1.13 Plugin Release Notes
 
-- The macOS installer now waits for an existing OpenGUI LaunchAgent to finish stopping before it registers the replacement, preventing an intermittent `Operation already in progress` failure during upgrades.
-- Upgrades now quarantine stale plugin-local pnpm dependencies left by older installations, restore them if startup fails, and remove them only after the new runtime is ready.
-- DSH support remains `0.1.0-rc.7`, `0.1.0-rc.8`, `0.1.1-rc.1`, and `0.1.1-rc.2`, with `0.1.1-rc.2` as the default.
+- The macOS installer now detects the versioned credential store written by DSH `0.1.1` RCs and refuses an incompatible downgrade to DSH `0.1.0-rc.7` or `0.1.0-rc.8` before changing any files.
+- Documentation now distinguishes plugin API compatibility from DSH user-state compatibility and recommends a separate DSH home when an older RC must be retained.
+- Restart-safe LaunchAgent replacement and stale plugin dependency recovery from OpenGUI `0.1.12` remain enabled.

@@ -4,7 +4,7 @@
 
 ## 目前能不能直接安装？
 
-可以。从 [OpenGUI 的公开 Release](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.12) 打开插件版本，在 Assets 中下载 `dsh-coremate-mobile-0.1.12.tgz`。
+可以。从 [OpenGUI 的公开 Release](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.13) 打开插件版本，在 Assets 中下载 `dsh-coremate-mobile-0.1.13.tgz`。
 
 下载后不要解压。不要下载 “Source code (zip)” 或 “Source code (tar.gz)”；它们是 GitHub 自动生成的源码压缩包，不是普通用户安装包。
 
@@ -13,10 +13,12 @@
 开始前确认以下事项：
 
 1. 电脑已经能启动官方 DeepSeek Harness；本版本支持 `0.1.0-rc.7`、`0.1.0-rc.8`、`0.1.1-rc.1` 和 `0.1.1-rc.2`，建议使用 `0.1.1-rc.2`。
-2. 已下载 `dsh-coremate-mobile-0.1.12.tgz`，并且没有解压。
+2. 已下载 `dsh-coremate-mobile-0.1.13.tgz`，并且没有解压。
 3. 电脑能访问公开的 GitHub Releases；不需要登录 GitHub。
 4. Node.js 版本为 `22.19.x`，或 `24` 及以上。如果 `node --version` 不在这个范围，请先切换到受支持版本。
 5. Harness 当前对话里已选择一个模型。该模型最好支持图片输入和工具调用；如果不兼容，OpenGUI 会在第一次真实任务时引导配置专用视觉模型。
+
+注意：DSH `0.1.0-rc.7` 和 `0.1.0-rc.8` 无法读取 DSH `0.1.1` RC 写入的新版凭据格式。如果同一个 DSH home 已经被新版本迁移，安装器会在改动任何文件前拒绝降级到旧 RC，并提示改用独立的 DSH home；它不会转换或覆盖你的凭据。
 6. Android 手机已经通过 USB 连接电脑，已打开“USB 调试”，并在手机上点过“允许”。
 7. 电脑是 macOS（Apple 芯片或 Intel）、Windows x64，或 Linux x64。Linux arm64 和 Windows arm64 暂不支持随包 ADB。
 
@@ -42,9 +44,9 @@ npx @deepseek-ai/dsh@0.1.1-rc.2 --help
 npx @deepseek-ai/dsh@0.1.1-rc.2 plugin --profile web add 
 ```
 
-找到下载好的 `dsh-coremate-mobile-0.1.12.tgz`，用鼠标把它拖进终端窗口，终端会自动填入文件路径，然后按回车。
+找到下载好的 `dsh-coremate-mobile-0.1.13.tgz`，用鼠标把它拖进终端窗口，终端会自动填入文件路径，然后按回车。
 
-看到 `dsh-coremate-mobile 0.1.12` 和安装完成信息，表示插件文件已经加入 Harness。此时还没有证明插件能够启动；第三步会进行实际装载验证。
+看到 `dsh-coremate-mobile 0.1.13` 和安装完成信息，表示插件文件已经加入 Harness。此时还没有证明插件能够启动；第三步会进行实际装载验证。
 
 ### 如果出现 `ERR_PNPM_IGNORED_BUILDS`
 

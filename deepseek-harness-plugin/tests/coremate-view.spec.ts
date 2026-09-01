@@ -24,10 +24,10 @@ describe('OpenGUI device photo wall', () => {
     }
     expect(runtimeVersionLabel({ ...shared, dshVersion: 'unknown', openGuiVersion: 'unknown', dshCompatibility: 'unknown' }))
       .toBe('DSH 未知 · OpenGUI 未知')
-    expect(runtimeVersionLabel({ ...shared, dshVersion: '0.1.0-rc.7', openGuiVersion: '0.1.12', dshCompatibility: 'supported' }))
-      .toBe('DSH 0.1.0-rc.7 · OpenGUI 0.1.12')
-    const unsupported = { ...shared, dshVersion: '0.1.2-alpha.4', openGuiVersion: '0.1.12', dshCompatibility: 'unsupported' as const }
-    expect(runtimeVersionLabel(unsupported)).toBe('DSH 0.1.2-alpha.4（未验证） · OpenGUI 0.1.12')
+    expect(runtimeVersionLabel({ ...shared, dshVersion: '0.1.0-rc.7', openGuiVersion: '0.1.13', dshCompatibility: 'supported' }))
+      .toBe('DSH 0.1.0-rc.7 · OpenGUI 0.1.13')
+    const unsupported = { ...shared, dshVersion: '0.1.2-alpha.4', openGuiVersion: '0.1.13', dshCompatibility: 'unsupported' as const }
+    expect(runtimeVersionLabel(unsupported)).toBe('DSH 0.1.2-alpha.4（未验证） · OpenGUI 0.1.13')
     expect(runtimeVersionTitle(unsupported)).toContain('已支持：0.1.0-rc.7、0.1.0-rc.8、0.1.1-rc.1、0.1.1-rc.2')
   })
 

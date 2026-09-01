@@ -11,7 +11,7 @@ const roots: string[] = []
 const servers: ReturnType<typeof createServer>[] = []
 const installer = new URL('../skills/opengui-coremate-install/scripts/install-macos.sh', import.meta.url)
 const uninstaller = new URL('../skills/opengui-coremate-install/scripts/uninstall-macos.sh', import.meta.url)
-const PLUGIN_VERSION = '0.1.12'
+const PLUGIN_VERSION = '0.1.13'
 const PREFERRED_DSH_VERSION = '0.1.1-rc.2'
 
 afterEach(async () => {
@@ -93,7 +93,7 @@ fi
 profile_dir="\${DSH_HOME}/profiles/web"
 mkdir -p "\${profile_dir}/node_modules/dsh-coremate-mobile/lib/types/client"
 printf '%s\\n' '{"dependencies":{"dsh-coremate-mobile":"file:fixture"},"dsh":{"profile":{"bundles":["dsh-coremate-mobile"]}}}' > "\${profile_dir}/package.json"
-printf '%s\\n' '{"name":"dsh-coremate-mobile","version":"0.1.12"}' > "\${profile_dir}/node_modules/dsh-coremate-mobile/package.json"
+printf '%s\\n' '{"name":"dsh-coremate-mobile","version":"0.1.13"}' > "\${profile_dir}/node_modules/dsh-coremate-mobile/package.json"
 printf '%s\\n' 'opengui command host with legacy coremate alias' > "\${profile_dir}/node_modules/dsh-coremate-mobile/lib/index.js"
 printf '%s\\n' 'client bundle' > "\${profile_dir}/node_modules/dsh-coremate-mobile/lib/client.js"
 printf '%s\\n' 'export {}' > "\${profile_dir}/node_modules/dsh-coremate-mobile/lib/types/client/index.d.ts"
@@ -273,6 +273,28 @@ describe('macOS installation Skill', () => {
     await expect(run(alpha, {}, false, PLUGIN_VERSION, '0.1.2-alpha.4')).rejects.toMatchObject({
       stderr: expect.stringContaining('Unsupported DSH version 0.1.2-alpha.4'),
     })
+  })
+
+  it('rejects old DSH versions before mutating a versioned credential profile', async () => {
+    for (const dshVersion of ['0.1.0-rc.7', '0.1.0-rc.8']) {
+      const value = await fixture()
+      await mkdir(value.home, { recursive: true })
+      const credentials = join(value.home, '.credentials.yaml')
+      await writeFile(credentials, 'version: 1\nrefs:\n  test: preserved\n')
+
+      await expect(run(value, {}, false, PLUGIN_VERSION, dshVersion)).rejects.toMatchObject({
+        stderr: expect.stringContaining('cannot read the versioned credential store'),
+      })
+      await expect(readFile(credentials, 'utf8')).resolves.toBe('version: 1\nrefs:\n  test: preserved\n')
+      await expect(access(join(value.home, 'profiles', 'web'))).rejects.toThrow()
+      await expect(access(join(value.home, 'runtime', `dsh-${dshVersion}`))).rejects.toThrow()
+    }
+
+    const current = await fixture()
+    await mkdir(current.home, { recursive: true })
+    await writeFile(join(current.home, '.credentials.yaml'), 'version: 1\nrefs: {}\n')
+    const result = await run(current, { FAKE_GLOBAL_DSH_VERSION: '0.1.1-rc.1' }, false, PLUGIN_VERSION, '0.1.1-rc.1')
+    expect(result.stdout).toContain(`Installed and verified dsh-coremate-mobile v${PLUGIN_VERSION}`)
   })
 
   it('falls back only to an existing verified managed DSH when preferred installation fails', async () => {

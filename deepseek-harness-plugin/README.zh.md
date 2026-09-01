@@ -58,14 +58,14 @@ codex plugin add opengui@opengui-local
 
 精确支持的 DSH 版本是 `0.1.0-rc.7`、`0.1.0-rc.8`、`0.1.1-rc.1` 和 `0.1.1-rc.2`，默认使用 `0.1.1-rc.2`；`0.1.2-alpha.4` 明确不受支持。安装器只会复用与所选版本完全一致的 `PATH` runtime，否则使用按版本隔离的 managed runtime。默认版本下载失败时，安装器可以回退到本机已有的最高兼容 managed runtime，并明确提示；显式传入 `--dsh-version` 时不会静默回退。现有 DSH、工作区、设置、凭据和手机授权都不会被替换。页头展示的是 Host 实际加载的组件版本；由于 DSH RC 包的内部依赖使用兼容范围，它可能比所选 CLI 版本更新。
 
-需要恢复上一版组合时，执行 `./skills/opengui-coremate-install/scripts/install-macos.sh --version 0.1.10 --dsh-version 0.1.0-rc.7`；该操作不会删除用户状态。
+DSH `0.1.0-rc.7` 和 `0.1.0-rc.8` 使用扁平凭据格式，而 DSH `0.1.1` RC 会把它迁移为旧 RC 无法读取的版本化格式。如果当前 DSH home 仍使用旧格式，可以执行 `./skills/opengui-coremate-install/scripts/install-macos.sh --version 0.1.10 --dsh-version 0.1.0-rc.7` 恢复上一版组合；如果已经迁移，安装器会在改动任何文件前拒绝这种状态降级，此时请为旧 DSH 使用独立的 `--dsh-home`。
 
 ### 1. 下载发布包
 
-从 [OpenGUI 公开 Release](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.12) 下载：
+从 [OpenGUI 公开 Release](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.13) 下载：
 
-- `dsh-coremate-mobile-0.1.12.tgz`
-- `dsh-coremate-mobile-0.1.12.tgz.sha256`
+- `dsh-coremate-mobile-0.1.13.tgz`
+- `dsh-coremate-mobile-0.1.13.tgz.sha256`
 
 不要解压 `.tgz`，也不要下载 GitHub 自动生成的 Source code 压缩包。
 
@@ -73,18 +73,18 @@ codex plugin add opengui@opengui-local
 
 ```sh
 # Linux
-sha256sum -c dsh-coremate-mobile-0.1.12.tgz.sha256
+sha256sum -c dsh-coremate-mobile-0.1.13.tgz.sha256
 
 # macOS
-shasum -a 256 -c dsh-coremate-mobile-0.1.12.tgz.sha256
+shasum -a 256 -c dsh-coremate-mobile-0.1.13.tgz.sha256
 ```
 
-Windows PowerShell 可分别执行 `Get-FileHash .\dsh-coremate-mobile-0.1.12.tgz -Algorithm SHA256` 和 `Get-Content .\dsh-coremate-mobile-0.1.12.tgz.sha256`，确认两者显示的哈希一致。
+Windows PowerShell 可分别执行 `Get-FileHash .\dsh-coremate-mobile-0.1.13.tgz -Algorithm SHA256` 和 `Get-Content .\dsh-coremate-mobile-0.1.13.tgz.sha256`，确认两者显示的哈希一致。
 
 ### 2. 安装到 Harness profile
 
 ```sh
-dsh plugin --profile web add /绝对路径/dsh-coremate-mobile-0.1.12.tgz
+dsh plugin --profile web add /绝对路径/dsh-coremate-mobile-0.1.13.tgz
 ```
 
 如果使用 `npx` 启动官方 CLI，可将命令中的 `dsh` 替换为：
@@ -267,7 +267,7 @@ OpenGUI 任务运行时，输入框右侧会出现方形“停止 OpenGUI 操作
 生产环境应使用上面的预构建 Release 包。开发时可以 checkout OpenGUI 的公开 Release tag，再安装插件目录：
 
 ```sh
-git clone --branch dsh-coremate-mobile-v0.1.12 --depth 1 https://github.com/Core-Mate/OpenGUI.git
+git clone --branch dsh-coremate-mobile-v0.1.13 --depth 1 https://github.com/Core-Mate/OpenGUI.git
 cd OpenGUI/deepseek-harness-plugin
 dsh plugin --profile web add "$(pwd)"
 ```

@@ -23,7 +23,7 @@ describe('Codex plugin package', () => {
     ])
     const compatibility = await json('skills/opengui-coremate-install/dsh-compatibility.json')
     const peerRange = compatibility.supportedVersions.join(' || ')
-    expect([pkg.version, plugin.version, publicPlugin.version]).toEqual(['0.1.12', '0.1.12', '0.1.12'])
+    expect([pkg.version, plugin.version, publicPlugin.version]).toEqual(['0.1.13', '0.1.13', '0.1.13'])
     expect(pkg.name).toBe('dsh-coremate-mobile')
     expect(Object.entries(pkg.peerDependencies)
       .filter(([name]) => name.startsWith('@deepseek-ai/dsh-'))

@@ -56,14 +56,14 @@ If port 3080 belongs to an OpenGUI-managed DSH, the installer safely reloads tha
 
 The exact supported DSH releases are `0.1.0-rc.7`, `0.1.0-rc.8`, `0.1.1-rc.1`, and `0.1.1-rc.2`; the default is `0.1.1-rc.2`. DSH `0.1.2-alpha.4` is explicitly unsupported. A `PATH` runtime is reused only when it exactly matches the selected version; otherwise the installer uses a versioned managed runtime. If the default download fails, the installer may fall back to the highest already-installed compatible managed runtime and reports that choice. An explicit `--dsh-version` never falls back silently. Existing DSH installations, workspaces, settings, credentials, and phone authorizations are preserved. The page header reports the Host component version actually loaded, which can be newer than the selected CLI version because DSH RC packages use compatible internal dependency ranges.
 
-To restore the previous release combination without deleting user state, run `./skills/opengui-coremate-install/scripts/install-macos.sh --version 0.1.10 --dsh-version 0.1.0-rc.7`.
+DSH `0.1.0-rc.7` and `0.1.0-rc.8` use a flat credential store, while DSH `0.1.1` RCs migrate it to a versioned layout that the older RCs cannot read. On a DSH home that still uses the flat layout, the previous release combination can be restored with `./skills/opengui-coremate-install/scripts/install-macos.sh --version 0.1.10 --dsh-version 0.1.0-rc.7`. On a migrated DSH home, the installer refuses that state downgrade before changing any file; use a separate `--dsh-home` for the older DSH version instead.
 
 ### 1. Download the release package
 
-Download these files from the [public OpenGUI Release](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.12):
+Download these files from the [public OpenGUI Release](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.13):
 
-- `dsh-coremate-mobile-0.1.12.tgz`
-- `dsh-coremate-mobile-0.1.12.tgz.sha256`
+- `dsh-coremate-mobile-0.1.13.tgz`
+- `dsh-coremate-mobile-0.1.13.tgz.sha256`
 
 Do not extract the `.tgz`, and do not use GitHub's automatically generated source archives.
 
@@ -71,18 +71,18 @@ From the directory containing both files, verify the package:
 
 ```sh
 # Linux
-sha256sum -c dsh-coremate-mobile-0.1.12.tgz.sha256
+sha256sum -c dsh-coremate-mobile-0.1.13.tgz.sha256
 
 # macOS
-shasum -a 256 -c dsh-coremate-mobile-0.1.12.tgz.sha256
+shasum -a 256 -c dsh-coremate-mobile-0.1.13.tgz.sha256
 ```
 
-On Windows PowerShell, run `Get-FileHash .\dsh-coremate-mobile-0.1.12.tgz -Algorithm SHA256` and `Get-Content .\dsh-coremate-mobile-0.1.12.tgz.sha256`, then confirm that the displayed hashes match.
+On Windows PowerShell, run `Get-FileHash .\dsh-coremate-mobile-0.1.13.tgz -Algorithm SHA256` and `Get-Content .\dsh-coremate-mobile-0.1.13.tgz.sha256`, then confirm that the displayed hashes match.
 
 ### 2. Install into a Harness profile
 
 ```sh
-dsh plugin --profile web add /absolute/path/dsh-coremate-mobile-0.1.12.tgz
+dsh plugin --profile web add /absolute/path/dsh-coremate-mobile-0.1.13.tgz
 ```
 
 If you run the official CLI through `npx`, replace `dsh` in the commands with:
@@ -265,7 +265,7 @@ This is an advanced option: a profile patch replaces the target row's entire `co
 Production installations should use the prebuilt release package above. For development, clone the public OpenGUI release tag and install the plugin directory:
 
 ```sh
-git clone --branch dsh-coremate-mobile-v0.1.12 --depth 1 https://github.com/Core-Mate/OpenGUI.git
+git clone --branch dsh-coremate-mobile-v0.1.13 --depth 1 https://github.com/Core-Mate/OpenGUI.git
 cd OpenGUI/deepseek-harness-plugin
 dsh plugin --profile web add "$(pwd)"
 ```

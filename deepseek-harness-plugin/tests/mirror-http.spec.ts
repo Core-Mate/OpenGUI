@@ -79,7 +79,7 @@ async function setup(options: { selectionLocked?: boolean, fleetError?: Error } 
     { status: async () => ({ supported: true, cached: true, approved: true, phase: 'ready' }), approve: () => true, subscribe: vi.fn() } as never,
     {
       dshVersion: '0.1.0-rc.7',
-      openGuiVersion: '0.1.12',
+      openGuiVersion: '0.1.13',
       dshCompatibility: 'supported',
       preferredDshVersion: '0.1.1-rc.2',
       supportedDshVersions: ['0.1.0-rc.7', '0.1.0-rc.8', '0.1.1-rc.1', '0.1.1-rc.2'],
@@ -105,7 +105,7 @@ describe('OpenGUI local preview HTTP surface', () => {
     expect(response.status).toBe(200)
     expect(await response.json()).toEqual({
       dshVersion: '0.1.0-rc.7',
-      openGuiVersion: '0.1.12',
+      openGuiVersion: '0.1.13',
       dshCompatibility: 'supported',
       preferredDshVersion: '0.1.1-rc.2',
       supportedDshVersions: ['0.1.0-rc.7', '0.1.0-rc.8', '0.1.1-rc.1', '0.1.1-rc.2'],

@@ -46,7 +46,7 @@ macOS 上最短的路径，是让 Codex 运行 `main` 分支上的稳定安装 S
 
 Skill 会下载公开 Release 的插件包和校验文件，验证 SHA-256，只安装 OpenGUI 插件，在需要时启动并打开 DSH，同时保留其他 DSH 插件和设置。安装器会说明它是否已重启受管理的 DSH，或者是否需要先退出已有进程再重新运行。Linux 或 Windows 用户可按[手动安装说明](./deepseek-harness-plugin/README.zh.md#1-下载发布包)操作。
 
-OpenGUI 正式支持 DSH `0.1.0-rc.7`、`0.1.0-rc.8`、`0.1.1-rc.1` 和 `0.1.1-rc.2`，新安装默认使用 `0.1.1-rc.2`。macOS 安装器只会复用与所选版本完全一致的 `PATH` runtime，否则会在 OpenGUI 的 DSH home 下安装隔离的 managed runtime；可用 `--dsh-version VERSION` 选择受支持的回退版本。DSH `0.1.2-alpha.4` 暂不支持。现有 DSH、工作区、模型设置、凭据和手机授权都不会被替换。
+OpenGUI 正式支持 DSH `0.1.0-rc.7`、`0.1.0-rc.8`、`0.1.1-rc.1` 和 `0.1.1-rc.2`，新安装默认使用 `0.1.1-rc.2`。macOS 安装器只会复用与所选版本完全一致的 `PATH` runtime，否则会在 OpenGUI 的 DSH home 下安装隔离的 managed runtime；可用 `--dsh-version VERSION` 选择受支持版本。DSH `0.1.2-alpha.4` 暂不支持。现有 DSH、工作区、模型设置、凭据和手机授权都不会被替换。DSH `0.1.0` RC 无法读取 DSH `0.1.1` RC 写入的新版凭据格式，因此安装器会在改动任何文件前拒绝这种状态降级，并提示改用独立的 DSH home。
 
 安装完成后，在 DSH 中添加或选择工作区，连接并选择已授权的 Android 手机，然后发送：
 
@@ -54,7 +54,7 @@ OpenGUI 正式支持 DSH `0.1.0-rc.7`、`0.1.0-rc.8`、`0.1.1-rc.1` 和 `0.1.1-r
 @OpenGUI 打开设置并报告 Android 版本
 ```
 
-插件可以直接为 DSH 增加手机与浏览器操作能力，不需要部署完整的 OpenGUI 后端。你还可以查看更多[使用场景](./deepseek-harness-plugin/docs/use-cases.zh.md)，或下载 [v0.1.12 安装包](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.12)。
+插件可以直接为 DSH 增加手机与浏览器操作能力，不需要部署完整的 OpenGUI 后端。你还可以查看更多[使用场景](./deepseek-harness-plugin/docs/use-cases.zh.md)，或下载 [v0.1.13 安装包](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.13)。
 
 适合的使用场景包括：
 
