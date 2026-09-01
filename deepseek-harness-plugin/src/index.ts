@@ -34,7 +34,7 @@ import type { FleetDevice } from './device-fleet.ts'
 import { OwnedForwardRegistry } from './forward-registry.ts'
 import { installMirrorHttp } from './mirror-http.ts'
 import { relayNestedTaskProgress, relayPhoneTaskProgress } from './phone-progress.ts'
-import { OpenGuiTaskManager, OPENGUI_USAGE } from './phone-task.ts'
+import { OpenGuiTaskManager, OPENGUI_USAGE, runPreparedOpenGuiTask } from './phone-task.ts'
 import type { CoremateTaskPresentation, CoremateTaskResult, OpenGuiTaskLease } from './phone-task.ts'
 import { resolveMobileProfile, type MobileApi } from './provider.ts'
 import { latestPhoneScreenshotMessages } from './runtime.ts'
@@ -674,6 +674,7 @@ export function apply(ctx: Context, baseConfig: Config): void {
       const info = await ctx.llm.resolveModelInfo(route.provider, route.model, signal)
       modalities = info.inputModalities
     } catch (error) {
+      if (signal.aborted) throw signal.reason
       ctx.logger.debug(error instanceof Error ? error : new Error(String(error)))
     }
     const piAiDescriptor = ctx.settings.describe().find(item => item.ns === LLM_PI_AI_NS)
@@ -715,6 +716,7 @@ export function apply(ctx: Context, baseConfig: Config): void {
         const info = await ctx.llm.resolveModelInfo(route.provider, route.model, signal)
         if (info.inputModalities?.includes('image')) return
       } catch (error) {
+        if (signal.aborted) throw signal.reason
         ctx.logger.debug(error instanceof Error ? error : new Error(String(error)))
       }
       if (Date.now() >= deadline) throw new Error('coremate-mobile: DSH 模型配置已保存，但热更新未及时生效；请重新提交任务')
@@ -911,22 +913,17 @@ export function apply(ctx: Context, baseConfig: Config): void {
   const runRootTask = async (
     interaction: TaskInteraction,
     operation: (lease: OpenGuiTaskLease<OpenGuiExecutionContext>) => Promise<CoremateTaskResult>,
-  ): Promise<CoremateTaskResult> => tasks.runRoot<CoremateTaskResult>(interaction.agent, interaction.signal, 'waiting-for-device', async lease => {
-    const route = await prepareTask(interaction)
-    const targets = await waitForSelectedPhone(interaction)
-    lease.setPhase('routing')
-    lease.context = { targets, route }
-    lease.setPhase('running')
-    try {
-      return await operation(lease)
-    } catch (error) {
-      if (error instanceof Error) {
-        const recovered = await recoverTask(error, interaction, route)
-        if (recovered !== undefined) throw new Error(recovered)
-      }
-      throw error
-    }
-  })
+  ): Promise<CoremateTaskResult> => tasks.runRoot<CoremateTaskResult>(interaction.agent, interaction.signal, 'waiting-for-device', lease => runPreparedOpenGuiTask(
+    interaction,
+    lease,
+    {
+      prepare: prepareTask,
+      waitForTargets: waitForSelectedPhone,
+      context: (route, targets) => ({ targets, route }),
+      execute: operation,
+      recover: recoverTask,
+    },
+  ))
 
   const directCommand = (commandName: 'opengui' | 'coremate'): CommandDefinition => ({
     name: commandName,

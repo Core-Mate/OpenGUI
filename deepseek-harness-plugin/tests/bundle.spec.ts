@@ -71,16 +71,23 @@ describe('standalone DeepSeek Harness bundle', () => {
   })
 
   it('prepares the model before waiting for an explicit phone selection', async () => {
-    const [hostSource, configurationSource] = await Promise.all([
+    const [hostSource, taskSource, configurationSource] = await Promise.all([
       readFile(new URL('src/index.ts', root), 'utf8'),
+      readFile(new URL('src/phone-task.ts', root), 'utf8'),
       readFile(new URL('src/configuration.ts', root), 'utf8'),
     ])
-    const prepareIndex = hostSource.indexOf('const route = await prepareTask(interaction)')
-    const deviceIndex = hostSource.indexOf('const targets = await waitForSelectedPhone(interaction)')
+    const prepareIndex = taskSource.indexOf('const route = await hooks.prepare(scopedInteraction)')
+    const deviceIndex = taskSource.indexOf('const targets = await hooks.waitForTargets(scopedInteraction)')
 
     expect(prepareIndex).toBeGreaterThan(-1)
     expect(deviceIndex).toBeGreaterThan(-1)
     expect(prepareIndex).toBeLessThan(deviceIndex)
+    expect(taskSource).toContain('const scopedInteraction = { ...interaction, signal: lease.signal }')
+    expect(taskSource.match(/lease\.signal\.throwIfAborted\(\)/g)).toHaveLength(10)
+    expect(hostSource).toContain('lease => runPreparedOpenGuiTask(')
+    expect(hostSource).toContain("const currentCapability = async (options: AgentOptions, signal: AbortSignal): Promise<ModelCapability>")
+    expect(hostSource).toContain("const waitForVisionDeclaration = async (route: ModelRoute, signal: AbortSignal): Promise<void>")
+    expect(hostSource.match(/if \(signal\.aborted\) throw signal\.reason/g)?.length).toBeGreaterThanOrEqual(4)
     expect(hostSource).toContain('当前模型没有注明是否支持图片输入和工具调用。它是否具备这些能力？')
     expect(hostSource).toContain("status: 'cancelled' as const")
     expect(hostSource).toContain("status: 'completed' as const")
@@ -95,6 +102,7 @@ describe('standalone DeepSeek Harness bundle', () => {
 
     expect(stopButtonSource).toContain("background: '#dc2626'")
     expect(stopButtonSource).not.toContain("background: 'currentColor'")
+    expect(stopButtonSource).toContain('role="alert"')
   })
 
   it('renders a full embedded canvas, moves scenarios into @, and names the optional mirror an independent window', async () => {

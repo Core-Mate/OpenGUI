@@ -146,14 +146,19 @@ export class CoremateTaskCoordinator {
         try {
           const result = await this.tasks.runRoot(invocation.agent, invocation.signal, 'waiting-for-device', async lease => {
             const agentOptions = await prepare?.({ ...invocation, signal: lease.signal })
+            lease.signal.throwIfAborted()
             await preflight?.(invocation, lease.signal)
+            lease.signal.throwIfAborted()
             lease.setPhase('routing')
             lease.setPhase('running')
+            lease.signal.throwIfAborted()
             try {
               return await this.start(task, invocation.agent, lease.signal, 'parent-chat', agentOptions)
             } catch (error) {
               if (error instanceof Error && agentOptions !== undefined && recover !== undefined) {
+                lease.signal.throwIfAborted()
                 const recovered = await recover(error, { ...invocation, signal: lease.signal }, agentOptions)
+                lease.signal.throwIfAborted()
                 if (recovered !== undefined) throw new CoremateRecoveredError(recovered)
               }
               throw error
@@ -191,6 +196,53 @@ export interface OpenGuiTaskLease<Context = unknown> {
   bindAgent(agent: object): void
   recordCapabilityFailure(error: Error): void
   capabilityFailure(): Error | undefined
+}
+
+/** Lifecycle hooks for preparing and executing one admitted OpenGUI root task. */
+export interface PreparedOpenGuiTaskHooks<Interaction, Route, Targets, Context, Result> {
+  prepare(interaction: Interaction): Promise<Route>
+  waitForTargets(interaction: Interaction): Promise<Targets>
+  context(route: Route, targets: Targets): Context
+  execute(lease: OpenGuiTaskLease<Context>): Promise<Result>
+  recover(error: Error, interaction: Interaction, route: Route): Promise<string | undefined>
+}
+
+/**
+ * Run every cancellable stage with the admitted task's fused lease signal.
+ * The caller's original signal alone cannot observe cancellation from the
+ * workbench stop control.
+ */
+export async function runPreparedOpenGuiTask<
+  Interaction extends { readonly signal: AbortSignal },
+  Route,
+  Targets,
+  Context,
+  Result,
+>(
+  interaction: Interaction,
+  lease: OpenGuiTaskLease<Context>,
+  hooks: PreparedOpenGuiTaskHooks<Interaction, Route, Targets, Context, Result>,
+): Promise<Result> {
+  const scopedInteraction = { ...interaction, signal: lease.signal }
+  const route = await hooks.prepare(scopedInteraction)
+  lease.signal.throwIfAborted()
+  const targets = await hooks.waitForTargets(scopedInteraction)
+  lease.signal.throwIfAborted()
+  lease.setPhase('routing')
+  lease.context = hooks.context(route, targets)
+  lease.setPhase('running')
+  lease.signal.throwIfAborted()
+  try {
+    return await hooks.execute(lease)
+  } catch (error) {
+    if (error instanceof Error) {
+      lease.signal.throwIfAborted()
+      const recovered = await hooks.recover(error, scopedInteraction, route)
+      lease.signal.throwIfAborted()
+      if (recovered !== undefined) throw new Error(recovered)
+    }
+    throw error
+  }
 }
 
 interface ActiveOpenGuiTask<Context> {

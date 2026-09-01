@@ -1,7 +1,7 @@
 import type { CommandInvocation } from '@deepseek-ai/dsh-commands'
 import type { ContentBlock } from '@deepseek-ai/dsh-llm'
 import { describe, expect, it, vi } from 'vitest'
-import { CoremateTaskCoordinator, OpenGuiTaskManager } from '../src/phone-task.ts'
+import { CoremateTaskCoordinator, OpenGuiTaskManager, runPreparedOpenGuiTask } from '../src/phone-task.ts'
 
 const invocation = (rawInput: string, signal = new AbortController().signal): CommandInvocation => ({
   commandId: 'command-test' as CommandInvocation['commandId'],
@@ -13,6 +13,79 @@ const invocation = (rawInput: string, signal = new AbortController().signal): Co
 const result = (runId: string, output: ContentBlock[] = [{ type: 'text', text: 'done' }]) => ({ runId, output })
 
 describe('OpenGUI task entry points', () => {
+  it.each(['prepare', 'wait', 'recover'] as const)('cancels the lease-scoped %s phase', async (phase) => {
+    const manager = new OpenGuiTaskManager<{ route: string, targets: string[] }>()
+    const parentSignal = new AbortController().signal
+    let phaseSignal: AbortSignal | undefined
+    const waitForCancellation = (signal: AbortSignal): Promise<never> => {
+      phaseSignal = signal
+      return new Promise((_resolve, reject) => {
+        signal.addEventListener('abort', () => reject(signal.reason), { once: true })
+      })
+    }
+    const running = manager.runRoot(invocation('').agent, parentSignal, 'waiting-for-device', lease => runPreparedOpenGuiTask(
+      { agent: invocation('').agent, signal: parentSignal },
+      lease,
+      {
+        prepare: interaction => phase === 'prepare' ? waitForCancellation(interaction.signal) : Promise.resolve('vision'),
+        waitForTargets: interaction => phase === 'wait' ? waitForCancellation(interaction.signal) : Promise.resolve(['phone-a']),
+        context: (route, targets) => ({ route, targets }),
+        execute: async () => {
+          if (phase === 'recover') throw new Error('model capability failed')
+          return 'done'
+        },
+        recover: (_error, interaction) => phase === 'recover' ? waitForCancellation(interaction.signal) : Promise.resolve(undefined),
+      },
+    ))
+
+    await vi.waitFor(() => expect(phaseSignal).toBeDefined())
+    expect(phaseSignal).not.toBe(parentSignal)
+    expect(manager.cancel()).toBe(true)
+    await expect(running).rejects.toThrow('OpenGUI task stopped by user')
+    expect(phaseSignal?.aborted).toBe(true)
+    expect(manager.state()).toEqual({ active: false, phase: 'idle', selectionLocked: false })
+  })
+
+  it.each(['prepare', 'wait'] as const)('never advances after cancelled %s work settles late', async (phase) => {
+    const manager = new OpenGuiTaskManager<{ route: string, targets: string[] }>()
+    let release!: () => void
+    const late = new Promise<void>(resolve => { release = resolve })
+    const entered = vi.fn()
+    const waitForTargets = vi.fn(async () => {
+      if (phase === 'wait') {
+        entered()
+        await late
+      }
+      return ['phone-a']
+    })
+    const execute = vi.fn(async () => 'done')
+    const running = manager.runRoot(invocation('').agent, new AbortController().signal, 'waiting-for-device', lease => runPreparedOpenGuiTask(
+      { agent: invocation('').agent, signal: new AbortController().signal },
+      lease,
+      {
+        prepare: async () => {
+          if (phase === 'prepare') {
+            entered()
+            await late
+          }
+          return 'vision'
+        },
+        waitForTargets,
+        context: (route, targets) => ({ route, targets }),
+        execute,
+        recover: async () => undefined,
+      },
+    ))
+
+    await vi.waitFor(() => expect(entered).toHaveBeenCalledOnce())
+    expect(manager.cancel()).toBe(true)
+    release()
+
+    await expect(running).rejects.toThrow('OpenGUI task stopped by user')
+    if (phase === 'prepare') expect(waitForTargets).not.toHaveBeenCalled()
+    expect(execute).not.toHaveBeenCalled()
+  })
+
   it('admits one root task while allowing only explicitly bound nested agents', async () => {
     const manager = new OpenGuiTaskManager<{ targets: string[] }>()
     let release!: () => void
@@ -118,6 +191,40 @@ describe('OpenGUI task entry points', () => {
     await expect(command.handler(call)).resolves.toEqual({ kind: 'success', text: 'configured and done' })
     expect(prepare).toHaveBeenCalledWith(expect.objectContaining({ commandId: call.commandId, rawInput: call.rawInput }))
     expect(start).toHaveBeenCalledWith('open settings', call.agent, expect.any(AbortSignal), 'parent-chat', route)
+  })
+
+  it.each(['prepare', 'preflight', 'recover'] as const)('never advances after cancelled coordinator %s work settles late', async (phase) => {
+    let release!: () => void
+    const late = new Promise<void>(resolve => { release = resolve })
+    const entered = vi.fn()
+    const waitLate = async (): Promise<void> => {
+      entered()
+      await late
+    }
+    const start = vi.fn(async () => {
+      if (phase === 'recover') throw new Error('model capability failed')
+      return result('run-late')
+    })
+    const prepare = vi.fn(async () => {
+      if (phase === 'prepare') await waitLate()
+      return { provider: 'current', model: 'vision' }
+    })
+    const preflight = vi.fn(async () => {
+      if (phase === 'preflight') await waitLate()
+    })
+    const recover = vi.fn(async () => {
+      if (phase === 'recover') await waitLate()
+      return '已切换模型，请重新提交。'
+    })
+    const coordinator = new CoremateTaskCoordinator(start)
+    const running = coordinator.command(preflight, prepare, recover).handler(invocation('检查手机'))
+
+    await vi.waitFor(() => expect(entered).toHaveBeenCalledOnce())
+    expect(coordinator.cancel()).toBe(true)
+    release()
+
+    await expect(running).resolves.toEqual({ kind: 'error', text: 'coremate-mobile: OpenGUI task stopped by user' })
+    if (phase !== 'recover') expect(start).not.toHaveBeenCalled()
   })
 
   it('resolves the model before waiting for a phone and locks selection only afterwards', async () => {
