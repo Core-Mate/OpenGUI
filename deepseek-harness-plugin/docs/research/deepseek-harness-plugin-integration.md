@@ -112,7 +112,7 @@ pnpm dsh plugin --profile web add ../Deepseek-ai
 插件迁入 OpenGUI monorepo 后，不应把仓库根目录当作插件包直接交给 DSH。开发验证应固定插件 release tag，checkout 后安装其中的 `deepseek-harness-plugin` 目录：
 
 ```sh
-git clone --branch dsh-coremate-mobile-v0.1.8 --depth 1 \
+git clone --branch dsh-coremate-mobile-v0.1.9 --depth 1 \
   https://github.com/Core-Mate/OpenGUI.git
 cd OpenGUI/deepseek-harness-plugin
 pnpm build

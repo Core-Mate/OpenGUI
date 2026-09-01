@@ -58,10 +58,10 @@ The verified DSH baseline is `0.1.0-rc.7`. When another DSH version is already o
 
 ### 1. Download the release package
 
-Download these files from the [public OpenGUI Release](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.8):
+Download these files from the [public OpenGUI Release](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.9):
 
-- `dsh-coremate-mobile-0.1.8.tgz`
-- `dsh-coremate-mobile-0.1.8.tgz.sha256`
+- `dsh-coremate-mobile-0.1.9.tgz`
+- `dsh-coremate-mobile-0.1.9.tgz.sha256`
 
 Do not extract the `.tgz`, and do not use GitHub's automatically generated source archives.
 
@@ -69,18 +69,18 @@ From the directory containing both files, verify the package:
 
 ```sh
 # Linux
-sha256sum -c dsh-coremate-mobile-0.1.8.tgz.sha256
+sha256sum -c dsh-coremate-mobile-0.1.9.tgz.sha256
 
 # macOS
-shasum -a 256 -c dsh-coremate-mobile-0.1.8.tgz.sha256
+shasum -a 256 -c dsh-coremate-mobile-0.1.9.tgz.sha256
 ```
 
-On Windows PowerShell, run `Get-FileHash .\dsh-coremate-mobile-0.1.8.tgz -Algorithm SHA256` and `Get-Content .\dsh-coremate-mobile-0.1.8.tgz.sha256`, then confirm that the displayed hashes match.
+On Windows PowerShell, run `Get-FileHash .\dsh-coremate-mobile-0.1.9.tgz -Algorithm SHA256` and `Get-Content .\dsh-coremate-mobile-0.1.9.tgz.sha256`, then confirm that the displayed hashes match.
 
 ### 2. Install into a Harness profile
 
 ```sh
-dsh plugin --profile web add /absolute/path/dsh-coremate-mobile-0.1.8.tgz
+dsh plugin --profile web add /absolute/path/dsh-coremate-mobile-0.1.9.tgz
 ```
 
 If you run the official CLI through `npx`, replace `dsh` in the commands with:
@@ -263,7 +263,7 @@ This is an advanced option: a profile patch replaces the target row's entire `co
 Production installations should use the prebuilt release package above. For development, clone the public OpenGUI release tag and install the plugin directory:
 
 ```sh
-git clone --branch dsh-coremate-mobile-v0.1.8 --depth 1 https://github.com/Core-Mate/OpenGUI.git
+git clone --branch dsh-coremate-mobile-v0.1.9 --depth 1 https://github.com/Core-Mate/OpenGUI.git
 cd OpenGUI/deepseek-harness-plugin
 dsh plugin --profile web add "$(pwd)"
 ```

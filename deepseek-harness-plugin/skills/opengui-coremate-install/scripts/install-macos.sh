@@ -194,7 +194,7 @@ if [[ -z "$release_version" ]]; then
 fi
 
 if [[ ! "$release_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  printf 'Invalid OpenGUI plugin version: %s. Expected a stable version such as 0.1.8.\n' "$release_version" >&2
+  printf 'Invalid OpenGUI plugin version: %s. Expected a stable version such as 0.1.9.\n' "$release_version" >&2
   exit 1
 fi
 printf 'Using OpenGUI plugin v%s.\n' "$release_version"
