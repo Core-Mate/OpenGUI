@@ -1,8 +1,28 @@
-import type { ClientContext, ISessions, IWorkspaces, SessionId, WorkspaceId } from '@deepseek-ai/dsh-client-runtime/client'
+import type { ClientContext, ISessions, IWorkspaces, SessionId, SessionListState, WorkspaceId } from '@deepseek-ai/dsh-client-runtime/client'
 import type { CoremateTaskStatusStore } from './task-status-store.ts'
 
 type SessionCreator = ISessions & {
   create(options: { workspaceId: WorkspaceId }): Promise<SessionId>
+}
+
+type WritableSessionList = ISessions['list'] & {
+  set?(next: SessionListState): void
+}
+
+/** Keep a command-only task owner in DSH's sidebar, which filters blank rows. */
+export function surfaceSessionInList(sessions: ISessions, sessionId: SessionId): boolean {
+  const list = sessions.list as WritableSessionList
+  const snapshot = list.getSnapshot()
+  const row = snapshot.byId[sessionId]
+  if (row === undefined || !row.blank || typeof list.set !== 'function') return false
+  list.set({
+    ...snapshot,
+    byId: {
+      ...snapshot.byId,
+      [sessionId]: { ...row, blank: false },
+    },
+  })
+  return true
 }
 
 export function shouldForceNewSession(
@@ -29,6 +49,23 @@ export function installActiveTaskSessionBridge(ctx: ClientContext, store: Corema
   let queued: { target: WorkspaceId, origin: SessionId, generation: number } | undefined
   let generation = 0
   let disposed = false
+
+  const syncOwnerVisibility = (): void => {
+    if (disposed) return
+    const task = store.getSnapshot().task
+    if (task.active && task.ownerSessionId !== undefined) {
+      surfaceSessionInList(sessions, task.ownerSessionId as SessionId)
+    }
+  }
+  const subscribeStore = (store as CoremateTaskStatusStore & { subscribe?: CoremateTaskStatusStore['subscribe'] }).subscribe
+  const unsubscribeStore = typeof subscribeStore === 'function'
+    ? subscribeStore.call(store, syncOwnerVisibility)
+    : () => {}
+  const subscribeList = sessions.list.subscribe
+  const unsubscribeList = typeof subscribeList === 'function'
+    ? subscribeList.call(sessions.list, syncOwnerVisibility)
+    : () => {}
+  syncOwnerVisibility()
 
   const createAndMaybeOpen = (target: WorkspaceId, origin: SessionId, requestGeneration: number): void => {
     store.setBridgeError(undefined)
@@ -72,6 +109,8 @@ export function installActiveTaskSessionBridge(ctx: ClientContext, store: Corema
 
   return () => {
     disposed = true
+    unsubscribeStore()
+    unsubscribeList()
     workspaces.startSession = original
   }
 }

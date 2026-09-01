@@ -56,6 +56,45 @@ describe('OpenGUI active-task new-session bridge', () => {
     expect(workspace.startSession).toBe(original)
   })
 
+  it('restores a running owner to the visible list after a client refresh', () => {
+    const listListeners = new Set<() => void>()
+    const storeListeners = new Set<() => void>()
+    const listState = {
+      ids: ['session-owner'],
+      current: 'session-owner',
+      byId: {
+        'session-owner': { id: 'session-owner', blank: true, displayTitle: 'OpenGUI task', running: false, updatedAt: 0 },
+      },
+    }
+    const list = {
+      getSnapshot: () => listState,
+      subscribe: (listener: () => void) => { listListeners.add(listener); return () => listListeners.delete(listener) },
+      set: (next: typeof listState) => {
+        Object.assign(listState, next)
+        for (const listener of listListeners) listener()
+      },
+    }
+    const workspace = {
+      list: { getSnapshot: () => ({ items: [{ workspaceId: 'workspace-1', sessionIds: ['session-owner'] }] }) },
+      startSession: vi.fn(),
+    }
+    const store = {
+      getSnapshot: () => ({ task: { active: true, ownerSessionId: 'session-owner' } }),
+      subscribe: (listener: () => void) => { storeListeners.add(listener); return () => storeListeners.delete(listener) },
+      isConsumedSession: () => true,
+      setBridgeError: vi.fn(),
+    }
+
+    const dispose = installActiveTaskSessionBridge({ sessions: { list, create: vi.fn(), open: vi.fn() }, workspaces: workspace } as never, store as never)
+    expect(listState.byId['session-owner'].blank).toBe(false)
+
+    listState.byId['session-owner'].blank = true
+    for (const listener of listListeners) listener()
+    expect(listState.byId['session-owner'].blank).toBe(false)
+
+    dispose()
+  })
+
   it('keeps the owner open and surfaces a visible bridge error when creation fails', async () => {
     const original = vi.fn()
     const errors: Array<string | undefined> = []

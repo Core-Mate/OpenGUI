@@ -5,6 +5,7 @@ import type {
   InputTriggerSource,
   SubmitOutcome,
 } from '@deepseek-ai/dsh-client-ui-input-trigger/client'
+import { surfaceSessionInList } from './session-bridge.ts'
 import { coremateTaskStatusStore } from './task-status-store.ts'
 
 const NAME = 'OpenGUI'
@@ -82,6 +83,7 @@ export function coremateCommandClaim(
       }
       try {
         const pending = binding.session.command(line)
+        surfaceSessionInList(sessions, session.sessionId)
         void pending.then(result => {
           if (!result.ok) launch.finishLaunch(result.error.message)
           else if (!result.value.matched) launch.finishLaunch('OpenGUI 命令尚未加载，请重启 DSH 后重试。')

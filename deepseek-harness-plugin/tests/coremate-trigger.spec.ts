@@ -119,6 +119,34 @@ describe('native @OpenGUI trigger', () => {
     await vi.waitFor(() => expect(launch.finishLaunch).toHaveBeenCalledWith())
   })
 
+  it('surfaces a command-only owner before a long OpenGUI command settles', async () => {
+    let finish!: (value: { ok: true; value: { matched: boolean } }) => void
+    const commandResult = new Promise<{ ok: true; value: { matched: boolean } }>(resolve => { finish = resolve })
+    const command = vi.fn(() => commandResult)
+    const rename = vi.fn(async () => ({ ok: true as const, value: { title: 'OpenGUI', seq: 1 } }))
+    const listState = {
+      ids: ['session-1'],
+      current: 'session-1',
+      byId: { 'session-1': { id: 'session-1', blank: true, displayTitle: '新会话', running: false, updatedAt: 0 } },
+    }
+    const set = vi.fn((next: typeof listState) => Object.assign(listState, next))
+    const sessions = {
+      binding: () => ({ session: { command, rename } }),
+      list: { getSnapshot: () => listState, set },
+    } as unknown as ISessions
+    const launch = { beginLaunch: vi.fn(() => true), finishLaunch: vi.fn() }
+    const source = coremateTriggerSource({ sessions } as unknown as ClientContext, launch)
+    const session = { sessionId: 'session-1' as never }
+    const entered = await source.matchEnter?.(session, '@OpenGUI 长任务', new AbortController().signal)
+    if (typeof entered !== 'object' || entered === null || !('claim' in entered)) throw new Error('expected claim')
+
+    await expect(entered.claim.submit('长任务', {} as ClientContext)).resolves.toEqual({ kind: 'success' })
+    expect(listState.byId['session-1'].blank).toBe(false)
+    expect(set).toHaveBeenCalledTimes(1)
+    finish({ ok: true, value: { matched: true } })
+    await vi.waitFor(() => expect(launch.finishLaunch).toHaveBeenCalledWith())
+  })
+
   it('preserves an existing title when dispatch succeeds', async () => {
     const { session } = setup()
     const command = vi.fn(async () => ({ ok: true as const, value: { matched: true } }))
