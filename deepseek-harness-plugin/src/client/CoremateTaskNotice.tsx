@@ -11,10 +11,15 @@ const noticeStyle: CSSProperties = {
   gap: 12,
   width: '100%',
   maxWidth: 'var(--dsh-chat-content-width)',
-  margin: '0 auto',
-  padding: '7px var(--dsh-composer-side-clearance) 0',
-  color: 'var(--dsw-alias-label-secondary, #52525b)',
+  margin: '8px auto 0',
+  padding: '9px 12px',
+  border: '1px solid color-mix(in srgb, #f1bf1f 34%, var(--dsw-alias-border-l2, #d4d4d8))',
+  borderRadius: 10,
+  color: 'var(--dsw-alias-label-primary, #27272a)',
+  background: 'color-mix(in srgb, #f1bf1f 9%, var(--dsw-alias-bg-layer-1, #fff))',
+  boxShadow: '0 1px 3px rgba(39, 39, 42, 0.08)',
   fontSize: 12,
+  fontWeight: 650,
   boxSizing: 'border-box',
 }
 
@@ -56,7 +61,7 @@ export function CoremateTaskNotice({ coremateSessionId, coremateSessions }: Core
     ? 'OpenGUI 正在另一会话执行'
     : browserApproval
       ? 'OpenGUI 需要确认浏览器安装，请前往 OpenGUI Tab。'
-      : launching ? '正在启动 OpenGUI…' : undefined)
+      : launching ? 'OpenGUI 已接收任务，正在启动…' : undefined)
   if (message === undefined) return null
   return (
     <div role="status" style={noticeStyle} data-coremate-task-notice>

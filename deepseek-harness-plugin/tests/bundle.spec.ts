@@ -42,8 +42,9 @@ describe('standalone DeepSeek Harness bundle', () => {
   })
 
   it('keeps OpenGUI controls in its view while retaining task stop inside the composer', async () => {
-    const [clientSource, viewSource, noticeSource, promotionSource, hostSource] = await Promise.all([
+    const [clientSource, commandCardSource, viewSource, noticeSource, promotionSource, hostSource] = await Promise.all([
       readFile(new URL('src/client/index.tsx', root), 'utf8'),
+      readFile(new URL('src/client/OpenGuiCommandCard.tsx', root), 'utf8'),
       readFile(new URL('src/client/CoremateView.tsx', root), 'utf8'),
       readFile(new URL('src/client/CoremateTaskNotice.tsx', root), 'utf8'),
       readFile(new URL('src/client/CorematePromotionCard.tsx', root), 'utf8'),
@@ -52,6 +53,8 @@ describe('standalone DeepSeek Harness bundle', () => {
 
     expect(clientSource).not.toContain("'conversation.composer.dock'")
     expect(clientSource).toContain("'conversation.input.right'")
+    expect(clientSource).toContain("'conversation.chat.commandview'")
+    expect(clientSource).toContain("['opengui', 'coremate']")
     expect(clientSource).toContain("'conversation.view'")
     expect(clientSource).toContain("label: 'OpenGUI'")
     expect(clientSource).not.toContain("'coremate-mobile-browser-install'")
@@ -62,6 +65,9 @@ describe('standalone DeepSeek Harness bundle', () => {
     expect(viewSource).toContain('data-coremate-connect-more')
     expect(viewSource).toContain('https://opengui.ai/')
     expect(noticeSource).toContain('请前往 OpenGUI Tab')
+    expect(noticeSource).toContain('OpenGUI 已接收任务，正在启动…')
+    expect(commandCardSource).toContain('OpenGUI 已接收任务，正在处理…')
+    expect(commandCardSource).toContain('data-coremate-command-status')
     expect(promotionSource).toContain('https://github.com/Core-Mate/OpenGUI/blob/main/deepseek-harness-plugin/docs/use-cases.zh.md')
     expect(promotionSource).not.toContain('Coremate-Mobile-Plugin')
     expect(viewSource).toContain('设备检测异常')

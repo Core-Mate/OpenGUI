@@ -4,6 +4,7 @@ import { CorematePromotionCard } from './CorematePromotionCard.tsx'
 import { CoremateClaimBridge, type CoremateDraftActions } from './CoremateClaimBridge.tsx'
 import { CoremateView } from './CoremateView.tsx'
 import { CoremateTaskNotice } from './CoremateTaskNotice.tsx'
+import { OpenGuiCommandCard } from './OpenGuiCommandCard.tsx'
 import {
   coremateCommandContextDefinition,
   corematePromotionDefinition,
@@ -50,6 +51,14 @@ interface ConversationTurnTailSlots {
       priority?: number
     },
     component: typeof CorematePromotionCard,
+  ): () => void
+}
+
+interface ConversationCommandViewSlots {
+  inject(name: 'conversation.chat.commandview', effect: () => () => void): void
+  register(
+    options: { name: 'conversation.chat.commandview'; key: 'opengui' | 'coremate' },
+    component: typeof OpenGuiCommandCard,
   ): () => void
 }
 
@@ -108,6 +117,13 @@ export function apply(ctx: ClientContext): void {
     id: 'coremate-mobile-stop',
     order: 100,
   }, TaskStopButton))
+  const commandViewSlots = ctx.slots as unknown as ConversationCommandViewSlots
+  for (const key of ['opengui', 'coremate'] as const) {
+    commandViewSlots.inject('conversation.chat.commandview', () => commandViewSlots.register({
+      name: 'conversation.chat.commandview',
+      key,
+    }, OpenGuiCommandCard))
+  }
   const turnTailSlots = ctx.slots as unknown as ConversationTurnTailSlots
   turnTailSlots.inject('conversation.chat.turnTail', () => turnTailSlots.register({
     name: 'conversation.chat.turnTail',
