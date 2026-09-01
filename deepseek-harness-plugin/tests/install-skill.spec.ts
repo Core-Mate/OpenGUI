@@ -21,13 +21,13 @@ async function fixture() {
   const root = await mkdtemp(join(tmpdir(), 'coremate-install-skill-'))
   roots.push(root)
   const bin = join(root, 'bin')
-  const release = join(root, 'release', 'dsh-coremate-mobile-v0.1.9')
+  const release = join(root, 'release', 'dsh-coremate-mobile-v0.1.10')
   const home = join(root, 'dsh-home')
   await Promise.all([mkdir(bin, { recursive: true }), mkdir(release, { recursive: true })])
-  const archive = join(release, 'dsh-coremate-mobile-0.1.9.tgz')
+  const archive = join(release, 'dsh-coremate-mobile-0.1.10.tgz')
   await writeFile(archive, 'verified release fixture')
   const { stdout: checksum } = await exec('shasum', ['-a', '256', archive])
-  await writeFile(`${archive}.sha256`, `${checksum.trim().split(/\s+/u)[0]}  dsh-coremate-mobile-0.1.9.tgz\n`)
+  await writeFile(`${archive}.sha256`, `${checksum.trim().split(/\s+/u)[0]}  dsh-coremate-mobile-0.1.10.tgz\n`)
   await writeFile(join(bin, 'lsof'), `#!/usr/bin/env bash
 if [[ "\${FAKE_DSH_RUNNING:-0}" == "1" ]]; then
   [[ " $* " == *" -t "* ]] && printf '%s\\n' 4242
@@ -66,7 +66,7 @@ fi
 profile_dir="\${DSH_HOME}/profiles/web"
 mkdir -p "\${profile_dir}/node_modules/dsh-coremate-mobile/lib/types/client"
 printf '%s\\n' '{"dependencies":{"dsh-coremate-mobile":"file:fixture"},"dsh":{"profile":{"bundles":["dsh-coremate-mobile"]}}}' > "\${profile_dir}/package.json"
-printf '%s\\n' '{"name":"dsh-coremate-mobile","version":"0.1.9"}' > "\${profile_dir}/node_modules/dsh-coremate-mobile/package.json"
+printf '%s\\n' '{"name":"dsh-coremate-mobile","version":"0.1.10"}' > "\${profile_dir}/node_modules/dsh-coremate-mobile/package.json"
 printf '%s\\n' 'opengui command host with legacy coremate alias' > "\${profile_dir}/node_modules/dsh-coremate-mobile/lib/index.js"
 printf '%s\\n' 'client bundle' > "\${profile_dir}/node_modules/dsh-coremate-mobile/lib/client.js"
 printf '%s\\n' 'export {}' > "\${profile_dir}/node_modules/dsh-coremate-mobile/lib/types/client/index.d.ts"
@@ -99,7 +99,7 @@ async function run(
   value: Awaited<ReturnType<typeof fixture>>,
   extraEnv: Record<string, string> = {},
   start = false,
-  version: string | null = '0.1.9',
+  version: string | null = '0.1.10',
 ) {
   return await exec('bash', [
     installer.pathname,
@@ -141,8 +141,8 @@ describe('macOS installation Skill', () => {
       const url = new URL(request.url ?? '/', `http://${request.headers.host}`)
       if (url.searchParams.get('page') === '2') {
         response.end(JSON.stringify([
-          { tag_name: 'dsh-coremate-mobile-v0.1.9', draft: false, prerelease: false },
-          { tag_name: 'dsh-coremate-mobile-v0.1.9', draft: true, prerelease: false },
+          { tag_name: 'dsh-coremate-mobile-v0.1.10', draft: false, prerelease: false },
+          { tag_name: 'dsh-coremate-mobile-v0.1.10', draft: true, prerelease: false },
         ]))
         return
       }
@@ -162,14 +162,14 @@ describe('macOS installation Skill', () => {
       COREMATE_INSTALL_RELEASES_API_OVERRIDE: `http://127.0.0.1:${address.port}/releases`,
     }, false, null)
     expect(result.stdout).toContain('Resolving the latest stable OpenGUI plugin release')
-    expect(result.stdout).toContain('Using OpenGUI plugin v0.1.9')
-    expect(result.stdout).toContain('Installed and verified dsh-coremate-mobile v0.1.9')
+    expect(result.stdout).toContain('Using OpenGUI plugin v0.1.10')
+    expect(result.stdout).toContain('Installed and verified dsh-coremate-mobile v0.1.10')
   })
 
   it('installs and verifies a first release, then repeats without replacing profile files', async () => {
     const value = await fixture()
     const first = await run(value)
-    expect(first.stdout).toContain('Installed and verified dsh-coremate-mobile v0.1.9')
+    expect(first.stdout).toContain('Installed and verified dsh-coremate-mobile v0.1.10')
     const marker = join(value.home, 'profiles', 'web', 'user-setting.txt')
     await writeFile(marker, 'keep me')
     const repeated = await run(value)
@@ -180,7 +180,7 @@ describe('macOS installation Skill', () => {
   it('uses an already compatible DSH without depending on a package-manager launcher', async () => {
     const value = await fixture()
     const result = await run(value, { FAKE_PNPM_FAIL: '1' })
-    expect(result.stdout).toContain('Installed and verified dsh-coremate-mobile v0.1.9')
+    expect(result.stdout).toContain('Installed and verified dsh-coremate-mobile v0.1.10')
   })
 
   it('rejects a checksum mismatch and uses the pinned CLI when PATH has an incompatible DSH', async () => {
@@ -193,7 +193,7 @@ describe('macOS installation Skill', () => {
     expect(result.stdout).toContain('Detected DSH 0.1.2-alpha.3 on PATH')
     expect(result.stdout).toContain('will use the compatible version for the web profile')
     expect(result.stdout).toContain('Installing managed DSH 0.1.0-rc.7')
-    expect(result.stdout).toContain('Installed and verified dsh-coremate-mobile v0.1.9')
+    expect(result.stdout).toContain('Installed and verified dsh-coremate-mobile v0.1.10')
     await expect(access(join(version.home, 'runtime/dsh-0.1.0-rc.7/node_modules/.bin/dsh'))).resolves.toBeUndefined()
   })
 
@@ -245,7 +245,7 @@ describe('macOS installation Skill', () => {
     })).rejects.toMatchObject({ stderr: expect.stringContaining('OpenGUI remains installed') })
     await expect(readFile(plist, 'utf8')).resolves.toContain('<key>KeepAlive</key>')
     await expect(readFile(join(value.home, 'profiles/web/node_modules/dsh-coremate-mobile/package.json'), 'utf8'))
-      .resolves.toContain('0.1.9')
+      .resolves.toContain('0.1.10')
     await expect(readFile(value.launchctlState, 'utf8')).resolves.toBe('loaded')
 
     await expect(exec('bash', [uninstaller.pathname, '--dsh-home', value.home, '--port', String(address.port)], {
@@ -330,7 +330,7 @@ describe('macOS installation Skill', () => {
       await expect(readFile(plist, 'utf8')).resolves.toContain('<key>KeepAlive</key>')
       await expect(readFile(value.launchctlState, 'utf8')).resolves.toBe('loaded')
       await expect(readFile(join(value.home, 'profiles/web/node_modules/dsh-coremate-mobile/package.json'), 'utf8'))
-        .resolves.toContain('0.1.9')
+        .resolves.toContain('0.1.10')
       await expect(readFile(value.launchctlLog, 'utf8')).resolves.not.toContain('bootout')
     }
   }, 20_000)

@@ -1,4 +1,4 @@
-# OpenGUI 0.1.9 Plugin Release Notes
+# OpenGUI 0.1.10 Plugin Release Notes
 
-- OpenGUI submissions now show immediate launch feedback after leaving the new-session composer, so the new conversation no longer appears stuck while the model starts.
-- A dedicated command card keeps the submitted task and its running, completed, failed, or stopped status visible without repeating the final assistant result.
+- Active OpenGUI command sessions now remain visible in the DSH sidebar after starting a new conversation or rebuilding the session list.
+- The OpenGUI workbench header now shows the DSH Host and OpenGUI plugin versions actually loaded by the running process.

@@ -21,7 +21,7 @@ describe('Codex plugin package', () => {
     const [pkg, plugin, publicPlugin] = await Promise.all([
       json('package.json'), json('.codex-plugin/plugin.json'), json('codex-public/.codex-plugin/plugin.json'),
     ])
-    expect([pkg.version, plugin.version, publicPlugin.version]).toEqual(['0.1.9', '0.1.9', '0.1.9'])
+    expect([pkg.version, plugin.version, publicPlugin.version]).toEqual(['0.1.10', '0.1.10', '0.1.10'])
     expect(pkg.name).toBe('dsh-coremate-mobile')
     expect(Object.entries(pkg.peerDependencies)
       .filter(([name]) => name.startsWith('@deepseek-ai/dsh-'))

@@ -55,7 +55,7 @@ After installation, add or select a DSH workspace, connect and select an authori
 @OpenGUI Open Settings and report the Android version
 ```
 
-The plugin adds phone and browser operation to DSH without requiring the full OpenGUI backend stack. See more [use cases](./deepseek-harness-plugin/docs/use-cases.md) or download the [v0.1.9 release package](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.9).
+The plugin adds phone and browser operation to DSH without requiring the full OpenGUI backend stack. See more [use cases](./deepseek-harness-plugin/docs/use-cases.md) or download the [v0.1.10 release package](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.10).
 
 Good fits include:
 
