@@ -83,7 +83,11 @@ describe('standalone DeepSeek Harness bundle', () => {
     expect(deviceIndex).toBeGreaterThan(-1)
     expect(prepareIndex).toBeLessThan(deviceIndex)
     expect(taskSource).toContain('const scopedInteraction = { ...interaction, signal: lease.signal }')
+    expect(taskSource.match(/lease\.signal\.throwIfAborted\(\)/g)).toHaveLength(10)
     expect(hostSource).toContain('lease => runPreparedOpenGuiTask(')
+    expect(hostSource).toContain("const currentCapability = async (options: AgentOptions, signal: AbortSignal): Promise<ModelCapability>")
+    expect(hostSource).toContain("const waitForVisionDeclaration = async (route: ModelRoute, signal: AbortSignal): Promise<void>")
+    expect(hostSource.match(/if \(signal\.aborted\) throw signal\.reason/g)?.length).toBeGreaterThanOrEqual(4)
     expect(hostSource).toContain('当前模型没有注明是否支持图片输入和工具调用。它是否具备这些能力？')
     expect(hostSource).toContain("status: 'cancelled' as const")
     expect(hostSource).toContain("status: 'completed' as const")
@@ -98,6 +102,7 @@ describe('standalone DeepSeek Harness bundle', () => {
 
     expect(stopButtonSource).toContain("background: '#dc2626'")
     expect(stopButtonSource).not.toContain("background: 'currentColor'")
+    expect(stopButtonSource).toContain('role="alert"')
   })
 
   it('renders a full embedded canvas, moves scenarios into @, and names the optional mirror an independent window', async () => {

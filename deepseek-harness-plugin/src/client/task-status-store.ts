@@ -10,6 +10,7 @@ export interface CoremateTaskSnapshot {
 }
 
 const IDLE: CoremateTaskStatus = { active: false, phase: 'idle', selectionLocked: false }
+const STOP_TIMEOUT_MS = 5_000
 
 export class CoremateTaskStatusStore {
   private snapshot: CoremateTaskSnapshot = { task: IDLE, launching: false }
@@ -61,9 +62,27 @@ export class CoremateTaskStatusStore {
   }
 
   async stop(): Promise<void> {
-    const response = await fetch(PHONE_TASK_STOP_PATH, { method: 'POST', headers: { Accept: 'application/json' } })
-    if (!response.ok && response.status !== 409) throw new Error(`停止 OpenGUI 操作失败 (${response.status})`)
-    try { await this.refresh() } catch { /* polling retains the last truthful Host state */ }
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(new Error('停止 OpenGUI 操作超时，请检查 Host 后重试。')), STOP_TIMEOUT_MS)
+    try {
+      const response = await fetch(PHONE_TASK_STOP_PATH, {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        signal: controller.signal,
+      })
+      if (!response.ok && response.status !== 409) throw new Error(`停止 OpenGUI 操作失败 (${response.status})`)
+      try {
+        await this.refresh(controller.signal)
+      } catch {
+        if (controller.signal.aborted) throw controller.signal.reason
+        /* polling retains the last truthful Host state */
+      }
+    } catch (error) {
+      if (controller.signal.aborted) throw controller.signal.reason
+      throw error
+    } finally {
+      clearTimeout(timer)
+    }
   }
 
   /** Reserve the short gap before the Host publishes the admitted task. */

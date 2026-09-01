@@ -674,6 +674,7 @@ export function apply(ctx: Context, baseConfig: Config): void {
       const info = await ctx.llm.resolveModelInfo(route.provider, route.model, signal)
       modalities = info.inputModalities
     } catch (error) {
+      if (signal.aborted) throw signal.reason
       ctx.logger.debug(error instanceof Error ? error : new Error(String(error)))
     }
     const piAiDescriptor = ctx.settings.describe().find(item => item.ns === LLM_PI_AI_NS)
@@ -715,6 +716,7 @@ export function apply(ctx: Context, baseConfig: Config): void {
         const info = await ctx.llm.resolveModelInfo(route.provider, route.model, signal)
         if (info.inputModalities?.includes('image')) return
       } catch (error) {
+        if (signal.aborted) throw signal.reason
         ctx.logger.debug(error instanceof Error ? error : new Error(String(error)))
       }
       if (Date.now() >= deadline) throw new Error('coremate-mobile: DSH 模型配置已保存，但热更新未及时生效；请重新提交任务')

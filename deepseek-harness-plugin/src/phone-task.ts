@@ -146,14 +146,19 @@ export class CoremateTaskCoordinator {
         try {
           const result = await this.tasks.runRoot(invocation.agent, invocation.signal, 'waiting-for-device', async lease => {
             const agentOptions = await prepare?.({ ...invocation, signal: lease.signal })
+            lease.signal.throwIfAborted()
             await preflight?.(invocation, lease.signal)
+            lease.signal.throwIfAborted()
             lease.setPhase('routing')
             lease.setPhase('running')
+            lease.signal.throwIfAborted()
             try {
               return await this.start(task, invocation.agent, lease.signal, 'parent-chat', agentOptions)
             } catch (error) {
               if (error instanceof Error && agentOptions !== undefined && recover !== undefined) {
+                lease.signal.throwIfAborted()
                 const recovered = await recover(error, { ...invocation, signal: lease.signal }, agentOptions)
+                lease.signal.throwIfAborted()
                 if (recovered !== undefined) throw new CoremateRecoveredError(recovered)
               }
               throw error
@@ -220,15 +225,20 @@ export async function runPreparedOpenGuiTask<
 ): Promise<Result> {
   const scopedInteraction = { ...interaction, signal: lease.signal }
   const route = await hooks.prepare(scopedInteraction)
+  lease.signal.throwIfAborted()
   const targets = await hooks.waitForTargets(scopedInteraction)
+  lease.signal.throwIfAborted()
   lease.setPhase('routing')
   lease.context = hooks.context(route, targets)
   lease.setPhase('running')
+  lease.signal.throwIfAborted()
   try {
     return await hooks.execute(lease)
   } catch (error) {
     if (error instanceof Error) {
+      lease.signal.throwIfAborted()
       const recovered = await hooks.recover(error, scopedInteraction, route)
+      lease.signal.throwIfAborted()
       if (recovered !== undefined) throw new Error(recovered)
     }
     throw error
