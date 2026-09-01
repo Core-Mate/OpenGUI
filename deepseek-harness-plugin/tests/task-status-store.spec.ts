@@ -25,10 +25,24 @@ describe('OpenGUI client task status store', () => {
     })
   })
 
-  it.each(['stop', 'refresh'] as const)('bounds an unresponsive Host %s request', async (stage) => {
+  it('rejects an unresponsive Host stop request', async () => {
+    vi.useFakeTimers()
+    vi.stubGlobal('fetch', vi.fn((_input: RequestInfo | URL, init?: RequestInit) => new Promise<Response>((_resolve, reject) => {
+      init?.signal?.addEventListener('abort', () => reject(init.signal?.reason), { once: true })
+    })))
+    const store = new CoremateTaskStatusStore()
+
+    const stopping = store.stop()
+    const result = expect(stopping).rejects.toThrow('停止 OpenGUI 操作超时，请检查 Host 后重试。')
+    await vi.advanceTimersByTimeAsync(5_000)
+
+    await result
+  })
+
+  it('keeps an accepted stop successful when its best-effort refresh hangs', async () => {
     vi.useFakeTimers()
     vi.stubGlobal('fetch', vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
-      if (stage === 'refresh' && input === '/coremate-mobile/task/stop') return Promise.resolve(Response.json({ stopped: true }))
+      if (input === '/coremate-mobile/task/stop') return Promise.resolve(Response.json({ accepted: true }, { status: 202 }))
       return new Promise<Response>((_resolve, reject) => {
         init?.signal?.addEventListener('abort', () => reject(init.signal?.reason), { once: true })
       })
@@ -36,8 +50,8 @@ describe('OpenGUI client task status store', () => {
     const store = new CoremateTaskStatusStore()
 
     const stopping = store.stop()
-    const result = expect(stopping).rejects.toThrow('停止 OpenGUI 操作超时，请检查 Host 后重试。')
-    await vi.advanceTimersByTimeAsync(5_000)
+    const result = expect(stopping).resolves.toBeUndefined()
+    await vi.advanceTimersByTimeAsync(1_000)
 
     await result
   })
