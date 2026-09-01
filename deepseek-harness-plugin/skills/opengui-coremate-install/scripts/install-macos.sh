@@ -66,17 +66,39 @@ for command in node curl shasum lsof; do
   command -v "$command" >/dev/null 2>&1 || { printf 'Required command not found: %s\n' "$command" >&2; exit 1; }
 done
 
+detected_dsh_version=""
 if command -v dsh >/dev/null 2>&1; then
+  detected_dsh_version="$(dsh -V 2>/dev/null || true)"
+fi
+managed_dsh_dir="${dsh_home}/runtime/dsh-${dsh_version}"
+managed_dsh="${managed_dsh_dir}/node_modules/.bin/dsh"
+managed_dsh_version=""
+if [[ -x "$managed_dsh" ]]; then
+  managed_dsh_version="$("$managed_dsh" -V 2>/dev/null || true)"
+fi
+dsh_command=()
+dsh_installer=()
+
+if [[ "$detected_dsh_version" == "$dsh_version" ]]; then
   dsh_command=(dsh)
+elif [[ "$managed_dsh_version" == "$dsh_version" ]]; then
+  dsh_command=("$managed_dsh")
 elif command -v pnpm >/dev/null 2>&1; then
-  dsh_command=(pnpm dlx "@deepseek-ai/dsh@${dsh_version}")
+  dsh_installer=(pnpm --dir "$managed_dsh_dir" add --save-exact "@deepseek-ai/dsh@${dsh_version}")
 elif command -v corepack >/dev/null 2>&1; then
-  dsh_command=(corepack pnpm dlx "@deepseek-ai/dsh@${dsh_version}")
-elif command -v npx >/dev/null 2>&1; then
-  dsh_command=(npx -y "@deepseek-ai/dsh@${dsh_version}")
-else
-  printf 'No DSH launcher found. Install dsh, pnpm, corepack, or npx first.\n' >&2
+  dsh_installer=(corepack pnpm --dir "$managed_dsh_dir" add --save-exact "@deepseek-ai/dsh@${dsh_version}")
+elif command -v npm >/dev/null 2>&1; then
+  dsh_installer=(npm install --prefix "$managed_dsh_dir" --no-audit --no-fund --save-exact "@deepseek-ai/dsh@${dsh_version}")
+elif [[ -n "$detected_dsh_version" ]]; then
+  printf 'The DSH on PATH is %s, but OpenGUI is verified with DSH %s. Install pnpm, corepack, or npm so the installer can install a compatible managed runtime without replacing your existing DSH.\n' "$detected_dsh_version" "$dsh_version" >&2
   exit 1
+else
+  printf 'No DSH launcher found. Install dsh, pnpm, corepack, or npm first.\n' >&2
+  exit 1
+fi
+
+if [[ -n "$detected_dsh_version" && "$detected_dsh_version" != "$dsh_version" ]]; then
+  printf 'Detected DSH %s on PATH. OpenGUI is verified with DSH %s, so this installer will use the compatible version for the web profile. Existing workspaces, settings, credentials, and phone authorizations are preserved.\n' "$detected_dsh_version" "$dsh_version"
 fi
 
 node_version="${COREMATE_INSTALL_NODE_VERSION_OVERRIDE:-$(node -p 'process.versions.node')}"
@@ -88,6 +110,14 @@ fi
 if ((node_major < 22 || node_major == 22 && node_minor < 19 || node_major == 23)); then
   printf 'OpenGUI requires Node.js 22.19+ or 24+; detected %s.\n' "$node_version" >&2
   exit 1
+fi
+
+if ((${#dsh_command[@]} == 0)); then
+  printf 'Installing managed DSH %s in %s.\n' "$dsh_version" "$managed_dsh_dir"
+  mkdir -p "$managed_dsh_dir"
+  "${dsh_installer[@]}"
+  [[ -x "$managed_dsh" ]] || { printf 'Managed DSH executable was not installed at %s.\n' "$managed_dsh" >&2; exit 1; }
+  dsh_command=("$managed_dsh")
 fi
 
 installed_dsh="$("${dsh_command[@]}" -V)"
@@ -164,7 +194,7 @@ if [[ -z "$release_version" ]]; then
 fi
 
 if [[ ! "$release_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  printf 'Invalid OpenGUI plugin version: %s. Expected a stable version such as 0.1.7.\n' "$release_version" >&2
+  printf 'Invalid OpenGUI plugin version: %s. Expected a stable version such as 0.1.8.\n' "$release_version" >&2
   exit 1
 fi
 printf 'Using OpenGUI plugin v%s.\n' "$release_version"
@@ -250,8 +280,12 @@ if [[ "$start_runtime" == true ]]; then
   mkdir -p "${dsh_home}/logs"
   mkdir -p "$launch_agents_dir"
   log_path="${dsh_home}/logs/opengui-coremate-web.log"
-  dsh_command[0]="$(command -v "${dsh_command[0]}")"
   canonical_dsh_home="$(cd "$dsh_home" && pwd -P)"
+  if [[ "${dsh_command[0]}" == "$managed_dsh" ]]; then
+    dsh_command[0]="${canonical_dsh_home}/runtime/dsh-${dsh_version}/node_modules/.bin/dsh"
+  else
+    dsh_command[0]="$(command -v "${dsh_command[0]}")"
+  fi
   default_dsh_home="$(cd "$HOME" && pwd -P)/.dsh"
   job_label="com.coremate.opengui.web"
   if [[ "$canonical_dsh_home" != "$default_dsh_home" || "$port" != "3080" ]]; then
@@ -317,7 +351,7 @@ NODE
   printf '%s\n' "$job_label" > "${dsh_home}/logs/opengui-coremate-web.job"
 
   if [[ "$runtime_running" == true ]]; then
-    printf 'DSH is already running at http://127.0.0.1:%s and is not managed by OpenGUI; leaving it untouched. The LaunchAgent will take over after the next login.\n' "$port"
+    printf 'DSH is already running at http://127.0.0.1:%s and is not managed by OpenGUI; leaving it untouched. Quit that DSH process and rerun this installer to activate the compatible version now. The LaunchAgent can also take over after the next login.\n' "$port"
   else
     launchctl bootstrap "gui/${UID}" "$plist_path"
     launchctl kickstart -k "$service_target"
@@ -345,7 +379,7 @@ NODE
   fi
 else
   if [[ "$runtime_running" == true ]]; then
-    printf 'DSH is already running at http://127.0.0.1:%s. It was not restarted; restart it manually to load v%s.\n' "$port" "$release_version"
+    printf 'DSH is already running at http://127.0.0.1:%s. It was not restarted. Quit that DSH process, then rerun this installer without --no-start to load OpenGUI v%s with the compatible DSH version.\n' "$port" "$release_version"
   else
     printf 'DSH was not running and --no-start was selected.\n'
   fi

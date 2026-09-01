@@ -56,12 +56,14 @@ codex plugin add opengui@opengui-local
 
 如果 3080 端口属于 OpenGUI 管理的 DSH，安装器会安全更新并重启对应 LaunchAgent；如果属于其他 DSH 进程，安装器绝不会强制终止它，新 LaunchAgent 会在下次登录后接管。下面的手动安装方式仍适用于所有受支持的系统。
 
+当前验证的 DSH 基线是 `0.1.0-rc.7`。如果系统 `PATH` 中已有其他 DSH 版本，安装器会说明版本不兼容，并在 OpenGUI 的 DSH home 下为 `web` profile 安装已验证的 runtime。现有 DSH、工作区、设置、凭据和手机授权不会被替换。如果 3080 端口已有非 OpenGUI 管理的 DSH 进程，请退出该进程并重新运行安装器，以启用 OpenGUI。重复安装插件或再次执行 `pnpm install` 不能解决 DSH 版本不兼容。
+
 ### 1. 下载发布包
 
-从 [OpenGUI 公开 Release](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.7) 下载：
+从 [OpenGUI 公开 Release](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.8) 下载：
 
-- `dsh-coremate-mobile-0.1.7.tgz`
-- `dsh-coremate-mobile-0.1.7.tgz.sha256`
+- `dsh-coremate-mobile-0.1.8.tgz`
+- `dsh-coremate-mobile-0.1.8.tgz.sha256`
 
 不要解压 `.tgz`，也不要下载 GitHub 自动生成的 Source code 压缩包。
 
@@ -69,18 +71,18 @@ codex plugin add opengui@opengui-local
 
 ```sh
 # Linux
-sha256sum -c dsh-coremate-mobile-0.1.7.tgz.sha256
+sha256sum -c dsh-coremate-mobile-0.1.8.tgz.sha256
 
 # macOS
-shasum -a 256 -c dsh-coremate-mobile-0.1.7.tgz.sha256
+shasum -a 256 -c dsh-coremate-mobile-0.1.8.tgz.sha256
 ```
 
-Windows PowerShell 可分别执行 `Get-FileHash .\dsh-coremate-mobile-0.1.7.tgz -Algorithm SHA256` 和 `Get-Content .\dsh-coremate-mobile-0.1.7.tgz.sha256`，确认两者显示的哈希一致。
+Windows PowerShell 可分别执行 `Get-FileHash .\dsh-coremate-mobile-0.1.8.tgz -Algorithm SHA256` 和 `Get-Content .\dsh-coremate-mobile-0.1.8.tgz.sha256`，确认两者显示的哈希一致。
 
 ### 2. 安装到 Harness profile
 
 ```sh
-dsh plugin --profile web add /绝对路径/dsh-coremate-mobile-0.1.7.tgz
+dsh plugin --profile web add /绝对路径/dsh-coremate-mobile-0.1.8.tgz
 ```
 
 如果使用 `npx` 启动官方 CLI，可将命令中的 `dsh` 替换为：
@@ -263,7 +265,7 @@ OpenGUI 任务运行时，输入框右侧会出现方形“停止 OpenGUI 操作
 生产环境应使用上面的预构建 Release 包。开发时可以 checkout OpenGUI 的公开 Release tag，再安装插件目录：
 
 ```sh
-git clone --branch dsh-coremate-mobile-v0.1.7 --depth 1 https://github.com/Core-Mate/OpenGUI.git
+git clone --branch dsh-coremate-mobile-v0.1.8 --depth 1 https://github.com/Core-Mate/OpenGUI.git
 cd OpenGUI/deepseek-harness-plugin
 dsh plugin --profile web add "$(pwd)"
 ```

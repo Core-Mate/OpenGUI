@@ -1,7 +1,7 @@
-# OpenGUI 0.1.7 Plugin Release Notes
+# OpenGUI 0.1.8 Plugin Release Notes
 
-- Adds a Codex plugin manifest, repo marketplace entry, and `opengui:control` Skill beside the existing DeepSeek Harness plugin.
-- Adds seven local stdio MCP interfaces and the equivalent persistent local CLI transport.
-- Shares one phone execution controller across DSH, MCP, and CLI for observation freshness, action allowlisting, screenshot bounds, per-device serialization, repeated-no-progress detection, and 100-operation limits.
-- Adds a loopback-only read-only device wall and explicit confirmation for send, publish, purchase, and delete actions.
-- Keeps the public directory package Skills-only; no hosted device gateway, account, relay, or extra model credential is introduced.
+- Stops now cancel OpenGUI while it prepares a model, waits for a phone, runs an action, or recovers from an error, including work that settles after cancellation.
+- The workbench reports stop-request failures, while an accepted stop stays successful even if the follow-up status refresh is slow or unavailable.
+- Detects a different DSH version on `PATH`, explains the compatibility boundary, and installs a stable `0.1.0-rc.7` runtime under the OpenGUI DSH home for the `web` profile.
+- Preserves the existing DSH installation, workspaces, settings, credentials, phone authorizations, and unowned running processes.
+- Tells users to quit an unowned DSH process and rerun the installer when that process prevents the compatible runtime from starting.

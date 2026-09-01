@@ -44,7 +44,9 @@ macOSでは、`main` ブランチの安定したインストーラーSkillをCod
 Install and run the OpenGUI installer Skill from https://github.com/Core-Mate/OpenGUI/tree/main/deepseek-harness-plugin/skills/opengui-coremate-install for my DSH web profile. Install the latest stable release. Proceed autonomously, and only pause when I need to authorize or select a phone, add or select a DSH workspace, or provide fallback visual-model credentials.
 ```
 
-Skillは公開ReleaseのパッケージとチェックサムをダウンロードしてSHA-256を検証し、OpenGUIプラグインだけをインストールします。必要な場合はDSHを起動して開き、既存のプラグインと設定は保持します。DSHがすでに起動していた場合は、一度再起動するとプラグインが読み込まれます。LinuxまたはWindowsでは、[手動パッケージガイド](./deepseek-harness-plugin/README.md#1-download-the-release-package)を使用してください。
+Skillは公開ReleaseのパッケージとチェックサムをダウンロードしてSHA-256を検証し、OpenGUIプラグインだけをインストールします。必要な場合はDSHを起動して開き、既存のプラグインと設定は保持します。管理対象のDSHを再起動したか、既存のプロセスを終了してインストーラーを再実行する必要があるかは、インストーラーが表示します。LinuxまたはWindowsでは、[手動パッケージガイド](./deepseek-harness-plugin/README.md#1-download-the-release-package)を使用してください。
+
+OpenGUIで現在検証済みのDSHバージョンは`0.1.0-rc.7`です。新しいalpha版など、別のDSHバージョンが`PATH`にある場合、macOSインストーラーは互換性の違いを表示し、OpenGUIのDSH home内に`web`プロファイル用の検証済みruntimeをインストールします。既存のDSH、ワークスペース、モデル設定、認証情報、スマートフォンの認証は置き換えません。OpenGUIが管理していないDSHプロセスがポート3080を使用している場合、そのプロセスは停止しません。終了してからインストーラーを再実行してください。プラグインの再インストールや`pnpm install`の再実行では、DSHのバージョン非互換は解消されません。
 
 インストール後、DSHでワークスペースを追加または選択し、認証済みのAndroidスマートフォンを接続して選択してから、次を送信します：
 
@@ -52,7 +54,7 @@ Skillは公開Releaseのパッケージとチェックサムをダウンロー�
 @OpenGUI Open Settings and report the Android version
 ```
 
-このプラグインは、OpenGUIバックエンド一式を必要とせず、DSHにスマートフォンとブラウザの操作機能を追加します。[ユースケース](./deepseek-harness-plugin/docs/use-cases.md)を確認するか、[v0.1.7リリースパッケージ](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.7)をダウンロードできます。
+このプラグインは、OpenGUIバックエンド一式を必要とせず、DSHにスマートフォンとブラウザの操作機能を追加します。[ユースケース](./deepseek-harness-plugin/docs/use-cases.md)を確認するか、[v0.1.8リリースパッケージ](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.8)をダウンロードできます。
 
 主なユースケース：
 

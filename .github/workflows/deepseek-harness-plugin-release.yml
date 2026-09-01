@@ -134,9 +134,21 @@ jobs:
           fi
           [[ "$tag_sha" == "$GITHUB_SHA" ]]
 
+          notes="$RUNNER_TEMP/dsh-release-notes.md"
+          notes_source="$RUNNER_TEMP/dsh-release-notes-source.md"
+          tar -xOf "release-assets/$archive" package/docs/public-submission/release-notes.md > "$notes_source"
+          expected_heading="# OpenGUI ${version} Plugin Release Notes"
+          [[ "$(head -n 1 "$notes_source")" == "$expected_heading" ]]
+          printf 'OpenGUI plugin for DeepSeek Harness v%s.\n\n' "$version" > "$notes"
+          tail -n +3 "$notes_source" >> "$notes"
+
           if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
             draft="$(gh api "repos/${GH_REPO}/releases/tags/${GITHUB_REF_NAME}" --jq .draft)"
             if [[ "$draft" != true ]]; then
+              published_title="$(gh release view "$GITHUB_REF_NAME" --json name --jq .name)"
+              published_notes="$(gh release view "$GITHUB_REF_NAME" --json body --jq .body)"
+              [[ "$published_title" == "dsh-coremate-mobile v${version}" ]]
+              [[ "$published_notes" == "$(cat "$notes")" ]]
               assets="$(gh release view "$GITHUB_REF_NAME" --json assets --jq '.assets[].name' | sort)"
               expected="$(printf '%s\n%s\n' "$archive" "$checksum" | sort)"
               [[ "$assets" == "$expected" ]]
@@ -150,29 +162,14 @@ jobs:
               exit 0
             fi
           else
-            notes="$RUNNER_TEMP/dsh-release-notes.md"
-            cat > "$notes" <<EOF
-          OpenGUI plugin for DeepSeek Harness v${version}.
-
-          Connected phones now show a screenshot immediately while OpenGUI prepares the live view in the background. Stream, decoder, and status failures keep the screenshot available with a retry action.
-
-          Bundled ADB now repairs missing execute bits on macOS and Linux before discovery, while custom ADB paths remain untouched. Device-detection failures surface their actionable diagnostic in the OpenGUI workbench and retry automatically.
-
-          The OpenGUI tab checks this public repository for newer stable \`dsh-coremate-mobile-v*\` releases, ignores unrelated Android APK releases, verifies the matching package checksum, and offers a user-approved update action when Harness is idle.
-
-          The macOS installer now runs DSH through a per-user LaunchAgent and includes a matching uninstall script. Verified phone-view caches are shared across DSH profiles, including existing \`~/.dsh\` caches.
-
-          Download both the \`.tgz\` package and its \`.sha256\` file. The recommended macOS path is the stable [Codex installer Skill](https://github.com/Core-Mate/OpenGUI/tree/main/deepseek-harness-plugin/skills/opengui-coremate-install), which resolves the latest stable plugin release each time it runs.
-
-          The package supports DeepSeek Harness through \`/opengui\` and \`@OpenGUI\`, and Codex through the \`opengui:control\` Skill plus seven local stdio MCP tools. Both hosts share the same bounded Android execution runtime, multi-device locking, cancellation, and read-only device-wall support.
-
-          The public plugin-directory materials remain Skills-only and do not add a hosted phone-control gateway. DeepSeek Harness integration requires \`0.1.0-rc.7\`; Codex local control requires the packaged Node runtime and a locally authorized Android device.
-          EOF
             gh release create "$GITHUB_REF_NAME" --draft --verify-tag \
               --title "dsh-coremate-mobile v${version}" \
               --notes-file "$notes"
           fi
 
+          gh release edit "$GITHUB_REF_NAME" \
+            --title "dsh-coremate-mobile v${version}" \
+            --notes-file "$notes"
           gh release upload "$GITHUB_REF_NAME" \
             "release-assets/$archive" \
             "release-assets/$checksum" \

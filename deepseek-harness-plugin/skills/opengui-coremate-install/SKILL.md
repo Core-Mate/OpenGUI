@@ -15,11 +15,13 @@ Install and verify the latest stable OpenGUI release without replacing unrelated
 
 By default, the script resolves the highest stable `dsh-coremate-mobile-v*` release from the public GitHub Releases API. It ignores drafts, prereleases, and unrelated OpenGUI releases. Use `--version VERSION` only when the user explicitly requests a rollback or reproducible install.
 
-The script checks the host Node version, pins DSH to `0.1.0-rc.7`, downloads both the resolved release tarball and checksum, verifies SHA-256, installs only `dsh-coremate-mobile` into the `web` profile, and validates the package, bundle, Client entry, and `/opengui` command. GitHub authentication is not required.
+The script checks the host Node version and pins DSH to `0.1.0-rc.7`. If another DSH version is already on `PATH`, explain that it is not the verified baseline and install the pinned runtime under the OpenGUI DSH home through pnpm, corepack, or npm. Preserve the existing DSH installation, workspaces, settings, credentials, and phone authorizations. Never suggest that reinstalling the plugin or rerunning `pnpm install` can repair a DSH compatibility mismatch.
 
-The script installs a user LaunchAgent with `KeepAlive` so DSH returns after a crash or login. It may safely reload an instance already owned by that exact LaunchAgent. If port 3080 belongs to any other DSH process, preserve it: the installer writes the LaunchAgent but defers takeover until the next login. When DSH is not running, the script starts and verifies `http://127.0.0.1:3080`.
+The script downloads both the resolved release tarball and checksum, verifies SHA-256, installs only `dsh-coremate-mobile` into the `web` profile, and validates the package, bundle, Client entry, and `/opengui` command. GitHub authentication is not required.
 
-For uninstall requests, run `scripts/uninstall-macos.sh`. It removes only the matching plugin and LaunchAgent; settings, credentials, unrelated DSH instances, and caches remain intact.
+The script installs a user LaunchAgent with `KeepAlive` so DSH returns after a crash or login. It may safely reload an instance already owned by that exact LaunchAgent. If port 3080 belongs to any other DSH process, preserve it and tell the user to quit it, then rerun the installer to activate the compatible version now. The installer writes the LaunchAgent but otherwise defers takeover until the next login. When DSH is not running, the script starts and verifies `http://127.0.0.1:3080`.
+
+For uninstall requests, run `scripts/uninstall-macos.sh`. It uses the same verified DSH CLI and removes only the matching plugin and LaunchAgent; settings, credentials, unrelated DSH instances, and caches remain intact.
 
 ## First-run handoff
 
