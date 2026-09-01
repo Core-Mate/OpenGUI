@@ -73,41 +73,96 @@ if [[ "$plugin_registered" != true && -e "$plugin_directory" ]]; then
   exit 1
 fi
 
-detected_dsh_version=""
-managed_dsh="${dsh_home}/runtime/dsh-0.1.0-rc.7/node_modules/.bin/dsh"
-managed_dsh_version=""
-if [[ "$plugin_registered" == true && -x "$managed_dsh" ]]; then
-  managed_dsh_version="$("$managed_dsh" -V 2>/dev/null || true)"
-fi
-if [[ "$plugin_registered" == true ]] && command -v dsh >/dev/null 2>&1; then
-  detected_dsh_version="$(dsh -V 2>/dev/null || true)"
-fi
-
-if [[ "$plugin_registered" != true ]]; then
-  dsh_command=()
-elif [[ "$managed_dsh_version" == '0.1.0-rc.7' ]]; then
-  dsh_command=("$managed_dsh")
-elif [[ "$detected_dsh_version" == '0.1.0-rc.7' ]]; then
-  dsh_command=(dsh)
-elif command -v pnpm >/dev/null 2>&1; then
-  dsh_command=(pnpm dlx '@deepseek-ai/dsh@0.1.0-rc.7')
-elif command -v corepack >/dev/null 2>&1; then
-  dsh_command=(corepack pnpm dlx '@deepseek-ai/dsh@0.1.0-rc.7')
-elif command -v npx >/dev/null 2>&1; then
-  dsh_command=(npx -y '@deepseek-ai/dsh@0.1.0-rc.7')
-else
-  printf 'A compatible DSH launcher was not found. Install pnpm, corepack, or npm, then rerun this command. OpenGUI remains installed.\n' >&2
-  exit 1
-fi
-
+dsh_command=()
 if [[ "$plugin_registered" == true ]]; then
+  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+  compatibility_manifest="$(cd "${script_dir}/.." && pwd -P)/dsh-compatibility.json"
+  if [[ ! -f "$compatibility_manifest" ]]; then
+    printf 'DSH compatibility manifest not found: %s. OpenGUI remains installed.\n' "$compatibility_manifest" >&2
+    exit 1
+  fi
+  if ! compatibility_values="$(node --input-type=module - "$compatibility_manifest" <<'NODE'
+import { readFileSync } from 'node:fs'
+
+const path = process.argv[2]
+const value = JSON.parse(readFileSync(path, 'utf8'))
+const exactRc = /^\d+\.\d+\.\d+-rc\.\d+$/u
+if (value?.schemaVersion !== 1) throw new Error('unsupported schema version')
+if (typeof value.preferredVersion !== 'string' || !exactRc.test(value.preferredVersion)) {
+  throw new Error('preferredVersion must be an exact release candidate')
+}
+if (!Array.isArray(value.supportedVersions) || value.supportedVersions.length === 0
+  || value.supportedVersions.some(version => typeof version !== 'string' || !exactRc.test(version))) {
+  throw new Error('supportedVersions must contain exact release candidates')
+}
+if (new Set(value.supportedVersions).size !== value.supportedVersions.length) throw new Error('supportedVersions contains duplicates')
+if (!value.supportedVersions.includes(value.preferredVersion)) throw new Error('preferredVersion is not supported')
+const parts = version => version.match(/\d+/gu).map(Number)
+const descending = [...value.supportedVersions].sort((left, right) => {
+  const leftParts = parts(left)
+  const rightParts = parts(right)
+  for (let index = 0; index < leftParts.length; index += 1) {
+    if (leftParts[index] !== rightParts[index]) return rightParts[index] - leftParts[index]
+  }
+  return 0
+})
+process.stdout.write([
+  value.preferredVersion,
+  value.supportedVersions.join(' '),
+  descending.join(' '),
+].join('\t'))
+NODE
+  )"; then
+    printf 'DSH compatibility manifest is invalid. Reinstall OpenGUI from a verified release. OpenGUI remains installed.\n' >&2
+    exit 1
+  fi
+  IFS=$'\t' read -r preferred_dsh_version supported_dsh_versions managed_dsh_versions <<<"$compatibility_values"
+
+  is_supported_dsh_version() {
+    case " ${supported_dsh_versions} " in
+      *" $1 "*) return 0 ;;
+      *) return 1 ;;
+    esac
+  }
+
+  checked_dsh_versions=" "
+  for candidate in "$preferred_dsh_version" $managed_dsh_versions; do
+    case "$checked_dsh_versions" in *" $candidate "*) continue ;; esac
+    checked_dsh_versions+="$candidate "
+    managed_dsh="${dsh_home}/runtime/dsh-${candidate}/node_modules/.bin/dsh"
+    [[ -x "$managed_dsh" ]] || continue
+    managed_dsh_version="$("$managed_dsh" -V 2>/dev/null || true)"
+    if [[ "$managed_dsh_version" == "$candidate" ]]; then
+      dsh_command=("$managed_dsh")
+      break
+    fi
+  done
+
+  if ((${#dsh_command[@]} == 0)) && command -v dsh >/dev/null 2>&1; then
+    detected_dsh_version="$(dsh -V 2>/dev/null || true)"
+    if is_supported_dsh_version "$detected_dsh_version"; then
+      dsh_command=(dsh)
+    fi
+  fi
+
+  if ((${#dsh_command[@]} == 0)); then
+    if command -v pnpm >/dev/null 2>&1; then
+      dsh_command=(pnpm dlx "@deepseek-ai/dsh@${preferred_dsh_version}")
+    elif command -v corepack >/dev/null 2>&1; then
+      dsh_command=(corepack pnpm dlx "@deepseek-ai/dsh@${preferred_dsh_version}")
+    elif command -v npx >/dev/null 2>&1; then
+      dsh_command=(npx -y "@deepseek-ai/dsh@${preferred_dsh_version}")
+    else
+      printf 'A compatible DSH launcher was not found. Install pnpm, corepack, or npm, then rerun this command. OpenGUI remains installed.\n' >&2
+      exit 1
+    fi
+  fi
+
   installed_dsh="$("${dsh_command[@]}" -V)"
-else
-  installed_dsh='0.1.0-rc.7'
-fi
-if [[ "$installed_dsh" != '0.1.0-rc.7' ]]; then
-  printf 'Expected DSH 0.1.0-rc.7 but resolved %s. OpenGUI remains installed.\n' "$installed_dsh" >&2
-  exit 1
+  if ! is_supported_dsh_version "$installed_dsh"; then
+    printf 'Resolved unsupported DSH %s. Supported versions: %s. OpenGUI remains installed.\n' "$installed_dsh" "${supported_dsh_versions// /, }" >&2
+    exit 1
+  fi
 fi
 
 managed_runtime=false

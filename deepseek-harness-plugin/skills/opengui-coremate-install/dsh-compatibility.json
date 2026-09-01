@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "preferredVersion": "0.1.1-rc.2",
+  "supportedVersions": [
+    "0.1.0-rc.7",
+    "0.1.0-rc.8",
+    "0.1.1-rc.1",
+    "0.1.1-rc.2"
+  ]
+}

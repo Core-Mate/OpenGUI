@@ -27,6 +27,9 @@ export interface MirrorStatus {
 export interface RuntimeInfo {
   dshVersion: string
   openGuiVersion: string
+  dshCompatibility: 'supported' | 'unsupported' | 'unknown'
+  preferredDshVersion: string
+  supportedDshVersions: string[]
 }
 
 /** Lightweight activity state used by the composer stop control. */

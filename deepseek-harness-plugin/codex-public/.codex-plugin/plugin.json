@@ -1,6 +1,6 @@
 {
   "name": "opengui",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "Guide Codex through safe local Android control with OpenGUI's packaged CLI and bounded observation workflow.",
   "author": {
     "name": "Core Mate",

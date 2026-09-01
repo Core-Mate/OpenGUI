@@ -4,7 +4,7 @@
 
 ## 目前能不能直接安装？
 
-可以。从 [OpenGUI 的公开 Release](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.10) 打开插件版本，在 Assets 中下载 `dsh-coremate-mobile-0.1.10.tgz`。
+可以。从 [OpenGUI 的公开 Release](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.11) 打开插件版本，在 Assets 中下载 `dsh-coremate-mobile-0.1.11.tgz`。
 
 下载后不要解压。不要下载 “Source code (zip)” 或 “Source code (tar.gz)”；它们是 GitHub 自动生成的源码压缩包，不是普通用户安装包。
 
@@ -12,22 +12,22 @@
 
 开始前确认以下事项：
 
-1. 电脑已经能启动官方 DeepSeek Harness；当前已验证版本为 `0.1.0-rc.7`。
-2. 已下载 `dsh-coremate-mobile-0.1.10.tgz`，并且没有解压。
+1. 电脑已经能启动官方 DeepSeek Harness；本版本支持 `0.1.0-rc.7`、`0.1.0-rc.8`、`0.1.1-rc.1` 和 `0.1.1-rc.2`，建议使用 `0.1.1-rc.2`。
+2. 已下载 `dsh-coremate-mobile-0.1.11.tgz`，并且没有解压。
 3. 电脑能访问公开的 GitHub Releases；不需要登录 GitHub。
 4. Node.js 版本为 `22.19.x`，或 `24` 及以上。如果 `node --version` 不在这个范围，请先切换到受支持版本。
 5. Harness 当前对话里已选择一个模型。该模型最好支持图片输入和工具调用；如果不兼容，OpenGUI 会在第一次真实任务时引导配置专用视觉模型。
 6. Android 手机已经通过 USB 连接电脑，已打开“USB 调试”，并在手机上点过“允许”。
 7. 电脑是 macOS（Apple 芯片或 Intel）、Windows x64，或 Linux x64。Linux arm64 和 Windows arm64 暂不支持随包 ADB。
 
-如果你的 Harness 版本不同，请先向插件维护者确认兼容性。本指南默认 Harness 使用 `web` profile，并把用户数据保存在默认的 `$HOME/.dsh`（Windows 为 `%USERPROFILE%\.dsh`）；自定义过这些位置的用户应替换文中的对应路径。
+如果你的 Harness 版本不在上面的四个版本中，请先向插件维护者确认兼容性；`0.1.2-alpha.4` 当前不支持。本指南默认 Harness 使用 `web` profile，并把用户数据保存在默认的 `$HOME/.dsh`（Windows 为 `%USERPROFILE%\.dsh`）；自定义过这些位置的用户应替换文中的对应路径。
 
 ## 第一步：确认 DeepSeek Harness 可以运行
 
 在 macOS 打开“终端”；在 Windows 打开“PowerShell”。复制下面的命令并按回车：
 
 ```sh
-npx @deepseek-ai/dsh@0.1.0-rc.7 --help
+npx @deepseek-ai/dsh@0.1.1-rc.2 --help
 ```
 
 第一次执行可能会询问是否下载软件包，输入 `y` 后按回车。看到 DeepSeek Harness 的帮助内容表示可以继续。如果提示找不到 `node` 或 `npx`，说明官方 Harness 的运行环境还没有安装好，应先完成官方 Harness 安装。
@@ -39,12 +39,12 @@ npx @deepseek-ai/dsh@0.1.0-rc.7 --help
 先在终端中输入下面这段内容，最后保留一个空格，不要立即按回车：
 
 ```text
-npx @deepseek-ai/dsh@0.1.0-rc.7 plugin --profile web add 
+npx @deepseek-ai/dsh@0.1.1-rc.2 plugin --profile web add 
 ```
 
-找到下载好的 `dsh-coremate-mobile-0.1.10.tgz`，用鼠标把它拖进终端窗口，终端会自动填入文件路径，然后按回车。
+找到下载好的 `dsh-coremate-mobile-0.1.11.tgz`，用鼠标把它拖进终端窗口，终端会自动填入文件路径，然后按回车。
 
-看到 `dsh-coremate-mobile 0.1.10` 和安装完成信息，表示插件文件已经加入 Harness。此时还没有证明插件能够启动；第五步会进行实际装载验证。
+看到 `dsh-coremate-mobile 0.1.11` 和安装完成信息，表示插件文件已经加入 Harness。此时还没有证明插件能够启动；第三步会进行实际装载验证。
 
 ### 如果出现 `ERR_PNPM_IGNORED_BUILDS`
 
@@ -77,7 +77,7 @@ allowBuilds:
 复制下面的命令并按回车：
 
 ```sh
-npx @deepseek-ai/dsh@0.1.0-rc.7 web
+npx @deepseek-ai/dsh@0.1.1-rc.2 web
 ```
 
 终端会显示一个以 `http://127.0.0.1:` 开头的网址。在浏览器中打开这个网址，然后发送：
@@ -129,7 +129,7 @@ OpenGUI 默认复用当前 DSH 会话模型。当前模型明确支持图片时�
 这个脚本会停止并删除 OpenGUI 自己的后台启动项，再移除插件，不会删除设置、密钥和缓存。其他安装方式可在终端执行：
 
 ```sh
-npx @deepseek-ai/dsh@0.1.0-rc.7 plugin --profile web remove dsh-coremate-mobile
+npx @deepseek-ai/dsh@0.1.1-rc.2 plugin --profile web remove dsh-coremate-mobile
 ```
 
 然后打开 `$HOME/.dsh/settings.yaml`（Windows 为 `%USERPROFILE%\.dsh\settings.yaml`），删除从 `coremate-mobile:` 开始的四行。如果以后不会再使用这个插件，也可以从 `.credentials.yaml` 删除 `COREMATE_MOBILE_API_KEY` 那一行。

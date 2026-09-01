@@ -153,9 +153,22 @@ export function runtimeVersionLabel(info?: RuntimeInfo, failed = false): string 
   if (info !== undefined) {
     const dshVersion = info.dshVersion === 'unknown' ? '未知' : info.dshVersion
     const openGuiVersion = info.openGuiVersion === 'unknown' ? '未知' : info.openGuiVersion
-    return `DSH ${dshVersion} · OpenGUI ${openGuiVersion}`
+    const compatibility = info.dshCompatibility === 'unsupported' ? '（未验证）' : ''
+    return `DSH ${dshVersion}${compatibility} · OpenGUI ${openGuiVersion}`
   }
   return failed ? 'DSH 未知 · OpenGUI 未知' : 'DSH … · OpenGUI …'
+}
+
+export function runtimeVersionTitle(info?: RuntimeInfo, failed = false): string {
+  if (failed) return '版本信息暂时不可用'
+  if (info === undefined) return '正在读取当前实际加载的 DSH 与 OpenGUI 版本'
+  if (info.dshCompatibility === 'unsupported') {
+    return `当前 DSH 未经验证。已支持：${info.supportedDshVersions.join('、')}；推荐：${info.preferredDshVersion}`
+  }
+  if (info.dshCompatibility === 'unknown') {
+    return `无法识别当前 DSH 版本。推荐：${info.preferredDshVersion}`
+  }
+  return `当前 DSH 已验证；推荐：${info.preferredDshVersion}`
 }
 
 function phaseLabel(status: MirrorStatus): string {
@@ -293,8 +306,8 @@ export function CoremateView({ coremateSessionId }: { readonly coremateSessionId
           <span
             data-coremate-runtime-version
             aria-label={`运行版本：${runtimeVersionLabel(runtime, runtimeFailed).replace(' · ', '，')}`}
-            title={runtimeFailed ? '版本信息暂时不可用' : '当前实际加载的 DSH 与 OpenGUI 版本'}
-            style={{ display: 'inline-flex', alignItems: 'center', minHeight: 40, padding: '0 6px', color: 'var(--dsw-alias-label-secondary, #52525b)', fontSize: 12, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}
+            title={runtimeVersionTitle(runtime, runtimeFailed)}
+            style={{ display: 'inline-flex', alignItems: 'center', minHeight: 40, padding: '0 6px', color: runtime?.dshCompatibility === 'unsupported' ? '#b45309' : 'var(--dsw-alias-label-secondary, #52525b)', fontSize: 12, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}
           >{runtimeVersionLabel(runtime, runtimeFailed)}</span>
           <a data-coremate-header-link href={OPENGUI_GITHUB_URL} target="_blank" rel="noreferrer" style={headerLinkStyle}>GitHub ↗</a>
           <a data-coremate-header-link href={OPENGUI_WEBSITE_URL} target="_blank" rel="noreferrer" style={headerLinkStyle}>官方网站 ↗</a>

@@ -22,6 +22,9 @@ describe('standalone mobile provider', () => {
     expect(profile.provider).toBe('coremate-mobile')
     expect(profile.apiKeyEnv).toBe('COREMATE_MOBILE_API_KEY')
     expect(profile.streamIdleTimeoutMs).toBe(60_000)
+    expect(profile.maxRequestImageBytes).toBe(20 * 1024 * 1024)
+    expect(profile.requestImagePixelBudget).toBe(2048 * 2048)
+    expect(profile.requestImageMaxBytes).toBe(1024 * 1024)
     expect(profile.piProvider.getModels()).toEqual([
       expect.objectContaining({
         id: 'vision-model',

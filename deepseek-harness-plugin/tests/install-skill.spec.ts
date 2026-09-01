@@ -11,6 +11,8 @@ const roots: string[] = []
 const servers: ReturnType<typeof createServer>[] = []
 const installer = new URL('../skills/opengui-coremate-install/scripts/install-macos.sh', import.meta.url)
 const uninstaller = new URL('../skills/opengui-coremate-install/scripts/uninstall-macos.sh', import.meta.url)
+const PLUGIN_VERSION = '0.1.11'
+const PREFERRED_DSH_VERSION = '0.1.1-rc.2'
 
 afterEach(async () => {
   await Promise.all(servers.splice(0).map(server => new Promise<void>(resolve => server.close(() => resolve()))))
@@ -21,13 +23,13 @@ async function fixture() {
   const root = await mkdtemp(join(tmpdir(), 'coremate-install-skill-'))
   roots.push(root)
   const bin = join(root, 'bin')
-  const release = join(root, 'release', 'dsh-coremate-mobile-v0.1.10')
+  const release = join(root, 'release', `dsh-coremate-mobile-v${PLUGIN_VERSION}`)
   const home = join(root, 'dsh-home')
   await Promise.all([mkdir(bin, { recursive: true }), mkdir(release, { recursive: true })])
-  const archive = join(release, 'dsh-coremate-mobile-0.1.10.tgz')
+  const archive = join(release, `dsh-coremate-mobile-${PLUGIN_VERSION}.tgz`)
   await writeFile(archive, 'verified release fixture')
   const { stdout: checksum } = await exec('shasum', ['-a', '256', archive])
-  await writeFile(`${archive}.sha256`, `${checksum.trim().split(/\s+/u)[0]}  dsh-coremate-mobile-0.1.10.tgz\n`)
+  await writeFile(`${archive}.sha256`, `${checksum.trim().split(/\s+/u)[0]}  dsh-coremate-mobile-${PLUGIN_VERSION}.tgz\n`)
   await writeFile(join(bin, 'lsof'), `#!/usr/bin/env bash
 if [[ "\${FAKE_DSH_RUNNING:-0}" == "1" ]]; then
   [[ " $* " == *" -t "* ]] && printf '%s\\n' 4242
@@ -56,7 +58,14 @@ exit 0
   await writeFile(join(bin, 'plutil'), '#!/usr/bin/env bash\nexit 0\n')
   await writeFile(join(bin, 'dsh'), `#!/usr/bin/env bash
 set -euo pipefail
-if [[ "\${1:-}" == "-V" ]]; then printf '%s\\n' "\${FAKE_DSH_VERSION:-\${FAKE_GLOBAL_DSH_VERSION:-0.1.0-rc.7}}"; exit 0; fi
+if [[ "\${1:-}" == "-V" ]]; then printf '%s\\n' "\${FAKE_DSH_VERSION:-\${FAKE_GLOBAL_DSH_VERSION:-0.1.1-rc.2}}"; exit 0; fi
+if [[ "\${1:-}" == "plugin" && "\${4:-}" == "--help" ]]; then
+  profile_dir="\${DSH_HOME}/profiles/web"
+  mkdir -p "$profile_dir"
+  [[ -f "$profile_dir/package.json" ]] || printf '%s\\n' '{"dependencies":{},"dsh":{"profile":{"bundles":[]}}}' > "$profile_dir/package.json"
+  [[ -f "$profile_dir/pnpm-workspace.yaml" ]] || printf '%s\\n' 'packages:' '  - .' 'nodeLinker: hoisted' > "$profile_dir/pnpm-workspace.yaml"
+  exit 0
+fi
 if [[ "\${1:-}" == "plugin" && "\${4:-}" == "remove" ]]; then
   [[ "\${FAKE_DSH_REMOVE_FAIL:-0}" != "1" ]] || exit 42
   rm -rf "\${DSH_HOME}/profiles/web/node_modules/dsh-coremate-mobile"
@@ -66,7 +75,7 @@ fi
 profile_dir="\${DSH_HOME}/profiles/web"
 mkdir -p "\${profile_dir}/node_modules/dsh-coremate-mobile/lib/types/client"
 printf '%s\\n' '{"dependencies":{"dsh-coremate-mobile":"file:fixture"},"dsh":{"profile":{"bundles":["dsh-coremate-mobile"]}}}' > "\${profile_dir}/package.json"
-printf '%s\\n' '{"name":"dsh-coremate-mobile","version":"0.1.10"}' > "\${profile_dir}/node_modules/dsh-coremate-mobile/package.json"
+printf '%s\\n' '{"name":"dsh-coremate-mobile","version":"0.1.11"}' > "\${profile_dir}/node_modules/dsh-coremate-mobile/package.json"
 printf '%s\\n' 'opengui command host with legacy coremate alias' > "\${profile_dir}/node_modules/dsh-coremate-mobile/lib/index.js"
 printf '%s\\n' 'client bundle' > "\${profile_dir}/node_modules/dsh-coremate-mobile/lib/client.js"
 printf '%s\\n' 'export {}' > "\${profile_dir}/node_modules/dsh-coremate-mobile/lib/types/client/index.d.ts"
@@ -76,14 +85,19 @@ set -euo pipefail
 [[ "\${FAKE_PNPM_FAIL:-0}" != "1" ]] || exit 99
 if [[ "\${1:-}" == "--dir" ]]; then
   runtime_dir="$2"
+  selected_version=""
+  for argument in "$@"; do
+    case "$argument" in @deepseek-ai/dsh@*) selected_version="\${argument##*@}" ;; esac
+  done
+  [[ -n "$selected_version" ]]
   managed_dsh="\${runtime_dir}/node_modules/.bin/dsh"
   mkdir -p "$(dirname "$managed_dsh")"
-  printf '#!/usr/bin/env bash\\nFAKE_DSH_VERSION=0.1.0-rc.7 exec "%s" "$@"\\n' "$(dirname "$0")/dsh" > "$managed_dsh"
+  printf '#!/usr/bin/env bash\\nFAKE_DSH_VERSION=%s exec "%s" "$@"\\n' "$selected_version" "$(dirname "$0")/dsh" > "$managed_dsh"
   chmod 755 "$managed_dsh"
   exit 0
 fi
 if [[ "\${1:-}" == "dlx" ]]; then shift 2; fi
-FAKE_DSH_VERSION=0.1.0-rc.7 exec "$(dirname "$0")/dsh" "$@"
+FAKE_DSH_VERSION=0.1.1-rc.2 exec "$(dirname "$0")/dsh" "$@"
 `)
   await Promise.all([
     chmod(join(bin, 'lsof'), 0o755), chmod(join(bin, 'launchctl'), 0o755),
@@ -99,11 +113,13 @@ async function run(
   value: Awaited<ReturnType<typeof fixture>>,
   extraEnv: Record<string, string> = {},
   start = false,
-  version: string | null = '0.1.10',
+  version: string | null = PLUGIN_VERSION,
+  dshVersion?: string,
 ) {
   return await exec('bash', [
     installer.pathname,
     ...(version === null ? [] : ['--version', version]),
+    ...(dshVersion === undefined ? [] : ['--dsh-version', dshVersion]),
     '--dsh-home', value.home,
     '--release-base', value.releaseBase,
     ...(start ? [] : ['--no-start']),
@@ -128,6 +144,8 @@ describe('macOS installation Skill', () => {
     expect(source).toContain('github_repository="Core-Mate/OpenGUI"')
     expect(source).toContain('/releases?per_page=100')
     expect(source).toContain('release_tag="${package_name}-v${release_version}"')
+    expect(source).toContain('dsh-compatibility.json')
+    expect(source).toContain('--dsh-version')
     expect(source).not.toContain('Coremate-Mobile-Plugin')
     expect(source).toContain('<key>KeepAlive</key>')
     expect(source).toContain('launchctl bootstrap')
@@ -141,8 +159,8 @@ describe('macOS installation Skill', () => {
       const url = new URL(request.url ?? '/', `http://${request.headers.host}`)
       if (url.searchParams.get('page') === '2') {
         response.end(JSON.stringify([
-          { tag_name: 'dsh-coremate-mobile-v0.1.10', draft: false, prerelease: false },
-          { tag_name: 'dsh-coremate-mobile-v0.1.10', draft: true, prerelease: false },
+          { tag_name: `dsh-coremate-mobile-v${PLUGIN_VERSION}`, draft: false, prerelease: false },
+          { tag_name: `dsh-coremate-mobile-v${PLUGIN_VERSION}`, draft: true, prerelease: false },
         ]))
         return
       }
@@ -162,39 +180,96 @@ describe('macOS installation Skill', () => {
       COREMATE_INSTALL_RELEASES_API_OVERRIDE: `http://127.0.0.1:${address.port}/releases`,
     }, false, null)
     expect(result.stdout).toContain('Resolving the latest stable OpenGUI plugin release')
-    expect(result.stdout).toContain('Using OpenGUI plugin v0.1.10')
-    expect(result.stdout).toContain('Installed and verified dsh-coremate-mobile v0.1.10')
+    expect(result.stdout).toContain(`Using OpenGUI plugin v${PLUGIN_VERSION}`)
+    expect(result.stdout).toContain(`Installed and verified dsh-coremate-mobile v${PLUGIN_VERSION}`)
   })
 
   it('installs and verifies a first release, then repeats without replacing profile files', async () => {
     const value = await fixture()
     const first = await run(value)
-    expect(first.stdout).toContain('Installed and verified dsh-coremate-mobile v0.1.10')
+    expect(first.stdout).toContain(`Installed and verified dsh-coremate-mobile v${PLUGIN_VERSION}`)
+    const policy = await readFile(join(value.home, 'profiles', 'web', 'pnpm-workspace.yaml'), 'utf8')
+    expect(policy).toContain("onlyBuiltDependencies:\n  - 'dsh-coremate-mobile'\n  - '@google/genai'\n  - 'protobufjs'")
+    expect(policy).toContain("allowBuilds:\n  '@google/genai': false\n  'protobufjs': false")
     const marker = join(value.home, 'profiles', 'web', 'user-setting.txt')
     await writeFile(marker, 'keep me')
+    await writeFile(
+      join(value.home, 'profiles', 'web', 'pnpm-workspace.yaml'),
+      policy.replace("'@google/genai': false", "'@google/genai': true")
+        .replace('protobufjs: false', 'protobufjs: true'),
+    )
     const repeated = await run(value)
     expect(repeated.stdout).toContain('Preserving existing DSH profile')
     await expect(readFile(marker, 'utf8')).resolves.toBe('keep me')
+    const correctedPolicy = await readFile(join(value.home, 'profiles', 'web', 'pnpm-workspace.yaml'), 'utf8')
+    expect(correctedPolicy).toContain("'@google/genai': false")
+    expect(correctedPolicy).toContain("'protobufjs': false")
   })
 
   it('uses an already compatible DSH without depending on a package-manager launcher', async () => {
     const value = await fixture()
     const result = await run(value, { FAKE_PNPM_FAIL: '1' })
-    expect(result.stdout).toContain('Installed and verified dsh-coremate-mobile v0.1.10')
+    expect(result.stdout).toContain(`Installed and verified dsh-coremate-mobile v${PLUGIN_VERSION}`)
   })
 
-  it('rejects a checksum mismatch and uses the pinned CLI when PATH has an incompatible DSH', async () => {
+  it('uses the preferred managed DSH when PATH has an older supported version', async () => {
+    const value = await fixture()
+    const result = await run(value, { FAKE_GLOBAL_DSH_VERSION: '0.1.0-rc.7' })
+    expect(result.stdout).toContain('Detected supported DSH 0.1.0-rc.7 on PATH')
+    expect(result.stdout).toContain(`Installing managed DSH ${PREFERRED_DSH_VERSION}`)
+    await expect(access(join(value.home, `runtime/dsh-${PREFERRED_DSH_VERSION}/node_modules/.bin/dsh`))).resolves.toBeUndefined()
+    const runtimePolicy = await readFile(join(value.home, `runtime/dsh-${PREFERRED_DSH_VERSION}/pnpm-workspace.yaml`), 'utf8')
+    expect(runtimePolicy).toContain('node-pty: true')
+    expect(runtimePolicy).toContain("'@deepseek-ai/dsh-subprocess-local': true")
+    expect(runtimePolicy).toContain("'@google/genai': false")
+    expect(runtimePolicy).toContain('node-addon-require-builtin: false')
+  })
+
+  it('accepts an explicitly selected supported DSH and rejects alpha versions', async () => {
+    const selected = await fixture()
+    const result = await run(selected, {
+      FAKE_GLOBAL_DSH_VERSION: '0.1.0-rc.7',
+      FAKE_PNPM_FAIL: '1',
+    }, false, PLUGIN_VERSION, '0.1.0-rc.7')
+    expect(result.stdout).toContain(`Installed and verified dsh-coremate-mobile v${PLUGIN_VERSION}`)
+    await expect(access(join(selected.home, 'runtime/dsh-0.1.0-rc.7'))).rejects.toThrow()
+
+    const alpha = await fixture()
+    await expect(run(alpha, {}, false, PLUGIN_VERSION, '0.1.2-alpha.4')).rejects.toMatchObject({
+      stderr: expect.stringContaining('Unsupported DSH version 0.1.2-alpha.4'),
+    })
+  })
+
+  it('falls back only to an existing verified managed DSH when preferred installation fails', async () => {
+    const value = await fixture()
+    await run(value, { FAKE_GLOBAL_DSH_VERSION: '0.1.2-alpha.4' }, false, PLUGIN_VERSION, '0.1.0-rc.7')
+    await run(value, { FAKE_GLOBAL_DSH_VERSION: '0.1.2-alpha.4' }, false, PLUGIN_VERSION, '0.1.1-rc.1')
+    const fallback = await run(value, {
+      FAKE_GLOBAL_DSH_VERSION: '0.1.2-alpha.4',
+      FAKE_PNPM_FAIL: '1',
+    })
+    expect(fallback.stdout).toContain('Preferred DSH could not be installed; using existing verified managed DSH 0.1.1-rc.1')
+
+    await expect(run(value, {
+      FAKE_GLOBAL_DSH_VERSION: '0.1.2-alpha.4',
+      FAKE_PNPM_FAIL: '1',
+    }, false, PLUGIN_VERSION, PREFERRED_DSH_VERSION)).rejects.toMatchObject({
+      stderr: expect.stringContaining(`Managed DSH ${PREFERRED_DSH_VERSION} could not be installed`),
+    })
+  })
+
+  it('rejects a checksum mismatch and uses the preferred CLI when PATH has an incompatible DSH', async () => {
     const checksum = await fixture()
     await writeFile(checksum.archive, 'tampered after checksum')
     await expect(run(checksum)).rejects.toMatchObject({ stderr: expect.stringContaining('checksum mismatch') })
 
     const version = await fixture()
-    const result = await run(version, { FAKE_GLOBAL_DSH_VERSION: '0.1.2-alpha.3' })
-    expect(result.stdout).toContain('Detected DSH 0.1.2-alpha.3 on PATH')
-    expect(result.stdout).toContain('will use the compatible version for the web profile')
-    expect(result.stdout).toContain('Installing managed DSH 0.1.0-rc.7')
-    expect(result.stdout).toContain('Installed and verified dsh-coremate-mobile v0.1.10')
-    await expect(access(join(version.home, 'runtime/dsh-0.1.0-rc.7/node_modules/.bin/dsh'))).resolves.toBeUndefined()
+    const result = await run(version, { FAKE_GLOBAL_DSH_VERSION: '0.1.2-alpha.4' })
+    expect(result.stdout).toContain('Detected unsupported DSH 0.1.2-alpha.4 on PATH')
+    expect(result.stdout).toContain(`OpenGUI will use verified DSH ${PREFERRED_DSH_VERSION}`)
+    expect(result.stdout).toContain(`Installing managed DSH ${PREFERRED_DSH_VERSION}`)
+    expect(result.stdout).toContain(`Installed and verified dsh-coremate-mobile v${PLUGIN_VERSION}`)
+    await expect(access(join(version.home, `runtime/dsh-${PREFERRED_DSH_VERSION}/node_modules/.bin/dsh`))).resolves.toBeUndefined()
   })
 
   it('preserves an existing DSH process and reports that a restart is required', async () => {
@@ -217,7 +292,7 @@ describe('macOS installation Skill', () => {
     if (address === null || typeof address === 'string') throw new Error('missing test server port')
 
     const result = await run(value, {
-      FAKE_DSH_RUNNING: '1', FAKE_GLOBAL_DSH_VERSION: '0.1.2-alpha.3',
+      FAKE_DSH_RUNNING: '1', FAKE_GLOBAL_DSH_VERSION: '0.1.2-alpha.4',
       COREMATE_INSTALL_PORT_OVERRIDE: String(address.port),
     }, true)
     expect(result.stdout).toContain('is not managed by OpenGUI; leaving it untouched')
@@ -229,7 +304,7 @@ describe('macOS installation Skill', () => {
     expect(source).toContain('<key>KeepAlive</key>')
     expect(source).toContain(`<string>${await realpath(value.home)}</string>`)
     expect(source).toContain(`<string>${String(address.port)}</string>`)
-    expect(source).toContain(`${await realpath(value.home)}/runtime/dsh-0.1.0-rc.7/node_modules/.bin/dsh`)
+    expect(source).toContain(`${await realpath(value.home)}/runtime/dsh-${PREFERRED_DSH_VERSION}/node_modules/.bin/dsh`)
     await expect(readFile(value.launchctlLog, 'utf8')).resolves.not.toContain('bootstrap')
 
     await writeFile(value.launchctlState, 'loaded')
@@ -245,7 +320,7 @@ describe('macOS installation Skill', () => {
     })).rejects.toMatchObject({ stderr: expect.stringContaining('OpenGUI remains installed') })
     await expect(readFile(plist, 'utf8')).resolves.toContain('<key>KeepAlive</key>')
     await expect(readFile(join(value.home, 'profiles/web/node_modules/dsh-coremate-mobile/package.json'), 'utf8'))
-      .resolves.toContain('0.1.10')
+      .resolves.toContain(PLUGIN_VERSION)
     await expect(readFile(value.launchctlState, 'utf8')).resolves.toBe('loaded')
 
     await expect(exec('bash', [uninstaller.pathname, '--dsh-home', value.home, '--port', String(address.port)], {
@@ -255,7 +330,7 @@ describe('macOS installation Skill', () => {
         COREMATE_INSTALL_LAUNCH_AGENTS_DIR_OVERRIDE: launchAgents,
         FAKE_LAUNCHCTL_LOG: value.launchctlLog,
         FAKE_LAUNCHCTL_STATE: value.launchctlState,
-        FAKE_GLOBAL_DSH_VERSION: '0.1.2-alpha.3',
+        FAKE_GLOBAL_DSH_VERSION: '0.1.2-alpha.4',
         FAKE_DSH_REMOVE_FAIL: '1',
       },
     })).rejects.toMatchObject({
@@ -272,7 +347,7 @@ describe('macOS installation Skill', () => {
         COREMATE_INSTALL_LAUNCH_AGENTS_DIR_OVERRIDE: launchAgents,
         FAKE_LAUNCHCTL_LOG: value.launchctlLog,
         FAKE_LAUNCHCTL_STATE: value.launchctlState,
-        FAKE_GLOBAL_DSH_VERSION: '0.1.2-alpha.3',
+        FAKE_GLOBAL_DSH_VERSION: '0.1.2-alpha.4',
       },
     })
     expect(removed.stdout).toContain('Settings and caches were preserved')
@@ -330,7 +405,7 @@ describe('macOS installation Skill', () => {
       await expect(readFile(plist, 'utf8')).resolves.toContain('<key>KeepAlive</key>')
       await expect(readFile(value.launchctlState, 'utf8')).resolves.toBe('loaded')
       await expect(readFile(join(value.home, 'profiles/web/node_modules/dsh-coremate-mobile/package.json'), 'utf8'))
-        .resolves.toContain('0.1.10')
+        .resolves.toContain(PLUGIN_VERSION)
       await expect(readFile(value.launchctlLog, 'utf8')).resolves.not.toContain('bootout')
     }
   }, 20_000)

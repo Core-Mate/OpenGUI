@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-dsh_version="0.1.0-rc.7"
 profile="web"
 port="${COREMATE_INSTALL_PORT_OVERRIDE:-3080}"
 package_name="dsh-coremate-mobile"
@@ -14,9 +13,11 @@ dsh_home="${DSH_HOME:-${HOME}/.dsh}"
 launch_agents_dir="${COREMATE_INSTALL_LAUNCH_AGENTS_DIR_OVERRIDE:-${HOME}/Library/LaunchAgents}"
 start_runtime=true
 open_browser=true
+requested_dsh_version=""
+dsh_version_explicit=false
 
 usage() {
-  printf '%s\n' 'Usage: install-macos.sh [--version VERSION] [--dsh-home PATH] [--release-base URL] [--no-start] [--no-open]'
+  printf '%s\n' 'Usage: install-macos.sh [--version VERSION] [--dsh-version VERSION] [--dsh-home PATH] [--release-base URL] [--no-start] [--no-open]'
 }
 
 while (($# > 0)); do
@@ -24,6 +25,12 @@ while (($# > 0)); do
     --version)
       [[ $# -ge 2 ]] || { usage >&2; exit 2; }
       release_version="$2"
+      shift 2
+      ;;
+    --dsh-version)
+      [[ $# -ge 2 ]] || { usage >&2; exit 2; }
+      requested_dsh_version="$2"
+      dsh_version_explicit=true
       shift 2
       ;;
     --dsh-home)
@@ -66,6 +73,63 @@ for command in node curl shasum lsof; do
   command -v "$command" >/dev/null 2>&1 || { printf 'Required command not found: %s\n' "$command" >&2; exit 1; }
 done
 
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+compatibility_manifest="$(cd "${script_dir}/.." && pwd -P)/dsh-compatibility.json"
+if [[ ! -f "$compatibility_manifest" ]]; then
+  printf 'DSH compatibility manifest not found: %s\n' "$compatibility_manifest" >&2
+  exit 1
+fi
+if ! compatibility_values="$(node --input-type=module - "$compatibility_manifest" <<'NODE'
+import { readFileSync } from 'node:fs'
+
+const path = process.argv[2]
+const value = JSON.parse(readFileSync(path, 'utf8'))
+const exactRc = /^\d+\.\d+\.\d+-rc\.\d+$/u
+if (value?.schemaVersion !== 1) throw new Error('unsupported schema version')
+if (typeof value.preferredVersion !== 'string' || !exactRc.test(value.preferredVersion)) {
+  throw new Error('preferredVersion must be an exact release candidate')
+}
+if (!Array.isArray(value.supportedVersions) || value.supportedVersions.length === 0
+  || value.supportedVersions.some(version => typeof version !== 'string' || !exactRc.test(version))) {
+  throw new Error('supportedVersions must contain exact release candidates')
+}
+if (new Set(value.supportedVersions).size !== value.supportedVersions.length) throw new Error('supportedVersions contains duplicates')
+if (!value.supportedVersions.includes(value.preferredVersion)) throw new Error('preferredVersion is not supported')
+const parts = version => version.match(/\d+/gu).map(Number)
+const descending = [...value.supportedVersions].sort((left, right) => {
+  const leftParts = parts(left)
+  const rightParts = parts(right)
+  for (let index = 0; index < leftParts.length; index += 1) {
+    if (leftParts[index] !== rightParts[index]) return rightParts[index] - leftParts[index]
+  }
+  return 0
+})
+process.stdout.write([
+  value.preferredVersion,
+  value.supportedVersions.join(' '),
+  descending.join(' '),
+].join('\t'))
+NODE
+)"; then
+  printf 'DSH compatibility manifest is invalid. Reinstall OpenGUI from a verified release.\n' >&2
+  exit 1
+fi
+IFS=$'\t' read -r preferred_dsh_version supported_dsh_versions fallback_dsh_versions <<<"$compatibility_values"
+dsh_version="${requested_dsh_version:-$preferred_dsh_version}"
+
+is_supported_dsh_version() {
+  case " ${supported_dsh_versions} " in
+    *" $1 "*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+supported_dsh_label="${supported_dsh_versions// /, }"
+if ! is_supported_dsh_version "$dsh_version"; then
+  printf 'Unsupported DSH version %s. Supported versions: %s.\n' "$dsh_version" "$supported_dsh_label" >&2
+  exit 1
+fi
+
 detected_dsh_version=""
 if command -v dsh >/dev/null 2>&1; then
   detected_dsh_version="$(dsh -V 2>/dev/null || true)"
@@ -89,16 +153,14 @@ elif command -v corepack >/dev/null 2>&1; then
   dsh_installer=(corepack pnpm --dir "$managed_dsh_dir" add --save-exact "@deepseek-ai/dsh@${dsh_version}")
 elif command -v npm >/dev/null 2>&1; then
   dsh_installer=(npm install --prefix "$managed_dsh_dir" --no-audit --no-fund --save-exact "@deepseek-ai/dsh@${dsh_version}")
-elif [[ -n "$detected_dsh_version" ]]; then
-  printf 'The DSH on PATH is %s, but OpenGUI is verified with DSH %s. Install pnpm, corepack, or npm so the installer can install a compatible managed runtime without replacing your existing DSH.\n' "$detected_dsh_version" "$dsh_version" >&2
-  exit 1
-else
-  printf 'No DSH launcher found. Install dsh, pnpm, corepack, or npm first.\n' >&2
-  exit 1
 fi
 
 if [[ -n "$detected_dsh_version" && "$detected_dsh_version" != "$dsh_version" ]]; then
-  printf 'Detected DSH %s on PATH. OpenGUI is verified with DSH %s, so this installer will use the compatible version for the web profile. Existing workspaces, settings, credentials, and phone authorizations are preserved.\n' "$detected_dsh_version" "$dsh_version"
+  if is_supported_dsh_version "$detected_dsh_version"; then
+    printf 'Detected supported DSH %s on PATH. OpenGUI defaults to DSH %s, so this installer will use the preferred managed version. Use --dsh-version %s to select the existing version explicitly. Existing workspaces, settings, credentials, and phone authorizations are preserved.\n' "$detected_dsh_version" "$dsh_version" "$detected_dsh_version"
+  else
+    printf 'Detected unsupported DSH %s on PATH. OpenGUI will use verified DSH %s for the web profile. Existing workspaces, settings, credentials, and phone authorizations are preserved.\n' "$detected_dsh_version" "$dsh_version"
+  fi
 fi
 
 node_version="${COREMATE_INSTALL_NODE_VERSION_OVERRIDE:-$(node -p 'process.versions.node')}"
@@ -112,12 +174,72 @@ if ((node_major < 22 || node_major == 22 && node_minor < 19 || node_major == 23)
   exit 1
 fi
 
-if ((${#dsh_command[@]} == 0)); then
-  printf 'Installing managed DSH %s in %s.\n' "$dsh_version" "$managed_dsh_dir"
+select_managed_fallback() {
+  local candidate candidate_dir candidate_dsh candidate_version
+  for candidate in $fallback_dsh_versions; do
+    [[ "$candidate" == "$dsh_version" ]] && continue
+    candidate_dir="${dsh_home}/runtime/dsh-${candidate}"
+    candidate_dsh="${candidate_dir}/node_modules/.bin/dsh"
+    [[ -x "$candidate_dsh" ]] || continue
+    candidate_version="$("$candidate_dsh" -V 2>/dev/null || true)"
+    [[ "$candidate_version" == "$candidate" ]] || continue
+    dsh_version="$candidate"
+    managed_dsh_dir="$candidate_dir"
+    managed_dsh="$candidate_dsh"
+    managed_dsh_version="$candidate_version"
+    dsh_command=("$managed_dsh")
+    printf 'Preferred DSH could not be installed; using existing verified managed DSH %s.\n' "$dsh_version"
+    return 0
+  done
+  return 1
+}
+
+prepare_managed_runtime() {
+  local package_manifest="${managed_dsh_dir}/package.json"
+  local workspace_manifest="${managed_dsh_dir}/pnpm-workspace.yaml"
   mkdir -p "$managed_dsh_dir"
-  "${dsh_installer[@]}"
-  [[ -x "$managed_dsh" ]] || { printf 'Managed DSH executable was not installed at %s.\n' "$managed_dsh" >&2; exit 1; }
-  dsh_command=("$managed_dsh")
+  node --input-type=module - "$package_manifest" "$workspace_manifest" <<'NODE'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+
+const packagePath = process.argv[2]
+const workspacePath = process.argv[3]
+const value = existsSync(packagePath) ? JSON.parse(readFileSync(packagePath, 'utf8')) : {}
+writeFileSync(packagePath, `${JSON.stringify(value, null, 2)}\n`)
+writeFileSync(workspacePath, `packages: []
+allowBuilds:
+  node-pty: true
+  koffi: true
+  '@deepseek-ai/dsh-subprocess-local': true
+  '@google/genai': false
+  protobufjs: false
+  node-addon-require-builtin: false
+`)
+NODE
+}
+
+if ((${#dsh_command[@]} == 0)) && ((${#dsh_installer[@]} > 0)); then
+  printf 'Installing managed DSH %s in %s.\n' "$dsh_version" "$managed_dsh_dir"
+  prepare_managed_runtime
+  if "${dsh_installer[@]}" && [[ -x "$managed_dsh" ]] && [[ "$("$managed_dsh" -V 2>/dev/null || true)" == "$dsh_version" ]]; then
+    dsh_command=("$managed_dsh")
+  elif [[ "$dsh_version_explicit" == false ]] && select_managed_fallback; then
+    :
+  else
+    printf 'Managed DSH %s could not be installed at %s.\n' "$dsh_version" "$managed_dsh" >&2
+    exit 1
+  fi
+fi
+
+if ((${#dsh_command[@]} == 0)); then
+  if [[ "$dsh_version_explicit" == false ]] && select_managed_fallback; then
+    :
+  elif [[ -n "$detected_dsh_version" ]]; then
+    printf 'The DSH on PATH is %s, but OpenGUI selected DSH %s. Install pnpm, corepack, or npm so the installer can add the selected managed runtime without replacing your existing DSH.\n' "$detected_dsh_version" "$dsh_version" >&2
+    exit 1
+  else
+    printf 'No selected DSH launcher found. Install dsh, pnpm, corepack, or npm first.\n' >&2
+    exit 1
+  fi
 fi
 
 installed_dsh="$("${dsh_command[@]}" -V)"
@@ -194,7 +316,7 @@ if [[ -z "$release_version" ]]; then
 fi
 
 if [[ ! "$release_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  printf 'Invalid OpenGUI plugin version: %s. Expected a stable version such as 0.1.10.\n' "$release_version" >&2
+  printf 'Invalid OpenGUI plugin version: %s. Expected a stable version such as 0.1.11.\n' "$release_version" >&2
   exit 1
 fi
 printf 'Using OpenGUI plugin v%s.\n' "$release_version"
@@ -252,6 +374,74 @@ if [[ -f "${profile_dir}/package.json" ]]; then
 else
   printf 'Initializing DSH profile: %s\n' "$profile_dir"
 fi
+
+if ! DSH_HOME="$dsh_home" "${dsh_command[@]}" plugin --profile "$profile" --help >/dev/null; then
+  printf 'Could not initialize the DSH profile package manager. Existing profile data was preserved.\n' >&2
+  exit 1
+fi
+profile_workspace="${profile_dir}/pnpm-workspace.yaml"
+node --input-type=module - "$profile_workspace" <<'NODE'
+import { readFileSync, writeFileSync } from 'node:fs'
+
+const path = process.argv[2]
+let lines = readFileSync(path, 'utf8').split('\n')
+
+function ensureListValue(key, value) {
+  const keyIndex = lines.findIndex(line => line.startsWith(`${key}:`))
+  if (keyIndex === -1) {
+    if (lines.at(-1) !== '') lines.push('')
+    lines.push(`${key}:`, `  - '${value}'`)
+    return
+  }
+  if (lines[keyIndex].trim() !== `${key}:`) {
+    if (lines[keyIndex].trim() === `${key}: []`) {
+      lines.splice(keyIndex, 1, `${key}:`, `  - '${value}'`)
+      return
+    }
+    throw new Error(`${key} must use block-list syntax`)
+  }
+  let end = keyIndex + 1
+  while (end < lines.length && (lines[end].trim() === '' || /^\s/u.test(lines[end]))) end += 1
+  const existing = lines.slice(keyIndex + 1, end)
+    .map(line => line.match(/^\s*-\s*['"]?([^'"]+)['"]?\s*$/u)?.[1])
+    .filter(Boolean)
+  if (!existing.includes(value)) lines.splice(end, 0, `  - '${value}'`)
+}
+
+function ensureMapValue(key, name, value) {
+  const keyIndex = lines.findIndex(line => line.startsWith(`${key}:`))
+  if (keyIndex === -1) {
+    if (lines.at(-1) !== '') lines.push('')
+    lines.push(`${key}:`, `  '${name}': ${value}`)
+    return
+  }
+  if (lines[keyIndex].trim() !== `${key}:`) {
+    if (lines[keyIndex].trim() === `${key}: {}`) {
+      lines.splice(keyIndex, 1, `${key}:`, `  '${name}': ${value}`)
+      return
+    }
+    throw new Error(`${key} must use block-map syntax`)
+  }
+  let end = keyIndex + 1
+  while (end < lines.length && (lines[end].trim() === '' || /^\s/u.test(lines[end]))) end += 1
+  for (let index = keyIndex + 1; index < end; index += 1) {
+    const match = lines[index].match(/^\s+['"]?([^'"]+)['"]?:\s*(.+)$/u)
+    if (match?.[1] !== name) continue
+    if (match[2] !== String(value)) lines[index] = `  '${name}': ${value}`
+    return
+  }
+  lines.splice(end, 0, `  '${name}': ${value}`)
+}
+
+ensureListValue('onlyBuiltDependencies', 'dsh-coremate-mobile')
+// DSH classifies these dependency scripts as no-ops. Older bundled pnpm
+// releases only support allowlisting them rather than marking them ignored.
+ensureListValue('onlyBuiltDependencies', '@google/genai')
+ensureListValue('onlyBuiltDependencies', 'protobufjs')
+ensureMapValue('allowBuilds', '@google/genai', false)
+ensureMapValue('allowBuilds', 'protobufjs', false)
+writeFileSync(path, `${lines.join('\n').replace(/\n+$/u, '')}\n`)
+NODE
 
 DSH_HOME="$dsh_home" "${dsh_command[@]}" plugin --profile "$profile" add --save-exact "$cached_archive"
 

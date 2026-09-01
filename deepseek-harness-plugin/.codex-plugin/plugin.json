@@ -1,6 +1,6 @@
 {
   "name": "opengui",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "Control one to four local Android phones through bounded screenshots and allowlisted actions from Codex or DeepSeek Harness.",
   "author": {
     "name": "Core Mate",

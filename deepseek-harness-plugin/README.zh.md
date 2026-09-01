@@ -37,7 +37,7 @@ codex plugin add opengui@opengui-local
 
 开始安装前，请确认：
 
-- 已安装并能启动官方 DeepSeek Harness；当前验证基线为 `0.1.0-rc.7`。
+- 已安装并能启动官方 DeepSeek Harness；受支持版本为 `0.1.0-rc.7`、`0.1.0-rc.8`、`0.1.1-rc.1` 和 `0.1.1-rc.2`，首选版本为 `0.1.1-rc.2`。
 - Node.js 版本为 `^22.19.0` 或 `>=24`。
 - 安装机器能访问本仓库公开的 GitHub Releases。
 - DSH 当前会话模型应支持图片输入和工具调用；若不兼容，OpenGUI 可引导用户配置独立的 OpenAI 兼容视觉模型作为回退。
@@ -52,18 +52,20 @@ codex plugin add opengui@opengui-local
 
 ### macOS：通过 Codex Skill 安装
 
-让 Codex 从仓库的 [`deepseek-harness-plugin/skills/opengui-coremate-install`](./skills/opengui-coremate-install) 安装 Skill，然后调用 `$opengui-coremate-install`。Skill 会解析最新的插件正式版 Release，下载并校验对应的安装包，忽略草稿、预发布版和 OpenGUI 的其他 Release；同时保留 `web` profile 中的其他配置，并安装用户级 LaunchAgent，让 DSH 在异常退出或重新登录后自动恢复。整个过程不要求登录 GitHub。只有回滚或需要可复现安装时才使用 `--version VERSION`。
+让 Codex 从仓库的 [`deepseek-harness-plugin/skills/opengui-coremate-install`](./skills/opengui-coremate-install) 安装 Skill，然后调用 `$opengui-coremate-install`。Skill 会解析最新的插件正式版 Release，下载并校验对应的安装包，忽略草稿、预发布版和 OpenGUI 的其他 Release；同时保留 `web` profile 中的其他配置，并安装用户级 LaunchAgent，让 DSH 在异常退出或重新登录后自动恢复。整个过程不要求登录 GitHub。插件回滚或可复现安装使用 `--version VERSION`，需要选择某个受支持的 DSH 精确版本时使用 `--dsh-version VERSION`。
 
 如果 3080 端口属于 OpenGUI 管理的 DSH，安装器会安全更新并重启对应 LaunchAgent；如果属于其他 DSH 进程，安装器绝不会强制终止它，新 LaunchAgent 会在下次登录后接管。下面的手动安装方式仍适用于所有受支持的系统。
 
-当前验证的 DSH 基线是 `0.1.0-rc.7`。如果系统 `PATH` 中已有其他 DSH 版本，安装器会说明版本不兼容，并在 OpenGUI 的 DSH home 下为 `web` profile 安装已验证的 runtime。现有 DSH、工作区、设置、凭据和手机授权不会被替换。如果 3080 端口已有非 OpenGUI 管理的 DSH 进程，请退出该进程并重新运行安装器，以启用 OpenGUI。重复安装插件或再次执行 `pnpm install` 不能解决 DSH 版本不兼容。
+精确支持的 DSH 版本是 `0.1.0-rc.7`、`0.1.0-rc.8`、`0.1.1-rc.1` 和 `0.1.1-rc.2`，默认使用 `0.1.1-rc.2`；`0.1.2-alpha.4` 明确不受支持。安装器只会复用与所选版本完全一致的 `PATH` runtime，否则使用按版本隔离的 managed runtime。默认版本下载失败时，安装器可以回退到本机已有的最高兼容 managed runtime，并明确提示；显式传入 `--dsh-version` 时不会静默回退。现有 DSH、工作区、设置、凭据和手机授权都不会被替换。页头展示的是 Host 实际加载的组件版本；由于 DSH RC 包的内部依赖使用兼容范围，它可能比所选 CLI 版本更新。
+
+需要恢复上一版组合时，执行 `./skills/opengui-coremate-install/scripts/install-macos.sh --version 0.1.10 --dsh-version 0.1.0-rc.7`；该操作不会删除用户状态。
 
 ### 1. 下载发布包
 
-从 [OpenGUI 公开 Release](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.10) 下载：
+从 [OpenGUI 公开 Release](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.11) 下载：
 
-- `dsh-coremate-mobile-0.1.10.tgz`
-- `dsh-coremate-mobile-0.1.10.tgz.sha256`
+- `dsh-coremate-mobile-0.1.11.tgz`
+- `dsh-coremate-mobile-0.1.11.tgz.sha256`
 
 不要解压 `.tgz`，也不要下载 GitHub 自动生成的 Source code 压缩包。
 
@@ -71,24 +73,24 @@ codex plugin add opengui@opengui-local
 
 ```sh
 # Linux
-sha256sum -c dsh-coremate-mobile-0.1.10.tgz.sha256
+sha256sum -c dsh-coremate-mobile-0.1.11.tgz.sha256
 
 # macOS
-shasum -a 256 -c dsh-coremate-mobile-0.1.10.tgz.sha256
+shasum -a 256 -c dsh-coremate-mobile-0.1.11.tgz.sha256
 ```
 
-Windows PowerShell 可分别执行 `Get-FileHash .\dsh-coremate-mobile-0.1.10.tgz -Algorithm SHA256` 和 `Get-Content .\dsh-coremate-mobile-0.1.10.tgz.sha256`，确认两者显示的哈希一致。
+Windows PowerShell 可分别执行 `Get-FileHash .\dsh-coremate-mobile-0.1.11.tgz -Algorithm SHA256` 和 `Get-Content .\dsh-coremate-mobile-0.1.11.tgz.sha256`，确认两者显示的哈希一致。
 
 ### 2. 安装到 Harness profile
 
 ```sh
-dsh plugin --profile web add /绝对路径/dsh-coremate-mobile-0.1.10.tgz
+dsh plugin --profile web add /绝对路径/dsh-coremate-mobile-0.1.11.tgz
 ```
 
 如果使用 `npx` 启动官方 CLI，可将命令中的 `dsh` 替换为：
 
 ```text
-npx @deepseek-ai/dsh@0.1.0-rc.7
+npx @deepseek-ai/dsh@0.1.1-rc.2
 ```
 
 首次安装若出现 `ERR_PNPM_IGNORED_BUILDS`，在 `$DSH_HOME/profiles/web/pnpm-workspace.yaml` 已有内容中合并下面两项，然后原样重试安装命令：
@@ -265,7 +267,7 @@ OpenGUI 任务运行时，输入框右侧会出现方形“停止 OpenGUI 操作
 生产环境应使用上面的预构建 Release 包。开发时可以 checkout OpenGUI 的公开 Release tag，再安装插件目录：
 
 ```sh
-git clone --branch dsh-coremate-mobile-v0.1.10 --depth 1 https://github.com/Core-Mate/OpenGUI.git
+git clone --branch dsh-coremate-mobile-v0.1.11 --depth 1 https://github.com/Core-Mate/OpenGUI.git
 cd OpenGUI/deepseek-harness-plugin
 dsh plugin --profile web add "$(pwd)"
 ```

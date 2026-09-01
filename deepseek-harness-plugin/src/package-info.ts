@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import type { RuntimeInfo } from './mirror-contract.ts'
+import { classifyDshCompatibility, dshCompatibilityManifest } from './dsh-compatibility.ts'
 
 interface PackageInfo {
   readonly name: string
@@ -30,8 +31,13 @@ export function packageInfo(): PackageInfo {
 
 /** Report the OpenGUI package and the DSH web Host package loaded in this process. */
 export function runtimeInfo(): RuntimeInfo {
+  const dshVersion = installedPackageVersion('@deepseek-ai/dsh-host-webserver') ?? 'unknown'
+  const compatibility = dshCompatibilityManifest()
   return {
-    dshVersion: installedPackageVersion('@deepseek-ai/dsh-host-webserver') ?? 'unknown',
+    dshVersion,
     openGuiVersion: packageInfo().version,
+    dshCompatibility: classifyDshCompatibility(dshVersion),
+    preferredDshVersion: compatibility.preferredVersion,
+    supportedDshVersions: [...compatibility.supportedVersions],
   }
 }

@@ -83,6 +83,7 @@ jobs:
           grep -Fx 'package/.codex-plugin/plugin.json' "$RUNNER_TEMP/archive-files.txt"
           grep -Fx 'package/.mcp.json' "$RUNNER_TEMP/archive-files.txt"
           grep -Fx 'package/skills/control/SKILL.md' "$RUNNER_TEMP/archive-files.txt"
+          grep -Fx 'package/skills/opengui-coremate-install/dsh-compatibility.json' "$RUNNER_TEMP/archive-files.txt"
           grep -Fx 'package/codex-public/.codex-plugin/plugin.json' "$RUNNER_TEMP/archive-files.txt"
           grep -Fx 'package/cordis.patch.yml' "$RUNNER_TEMP/archive-files.txt"
           grep -Fx 'package/assets/platform-tools/win32-x64/adb.exe' "$RUNNER_TEMP/archive-files.txt"

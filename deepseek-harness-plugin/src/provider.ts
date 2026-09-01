@@ -50,6 +50,10 @@ const PROTOCOLS: Readonly<Record<MobileApi, () => ProviderStreams>> = {
   'openai-completions': openAICompletionsApi,
 }
 
+const DEFAULT_MAX_REQUEST_IMAGE_BYTES = 20 * 1024 * 1024
+const DEFAULT_REQUEST_IMAGE_PIXEL_BUDGET = 2048 * 2048
+const DEFAULT_REQUEST_IMAGE_MAX_BYTES = 1024 * 1024
+
 function harnessApiKeyAuth(displayName: string): ApiKeyAuth {
   return {
     name: displayName,
@@ -85,6 +89,9 @@ export function resolveMobileProfile(config: MobileProfileConfig): ResolvedPiAiP
     baseURL: config.baseURL,
     apiKeyEnv: credentialRef(config.apiKeyEnv),
     streamIdleTimeoutMs: config.streamIdleTimeoutMs,
+    maxRequestImageBytes: DEFAULT_MAX_REQUEST_IMAGE_BYTES,
+    requestImagePixelBudget: DEFAULT_REQUEST_IMAGE_PIXEL_BUDGET,
+    requestImageMaxBytes: DEFAULT_REQUEST_IMAGE_MAX_BYTES,
     retryPolicy: resolveRetryPolicy(undefined, 'coremate-mobile retryPolicy'),
     configuredMaxTokens: new Map(),
     piProvider: createProvider({

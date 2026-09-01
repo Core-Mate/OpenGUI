@@ -10,11 +10,12 @@ const json = async path => JSON.parse(await readFile(new URL(path, root), 'utf8'
 const pkg = await json('package.json')
 const plugin = await json('.codex-plugin/plugin.json')
 const publicPlugin = await json('codex-public/.codex-plugin/plugin.json')
+const compatibility = await json('skills/opengui-coremate-install/dsh-compatibility.json')
 const mcp = await json('.mcp.json')
 const marketplace = await json('../.agents/plugins/marketplace.json')
 
-if (pkg.version !== '0.1.10' || plugin.version !== pkg.version || publicPlugin.version !== pkg.version) {
-  throw new Error('package, Codex, and public Skills-only versions must all be 0.1.10')
+if (pkg.version !== '0.1.11' || plugin.version !== pkg.version || publicPlugin.version !== pkg.version) {
+  throw new Error('package, Codex, and public Skills-only versions must all be 0.1.11')
 }
 if (pkg.name !== 'dsh-coremate-mobile' || plugin.name !== 'opengui' || publicPlugin.name !== 'opengui') {
   throw new Error('internal package identity or public OpenGUI identity changed unexpectedly')
@@ -24,6 +25,17 @@ if (plugin.mcpServers !== './.mcp.json' || publicPlugin.mcpServers !== undefined
 }
 if (plugin.skills !== './skills/' || publicPlugin.skills !== './skills/') {
   throw new Error('both Codex manifests must load the shared skills directory')
+}
+const peerRange = compatibility.supportedVersions.join(' || ')
+if (!Object.entries(pkg.peerDependencies)
+  .filter(([name]) => name.startsWith('@deepseek-ai/dsh-'))
+  .every(([, version]) => version === peerRange)) {
+  throw new Error('all DSH peer dependencies must match the compatibility manifest exactly')
+}
+if (!Object.entries(pkg.devDependencies)
+  .filter(([name]) => name.startsWith('@deepseek-ai/dsh-'))
+  .every(([, version]) => version === compatibility.preferredVersion)) {
+  throw new Error('all DSH development dependencies must use the preferred compatible version')
 }
 const server = mcp.mcpServers?.['opengui-local-android']
 if (server?.command !== 'node' || server.cwd !== '.' || server.args?.[0] !== './lib/codex-mcp.js') {
@@ -38,7 +50,8 @@ if (entry.policy?.installation !== 'AVAILABLE' || entry.policy?.authentication !
 }
 for (const path of [
   'lib/index.js', 'lib/client.js', 'lib/codex-mcp.js', 'lib/codex-cli.js',
-  'skills/control/SKILL.md', 'docs/public-submission/review-tests.md',
+  'skills/control/SKILL.md', 'skills/opengui-coremate-install/dsh-compatibility.json',
+  'docs/public-submission/review-tests.md',
 ]) await access(new URL(path, root))
 
 const cli = await stat(new URL('lib/codex-cli.js', root))

@@ -13,15 +13,15 @@ Install and verify the latest stable OpenGUI release without replacing unrelated
 2. Run `scripts/install-macos.sh` from this skill directory.
 3. Report the installed package version, profile path, runtime URL, and whether an existing DSH process still needs a manual restart.
 
-By default, the script resolves the highest stable `dsh-coremate-mobile-v*` release from the public GitHub Releases API. It ignores drafts, prereleases, and unrelated OpenGUI releases. Use `--version VERSION` only when the user explicitly requests a rollback or reproducible install.
+By default, the script resolves the highest stable `dsh-coremate-mobile-v*` release from the public GitHub Releases API. It ignores drafts, prereleases, and unrelated OpenGUI releases. Use `--version VERSION` only when the user explicitly requests a plugin rollback or reproducible install. Use `--dsh-version VERSION` only for an exact version listed in `dsh-compatibility.json`.
 
-The script checks the host Node version and pins DSH to `0.1.0-rc.7`. If another DSH version is already on `PATH`, explain that it is not the verified baseline and install the pinned runtime under the OpenGUI DSH home through pnpm, corepack, or npm. Preserve the existing DSH installation, workspaces, settings, credentials, and phone authorizations. Never suggest that reinstalling the plugin or rerunning `pnpm install` can repair a DSH compatibility mismatch.
+The script checks the host Node version and reads its DSH policy only from `dsh-compatibility.json`. It defaults to the manifest's preferred version and reuses a `PATH` runtime only when its version is an exact match. Otherwise it installs a versioned managed runtime under the OpenGUI DSH home through pnpm, corepack, or npm. A default-version download failure may fall back to the highest already-installed compatible managed runtime and must report that choice. An explicit `--dsh-version` must never fall back silently. Reject versions outside the manifest, including alpha releases. Preserve the existing DSH installation, workspaces, settings, credentials, and phone authorizations. Never suggest that reinstalling the plugin or rerunning `pnpm install` can repair a DSH compatibility mismatch.
 
 The script downloads both the resolved release tarball and checksum, verifies SHA-256, installs only `dsh-coremate-mobile` into the `web` profile, and validates the package, bundle, Client entry, and `/opengui` command. GitHub authentication is not required.
 
 The script installs a user LaunchAgent with `KeepAlive` so DSH returns after a crash or login. It may safely reload an instance already owned by that exact LaunchAgent. If port 3080 belongs to any other DSH process, preserve it and tell the user to quit it, then rerun the installer to activate the compatible version now. The installer writes the LaunchAgent but otherwise defers takeover until the next login. When DSH is not running, the script starts and verifies `http://127.0.0.1:3080`.
 
-For uninstall requests, run `scripts/uninstall-macos.sh`. It uses the same verified DSH CLI and removes only the matching plugin and LaunchAgent; settings, credentials, unrelated DSH instances, and caches remain intact.
+For uninstall requests, run `scripts/uninstall-macos.sh`. It selects a launcher from the same compatibility manifest and removes only the matching plugin and LaunchAgent; settings, credentials, unrelated DSH instances, managed runtimes, and caches remain intact.
 
 ## First-run handoff
 

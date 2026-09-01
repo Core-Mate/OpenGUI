@@ -77,7 +77,13 @@ async function setup(options: { selectionLocked?: boolean, fleetError?: Error } 
     updater,
     { read: previewRead } as never,
     { status: async () => ({ supported: true, cached: true, approved: true, phase: 'ready' }), approve: () => true, subscribe: vi.fn() } as never,
-    { dshVersion: '0.1.0-rc.7', openGuiVersion: '0.1.10' },
+    {
+      dshVersion: '0.1.0-rc.7',
+      openGuiVersion: '0.1.11',
+      dshCompatibility: 'supported',
+      preferredDshVersion: '0.1.1-rc.2',
+      supportedDshVersions: ['0.1.0-rc.7', '0.1.0-rc.8', '0.1.1-rc.1', '0.1.1-rc.2'],
+    },
   )
   const server = createServer((request, response) => {
     const path = new URL(request.url ?? '/', 'http://localhost').pathname
@@ -97,7 +103,13 @@ describe('OpenGUI local preview HTTP surface', () => {
     const response = await fetch(`${base}${RUNTIME_INFO_PATH}`)
 
     expect(response.status).toBe(200)
-    expect(await response.json()).toEqual({ dshVersion: '0.1.0-rc.7', openGuiVersion: '0.1.10' })
+    expect(await response.json()).toEqual({
+      dshVersion: '0.1.0-rc.7',
+      openGuiVersion: '0.1.11',
+      dshCompatibility: 'supported',
+      preferredDshVersion: '0.1.1-rc.2',
+      supportedDshVersions: ['0.1.0-rc.7', '0.1.0-rc.8', '0.1.1-rc.1', '0.1.1-rc.2'],
+    })
   })
 
   it('preserves an actionable device-discovery failure for the local workbench', async () => {

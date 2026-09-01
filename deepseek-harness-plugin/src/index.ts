@@ -6,6 +6,7 @@
 
 import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
+import { defaultProviderAuthContext, InMemoryCredentialStore } from '@earendil-works/pi-ai'
 import type { CommandDefinition, CommandInvocation, CommandResult } from '@deepseek-ai/dsh-commands'
 import type { AgentOptions } from '@deepseek-ai/dsh-agent'
 import { credentialRef } from '@deepseek-ai/dsh-credentials'
@@ -399,6 +400,10 @@ export function apply(ctx: Context, baseConfig: Config): void {
       return active === undefined ? new Map() : new Map([[PROVIDER, active]])
     },
     resolveApiKey,
+    auth: {
+      credentials: new InMemoryCredentialStore(),
+      authContext: defaultProviderAuthContext(),
+    },
     resolveAttachments: () => ctx.get('attachments'),
   })
   const hostedObservations = new WeakMap<object, PhoneObservation>()

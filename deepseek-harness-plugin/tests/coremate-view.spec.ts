@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { MirrorDeviceStatus } from '../src/mirror-contract.ts'
-import { buildDeviceWallItems, runtimeVersionLabel } from '../src/client/CoremateView.tsx'
+import { buildDeviceWallItems, runtimeVersionLabel, runtimeVersionTitle } from '../src/client/CoremateView.tsx'
 import { preparationMessage, streamFallbackMessage } from '../src/client/PhoneStream.tsx'
 import { WECHAT_GROUP_QR_DATA_URL } from '../src/client/wechat-group-qr.ts'
 
@@ -18,9 +18,17 @@ describe('OpenGUI device photo wall', () => {
   it('keeps the compact runtime version label complete in every state', () => {
     expect(runtimeVersionLabel()).toBe('DSH … · OpenGUI …')
     expect(runtimeVersionLabel(undefined, true)).toBe('DSH 未知 · OpenGUI 未知')
-    expect(runtimeVersionLabel({ dshVersion: 'unknown', openGuiVersion: 'unknown' })).toBe('DSH 未知 · OpenGUI 未知')
-    expect(runtimeVersionLabel({ dshVersion: '0.1.0-rc.7', openGuiVersion: '0.1.10' }))
-      .toBe('DSH 0.1.0-rc.7 · OpenGUI 0.1.10')
+    const shared = {
+      preferredDshVersion: '0.1.1-rc.2',
+      supportedDshVersions: ['0.1.0-rc.7', '0.1.0-rc.8', '0.1.1-rc.1', '0.1.1-rc.2'],
+    }
+    expect(runtimeVersionLabel({ ...shared, dshVersion: 'unknown', openGuiVersion: 'unknown', dshCompatibility: 'unknown' }))
+      .toBe('DSH 未知 · OpenGUI 未知')
+    expect(runtimeVersionLabel({ ...shared, dshVersion: '0.1.0-rc.7', openGuiVersion: '0.1.11', dshCompatibility: 'supported' }))
+      .toBe('DSH 0.1.0-rc.7 · OpenGUI 0.1.11')
+    const unsupported = { ...shared, dshVersion: '0.1.2-alpha.4', openGuiVersion: '0.1.11', dshCompatibility: 'unsupported' as const }
+    expect(runtimeVersionLabel(unsupported)).toBe('DSH 0.1.2-alpha.4（未验证） · OpenGUI 0.1.11')
+    expect(runtimeVersionTitle(unsupported)).toContain('已支持：0.1.0-rc.7、0.1.0-rc.8、0.1.1-rc.1、0.1.1-rc.2')
   })
 
   it('falls back deterministically when stream status cannot be read and hides implementation details', () => {

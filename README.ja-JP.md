@@ -46,7 +46,7 @@ Install and run the OpenGUI installer Skill from https://github.com/Core-Mate/Op
 
 Skillは公開ReleaseのパッケージとチェックサムをダウンロードしてSHA-256を検証し、OpenGUIプラグインだけをインストールします。必要な場合はDSHを起動して開き、既存のプラグインと設定は保持します。管理対象のDSHを再起動したか、既存のプロセスを終了してインストーラーを再実行する必要があるかは、インストーラーが表示します。LinuxまたはWindowsでは、[手動パッケージガイド](./deepseek-harness-plugin/README.md#1-download-the-release-package)を使用してください。
 
-OpenGUIで現在検証済みのDSHバージョンは`0.1.0-rc.7`です。新しいalpha版など、別のDSHバージョンが`PATH`にある場合、macOSインストーラーは互換性の違いを表示し、OpenGUIのDSH home内に`web`プロファイル用の検証済みruntimeをインストールします。既存のDSH、ワークスペース、モデル設定、認証情報、スマートフォンの認証は置き換えません。OpenGUIが管理していないDSHプロセスがポート3080を使用している場合、そのプロセスは停止しません。終了してからインストーラーを再実行してください。プラグインの再インストールや`pnpm install`の再実行では、DSHのバージョン非互換は解消されません。
+OpenGUIはDSH `0.1.0-rc.7`、`0.1.0-rc.8`、`0.1.1-rc.1`、`0.1.1-rc.2`を正式にサポートし、新規インストールでは`0.1.1-rc.2`を使用します。macOSインストーラーは、選択したバージョンと完全に一致する`PATH` runtimeだけを再利用し、それ以外の場合はOpenGUIのDSH homeに分離されたmanaged runtimeをインストールします。サポート対象へのロールバックには`--dsh-version VERSION`を使用できます。DSH `0.1.2-alpha.4`はサポート対象外です。既存のDSH、ワークスペース、モデル設定、認証情報、スマートフォン認証は保持されます。
 
 インストール後、DSHでワークスペースを追加または選択し、認証済みのAndroidスマートフォンを接続して選択してから、次を送信します：
 
@@ -54,7 +54,7 @@ OpenGUIで現在検証済みのDSHバージョンは`0.1.0-rc.7`です。新し�
 @OpenGUI Open Settings and report the Android version
 ```
 
-このプラグインは、OpenGUIバックエンド一式を必要とせず、DSHにスマートフォンとブラウザの操作機能を追加します。[ユースケース](./deepseek-harness-plugin/docs/use-cases.md)を確認するか、[v0.1.10リリースパッケージ](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.10)をダウンロードできます。
+このプラグインは、OpenGUIバックエンド一式を必要とせず、DSHにスマートフォンとブラウザの操作機能を追加します。[ユースケース](./deepseek-harness-plugin/docs/use-cases.md)を確認するか、[v0.1.11リリースパッケージ](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.11)をダウンロードできます。
 
 主なユースケース：
 

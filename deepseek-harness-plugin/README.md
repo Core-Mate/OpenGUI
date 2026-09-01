@@ -35,7 +35,7 @@ Before a public-directory submission, run `pnpm run build`, then use `pnpm codex
 
 Before installing, confirm that:
 
-- The official DeepSeek Harness is installed and starts successfully. The current verified baseline is `0.1.0-rc.7`.
+- The official DeepSeek Harness is installed and starts successfully. Supported versions are `0.1.0-rc.7`, `0.1.0-rc.8`, `0.1.1-rc.1`, and `0.1.1-rc.2`; the preferred version is `0.1.1-rc.2`.
 - Node.js is `^22.19.0` or `>=24`.
 - The installation machine can access the public GitHub Releases for this repository.
 - The DSH conversation model should support image input and tool calling. If it does not, OpenGUI can guide the user through configuring a separate OpenAI-compatible visual-model fallback.
@@ -50,18 +50,20 @@ The examples use the `web` profile and the default `$DSH_HOME=~/.dsh`. Substitut
 
 ### macOS: install with the Codex Skill
 
-Ask Codex to install the repository skill from [`deepseek-harness-plugin/skills/opengui-coremate-install`](./skills/opengui-coremate-install), then invoke `$opengui-coremate-install`. The Skill resolves the latest stable namespaced plugin Release, downloads its package and checksum, preserves the rest of the `web` profile, and installs a per-user LaunchAgent so DSH returns after a crash or login. Drafts, prereleases, and unrelated OpenGUI releases are ignored. GitHub login is not required. Use `--version VERSION` only for rollback or a reproducible install.
+Ask Codex to install the repository skill from [`deepseek-harness-plugin/skills/opengui-coremate-install`](./skills/opengui-coremate-install), then invoke `$opengui-coremate-install`. The Skill resolves the latest stable namespaced plugin Release, downloads its package and checksum, preserves the rest of the `web` profile, and installs a per-user LaunchAgent so DSH returns after a crash or login. Drafts, prereleases, and unrelated OpenGUI releases are ignored. GitHub login is not required. Use `--version VERSION` only for plugin rollback or a reproducible install, and `--dsh-version VERSION` to select an exact supported DSH release.
 
 If port 3080 belongs to an OpenGUI-managed DSH, the installer safely reloads that LaunchAgent. It never terminates an unowned DSH process; in that case the new LaunchAgent takes over after the next login. The manual package flow below remains available on every supported host.
 
-The verified DSH baseline is `0.1.0-rc.7`. When another DSH version is already on `PATH`, the installer explains the mismatch and installs the verified runtime under the OpenGUI DSH home for the `web` profile. It does not replace the existing DSH installation, workspaces, settings, credentials, or phone authorizations. If an unowned DSH process is already using port 3080, quit it and rerun the installer to activate OpenGUI. Reinstalling the plugin or rerunning `pnpm install` does not resolve a DSH compatibility mismatch.
+The exact supported DSH releases are `0.1.0-rc.7`, `0.1.0-rc.8`, `0.1.1-rc.1`, and `0.1.1-rc.2`; the default is `0.1.1-rc.2`. DSH `0.1.2-alpha.4` is explicitly unsupported. A `PATH` runtime is reused only when it exactly matches the selected version; otherwise the installer uses a versioned managed runtime. If the default download fails, the installer may fall back to the highest already-installed compatible managed runtime and reports that choice. An explicit `--dsh-version` never falls back silently. Existing DSH installations, workspaces, settings, credentials, and phone authorizations are preserved. The page header reports the Host component version actually loaded, which can be newer than the selected CLI version because DSH RC packages use compatible internal dependency ranges.
+
+To restore the previous release combination without deleting user state, run `./skills/opengui-coremate-install/scripts/install-macos.sh --version 0.1.10 --dsh-version 0.1.0-rc.7`.
 
 ### 1. Download the release package
 
-Download these files from the [public OpenGUI Release](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.10):
+Download these files from the [public OpenGUI Release](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.11):
 
-- `dsh-coremate-mobile-0.1.10.tgz`
-- `dsh-coremate-mobile-0.1.10.tgz.sha256`
+- `dsh-coremate-mobile-0.1.11.tgz`
+- `dsh-coremate-mobile-0.1.11.tgz.sha256`
 
 Do not extract the `.tgz`, and do not use GitHub's automatically generated source archives.
 
@@ -69,24 +71,24 @@ From the directory containing both files, verify the package:
 
 ```sh
 # Linux
-sha256sum -c dsh-coremate-mobile-0.1.10.tgz.sha256
+sha256sum -c dsh-coremate-mobile-0.1.11.tgz.sha256
 
 # macOS
-shasum -a 256 -c dsh-coremate-mobile-0.1.10.tgz.sha256
+shasum -a 256 -c dsh-coremate-mobile-0.1.11.tgz.sha256
 ```
 
-On Windows PowerShell, run `Get-FileHash .\dsh-coremate-mobile-0.1.10.tgz -Algorithm SHA256` and `Get-Content .\dsh-coremate-mobile-0.1.10.tgz.sha256`, then confirm that the displayed hashes match.
+On Windows PowerShell, run `Get-FileHash .\dsh-coremate-mobile-0.1.11.tgz -Algorithm SHA256` and `Get-Content .\dsh-coremate-mobile-0.1.11.tgz.sha256`, then confirm that the displayed hashes match.
 
 ### 2. Install into a Harness profile
 
 ```sh
-dsh plugin --profile web add /absolute/path/dsh-coremate-mobile-0.1.10.tgz
+dsh plugin --profile web add /absolute/path/dsh-coremate-mobile-0.1.11.tgz
 ```
 
 If you run the official CLI through `npx`, replace `dsh` in the commands with:
 
 ```text
-npx @deepseek-ai/dsh@0.1.0-rc.7
+npx @deepseek-ai/dsh@0.1.1-rc.2
 ```
 
 If the first installation stops with `ERR_PNPM_IGNORED_BUILDS`, merge these decisions into the existing `$DSH_HOME/profiles/web/pnpm-workspace.yaml`, then rerun the same installation command:
@@ -263,7 +265,7 @@ This is an advanced option: a profile patch replaces the target row's entire `co
 Production installations should use the prebuilt release package above. For development, clone the public OpenGUI release tag and install the plugin directory:
 
 ```sh
-git clone --branch dsh-coremate-mobile-v0.1.10 --depth 1 https://github.com/Core-Mate/OpenGUI.git
+git clone --branch dsh-coremate-mobile-v0.1.11 --depth 1 https://github.com/Core-Mate/OpenGUI.git
 cd OpenGUI/deepseek-harness-plugin
 dsh plugin --profile web add "$(pwd)"
 ```

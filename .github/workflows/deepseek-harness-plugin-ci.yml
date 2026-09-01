@@ -50,8 +50,71 @@ jobs:
           grep -Fx 'package/.codex-plugin/plugin.json' "$RUNNER_TEMP/archive-files.txt"
           grep -Fx 'package/.mcp.json' "$RUNNER_TEMP/archive-files.txt"
           grep -Fx 'package/skills/control/SKILL.md' "$RUNNER_TEMP/archive-files.txt"
+          grep -Fx 'package/skills/opengui-coremate-install/dsh-compatibility.json' "$RUNNER_TEMP/archive-files.txt"
           grep -Fx 'package/codex-public/.codex-plugin/plugin.json' "$RUNNER_TEMP/archive-files.txt"
           grep -Fx 'package/cordis.patch.yml' "$RUNNER_TEMP/archive-files.txt"
           grep -E '^-rwxr-xr-x .* package/lib/codex-cli.js$' "$RUNNER_TEMP/archive-verbose.txt"
           grep -E '^-rwxr-xr-x .* package/assets/platform-tools/darwin/adb$' "$RUNNER_TEMP/archive-verbose.txt"
           grep -E '^-rwxr-xr-x .* package/assets/platform-tools/linux-x64/adb$' "$RUNNER_TEMP/archive-verbose.txt"
+
+  compatibility-matrix:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: deepseek-harness-plugin
+    outputs:
+      versions: ${{ steps.matrix.outputs.versions }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: matrix
+        name: Read supported DSH versions
+        shell: bash
+        run: |
+          versions="$(node -e '
+            const manifest = require("./skills/opengui-coremate-install/dsh-compatibility.json")
+            const exactRc = /^\d+\.\d+\.\d+-rc\.\d+$/u
+            if (manifest.schemaVersion !== 1 || typeof manifest.preferredVersion !== "string"
+              || !Array.isArray(manifest.supportedVersions) || manifest.supportedVersions.length === 0
+              || manifest.supportedVersions.some(version => typeof version !== "string" || !exactRc.test(version))
+              || new Set(manifest.supportedVersions).size !== manifest.supportedVersions.length
+              || !manifest.supportedVersions.includes(manifest.preferredVersion)) {
+              throw new Error("invalid DSH compatibility manifest")
+            }
+            process.stdout.write(JSON.stringify(manifest.supportedVersions))
+          ')"
+          echo "versions=$versions" >> "$GITHUB_OUTPUT"
+
+  dsh-compatibility:
+    needs: compatibility-matrix
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        dsh: ${{ fromJSON(needs.compatibility-matrix.outputs.versions) }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: deepseek-harness-plugin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.19.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: deepseek-harness-plugin/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build
+      - run: mkdir -p .artifacts && npm pack --pack-destination .artifacts
+      - name: Locate Chrome
+        shell: bash
+        run: |
+          chrome="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium || true)"
+          test -n "$chrome"
+          echo "CHROME_PATH=$chrome" >> "$GITHUB_ENV"
+      - name: Verify packaged plugin with DSH ${{ matrix.dsh }}
+        env:
+          DSH_COMPAT_VERSION: ${{ matrix.dsh }}
+        run: pnpm run check:dsh-compatibility

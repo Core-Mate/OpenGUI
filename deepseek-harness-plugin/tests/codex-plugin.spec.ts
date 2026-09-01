@@ -21,11 +21,16 @@ describe('Codex plugin package', () => {
     const [pkg, plugin, publicPlugin] = await Promise.all([
       json('package.json'), json('.codex-plugin/plugin.json'), json('codex-public/.codex-plugin/plugin.json'),
     ])
-    expect([pkg.version, plugin.version, publicPlugin.version]).toEqual(['0.1.10', '0.1.10', '0.1.10'])
+    const compatibility = await json('skills/opengui-coremate-install/dsh-compatibility.json')
+    const peerRange = compatibility.supportedVersions.join(' || ')
+    expect([pkg.version, plugin.version, publicPlugin.version]).toEqual(['0.1.11', '0.1.11', '0.1.11'])
     expect(pkg.name).toBe('dsh-coremate-mobile')
     expect(Object.entries(pkg.peerDependencies)
       .filter(([name]) => name.startsWith('@deepseek-ai/dsh-'))
-      .every(([, version]) => version === '0.1.0-rc.7')).toBe(true)
+      .every(([, version]) => version === peerRange)).toBe(true)
+    expect(Object.entries(pkg.devDependencies)
+      .filter(([name]) => name.startsWith('@deepseek-ai/dsh-'))
+      .every(([, version]) => version === compatibility.preferredVersion)).toBe(true)
     expect(plugin).toMatchObject({ name: 'opengui', skills: './skills/', mcpServers: './.mcp.json' })
     expect(publicPlugin).toMatchObject({ name: 'opengui', skills: './skills/' })
     expect(publicPlugin).not.toHaveProperty('mcpServers')

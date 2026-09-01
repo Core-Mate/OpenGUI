@@ -6,7 +6,7 @@
 
 安装命令只改写 `$DSH_HOME/profiles/<name>` 下由用户拥有的 profile：pnpm 管理其中的依赖，Harness 在成功安装后把声明了 `dsh.bundle` 的依赖追加到 profile 的 `dsh.profile.bundles`。官方源码把 profile 定义为 `$DSH_HOME/profiles/<name>`，默认 `$DSH_HOME` 是 `~/.dsh`；外部 bundle 从 profile 自己的 `node_modules` 解析。[官方插件发布教程](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.1.0-rc.7/docs/user/develop/basic/publish.zh.md)；[官方 profile 实现](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.1.0-rc.7/packages/boot/app-boot/src/profile.ts)；本地官方源码：`/Users/panda/Documents/Projects/Deepseek-harness/packages/boot/app-boot/src/profile.ts`。
 
-当前插件的 peer dependency 基线是 DeepSeek Harness `0.1.0-rc.7`。Harness 仍处于开发者预览期，后续版本可能破坏兼容性，因此安装前应核对插件 [`package.json`](../../package.json) 的 `peerDependencies` 与目标 Harness 版本。
+当前插件的精确兼容矩阵是 DeepSeek Harness `0.1.0-rc.7`、`0.1.0-rc.8`、`0.1.1-rc.1` 和 `0.1.1-rc.2`，首选版本为 `0.1.1-rc.2`。唯一真源是 [`dsh-compatibility.json`](../../skills/opengui-coremate-install/dsh-compatibility.json)，`package.json` 的 DSH peer dependencies 必须与其完全一致。`0.1.2-alpha.4` 不在兼容范围内，因为它移除了插件仍依赖的 `@deepseek-ai/dsh-llm` `CallId` 导出。Harness 仍处于开发者预览期，后续版本必须经过同样的打包、Host、API 和客户端矩阵验证后才能加入。
 
 ## 前置条件
 
@@ -112,7 +112,7 @@ pnpm dsh plugin --profile web add ../Deepseek-ai
 插件迁入 OpenGUI monorepo 后，不应把仓库根目录当作插件包直接交给 DSH。开发验证应固定插件 release tag，checkout 后安装其中的 `deepseek-harness-plugin` 目录：
 
 ```sh
-git clone --branch dsh-coremate-mobile-v0.1.10 --depth 1 \
+git clone --branch dsh-coremate-mobile-v0.1.11 --depth 1 \
   https://github.com/Core-Mate/OpenGUI.git
 cd OpenGUI/deepseek-harness-plugin
 pnpm build
