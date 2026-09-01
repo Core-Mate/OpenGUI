@@ -249,7 +249,31 @@ if [[ "$installed_dsh" != "$dsh_version" ]]; then
 fi
 
 temporary="$(mktemp -d "${TMPDIR:-/tmp}/opengui-coremate-install.XXXXXX")"
-trap 'rm -rf "$temporary"' EXIT
+stale_plugin_modules=""
+stale_plugin_modules_backup=""
+installation_completed=false
+cleanup() {
+  local preserve_temporary=false
+  if [[ "$installation_completed" != true && -n "$stale_plugin_modules_backup" && -d "$stale_plugin_modules_backup" ]]; then
+    if [[ ! -e "$stale_plugin_modules" ]] && mv "$stale_plugin_modules_backup" "$stale_plugin_modules"; then
+      printf 'Restored the previous plugin dependency directory after installation failed.\n' >&2
+    else
+      preserve_temporary=true
+      printf 'Could not restore the previous plugin dependency directory; recovery data remains at %s.\n' "$temporary" >&2
+    fi
+  fi
+  if [[ "$preserve_temporary" != true ]]; then rm -rf "$temporary"; fi
+}
+trap cleanup EXIT
+
+quarantine_stale_plugin_modules() {
+  local candidate="${profile_dir}/node_modules/${package_name}/node_modules"
+  [[ -f "${candidate}/.modules.yaml" && -d "${candidate}/.pnpm" ]] || return 0
+  stale_plugin_modules="$candidate"
+  stale_plugin_modules_backup="${temporary}/stale-plugin-node-modules"
+  mv "$stale_plugin_modules" "$stale_plugin_modules_backup"
+  printf 'Quarantined a stale plugin dependency directory from an older installation.\n'
+}
 
 if [[ -z "$release_version" ]]; then
   printf 'Resolving the latest stable OpenGUI plugin release...\n'
@@ -316,7 +340,7 @@ if [[ -z "$release_version" ]]; then
 fi
 
 if [[ ! "$release_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  printf 'Invalid OpenGUI plugin version: %s. Expected a stable version such as 0.1.11.\n' "$release_version" >&2
+  printf 'Invalid OpenGUI plugin version: %s. Expected a stable version such as 0.1.12.\n' "$release_version" >&2
   exit 1
 fi
 printf 'Using OpenGUI plugin v%s.\n' "$release_version"
@@ -464,25 +488,27 @@ NODE
 
 printf 'Installed and verified %s v%s in %s.\n' "$package_name" "$release_version" "$profile_dir"
 
+canonical_dsh_home="$(cd "$dsh_home" && pwd -P)"
+default_dsh_home="$(cd "$HOME" && pwd -P)/.dsh"
+job_label="com.coremate.opengui.web"
+if [[ "$canonical_dsh_home" != "$default_dsh_home" || "$port" != "3080" ]]; then
+  label_hash="$(printf '%s\n%s\n' "$canonical_dsh_home" "$port" | shasum -a 256 | awk '{print substr($1,1,12)}')"
+  job_label="${job_label}.${label_hash}"
+fi
+plist_path="${launch_agents_dir}/${job_label}.plist"
+service_target="gui/${UID}/${job_label}"
+
 if [[ "$start_runtime" == true ]]; then
   command -v launchctl >/dev/null 2>&1 || { printf 'Required command not found: launchctl\n' >&2; exit 1; }
   command -v plutil >/dev/null 2>&1 || { printf 'Required command not found: plutil\n' >&2; exit 1; }
   mkdir -p "${dsh_home}/logs"
   mkdir -p "$launch_agents_dir"
   log_path="${dsh_home}/logs/opengui-coremate-web.log"
-  canonical_dsh_home="$(cd "$dsh_home" && pwd -P)"
   if [[ "${dsh_command[0]}" == "$managed_dsh" ]]; then
     dsh_command[0]="${canonical_dsh_home}/runtime/dsh-${dsh_version}/node_modules/.bin/dsh"
   else
     dsh_command[0]="$(command -v "${dsh_command[0]}")"
   fi
-  default_dsh_home="$(cd "$HOME" && pwd -P)/.dsh"
-  job_label="com.coremate.opengui.web"
-  if [[ "$canonical_dsh_home" != "$default_dsh_home" || "$port" != "3080" ]]; then
-    label_hash="$(printf '%s\n%s\n' "$canonical_dsh_home" "$port" | shasum -a 256 | awk '{print substr($1,1,12)}')"
-    job_label="${job_label}.${label_hash}"
-  fi
-  plist_path="${launch_agents_dir}/${job_label}.plist"
   plist_temporary="${temporary}/${job_label}.plist"
   node --input-type=module - "$plist_temporary" "$job_label" "$log_path" "$canonical_dsh_home" "$PATH" \
     "${dsh_command[@]}" --profile "$profile" --host 127.0.0.1 --port "$port" --no-open <<'NODE'
@@ -530,13 +556,28 @@ await chmod(output, 0o600)
 NODE
   plutil -lint "$plist_temporary" >/dev/null
 
-  service_target="gui/${UID}/${job_label}"
   managed_runtime=false
   if launchctl print "$service_target" >/dev/null 2>&1; then managed_runtime=true; fi
   if [[ "$managed_runtime" == true ]]; then
-    launchctl bootout "$service_target" >/dev/null 2>&1 || true
+    if ! launchctl bootout "$service_target" >/dev/null 2>&1; then
+      printf 'Could not stop LaunchAgent %s; the existing definition was preserved.\n' "$job_label" >&2
+      exit 1
+    fi
+    launch_agent_removed=false
+    for _ in {1..150}; do
+      if ! launchctl print "$service_target" >/dev/null 2>&1; then
+        launch_agent_removed=true
+        break
+      fi
+      sleep 0.1
+    done
+    if [[ "$launch_agent_removed" != true ]]; then
+      printf 'LaunchAgent %s did not finish stopping; the existing definition was preserved.\n' "$job_label" >&2
+      exit 1
+    fi
     runtime_running=false
   fi
+  if [[ "$runtime_running" != true ]]; then quarantine_stale_plugin_modules; fi
   install -m 0600 "$plist_temporary" "$plist_path"
   printf '%s\n' "$job_label" > "${dsh_home}/logs/opengui-coremate-web.job"
 
@@ -568,12 +609,19 @@ NODE
     printf 'DSH is ready at http://127.0.0.1:%s (PID %s, LaunchAgent %s).\n' "$port" "$runtime_pid" "$job_label"
   fi
 else
+  if [[ "$runtime_running" != true ]]; then
+    if ! command -v launchctl >/dev/null 2>&1 || ! launchctl print "$service_target" >/dev/null 2>&1; then
+      quarantine_stale_plugin_modules
+    fi
+  fi
   if [[ "$runtime_running" == true ]]; then
     printf 'DSH is already running at http://127.0.0.1:%s. It was not restarted. Quit that DSH process, then rerun this installer without --no-start to load OpenGUI v%s with the compatible DSH version.\n' "$port" "$release_version"
   else
     printf 'DSH was not running and --no-start was selected.\n'
   fi
 fi
+
+installation_completed=true
 
 if [[ "$open_browser" == true && ( "$runtime_running" == true || "$start_runtime" == true ) ]]; then
   open "http://127.0.0.1:${port}"

@@ -172,8 +172,16 @@ if command -v launchctl >/dev/null 2>&1 && launchctl print "$service_target" >/d
     printf 'Could not stop LaunchAgent %s. OpenGUI remains installed.\n' "$job_label" >&2
     exit 1
   fi
-  if launchctl print "$service_target" >/dev/null 2>&1; then
-    printf 'LaunchAgent %s is still running. OpenGUI remains installed.\n' "$job_label" >&2
+  launch_agent_removed=false
+  for _ in {1..150}; do
+    if ! launchctl print "$service_target" >/dev/null 2>&1; then
+      launch_agent_removed=true
+      break
+    fi
+    sleep 0.1
+  done
+  if [[ "$launch_agent_removed" != true ]]; then
+    printf 'LaunchAgent %s did not finish stopping. OpenGUI remains installed.\n' "$job_label" >&2
     exit 1
   fi
 fi

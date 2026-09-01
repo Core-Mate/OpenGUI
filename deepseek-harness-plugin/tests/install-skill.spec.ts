@@ -11,7 +11,7 @@ const roots: string[] = []
 const servers: ReturnType<typeof createServer>[] = []
 const installer = new URL('../skills/opengui-coremate-install/scripts/install-macos.sh', import.meta.url)
 const uninstaller = new URL('../skills/opengui-coremate-install/scripts/uninstall-macos.sh', import.meta.url)
-const PLUGIN_VERSION = '0.1.11'
+const PLUGIN_VERSION = '0.1.12'
 const PREFERRED_DSH_VERSION = '0.1.1-rc.2'
 
 afterEach(async () => {
@@ -41,15 +41,32 @@ exit 1
   await writeFile(join(bin, 'launchctl'), `#!/usr/bin/env bash
 printf '%s\\n' "$*" >> "\${FAKE_LAUNCHCTL_LOG}"
 state="\${FAKE_LAUNCHCTL_STATE:-}"
+pending="\${state}.pending"
+pending_count="\${state}.pending-count"
 case "\${1:-}" in
   print)
+    if [[ -n "$state" && -f "$pending" ]]; then
+      count="$(cat "$pending_count" 2>/dev/null || printf '0')"
+      count=$((count + 1))
+      printf '%s\n' "$count" > "$pending_count"
+      if ((count >= 3)); then
+        rm -f "$state" "$pending" "$pending_count"
+        exit 1
+      fi
+    fi
     if [[ -n "$state" && -f "$state" ]]; then exit 0; else exit 1; fi
     ;;
   bootout)
     [[ "\${FAKE_BOOTOUT_FAIL:-0}" != "1" ]] || exit 55
-    [[ -z "$state" ]] || rm -f "$state"
+    if [[ -n "$state" && "\${FAKE_BOOTOUT_ASYNC:-0}" == "1" ]]; then
+      touch "$pending"
+    elif [[ -n "$state" ]]; then
+      rm -f "$state"
+    fi
     ;;
   bootstrap)
+    [[ -z "$state" || ! -f "$state" ]] || exit 37
+    [[ "\${FAKE_BOOTSTRAP_FAIL:-0}" != "1" ]] || exit 44
     [[ -z "$state" ]] || touch "$state"
     ;;
 esac
@@ -68,6 +85,7 @@ if [[ "\${1:-}" == "plugin" && "\${4:-}" == "--help" ]]; then
 fi
 if [[ "\${1:-}" == "plugin" && "\${4:-}" == "remove" ]]; then
   [[ "\${FAKE_DSH_REMOVE_FAIL:-0}" != "1" ]] || exit 42
+  if [[ "\${FAKE_REMOVE_REQUIRES_STOP:-0}" == "1" && -f "\${FAKE_LAUNCHCTL_STATE:-}" ]]; then exit 43; fi
   rm -rf "\${DSH_HOME}/profiles/web/node_modules/dsh-coremate-mobile"
   printf '%s\\n' '{"dependencies":{},"dsh":{"profile":{"bundles":[]}}}' > "\${DSH_HOME}/profiles/web/package.json"
   exit 0
@@ -75,7 +93,7 @@ fi
 profile_dir="\${DSH_HOME}/profiles/web"
 mkdir -p "\${profile_dir}/node_modules/dsh-coremate-mobile/lib/types/client"
 printf '%s\\n' '{"dependencies":{"dsh-coremate-mobile":"file:fixture"},"dsh":{"profile":{"bundles":["dsh-coremate-mobile"]}}}' > "\${profile_dir}/package.json"
-printf '%s\\n' '{"name":"dsh-coremate-mobile","version":"0.1.11"}' > "\${profile_dir}/node_modules/dsh-coremate-mobile/package.json"
+printf '%s\\n' '{"name":"dsh-coremate-mobile","version":"0.1.12"}' > "\${profile_dir}/node_modules/dsh-coremate-mobile/package.json"
 printf '%s\\n' 'opengui command host with legacy coremate alias' > "\${profile_dir}/node_modules/dsh-coremate-mobile/lib/index.js"
 printf '%s\\n' 'client bundle' > "\${profile_dir}/node_modules/dsh-coremate-mobile/lib/client.js"
 printf '%s\\n' 'export {}' > "\${profile_dir}/node_modules/dsh-coremate-mobile/lib/types/client/index.d.ts"
@@ -193,6 +211,10 @@ describe('macOS installation Skill', () => {
     expect(policy).toContain("allowBuilds:\n  '@google/genai': false\n  'protobufjs': false")
     const marker = join(value.home, 'profiles', 'web', 'user-setting.txt')
     await writeFile(marker, 'keep me')
+    const stalePluginModules = join(value.home, 'profiles', 'web', 'node_modules', 'dsh-coremate-mobile', 'node_modules')
+    await mkdir(join(stalePluginModules, '.pnpm'), { recursive: true })
+    await writeFile(join(stalePluginModules, '.modules.yaml'), 'virtualStoreDir: .pnpm\n')
+    await writeFile(join(stalePluginModules, 'stale-peer.txt'), 'old DSH peer')
     await writeFile(
       join(value.home, 'profiles', 'web', 'pnpm-workspace.yaml'),
       policy.replace("'@google/genai': false", "'@google/genai': true")
@@ -201,9 +223,22 @@ describe('macOS installation Skill', () => {
     const repeated = await run(value)
     expect(repeated.stdout).toContain('Preserving existing DSH profile')
     await expect(readFile(marker, 'utf8')).resolves.toBe('keep me')
+    await expect(access(stalePluginModules)).rejects.toThrow()
     const correctedPolicy = await readFile(join(value.home, 'profiles', 'web', 'pnpm-workspace.yaml'), 'utf8')
     expect(correctedPolicy).toContain("'@google/genai': false")
     expect(correctedPolicy).toContain("'protobufjs': false")
+  })
+
+  it('restores quarantined plugin dependencies when runtime startup fails', async () => {
+    const value = await fixture()
+    await run(value)
+    const stalePluginModules = join(value.home, 'profiles', 'web', 'node_modules', 'dsh-coremate-mobile', 'node_modules')
+    await mkdir(join(stalePluginModules, '.pnpm'), { recursive: true })
+    await writeFile(join(stalePluginModules, '.modules.yaml'), 'virtualStoreDir: .pnpm\n')
+    await writeFile(join(stalePluginModules, 'stale-peer.txt'), 'restore me')
+
+    await expect(run(value, { FAKE_BOOTSTRAP_FAIL: '1' }, true)).rejects.toMatchObject({ code: 44 })
+    await expect(readFile(join(stalePluginModules, 'stale-peer.txt'), 'utf8')).resolves.toBe('restore me')
   })
 
   it('uses an already compatible DSH without depending on a package-manager launcher', async () => {
@@ -441,5 +476,52 @@ describe('macOS installation Skill', () => {
     expect(managedLog).toContain('bootout gui/')
     expect(managedLog).toContain('bootstrap gui/')
     expect(managedLog).toContain('kickstart -k gui/')
+  }, 10_000)
+
+  it('waits for asynchronous LaunchAgent removal before bootstrapping its replacement', async () => {
+    const value = await fixture()
+    const server = createServer((_request, response) => { response.end('<script>window.__DSH_BOOT__={}</script>') })
+    servers.push(server)
+    await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve))
+    const address = server.address()
+    if (address === null || typeof address === 'string') throw new Error('missing test server port')
+    await writeFile(value.launchctlState, 'loaded')
+
+    const result = await run(value, {
+      FAKE_DSH_RUNNING: '1',
+      FAKE_BOOTOUT_ASYNC: '1',
+      COREMATE_INSTALL_PORT_OVERRIDE: String(address.port),
+    }, true)
+    expect(result.stdout).toContain('PID 4242, LaunchAgent com.coremate.opengui.web.')
+    const log = await readFile(value.launchctlLog, 'utf8')
+    expect(log.indexOf('bootout gui/')).toBeLessThan(log.indexOf('bootstrap gui/'))
+  }, 10_000)
+
+  it('waits for asynchronous LaunchAgent removal before uninstalling the plugin', async () => {
+    const value = await fixture()
+    const server = createServer((_request, response) => { response.end('<script>window.__DSH_BOOT__={}</script>') })
+    servers.push(server)
+    await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve))
+    const address = server.address()
+    if (address === null || typeof address === 'string') throw new Error('missing test server port')
+    await run(value, {
+      FAKE_DSH_RUNNING: 'after-start',
+      COREMATE_INSTALL_PORT_OVERRIDE: String(address.port),
+    }, true)
+
+    const result = await exec('bash', [
+      uninstaller.pathname, '--dsh-home', value.home, '--port', String(address.port),
+    ], {
+      env: {
+        ...process.env,
+        PATH: `${value.bin}:${process.env.PATH ?? ''}`,
+        COREMATE_INSTALL_LAUNCH_AGENTS_DIR_OVERRIDE: join(value.root, 'LaunchAgents'),
+        FAKE_LAUNCHCTL_LOG: value.launchctlLog,
+        FAKE_LAUNCHCTL_STATE: value.launchctlState,
+        FAKE_BOOTOUT_ASYNC: '1',
+        FAKE_REMOVE_REQUIRES_STOP: '1',
+      },
+    })
+    expect(result.stdout).toContain('Settings and caches were preserved')
   }, 10_000)
 })
