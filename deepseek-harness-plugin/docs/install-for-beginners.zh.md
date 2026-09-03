@@ -2,6 +2,8 @@
 
 这份指南面向不会编程的用户。你不需要下载源码、使用 Git、构建项目或修改 DeepSeek Harness。你只需要下载一个 `.tgz` 插件文件、复制几条命令，并填写模型服务信息。
 
+如果你只想快速了解 DSH、完成首次使用或查询常见问题，请先看 [OpenGUI × DeepSeek Harness 简明说明与 FAQ](quick-start-and-faq.zh.md)。
+
 ## 目前能不能直接安装？
 
 可以。从 [OpenGUI 的公开 Release](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.13) 打开插件版本，在 Assets 中下载 `dsh-coremate-mobile-0.1.13.tgz`。

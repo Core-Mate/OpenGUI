@@ -78,6 +78,21 @@ describe('OpenGUI interactive model configuration', () => {
     expect(io.updateSettings).not.toHaveBeenCalled()
   })
 
+  it('reuses the model directory entry when only the credential is missing', async () => {
+    const io = services({ apiKey: 'sk-phone', capabilityConfirmation: '确认支持并保存' })
+    const config = {
+      ...emptyConfig(),
+      baseURL: 'https://gateway.example/v1',
+      models: [{ id: 'editor-model' }],
+    }
+
+    await expect(configurePhoneModel(config, io, invocation())).resolves.toEqual({ status: 'ready', changed: true })
+    expect(io.ask.mock.calls.map(call => (call[0] as AskUserQuestionRequest).questions[0]?.id))
+      .toEqual(['apiKey', 'capabilityConfirmation'])
+    expect(io.storeCredential).toHaveBeenCalled()
+    expect(io.updateSettings).not.toHaveBeenCalled()
+  })
+
   it('preserves an existing endpoint and protocol while asking only for missing model and key', async () => {
     const io = services({ model: 'vision-model', apiKey: 'sk-phone', capabilityConfirmation: '确认支持并保存' })
     const config = { ...emptyConfig(), baseURL: 'https://gateway.example/v1', api: 'openai-completions' as const }

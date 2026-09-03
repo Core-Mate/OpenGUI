@@ -20,6 +20,7 @@ export interface PhoneModelConfiguration {
   readonly baseURL?: string
   readonly api: MobileApi
   readonly model?: string
+  readonly models?: readonly { readonly id: string }[]
   readonly apiKeyEnv: string
 }
 
@@ -174,7 +175,7 @@ export async function configurePhoneModel(
   force = false,
 ): Promise<PhoneConfigurationResult> {
   const baseURL = force ? undefined : config.baseURL?.trim()
-  const model = force ? undefined : config.model?.trim()
+  const model = force ? undefined : config.models?.[0]?.id.trim() || config.model?.trim()
   const ref = credentialRef(config.apiKeyEnv)
   const storedKey = force ? undefined : await services.resolveCredential(ref)
   if (baseURL && model && storedKey !== undefined) return { status: 'ready', changed: false }

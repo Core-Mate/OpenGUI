@@ -95,6 +95,15 @@ class PhonePiAiAdapter extends PiAiAdapter {
   }
 }
 
+/** One model row written by the existing DSH provider editor. */
+export interface ConfiguredModel {
+  id: string
+  name?: string
+  contextWindow?: number
+  maxTokens?: number
+  input?: ('text' | 'image')[]
+}
+
 /** User-owned phone model settings and local execution bounds. */
 export interface Config {
   /** OpenAI-compatible phone-model endpoint. */
@@ -103,6 +112,8 @@ export interface Config {
   api?: MobileApi
   /** Image- and tool-capable model identifier. */
   model?: string
+  /** Model rows written by the existing DSH model editor. */
+  models?: ConfiguredModel[]
   /** Credential reference used to resolve the API key. */
   apiKeyEnv?: string
   /** Prefer the receiving DSH model, or always use the dedicated fallback. */
@@ -145,10 +156,19 @@ const DEFAULT_CONFIG = {
 } as const satisfies Required<Pick<Config,
   'api' | 'apiKeyEnv' | 'modelStrategy' | 'trustUnknownCurrentModels' | 'trustedCurrentModels' | 'visionDeclarations' | 'commandTimeoutMs' | 'maxOperations' | 'maxParallelDevices' | 'contextWindow' | 'maxTokens' | 'streamIdleTimeoutMs'>>
 
+const configuredModelSchema: z<ConfiguredModel> = z.object({
+  id: z.string().required(),
+  name: z.string(),
+  contextWindow: z.number().step(1).min(1),
+  maxTokens: z.number().step(1).min(1),
+  input: z.array(z.union(['text', 'image'] as const)),
+})
+
 export const Config: z<Config> = z.object({
   baseURL: z.string(),
   api: z.union(['openai-responses', 'openai-completions'] as const).default(DEFAULT_CONFIG.api),
   model: z.string(),
+  models: z.array(configuredModelSchema),
   apiKeyEnv: z.string().role('credential-ref').default(DEFAULT_CONFIG.apiKeyEnv),
   modelStrategy: z.union(['current-first', 'dedicated'] as const).default(DEFAULT_CONFIG.modelStrategy),
   trustUnknownCurrentModels: z.boolean().default(DEFAULT_CONFIG.trustUnknownCurrentModels),
@@ -202,15 +222,33 @@ function resolvedConfig(config: Config): ResolvedConfig {
   }
   if (config.baseURL !== undefined) resolved.baseURL = config.baseURL
   if (config.model !== undefined) resolved.model = config.model
+  if (config.models !== undefined) resolved.models = config.models.map(model => ({ ...model }))
   if (config.adbPath !== undefined) resolved.adbPath = config.adbPath
   return resolved
+}
+
+/** Resolve the editor's first model row while preserving legacy single-model settings. */
+export function configuredModel(config: Config): {
+  id: string
+  contextWindow: number
+  maxTokens: number
+} | undefined {
+  const value = resolvedConfig(config)
+  const edited = value.models?.[0]
+  const id = edited?.id.trim() || value.model?.trim()
+  if (!id) return undefined
+  return {
+    id,
+    contextWindow: edited?.contextWindow ?? value.contextWindow,
+    maxTokens: edited?.maxTokens ?? value.maxTokens,
+  }
 }
 
 function configuredProfile(config: Config): ResolvedPiAiProviderProfile | undefined {
   const value = resolvedConfig(config)
   const baseURL = value.baseURL?.trim()
-  const model = value.model?.trim()
-  if (!baseURL || !model) return undefined
+  const selected = configuredModel(value)
+  if (!baseURL || selected === undefined) return undefined
   const url = new URL(baseURL)
   if (url.protocol !== 'https:' && url.protocol !== 'http:') {
     throw new Error('coremate-mobile: the phone model endpoint must use HTTP or HTTPS')
@@ -220,10 +258,10 @@ function configuredProfile(config: Config): ResolvedPiAiProviderProfile | undefi
     displayName: 'OpenGUI model',
     baseURL,
     api: value.api,
-    model,
+    model: selected.id,
     apiKeyEnv: value.apiKeyEnv,
-    contextWindow: value.contextWindow,
-    maxTokens: value.maxTokens,
+    contextWindow: selected.contextWindow,
+    maxTokens: selected.maxTokens,
     streamIdleTimeoutMs: value.streamIdleTimeoutMs,
   })
 }
@@ -610,7 +648,7 @@ export function apply(ctx: Context, baseConfig: Config): void {
       registeredModel = undefined
       return
     }
-    const model = resolvedConfig(current()).model
+    const model = configuredModel(current())?.id
     if (registration === undefined) registration = ctx.llm.registerAdapter([PROVIDER], adapter)
     else if (registeredModel !== model) registration.replace([PROVIDER])
     registeredModel = model
@@ -629,11 +667,12 @@ export function apply(ctx: Context, baseConfig: Config): void {
     const credentials = ctx.get('credentials')
     const initial = resolvedConfig(current())
     const initialProfile = profile()
+    const initialModel = configuredModel(initial)
     const initialKey = credentials === undefined
       ? undefined
       : await credentials.resolve(credentialRef(initial.apiKeyEnv))
-    if (!force && initialProfile !== undefined && initial.model?.trim() && initialKey !== undefined) {
-      return { provider: PROVIDER, model: initial.model.trim(), maxTokens: initial.maxTokens }
+    if (!force && initialProfile !== undefined && initialModel !== undefined && initialKey !== undefined) {
+      return { provider: PROVIDER, model: initialModel.id, maxTokens: initialModel.maxTokens }
     }
     if (questions === undefined || credentials === undefined) {
       throw new Error('coremate-mobile: 当前 Host 不支持对话式配置；请在 settings.yaml 和凭据存储中配置 OpenGUI 模型')
@@ -650,11 +689,11 @@ export function apply(ctx: Context, baseConfig: Config): void {
     const value = resolvedConfig(current())
     const active = profile()
     const key = await credentials.resolve(credentialRef(value.apiKeyEnv))
-    const model = value.model?.trim()
-    if (active === undefined || !model || key === undefined) {
+    const selected = configuredModel(value)
+    if (active === undefined || selected === undefined || key === undefined) {
       throw new Error('coremate-mobile: 专用视觉模型配置未完整保存')
     }
-    return { provider: PROVIDER, model, maxTokens: value.maxTokens }
+    return { provider: PROVIDER, model: selected.id, maxTokens: selected.maxTokens }
   }
 
   const inheritedOptions = (options: AgentOptions): AgentOptions => inheritedAgentOptions(options)
