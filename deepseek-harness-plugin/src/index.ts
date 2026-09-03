@@ -30,8 +30,8 @@ import {
 import type { ObservationId } from './adb.ts'
 import { encodePhoneScreenshotFrame } from './image.ts'
 import { configurePhoneModel } from './configuration.ts'
-import { DeviceFleet } from './device-fleet.ts'
-import type { FleetDevice } from './device-fleet.ts'
+import { DeviceFleet, DeviceLeaseConflictError } from './device-fleet.ts'
+import type { DeviceLeaseHandle, FleetDevice } from './device-fleet.ts'
 import { OwnedForwardRegistry } from './forward-registry.ts'
 import { installMirrorHttp } from './mirror-http.ts'
 import { relayNestedTaskProgress, relayPhoneTaskProgress } from './phone-progress.ts'
@@ -442,6 +442,12 @@ export function apply(ctx: Context, baseConfig: Config): void {
     readonly route: AgentOptions
   }
   const tasks = new OpenGuiTaskManager<OpenGuiExecutionContext>()
+  ctx.on('agent/disposed', ({ agent }) => {
+    const sessionId = agent.session?.id
+    if (typeof sessionId !== 'string' || sessionId.trim().length === 0) return
+    tasks.cancelSession(sessionId)
+    fleet.forgetSession(sessionId)
+  })
 
   const executePhoneTask = async (
     task: string,
@@ -473,6 +479,7 @@ export function apply(ctx: Context, baseConfig: Config): void {
           await child.dispose()
           throw new Error('coremate-mobile: a phone task requires a local child agent')
         }
+        lease.bindAgent(child.localAgent)
         phoneController.assignTarget(child.localAgent, target.serial)
         return { target, result: await settleForeground(child, foregroundProgress) }
       }
@@ -516,6 +523,7 @@ export function apply(ctx: Context, baseConfig: Config): void {
     const showProgress = presentation === 'parent-chat'
     const context = lease.context
     if (context === undefined) throw new Error('coremate-mobile: OpenGUI task context is missing')
+    const releaseBrowser = lease.acquireBrowser()
     const startRun = async (executionSignal: AbortSignal): Promise<CoremateTaskResult> => {
       const page = await managedBrowser.open(executionSignal)
       page.setDefaultTimeout(resolvedConfig(current()).commandTimeoutMs)
@@ -536,6 +544,7 @@ export function apply(ctx: Context, baseConfig: Config): void {
         if (child.localAgent === undefined) {
           throw new Error('coremate-mobile: a browser task requires a local child agent')
         }
+        lease.bindAgent(child.localAgent)
         browserController.bind(child.localAgent, page)
         settlementStarted = true
         return await settleForeground(child, foregroundProgress)
@@ -550,10 +559,14 @@ export function apply(ctx: Context, baseConfig: Config): void {
         await managedBrowser.close()
       }
     }
-    if (showProgress) {
-      return parent.runMaintenance(maintenanceSignal => startRun(AbortSignal.any([lease.signal, maintenanceSignal])))
+    try {
+      if (showProgress) {
+        return await parent.runMaintenance(maintenanceSignal => startRun(AbortSignal.any([lease.signal, maintenanceSignal])))
+      }
+      return await startRun(lease.signal)
+    } finally {
+      releaseBrowser()
     }
-    return startRun(lease.signal)
   }
 
   const executeRouterTask = async (
@@ -589,7 +602,7 @@ export function apply(ctx: Context, baseConfig: Config): void {
 
   ctx.effect(function* () {
     yield async () => {
-      tasks.cancel()
+      tasks.cancelAll()
       await Promise.allSettled([tasks.dispose(), managedBrowser.close()])
     }
   }, 'coremate-mobile task lifecycle')
@@ -734,15 +747,19 @@ export function apply(ctx: Context, baseConfig: Config): void {
     return (item?.selected[0] ?? item?.custom ?? '').trim()
   }
 
-  const waitForSelectedPhone = async (invocation: TaskInteraction): Promise<readonly FleetDevice[]> => {
+  const waitForSelectedPhone = async (
+    invocation: TaskInteraction,
+    lease: OpenGuiTaskLease<OpenGuiExecutionContext>,
+  ): Promise<DeviceLeaseHandle> => {
     const signal = invocation.signal
     while (true) {
       let failure: Error
       try {
-        return await fleet.selectedDevices(signal)
+        return await fleet.acquireSelected(lease.identity, signal)
       } catch (error) {
         if (signal.aborted) throw signal.reason
         failure = error instanceof Error ? error : new Error(String(error))
+        if (failure instanceof DeviceLeaseConflictError) throw failure
       }
       const questions = ctx.get('userQuestions')
       if (questions === undefined) {
@@ -768,11 +785,12 @@ export function apply(ctx: Context, baseConfig: Config): void {
     }
   }
 
-  let configuring = false
+  // Model settings are shared, but concurrent sessions wait instead of being rejected.
+  const modelPreparation = new AsyncSemaphore(1)
   const prepareTask = async (invocation: TaskInteraction): Promise<AgentOptions> => {
-    if (configuring) throw new Error('coremate-mobile: OpenGUI 模型配置正在另一条命令中进行')
-    configuring = true
+    const releasePreparation = await modelPreparation.acquire(invocation.signal)
     try {
+      invocation.signal.throwIfAborted()
       let value = resolvedConfig(current())
       const capability = await currentCapability(invocation.agent.options, invocation.signal)
       const route = upstreamRoute(invocation.agent.options)
@@ -787,7 +805,7 @@ export function apply(ctx: Context, baseConfig: Config): void {
 
       const questions = ctx.get('userQuestions')
       if (decision.kind === 'dedicated') {
-        if (decision.reason !== 'unsupported') return dedicatedAgentOptions(invocation)
+        if (decision.reason !== 'unsupported') return await dedicatedAgentOptions(invocation)
         if (questions === undefined) {
           throw new Error('coremate-mobile: 当前模型只能处理文字，请配置 OpenGUI 视觉模型')
         }
@@ -858,7 +876,7 @@ export function apply(ctx: Context, baseConfig: Config): void {
       await ctx.settings.update(NS, { modelStrategy: 'dedicated' })
       return dedicated
     } finally {
-      configuring = false
+      releasePreparation()
     }
   }
 
@@ -918,17 +936,28 @@ export function apply(ctx: Context, baseConfig: Config): void {
   const runRootTask = async (
     interaction: TaskInteraction,
     operation: (lease: OpenGuiTaskLease<OpenGuiExecutionContext>) => Promise<CoremateTaskResult>,
-  ): Promise<CoremateTaskResult> => tasks.runRoot<CoremateTaskResult>(interaction.agent, interaction.signal, 'waiting-for-device', lease => runPreparedOpenGuiTask(
-    interaction,
-    lease,
-    {
-      prepare: prepareTask,
-      waitForTargets: waitForSelectedPhone,
-      context: (route, targets) => ({ targets, route }),
-      execute: operation,
-      recover: recoverTask,
-    },
-  ))
+  ): Promise<CoremateTaskResult> => tasks.runRoot<CoremateTaskResult>(interaction.agent, interaction.signal, 'waiting-for-device', async lease => {
+    let deviceLease: DeviceLeaseHandle | undefined
+    try {
+      return await runPreparedOpenGuiTask(
+        interaction,
+        lease,
+        {
+          prepare: prepareTask,
+          waitForTargets: async scopedInteraction => {
+            deviceLease = await waitForSelectedPhone(scopedInteraction, lease)
+            lease.setDeviceIds(deviceLease.devices.map(device => device.id))
+            return deviceLease.devices
+          },
+          context: (route, targets) => ({ targets, route }),
+          execute: operation,
+          recover: recoverTask,
+        },
+      )
+    } finally {
+      deviceLease?.release()
+    }
+  })
 
   const directCommand = (commandName: 'opengui' | 'coremate'): CommandDefinition => ({
     name: commandName,
@@ -988,12 +1017,8 @@ export function apply(ctx: Context, baseConfig: Config): void {
   const mediaPermits = new AsyncSemaphore(2)
   phoneController = new PhoneController({
     runAdb: run,
-    discoverTarget: async (signal) => {
-      const selected = await fleet.selectedDevices(signal)
-      if (selected.length !== 1) {
-        throw new Error('coremate-mobile: this phone agent was not bound to exactly one selected device')
-      }
-      return selected[0]!.serial
+    discoverTarget: async () => {
+      throw new Error('coremate-mobile: this phone agent was not bound to an exact task device')
     },
     validateTarget: async (serial, signal) => {
       const devices = parseDevices(String(await run(['devices', '-l'], signal)))
@@ -1020,8 +1045,10 @@ export function apply(ctx: Context, baseConfig: Config): void {
   })
   const taskControl = {
     isActive: (): boolean => tasks.isActive(),
-    state: () => tasks.state(),
-    cancel: (): boolean => tasks.cancel(),
+    state: (sessionId: string) => tasks.state(sessionId),
+    states: () => tasks.states(),
+    cancel: (sessionId: string, taskId: string): boolean => tasks.cancel(sessionId, taskId),
+    browserOwner: () => tasks.browserOwnerIdentity(),
   }
   const updater = new PluginUpdateManager()
   installMirrorHttp(ctx, mirror, fleet, taskControl, managedBrowser, updater, preview, streams)
@@ -1131,7 +1158,9 @@ export function apply(ctx: Context, baseConfig: Config): void {
       if (agent === undefined || header?.origin !== 'subagent' || header.parentSession === undefined || !isCoremateExecutionProvider(route?.provider)) {
         throw new Error('coremate-mobile: phone_control is restricted to a coremate-mobile child subagent')
       }
-      return hostObservation(agent, await phoneController.execute(agent, args, exec.signal))
+      const lease = tasks.nestedLease(agent, exec.signal)
+      if (lease === undefined) throw new Error('coremate-mobile: phone_control requires an exact active task lease')
+      return hostObservation(agent, await phoneController.execute(agent, args, lease.signal))
     },
   }))
 
@@ -1199,7 +1228,9 @@ export function apply(ctx: Context, baseConfig: Config): void {
       if (agent === undefined || header?.origin !== 'subagent' || header.parentSession === undefined || !isCoremateExecutionProvider(route?.provider)) {
         throw new Error('coremate-mobile: browser_control is restricted to a coremate-mobile child subagent')
       }
-      return browserController.execute(agent, args as BrowserControlInput, resolvedConfig(current()).maxOperations, exec.signal)
+      const lease = tasks.nestedLease(agent, exec.signal)
+      if (lease === undefined) throw new Error('coremate-mobile: browser_control requires an exact active task lease')
+      return browserController.execute(agent, args as BrowserControlInput, resolvedConfig(current()).maxOperations, lease.signal)
     },
   }))
 

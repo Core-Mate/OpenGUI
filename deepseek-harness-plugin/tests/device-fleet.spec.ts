@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DeviceFleet } from '../src/device-fleet.ts'
+import { DeviceFleet, DeviceLeaseConflictError, DeviceSelectionLockedError } from '../src/device-fleet.ts'
 import type { AdbDevice } from '../src/adb.ts'
 
 describe('multi-phone device fleet', () => {
@@ -9,7 +9,7 @@ describe('multi-phone device fleet', () => {
     const snapshot = await fleet.snapshot(new AbortController().signal)
 
     expect(snapshot).toEqual({
-      devices: [{ id: 'phone-1', label: 'Pixel 8', model: 'Pixel 8', selected: true }],
+      devices: [{ id: 'phone-1', label: 'Pixel 8', model: 'Pixel 8', selected: true, occupied: false, occupiedByCurrentSession: false }],
       selectedDeviceIds: ['phone-1'],
     })
     expect(JSON.stringify(snapshot)).not.toContain('usb-secret')
@@ -30,8 +30,8 @@ describe('multi-phone device fleet', () => {
 
     const initial = await fleet.snapshot(signal)
     expect(initial.devices).toEqual([
-      { id: 'opaque-a', label: 'Pixel 8 1', model: 'Pixel 8', selected: false },
-      { id: 'opaque-z', label: 'Pixel 8 2', model: 'Pixel 8', selected: false },
+      { id: 'opaque-a', label: 'Pixel 8 1', model: 'Pixel 8', selected: false, occupied: false, occupiedByCurrentSession: false },
+      { id: 'opaque-z', label: 'Pixel 8 2', model: 'Pixel 8', selected: false, occupied: false, occupiedByCurrentSession: false },
     ])
     await expect(fleet.selectedDevices(signal)).rejects.toThrow('select at least one')
 
@@ -58,7 +58,7 @@ describe('multi-phone device fleet', () => {
 
     devices = [{ serial: 'b', state: 'device', model: 'B' }]
     expect(await fleet.snapshot(signal)).toEqual({
-      devices: [{ id: 'id-b', label: 'B', model: 'B', selected: true }],
+      devices: [{ id: 'id-b', label: 'B', model: 'B', selected: true, occupied: false, occupiedByCurrentSession: false }],
       selectedDeviceIds: ['id-b'],
     })
     await expect(fleet.select(['id-a'], signal)).rejects.toThrow('disconnected or unknown')
@@ -75,7 +75,132 @@ describe('multi-phone device fleet', () => {
     devices = [{ serial: 'replacement', state: 'device', model: 'Pixel' }]
     await expect(fleet.resolveConnected(['locked-original'], signal)).rejects.toThrow('disconnected or unknown')
     expect((await fleet.snapshot(signal)).devices).toEqual([
-      { id: 'new-arrival', label: 'Pixel', model: 'Pixel', selected: true },
+      { id: 'new-arrival', label: 'Pixel', model: 'Pixel', selected: true, occupied: false, occupiedByCurrentSession: false },
     ])
+  })
+
+  it('keeps preferences per session and acquires every selected phone atomically', async () => {
+    const devices: AdbDevice[] = [
+      { serial: 'a', state: 'device', model: 'A' },
+      { serial: 'b', state: 'device', model: 'B' },
+    ]
+    const ids = ['id-a', 'id-b']
+    const fleet = new DeviceFleet(async () => devices, () => ids.shift()!)
+    const signal = new AbortController().signal
+    await fleet.selectForSession('session-a', ['id-a', 'id-b'], signal)
+    await fleet.selectForSession('session-b', ['id-b'], signal)
+    const ownerA = { sessionId: 'session-a', taskId: 'task-a', attemptId: 'attempt-a' }
+    const leaseA = await fleet.acquireSelected(ownerA, signal)
+
+    expect(leaseA.devices.map(device => device.id)).toEqual(['id-a', 'id-b'])
+    await expect(fleet.selectForSession('session-b', ['id-b'], signal)).resolves.toMatchObject({ selectedDeviceIds: ['id-b'] })
+    await expect(fleet.acquireSelected(
+      { sessionId: 'session-b', taskId: 'task-b', attemptId: 'attempt-b' },
+      signal,
+    )).rejects.toBeInstanceOf(DeviceLeaseConflictError)
+    expect(fleet.leaseSnapshot()).toEqual([
+      { ...ownerA, deviceId: 'id-a' },
+      { ...ownerA, deviceId: 'id-b' },
+    ])
+    expect((await fleet.snapshotForSession('session-b', signal)).devices).toEqual([
+      { id: 'id-a', label: 'A', model: 'A', selected: false, occupied: true, occupiedByCurrentSession: false },
+      { id: 'id-b', label: 'B', model: 'B', selected: true, occupied: true, occupiedByCurrentSession: false },
+    ])
+  })
+
+  it('ignores a stale attempt release after the device has been reassigned', async () => {
+    const fleet = new DeviceFleet(
+      async () => [{ serial: 'a', state: 'device', model: 'A' }],
+      () => 'id-a',
+    )
+    const signal = new AbortController().signal
+    const oldOwner = { sessionId: 'session-a', taskId: 'task-a', attemptId: 'attempt-old' }
+    const oldLease = await fleet.acquireSelected(oldOwner, signal)
+    oldLease.release()
+    const newOwner = { sessionId: 'session-a', taskId: 'task-a', attemptId: 'attempt-new' }
+    await fleet.acquireSelected(newOwner, signal)
+
+    expect(fleet.release(oldOwner, ['id-a'])).toBe(0)
+    expect(fleet.leaseSnapshot()).toEqual([{ ...newOwner, deviceId: 'id-a' }])
+  })
+
+  it('leaves no partial lease when one phone in a requested batch is busy', async () => {
+    const ids = ['id-a', 'id-b']
+    const fleet = new DeviceFleet(async () => [
+      { serial: 'a', state: 'device', model: 'A' },
+      { serial: 'b', state: 'device', model: 'B' },
+    ], () => ids.shift()!)
+    const signal = new AbortController().signal
+    const ownerA = { sessionId: 'session-a', taskId: 'task-a', attemptId: 'attempt-a' }
+    const ownerB = { sessionId: 'session-b', taskId: 'task-b', attemptId: 'attempt-b' }
+    await fleet.selectForSession('session-a', ['id-a', 'id-b'], signal)
+    await fleet.selectForSession('session-b', ['id-b'], signal)
+    await fleet.acquireSelected(ownerB, signal)
+
+    await expect(fleet.acquireSelected(ownerA, signal)).rejects.toBeInstanceOf(DeviceLeaseConflictError)
+
+    expect(fleet.leaseSnapshot()).toEqual([{ ...ownerB, deviceId: 'id-b' }])
+    expect((await fleet.snapshotForSession('session-a', signal)).devices[0]?.occupied).toBe(false)
+  })
+
+  it('forgets only a deleted session preference and preserves other sessions', async () => {
+    const ids = ['id-a', 'id-b']
+    const fleet = new DeviceFleet(async () => [
+      { serial: 'a', state: 'device', model: 'A' },
+      { serial: 'b', state: 'device', model: 'B' },
+    ], () => ids.shift()!)
+    const signal = new AbortController().signal
+    await fleet.selectForSession('session-a', ['id-a'], signal)
+    await fleet.selectForSession('session-b', ['id-b'], signal)
+
+    fleet.forgetSession('session-a')
+
+    expect((await fleet.snapshotForSession('session-a', signal)).selectedDeviceIds).toEqual([])
+    expect((await fleet.snapshotForSession('session-b', signal)).selectedDeviceIds).toEqual(['id-b'])
+  })
+
+  it('rejects a selection request that finishes discovery after its session acquired a lease', async () => {
+    const devices: AdbDevice[] = [
+      { serial: 'a', state: 'device', model: 'A' },
+      { serial: 'b', state: 'device', model: 'B' },
+    ]
+    const ids = ['id-a', 'id-b']
+    let slowNext = false
+    let release!: (devices: readonly AdbDevice[]) => void
+    const fleet = new DeviceFleet(async () => {
+      if (!slowNext) return devices
+      slowNext = false
+      return new Promise<readonly AdbDevice[]>(resolve => { release = resolve })
+    }, () => ids.shift()!)
+    const signal = new AbortController().signal
+    await fleet.selectForSession('session-a', ['id-a'], signal)
+    slowNext = true
+    const delayedSelection = fleet.selectForSession('session-a', ['id-b'], signal)
+    const owner = { sessionId: 'session-a', taskId: 'task-a', attemptId: 'attempt-a' }
+    await fleet.acquireSelected(owner, signal)
+
+    release(devices)
+
+    await expect(delayedSelection).rejects.toBeInstanceOf(DeviceSelectionLockedError)
+    expect((await fleet.snapshotForSession('session-a', signal)).selectedDeviceIds).toEqual(['id-a'])
+    expect(fleet.leaseSnapshot()).toEqual([{ ...owner, deviceId: 'id-a' }])
+  })
+
+  it('reserves a leased physical identity across disconnect and reconnect', async () => {
+    let devices: AdbDevice[] = [{ serial: 'a', state: 'device', model: 'A' }]
+    const ids = ['id-a', 'must-not-be-used']
+    const fleet = new DeviceFleet(async () => devices, () => ids.shift()!)
+    const signal = new AbortController().signal
+    const ownerA = { sessionId: 'session-a', taskId: 'task-a', attemptId: 'attempt-a' }
+    const ownerB = { sessionId: 'session-b', taskId: 'task-b', attemptId: 'attempt-b' }
+    const lease = await fleet.acquireSelected(ownerA, signal)
+
+    devices = []
+    expect((await fleet.snapshotForSession('session-a', signal)).devices).toEqual([])
+    devices = [{ serial: 'a', state: 'device', model: 'A' }]
+    expect((await fleet.snapshotForSession('session-b', signal)).devices[0]?.id).toBe('id-a')
+    await expect(fleet.acquireSelected(ownerB, signal)).rejects.toBeInstanceOf(DeviceLeaseConflictError)
+    lease.release()
+    await expect(fleet.acquireSelected(ownerB, signal)).resolves.toMatchObject({ devices: [expect.objectContaining({ id: 'id-a' })] })
   })
 })

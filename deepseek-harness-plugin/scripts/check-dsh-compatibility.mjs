@@ -203,7 +203,7 @@ allowBuilds:
   })
   if (!taskResponse.ok) throw new Error(`Task status returned HTTP ${taskResponse.status}`)
   const task = await taskResponse.json()
-  if (task.active !== false || task.phase !== 'idle') throw new Error(`Unexpected initial task state: ${JSON.stringify(task)}`)
+  if (!Array.isArray(task.tasks) || task.tasks.length !== 0) throw new Error(`Unexpected initial task state: ${JSON.stringify(task)}`)
 
   const pageErrors = []
   const consoleErrors = []

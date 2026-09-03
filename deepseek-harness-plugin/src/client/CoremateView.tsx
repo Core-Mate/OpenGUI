@@ -188,15 +188,22 @@ function mirrorActive(device: MirrorDeviceStatus): boolean {
 }
 
 export function CoremateView({ coremateSessionId }: { readonly coremateSessionId?: string }): JSX.Element {
-  const [status, setStatus] = useState<MirrorStatus>()
+  const currentSessionId = useRef(coremateSessionId)
+  currentSessionId.current = coremateSessionId
+  const sessionGeneration = useRef(0)
+  const mutationGeneration = useRef(0)
+  const [snapshot, setStatus] = useState<MirrorStatus>()
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set())
   const seenDevices = useRef(new Set<string>())
-  const [pending, setPending] = useState(false)
-  const [error, setError] = useState<string>()
+  const [pendingSessionId, setPendingSessionId] = useState<string>()
+  const [failure, setFailure] = useState<{ sessionId: string | undefined, message: string }>()
   const [streamStatus, setStreamStatus] = useState<ScrcpyStreamStatus>()
   const [streamStatusError, setStreamStatusError] = useState<string>()
   const [runtime, setRuntime] = useState<RuntimeInfo>()
   const [runtimeFailed, setRuntimeFailed] = useState(false)
+  const status = snapshot?.sessionId === coremateSessionId ? snapshot : undefined
+  const pending = coremateSessionId !== undefined && pendingSessionId === coremateSessionId
+  const error = failure?.sessionId === coremateSessionId ? failure?.message : undefined
 
   useEffect(() => {
     const controller = new AbortController()
@@ -211,11 +218,25 @@ export function CoremateView({ coremateSessionId }: { readonly coremateSessionId
   }, [])
 
   useEffect(() => {
+    const generation = ++sessionGeneration.current
+    mutationGeneration.current += 1
+    setStatus(undefined)
+    setExpanded(new Set())
+    seenDevices.current.clear()
+    setPendingSessionId(undefined)
+    setFailure(undefined)
     const controller = new AbortController()
+    if (coremateSessionId === undefined) return () => controller.abort()
     let timer: ReturnType<typeof setTimeout> | undefined
     const poll = async (): Promise<void> => {
       try {
-        const next = await readMirrorStatus(controller.signal)
+        const next = await readMirrorStatus(coremateSessionId, controller.signal)
+        if (
+          next === undefined ||
+          controller.signal.aborted ||
+          generation !== sessionGeneration.current ||
+          currentSessionId.current !== coremateSessionId
+        ) return
         setStatus(next)
         setExpanded(current => {
           const connectedIds = new Set(next.devices.map(device => device.id))
@@ -228,11 +249,23 @@ export function CoremateView({ coremateSessionId }: { readonly coremateSessionId
           }
           return value
         })
-        setError(undefined)
+        setFailure(undefined)
       } catch (reason) {
-        if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : String(reason))
+        if (
+          !controller.signal.aborted &&
+          generation === sessionGeneration.current &&
+          currentSessionId.current === coremateSessionId
+        ) {
+          setFailure({ sessionId: coremateSessionId, message: reason instanceof Error ? reason.message : String(reason) })
+        }
       } finally {
-        if (!controller.signal.aborted) timer = setTimeout(poll, document.hidden ? 10_000 : 1_500)
+        if (
+          !controller.signal.aborted &&
+          generation === sessionGeneration.current &&
+          currentSessionId.current === coremateSessionId
+        ) {
+          timer = setTimeout(poll, document.hidden ? 10_000 : 1_500)
+        }
       }
     }
     void poll()
@@ -240,7 +273,7 @@ export function CoremateView({ coremateSessionId }: { readonly coremateSessionId
       controller.abort()
       if (timer !== undefined) clearTimeout(timer)
     }
-  }, [])
+  }, [coremateSessionId])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -269,16 +302,23 @@ export function CoremateView({ coremateSessionId }: { readonly coremateSessionId
   }, [])
 
   const mutate = useCallback(async (path: string, ids: readonly string[]): Promise<void> => {
-    setPending(true)
+    const sessionId = coremateSessionId
+    const generation = ++mutationGeneration.current
+    setPendingSessionId(sessionId)
     try {
-      setStatus(await postMirrorStatus(path, ids))
-      setError(undefined)
+      if (sessionId === undefined) throw new Error('当前会话不可用，请刷新后重试。')
+      const next = await postMirrorStatus(path, sessionId, ids)
+      if (next === undefined || generation !== mutationGeneration.current || currentSessionId.current !== sessionId) return
+      setStatus(next)
+      setFailure(undefined)
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : String(reason))
+      if (generation === mutationGeneration.current && currentSessionId.current === sessionId) {
+        setFailure({ sessionId, message: reason instanceof Error ? reason.message : String(reason) })
+      }
     } finally {
-      setPending(false)
+      if (generation === mutationGeneration.current && currentSessionId.current === sessionId) setPendingSessionId(undefined)
     }
-  }, [])
+  }, [coremateSessionId])
 
   const selected = status?.devices.filter(device => device.selected).map(device => device.id) ?? []
   const wallItems = buildDeviceWallItems(status?.devices ?? [])
@@ -321,7 +361,7 @@ export function CoremateView({ coremateSessionId }: { readonly coremateSessionId
 
       <div style={{ position: 'sticky', top: 0, zIndex: 10 }}>
         <PluginUpdatePrompt />
-        <BrowserInstallPrompt />
+        <BrowserInstallPrompt {...(coremateSessionId === undefined ? {} : { coremateSessionId })} />
       </div>
 
       {error === undefined ? null : (
@@ -375,6 +415,9 @@ export function CoremateView({ coremateSessionId }: { readonly coremateSessionId
                     />
                     <span style={{ minWidth: 0, overflowWrap: 'anywhere', fontSize: 12, fontWeight: 700 }}>{device.label}</span>
                     <span aria-label={device.connected ? '在线' : '已断开'} title={device.connected ? '在线' : '已断开'} style={{ width: 6, height: 6, flex: '0 0 auto', borderRadius: 999, background: device.connected ? '#16a34a' : '#a1a1aa' }} />
+                    {device.occupied && !device.occupiedByCurrentSession
+                      ? <span title="设备正由另一 OpenGUI 会话使用" style={{ color: '#b45309', fontSize: 11, fontWeight: 650, whiteSpace: 'nowrap' }}>占用中</span>
+                      : null}
                   </label>
                   <div style={{ display: 'flex', flex: '0 0 auto', gap: 6 }}>
                     <button data-coremate-press type="button" style={actionStyle} aria-label={`${open ? '收起' : '展开'} ${device.label} 画面`} aria-expanded={open} onClick={() => setExpanded(current => {

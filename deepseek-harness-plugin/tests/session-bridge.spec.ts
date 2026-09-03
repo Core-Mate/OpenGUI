@@ -1,6 +1,24 @@
 import { describe, expect, it, vi } from 'vitest'
 import { installActiveTaskSessionBridge, shouldForceNewSession } from '../src/client/session-bridge.ts'
 
+const activeTask = (sessionId: string) => ({
+  sessionId,
+  taskId: `task-${sessionId}`,
+  attemptId: `attempt-${sessionId}`,
+  active: true,
+  phase: 'running',
+  selectionLocked: true,
+  deviceIds: [],
+})
+
+const idleTask = (sessionId: string) => ({
+  sessionId,
+  active: false,
+  phase: 'idle',
+  selectionLocked: false,
+  deviceIds: [],
+})
+
 describe('OpenGUI active-task new-session bridge', () => {
   it('only bypasses blank-session reuse for the active task owner', () => {
     expect(shouldForceNewSession('session-1', 'session-1', true)).toBe(true)
@@ -37,9 +55,10 @@ describe('OpenGUI active-task new-session bridge', () => {
     }
     const errors: Array<string | undefined> = []
     const store = {
-      getSnapshot: () => ({ task: { active: true, phase: 'running', selectionLocked: true, ownerSessionId: 'session-owner' } }),
+      getSnapshot: () => ({ task: activeTask('session-owner') }),
+      activeTasks: () => [activeTask('session-owner')],
       isConsumedSession: () => false,
-      setBridgeError: (value?: string) => { errors.push(value) },
+      setBridgeError: (_sessionId: string, value?: string) => { errors.push(value) },
     }
     const dispose = installActiveTaskSessionBridge({ sessions, workspaces: workspace } as never, store as never)
 
@@ -79,7 +98,8 @@ describe('OpenGUI active-task new-session bridge', () => {
       startSession: vi.fn(),
     }
     const store = {
-      getSnapshot: () => ({ task: { active: true, ownerSessionId: 'session-owner' } }),
+      getSnapshot: () => ({ task: activeTask('session-owner') }),
+      activeTasks: () => [activeTask('session-owner')],
       subscribe: (listener: () => void) => { storeListeners.add(listener); return () => storeListeners.delete(listener) },
       isConsumedSession: () => true,
       setBridgeError: vi.fn(),
@@ -110,9 +130,10 @@ describe('OpenGUI active-task new-session bridge', () => {
       },
       workspaces: workspace,
     } as never, {
-      getSnapshot: () => ({ task: { active: true, ownerSessionId: 'session-owner' } }),
+      getSnapshot: () => ({ task: activeTask('session-owner') }),
+      activeTasks: () => [activeTask('session-owner')],
       isConsumedSession: () => false,
-      setBridgeError: (value?: string) => { errors.push(value) },
+      setBridgeError: (_sessionId: string, value?: string) => { errors.push(value) },
     } as never)
 
     workspace.startSession()
@@ -143,7 +164,8 @@ describe('OpenGUI active-task new-session bridge', () => {
       },
       workspaces: workspace,
     } as never, {
-      getSnapshot: () => ({ task: { active: true, ownerSessionId: 'session-owner' } }),
+      getSnapshot: () => ({ task: activeTask('session-owner') }),
+      activeTasks: () => [activeTask('session-owner')],
       isConsumedSession: () => false,
       setBridgeError: vi.fn(),
     } as never)
@@ -177,7 +199,8 @@ describe('OpenGUI active-task new-session bridge', () => {
       sessions: { list: { getSnapshot: () => listState }, create, open },
       workspaces: workspace,
     } as never, {
-      getSnapshot: () => ({ task: { active: true, ownerSessionId: listState.current } }),
+      getSnapshot: (sessionId: string) => ({ task: activeTask(sessionId) }),
+      activeTasks: () => [activeTask('session-owner'), activeTask('session-other')],
       isConsumedSession: () => false,
       setBridgeError: vi.fn(),
     } as never)
@@ -206,7 +229,8 @@ describe('OpenGUI active-task new-session bridge', () => {
       },
       workspaces: workspace,
     } as never, {
-      getSnapshot: () => ({ task: { active: false, phase: 'idle', selectionLocked: false } }),
+      getSnapshot: (sessionId: string) => ({ task: idleTask(sessionId) }),
+      activeTasks: () => [],
       isConsumedSession: () => false,
       setBridgeError: vi.fn(),
     } as never)
@@ -231,7 +255,8 @@ describe('OpenGUI active-task new-session bridge', () => {
       },
       workspaces: workspace,
     } as never, {
-      getSnapshot: () => ({ task: { active: false, phase: 'idle', selectionLocked: false } }),
+      getSnapshot: (sessionId: string) => ({ task: idleTask(sessionId) }),
+      activeTasks: () => [],
       isConsumedSession: (id: string) => id === 'session-consumed',
       setBridgeError: vi.fn(),
     } as never)

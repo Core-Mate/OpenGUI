@@ -75,7 +75,7 @@ describe('linked-checkout auto reload', () => {
           return
         }
         response.setHeader('content-type', 'application/json')
-        response.end(JSON.stringify({ active: false }))
+        response.end(JSON.stringify({ tasks: [] }))
       } else {
         response.end('<script>window.__DSH_BOOT__={}</script>')
       }
@@ -116,7 +116,7 @@ describe('linked-checkout auto reload', () => {
     const server = createServer((request, response) => {
       if (request.url === '/coremate-mobile/task/status') {
         response.setHeader('content-type', 'application/json')
-        response.end(JSON.stringify({ active: false }))
+        response.end(JSON.stringify({ tasks: [] }))
       } else {
         response.end('<script>window.__DSH_BOOT__={}</script>')
       }

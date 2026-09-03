@@ -13,8 +13,8 @@ const TOKEN = '@OpenGUI '
 const COMMAND = '/opengui'
 
 export interface CoremateLaunchTracker {
-  beginLaunch(ownerSessionId?: string): boolean
-  finishLaunch(error?: string): void
+  beginLaunch(sessionId: string): number | undefined
+  finishLaunch(sessionId: string, generation: number, error?: string): boolean | void
 }
 
 export function taskTitle(task: string): string {
@@ -74,7 +74,9 @@ export function coremateCommandClaim(
           ? { kind: 'success' }
           : { kind: 'error', text: 'OpenGUI 命令尚未加载，请重启 DSH 后重试。' }
       }
-      if (!launch.beginLaunch(String(session.sessionId))) {
+      const sessionId = String(session.sessionId)
+      const launchGeneration = launch.beginLaunch(sessionId)
+      if (launchGeneration === undefined) {
         return { kind: 'error', text: '已有 OpenGUI 任务正在启动或执行，请等待完成后再试。' }
       }
       const row = sessions.list.getSnapshot().byId[session.sessionId]
@@ -85,13 +87,13 @@ export function coremateCommandClaim(
         const pending = binding.session.command(line)
         surfaceSessionInList(sessions, session.sessionId)
         void pending.then(result => {
-          if (!result.ok) launch.finishLaunch(result.error.message)
-          else if (!result.value.matched) launch.finishLaunch('OpenGUI 命令尚未加载，请重启 DSH 后重试。')
-          else launch.finishLaunch()
-        }, reason => launch.finishLaunch(launchFailure(reason)))
+          if (!result.ok) launch.finishLaunch(sessionId, launchGeneration, result.error.message)
+          else if (!result.value.matched) launch.finishLaunch(sessionId, launchGeneration, 'OpenGUI 命令尚未加载，请重启 DSH 后重试。')
+          else launch.finishLaunch(sessionId, launchGeneration)
+        }, reason => launch.finishLaunch(sessionId, launchGeneration, launchFailure(reason)))
       } catch (reason) {
         const message = launchFailure(reason)
-        launch.finishLaunch(message)
+        launch.finishLaunch(sessionId, launchGeneration, message)
         return { kind: 'error', text: message }
       }
       return { kind: 'success' }

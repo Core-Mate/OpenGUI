@@ -40,13 +40,23 @@ const progressTrackStyle: CSSProperties = {
   background: 'var(--dsw-alias-bg-layer-2, rgba(128, 128, 128, 0.16))',
 }
 
-export async function readBrowserInstallStatus(signal?: AbortSignal): Promise<BrowserInstallStatus> {
-  const response = await fetch(BROWSER_INSTALL_STATUS_PATH, {
+export async function readBrowserInstallStatus(sessionId: string, signal?: AbortSignal): Promise<BrowserInstallStatus> {
+  const response = await fetch(`${BROWSER_INSTALL_STATUS_PATH}?sessionId=${encodeURIComponent(sessionId)}`, {
     cache: 'no-store',
     ...(signal === undefined ? {} : { signal }),
   })
   if (!response.ok) throw new Error(`浏览器安装状态请求失败 (${response.status})`)
   return await response.json() as BrowserInstallStatus
+}
+
+async function browserInstallError(response: Response): Promise<string> {
+  try {
+    const body = await response.json() as { error?: unknown }
+    if (typeof body.error === 'string' && body.error.length > 0) return body.error
+  } catch {
+    // Fall through to the status-based message.
+  }
+  return `浏览器安装操作失败 (${response.status})`
 }
 
 function megabytes(bytes?: number): string {
@@ -78,18 +88,30 @@ export function browserInstallPresentation(status?: BrowserInstallStatus): Brows
 }
 
 /** Inline first-use consent and progress for the plugin-managed browser. */
-export function BrowserInstallPrompt(): JSX.Element | null {
+export function BrowserInstallPrompt({ coremateSessionId }: { readonly coremateSessionId?: string }): JSX.Element | null {
+  const currentSessionId = useRef(coremateSessionId)
+  currentSessionId.current = coremateSessionId
   const panel = useRef<HTMLElement>(null)
-  const [status, setStatus] = useState<BrowserInstallStatus>()
-  const [pending, setPending] = useState(false)
-  const [error, setError] = useState<string>()
+  const [snapshot, setStatus] = useState<BrowserInstallStatus>()
+  const status = snapshot?.owner?.sessionId === coremateSessionId ? snapshot : undefined
+  const [decision, setDecision] = useState<{
+    sessionId: string,
+    taskId: string,
+    pending: boolean,
+    message: string | undefined,
+  }>()
 
   useEffect(() => {
+    setStatus(undefined)
+    setDecision(undefined)
     const controller = new AbortController()
+    if (coremateSessionId === undefined) return () => controller.abort()
     let timer: ReturnType<typeof setTimeout> | undefined
     const poll = async (): Promise<void> => {
       try {
-        setStatus(await readBrowserInstallStatus(controller.signal))
+        const next = await readBrowserInstallStatus(coremateSessionId, controller.signal)
+        if (controller.signal.aborted || currentSessionId.current !== coremateSessionId) return
+        setStatus(next.owner?.sessionId === coremateSessionId ? next : undefined)
       } catch {
         // The Host route is optional; an absent route leaves this control hidden.
       } finally {
@@ -101,25 +123,40 @@ export function BrowserInstallPrompt(): JSX.Element | null {
       controller.abort()
       if (timer !== undefined) clearTimeout(timer)
     }
-  }, [])
+  }, [coremateSessionId])
 
   const decide = useCallback(async (approve: boolean): Promise<void> => {
-    setPending(true)
-    setError(undefined)
+    const owner = status?.owner
+    if (owner === undefined || owner.sessionId !== coremateSessionId) return
+    setDecision({ sessionId: owner.sessionId, taskId: owner.taskId, pending: true, message: undefined })
     try {
       const response = await fetch(approve ? BROWSER_INSTALL_APPROVE_PATH : BROWSER_INSTALL_DECLINE_PATH, {
         method: 'POST',
-        headers: { Accept: 'application/json' },
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: owner.sessionId, taskId: owner.taskId }),
       })
-      if (!response.ok && response.status !== 409) throw new Error(`浏览器安装操作失败 (${response.status})`)
-      setStatus(await readBrowserInstallStatus())
+      if (!response.ok) throw new Error(await browserInstallError(response))
+      const next = await readBrowserInstallStatus(owner.sessionId)
+      if (currentSessionId.current !== owner.sessionId) return
+      setStatus(current => current?.owner?.taskId === owner.taskId
+        ? next.owner?.sessionId === owner.sessionId ? next : undefined
+        : current)
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : String(reason))
+      setDecision(current => current?.sessionId === owner.sessionId && current.taskId === owner.taskId
+        ? { ...current, message: reason instanceof Error ? reason.message : String(reason) }
+        : current)
     } finally {
-      setPending(false)
+      setDecision(current => current?.sessionId === owner.sessionId && current.taskId === owner.taskId
+        ? { ...current, pending: false }
+        : current)
     }
-  }, [])
+  }, [coremateSessionId, status])
 
+  const currentDecision = decision?.sessionId === status?.owner?.sessionId && decision?.taskId === status?.owner?.taskId
+    ? decision
+    : undefined
+  const pending = currentDecision?.pending ?? false
+  const error = currentDecision?.message
   const presentation = browserInstallPresentation(status)
   useEffect(() => {
     if (presentation.kind === 'confirmation') panel.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })

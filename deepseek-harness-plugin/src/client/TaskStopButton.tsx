@@ -35,23 +35,41 @@ const errorStyle: CSSProperties = {
 
 /** Stop the active OpenGUI phone or browser task from the composer's right tool row. */
 export function TaskStopButton({ coremateSessionId }: { readonly coremateSessionId?: string }): JSX.Element | null {
-  const { task } = useCoremateTaskStatus()
-  const [pending, setPending] = useState(false)
-  const [error, setError] = useState<string | undefined>()
+  const { task } = useCoremateTaskStatus(coremateSessionId)
+  const [pendingTasks, setPendingTasks] = useState(() => new Map<string, string>())
+  const [errors, setErrors] = useState(() => new Map<string, { taskId: string, message: string }>())
 
   const stop = useCallback(async (): Promise<void> => {
-    setPending(true)
-    setError(undefined)
+    const sessionId = coremateSessionId
+    const taskId = task.taskId
+    if (!sessionId || !taskId) return
+    setPendingTasks(current => new Map(current).set(sessionId, taskId))
+    setErrors(current => {
+      const next = new Map(current)
+      next.delete(sessionId)
+      return next
+    })
     try {
-      await coremateTaskStatusStore.stop()
+      await coremateTaskStatusStore.stop(sessionId, taskId)
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : String(reason))
+      setErrors(current => new Map(current).set(sessionId, {
+        taskId,
+        message: reason instanceof Error ? reason.message : String(reason),
+      }))
     } finally {
-      setPending(false)
+      setPendingTasks(current => {
+        if (current.get(sessionId) !== taskId) return current
+        const next = new Map(current)
+        next.delete(sessionId)
+        return next
+      })
     }
-  }, [])
+  }, [coremateSessionId, task.taskId])
 
-  if (!task.active || (task.ownerSessionId !== undefined && task.ownerSessionId !== coremateSessionId)) return null
+  if (!coremateSessionId || !task.active || !task.taskId) return null
+  const pending = pendingTasks.get(coremateSessionId) === task.taskId
+  const failure = errors.get(coremateSessionId)
+  const error = failure?.taskId === task.taskId ? failure.message : undefined
   const stopping = pending || task.phase === 'stopping'
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>

@@ -10,7 +10,7 @@ function setup(result: { ok: true, value: { matched: boolean } } | { ok: false, 
     list: { getSnapshot: () => ({ byId: { 'session-1': { blank: true } } }) },
   } as unknown as ISessions
   const launch = {
-    beginLaunch: vi.fn(() => true),
+    beginLaunch: vi.fn(() => 7),
     finishLaunch: vi.fn(),
   }
   const source = coremateTriggerSource({ sessions } as unknown as ClientContext, launch as never)
@@ -93,7 +93,7 @@ describe('native @OpenGUI trigger', () => {
     const picked = await source.matchEnter?.(session, '@OpenGUI 任务', new AbortController().signal)
     if (typeof picked !== 'object' || picked === null || !('claim' in picked)) throw new Error('expected claim')
     await expect(picked.claim.submit('任务', {} as ClientContext)).resolves.toEqual({ kind: 'success' })
-    await vi.waitFor(() => expect(launch.finishLaunch).toHaveBeenCalledWith('OpenGUI 命令尚未加载，请重启 DSH 后重试。'))
+    await vi.waitFor(() => expect(launch.finishLaunch).toHaveBeenCalledWith('session-1', 7, 'OpenGUI 命令尚未加载，请重启 DSH 后重试。'))
   })
 
   it('releases the composer before a long OpenGUI command settles', async () => {
@@ -105,7 +105,7 @@ describe('native @OpenGUI trigger', () => {
       binding: () => ({ session: { command, rename } }),
       list: { getSnapshot: () => ({ byId: { 'session-1': { blank: true } } }) },
     } as unknown as ISessions
-    const launch = { beginLaunch: vi.fn(() => true), finishLaunch: vi.fn() }
+    const launch = { beginLaunch: vi.fn(() => 7), finishLaunch: vi.fn() }
     const source = coremateTriggerSource({ sessions } as unknown as ClientContext, launch as never)
     const session = { sessionId: 'session-1' as never }
     const entered = await source.matchEnter?.(session, '@OpenGUI 长任务', new AbortController().signal)
@@ -116,7 +116,7 @@ describe('native @OpenGUI trigger', () => {
     expect(rename).toHaveBeenCalledWith('OpenGUI · 长任务')
     expect(launch.finishLaunch).not.toHaveBeenCalled()
     finish({ ok: true, value: { matched: true } })
-    await vi.waitFor(() => expect(launch.finishLaunch).toHaveBeenCalledWith())
+    await vi.waitFor(() => expect(launch.finishLaunch).toHaveBeenCalledWith('session-1', 7))
   })
 
   it('surfaces a command-only owner before a long OpenGUI command settles', async () => {
@@ -134,7 +134,7 @@ describe('native @OpenGUI trigger', () => {
       binding: () => ({ session: { command, rename } }),
       list: { getSnapshot: () => listState, set },
     } as unknown as ISessions
-    const launch = { beginLaunch: vi.fn(() => true), finishLaunch: vi.fn() }
+    const launch = { beginLaunch: vi.fn(() => 7), finishLaunch: vi.fn() }
     const source = coremateTriggerSource({ sessions } as unknown as ClientContext, launch)
     const session = { sessionId: 'session-1' as never }
     const entered = await source.matchEnter?.(session, '@OpenGUI 长任务', new AbortController().signal)
@@ -144,7 +144,7 @@ describe('native @OpenGUI trigger', () => {
     expect(listState.byId['session-1'].blank).toBe(false)
     expect(set).toHaveBeenCalledTimes(1)
     finish({ ok: true, value: { matched: true } })
-    await vi.waitFor(() => expect(launch.finishLaunch).toHaveBeenCalledWith())
+    await vi.waitFor(() => expect(launch.finishLaunch).toHaveBeenCalledWith('session-1', 7))
   })
 
   it('preserves an existing title when dispatch succeeds', async () => {
@@ -155,14 +155,14 @@ describe('native @OpenGUI trigger', () => {
       binding: () => ({ session: { command, rename: titledRename } }),
       list: { getSnapshot: () => ({ byId: { 'session-1': { blank: true, title: '我的任务' } } }) },
     } as unknown as ISessions
-    const launch = { beginLaunch: vi.fn(() => true), finishLaunch: vi.fn() }
+    const launch = { beginLaunch: vi.fn(() => 7), finishLaunch: vi.fn() }
     const titledSource = coremateTriggerSource({ sessions: titledSessions } as unknown as ClientContext, launch)
     const entered = await titledSource.matchEnter?.(session, '@OpenGUI 新任务', new AbortController().signal)
     if (typeof entered !== 'object' || entered === null || !('claim' in entered)) throw new Error('expected claim')
 
     await expect(entered.claim.submit('新任务', {} as ClientContext)).resolves.toEqual({ kind: 'success' })
     expect(titledRename).not.toHaveBeenCalled()
-    await vi.waitFor(() => expect(launch.finishLaunch).toHaveBeenCalledWith())
+    await vi.waitFor(() => expect(launch.finishLaunch).toHaveBeenCalledWith('session-1', 7))
   })
 
   it('rejects a duplicate launch before dispatch', async () => {
@@ -172,7 +172,7 @@ describe('native @OpenGUI trigger', () => {
       binding: () => ({ session: { command, rename } }),
       list: { getSnapshot: () => ({ byId: { 'session-1': { blank: true, title: '我的任务' } } }) },
     } as unknown as ISessions
-    const launch = { beginLaunch: vi.fn(() => false), finishLaunch: vi.fn() }
+    const launch = { beginLaunch: vi.fn(() => undefined), finishLaunch: vi.fn() }
     const source = coremateTriggerSource({ sessions } as unknown as ClientContext, launch as never)
     const session = { sessionId: 'session-1' as never }
     const entered = await source.matchEnter?.(session, '@OpenGUI 第二个任务', new AbortController().signal)

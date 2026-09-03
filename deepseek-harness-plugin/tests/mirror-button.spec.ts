@@ -12,6 +12,17 @@ describe('OpenGUI workbench status errors', () => {
       { status: 503, headers: { 'Content-Type': 'application/json' } },
     )))
 
-    await expect(readMirrorStatus()).rejects.toThrow('bundled ADB is missing execute permission')
+    await expect(readMirrorStatus('session-a')).rejects.toThrow('bundled ADB is missing execute permission')
+  })
+
+  it('discards status updates without the requested session identity', async () => {
+    const fetch = vi.fn()
+      .mockResolvedValueOnce(Response.json({ devices: [], taskActive: false }))
+      .mockResolvedValueOnce(Response.json({ sessionId: 'session-b', devices: [], taskActive: false }))
+    vi.stubGlobal('fetch', fetch)
+
+    await expect(readMirrorStatus('session-a')).resolves.toBeUndefined()
+    await expect(readMirrorStatus('session-a')).resolves.toBeUndefined()
+    expect(fetch.mock.calls[0]?.[0]).toBe('/coremate-mobile/mirror/status?sessionId=session-a')
   })
 })

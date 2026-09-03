@@ -820,7 +820,10 @@ export class ScrcpyMirror {
     if (this.asset !== undefined) void this.installer.isInstalled(this.asset).then(cached => { this.cached = cached })
   }
 
-  status(connectedDevices: readonly FleetDeviceView[] = [], taskActive = false): MirrorStatus {
+  status(
+    connectedDevices: readonly FleetDeviceView[] = [],
+    taskActive = false,
+  ): Omit<MirrorStatus, 'sessionId' | 'taskId' | 'attemptId'> {
     const connected = new Map(connectedDevices.map(device => [device.id, device]))
     const now = Date.now()
     for (const [id, entry] of this.entries) {
@@ -835,6 +838,8 @@ export class ScrcpyMirror {
         label: entry.device.label,
         ...(entry.device.model === undefined ? {} : { model: entry.device.model }),
         selected: false,
+        occupied: false,
+        occupiedByCurrentSession: false,
       })
     }
     return {

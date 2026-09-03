@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import {
   DEVICE_SELECTION_PATH, MIRROR_START_PATH, MIRROR_STATUS_PATH, MIRROR_STOP_PATH,
@@ -126,8 +126,19 @@ export function mirrorBusy(device: MirrorDeviceStatus): boolean {
   return device.phase === 'downloading' || device.phase === 'extracting' || device.phase === 'launching'
 }
 
-export async function readMirrorStatus(signal?: AbortSignal): Promise<MirrorStatus> {
-  const response = await fetch(MIRROR_STATUS_PATH, { cache: 'no-store', ...(signal === undefined ? {} : { signal }) })
+function scopedMirrorStatus(value: unknown, sessionId: string): MirrorStatus | undefined {
+  if (
+    !value || typeof value !== 'object' ||
+    !('sessionId' in value) || value.sessionId !== sessionId
+  ) return undefined
+  return value as MirrorStatus
+}
+
+export async function readMirrorStatus(sessionId: string, signal?: AbortSignal): Promise<MirrorStatus | undefined> {
+  const response = await fetch(`${MIRROR_STATUS_PATH}?sessionId=${encodeURIComponent(sessionId)}`, {
+    cache: 'no-store',
+    ...(signal === undefined ? {} : { signal }),
+  })
   const value: unknown = await response.json().catch(() => undefined)
   if (!response.ok) {
     const message = typeof value === 'object' && value !== null && 'error' in value && typeof value.error === 'string'
@@ -135,36 +146,53 @@ export async function readMirrorStatus(signal?: AbortSignal): Promise<MirrorStat
       : `手机状态请求失败 (${response.status})`
     throw new Error(message)
   }
-  return value as MirrorStatus
+  return scopedMirrorStatus(value, sessionId)
 }
 
-export async function postMirrorStatus(path: string, deviceIds: readonly string[]): Promise<MirrorStatus> {
+export async function postMirrorStatus(path: string, sessionId: string, deviceIds: readonly string[]): Promise<MirrorStatus | undefined> {
   const response = await fetch(path, {
     method: 'POST',
     headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-    body: JSON.stringify({ deviceIds }),
+    body: JSON.stringify({ sessionId, deviceIds }),
   })
   const value = await response.json() as MirrorStatus | { error?: string }
   if (!response.ok) throw new Error('error' in value ? value.error : `手机请求失败 (${response.status})`)
-  return value as MirrorStatus
+  return scopedMirrorStatus(value, sessionId)
 }
 
-export function MirrorButton(): JSX.Element | null {
-  const [status, setStatus] = useState<MirrorStatus | undefined>()
-  const [requestError, setRequestError] = useState<string | undefined>()
-  const [pending, setPending] = useState(false)
+export function MirrorButton({ coremateSessionId }: { readonly coremateSessionId?: string }): JSX.Element | null {
+  const currentSessionId = useRef(coremateSessionId)
+  currentSessionId.current = coremateSessionId
+  const mutationGeneration = useRef(0)
+  const [snapshot, setStatus] = useState<MirrorStatus | undefined>()
+  const [failure, setFailure] = useState<{ sessionId: string | undefined, message: string }>()
+  const [pendingSessionId, setPendingSessionId] = useState<string>()
+  const status = snapshot?.sessionId === coremateSessionId ? snapshot : undefined
+  const requestError = failure?.sessionId === coremateSessionId ? failure?.message : undefined
+  const pending = coremateSessionId !== undefined && pendingSessionId === coremateSessionId
 
   useEffect(() => {
+    mutationGeneration.current += 1
+    setStatus(undefined)
+    setFailure(undefined)
+    setPendingSessionId(undefined)
     const controller = new AbortController()
+    if (coremateSessionId === undefined) return () => controller.abort()
     let timer: ReturnType<typeof setTimeout> | undefined
     const poll = async (): Promise<void> => {
       try {
-        setStatus(await readMirrorStatus(controller.signal))
-        setRequestError(undefined)
+        const next = await readMirrorStatus(coremateSessionId, controller.signal)
+        if (next === undefined || controller.signal.aborted || currentSessionId.current !== coremateSessionId) return
+        setStatus(next)
+        setFailure(undefined)
       } catch (error) {
-        if (!controller.signal.aborted) setRequestError(error instanceof Error ? error.message : String(error))
+        if (!controller.signal.aborted && currentSessionId.current === coremateSessionId) {
+          setFailure({ sessionId: coremateSessionId, message: error instanceof Error ? error.message : String(error) })
+        }
       } finally {
-        if (!controller.signal.aborted) timer = setTimeout(poll, document.hidden ? 5_000 : 1_500)
+        if (!controller.signal.aborted && currentSessionId.current === coremateSessionId) {
+          timer = setTimeout(poll, document.hidden ? 5_000 : 1_500)
+        }
       }
     }
     void poll()
@@ -172,19 +200,26 @@ export function MirrorButton(): JSX.Element | null {
       controller.abort()
       if (timer !== undefined) clearTimeout(timer)
     }
-  }, [])
+  }, [coremateSessionId])
 
   const mutate = useCallback(async (path: string, deviceIds: readonly string[]): Promise<void> => {
+    const sessionId = coremateSessionId
+    const generation = ++mutationGeneration.current
     try {
-      setPending(true)
-      setRequestError(undefined)
-      setStatus(await postMirrorStatus(path, deviceIds))
+      setPendingSessionId(sessionId)
+      setFailure(undefined)
+      if (sessionId === undefined) throw new Error('当前会话不可用，请刷新后重试。')
+      const next = await postMirrorStatus(path, sessionId, deviceIds)
+      if (next === undefined || generation !== mutationGeneration.current || currentSessionId.current !== sessionId) return
+      setStatus(next)
     } catch (error) {
-      setRequestError(error instanceof Error ? error.message : String(error))
+      if (generation === mutationGeneration.current && currentSessionId.current === sessionId) {
+        setFailure({ sessionId, message: error instanceof Error ? error.message : String(error) })
+      }
     } finally {
-      setPending(false)
+      if (generation === mutationGeneration.current && currentSessionId.current === sessionId) setPendingSessionId(undefined)
     }
-  }, [])
+  }, [coremateSessionId])
 
   if (status === undefined) return requestError === undefined ? null : (
     <div style={dockStyle} data-coremate-mobile><div role="status" style={messageStyle}>{requestError}</div></div>

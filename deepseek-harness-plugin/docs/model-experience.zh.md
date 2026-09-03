@@ -62,4 +62,4 @@ You control exactly one fixed Android phone, labeled {device label}. Never try t
 
 `text` action 最多接受 500 个 Unicode 字符。安全 ASCII 走 `adb input text`；中文、emoji 和其他 Unicode 内容通过 scrcpy 标准控制协议发送 UTF-8 剪贴板消息，并在收到对应的设备 ACK 后才报告成功。该协议路径与手机厂商和当前输入法无关。文本以进程参数或原始 socket 数据发送，不经过 shell 拼接。输入框右侧的停止按钮会取消整个 OpenGUI 任务。
 
-Web 界面会在任务接纳前发现已授权设备。插件忽略 offline 和 unauthorized 行，只向浏览器暴露进程内 opaque id 与显示名。单台自动选择；多台时由用户在 OpenGUI Tab 选择子集。任务接纳后会冻结该子集，并在每个子任务首次调用工具前绑定一个 Host 私有 serial。后续每条设备命令都会明确携带该子任务锁定的 serial。
+设备偏好按 DSH Session 独立保存。插件忽略 offline 和 unauthorized 行，只向浏览器暴露进程内 opaque id 与显示名。单台自动选择；多台时由用户在 OpenGUI Tab 选择子集。检测完成后，任务会原子租用整个子集并只锁定所属 Session 的选择器；任一设备冲突都会拒绝整次获取。每个子任务首次调用工具前都会绑定一个 Host 私有 serial，后续每条设备命令都明确携带该子任务锁定的 serial。

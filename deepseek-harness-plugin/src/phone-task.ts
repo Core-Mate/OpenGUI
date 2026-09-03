@@ -3,6 +3,7 @@
  * @module dsh-coremate-mobile/phone-task
  */
 
+import { randomUUID } from 'node:crypto'
 import type { CommandDefinition, CommandInvocation, CommandResult } from '@deepseek-ai/dsh-commands'
 import type { AgentOptions } from '@deepseek-ai/dsh-agent'
 import type { CallId, ContentBlock } from '@deepseek-ai/dsh-llm'
@@ -20,10 +21,20 @@ export const OPENGUI_USAGE = `Usage: /opengui <task>
 export type CoremateTaskPhase = 'idle' | 'waiting-for-device' | 'routing' | 'running' | 'stopping'
 
 export interface CoremateTaskState {
+  readonly sessionId: string
   readonly active: boolean
   readonly phase: CoremateTaskPhase
   readonly selectionLocked: boolean
-  readonly ownerSessionId?: string
+  readonly taskId?: string
+  readonly attemptId?: string
+  readonly deviceIds: readonly string[]
+}
+
+/** Exact identity shared by task cancellation and process-local resource leases. */
+export interface OpenGuiTaskIdentity {
+  readonly sessionId: string
+  readonly taskId: string
+  readonly attemptId: string
 }
 
 /** Completed child run returned to the parent tool or command adapter. */
@@ -80,7 +91,7 @@ function textFrom(output: readonly ContentBlock[]): string {
 
 /**
  * Owns one plugin instance's task lifetime across tool and command callers.
- * A second task fails before target access.
+ * A second root task in the same session fails before target access.
  */
 export class CoremateTaskCoordinator {
   private readonly tasks = new OpenGuiTaskManager<void>()
@@ -89,7 +100,7 @@ export class CoremateTaskCoordinator {
   constructor(private readonly start: CoremateTaskStart) {}
 
   /**
-   * Run one non-empty task while excluding every other plugin entry point.
+   * Run one non-empty task while excluding other root entries in its session.
    * @param task Human-authored task.
    * @param parent Exact receiving parent agent.
    * @param signal Caller-owned cancellation signal.
@@ -110,17 +121,17 @@ export class CoremateTaskCoordinator {
   }
 
   /** Whether a command or tool currently owns this coordinator. */
-  isActive(): boolean {
-    return this.tasks.isActive()
+  isActive(sessionId?: string): boolean {
+    return this.tasks.isActive(sessionId)
   }
 
-  state(): CoremateTaskState {
-    return this.tasks.state()
+  state(sessionId: string): CoremateTaskState {
+    return this.tasks.state(sessionId)
   }
 
-  /** Request cancellation of the active task without waiting for settlement. */
-  cancel(): boolean {
-    return this.tasks.cancel()
+  /** Request cancellation of one exact task without waiting for settlement. */
+  cancel(sessionId: string, taskId: string): boolean {
+    return this.tasks.cancel(sessionId, taskId)
   }
 
   /**
@@ -189,11 +200,14 @@ class CoremateRecoveredError extends Error {}
 
 /** Mutable data owned by one root OpenGUI task and shared with its nested delegates. */
 export interface OpenGuiTaskLease<Context = unknown> {
+  readonly identity: OpenGuiTaskIdentity
   readonly signal: AbortSignal
-  readonly ownerSessionId: string | undefined
+  readonly deviceIds: readonly string[]
   context: Context | undefined
   setPhase(phase: Exclude<CoremateTaskPhase, 'idle'>): void
+  setDeviceIds(deviceIds: readonly string[]): void
   bindAgent(agent: object): void
+  acquireBrowser(): () => void
   recordCapabilityFailure(error: Error): void
   capabilityFailure(): Error | undefined
 }
@@ -246,23 +260,50 @@ export async function runPreparedOpenGuiTask<
 }
 
 interface ActiveOpenGuiTask<Context> {
+  readonly identity: OpenGuiTaskIdentity
   readonly controller: AbortController
+  readonly signal: AbortSignal
   readonly agents: WeakSet<object>
-  readonly ownerSessionId?: string
   phase: Exclude<CoremateTaskPhase, 'idle'>
   result: Promise<unknown>
   capabilityError?: Error
   context: Context | undefined
+  deviceIds: readonly string[]
+}
+
+/** The single managed browser is already owned by another task attempt. */
+export class BrowserLeaseConflictError extends Error {
+  readonly code = 'BROWSER_BUSY'
+  constructor() {
+    super('coremate-mobile: the managed browser is busy in another OpenGUI task')
+    this.name = 'BrowserLeaseConflictError'
+  }
+}
+
+function requireTaskIdentity(value: unknown, field: keyof OpenGuiTaskIdentity): string {
+  const normalized = typeof value === 'string' ? value.trim() : ''
+  if (normalized.length === 0) throw new Error(`coremate-mobile: ${field} must not be empty`)
+  return normalized
+}
+
+function sameIdentity(left: OpenGuiTaskIdentity, right: OpenGuiTaskIdentity): boolean {
+  return left.sessionId === right.sessionId
+    && left.taskId === right.taskId
+    && left.attemptId === right.attemptId
 }
 
 /**
- * Plugin-wide admission gate. A root command/tool owns the task while router
+ * Session-scoped admission gate. A root command/tool owns the task while router
  * delegates explicitly bound to its lease may re-enter without opening a
- * second task. Unbound callers always compete for the single root slot.
+ * second task. Unbound callers compete only for their own session's root slot.
  */
 export class OpenGuiTaskManager<Context = unknown> {
-  private active: ActiveOpenGuiTask<Context> | undefined
+  private readonly activeBySession = new Map<string, ActiveOpenGuiTask<Context>>()
+  private readonly activeByAgent = new WeakMap<object, ActiveOpenGuiTask<Context>>()
   private readonly lifetime = new AbortController()
+  private browserOwner: ActiveOpenGuiTask<Context> | undefined
+
+  constructor(private readonly createId: () => string = randomUUID) {}
 
   async runRoot<Result>(
     parent: CommandInvocation['agent'],
@@ -271,76 +312,162 @@ export class OpenGuiTaskManager<Context = unknown> {
     operation: (lease: OpenGuiTaskLease<Context>) => Promise<Result>,
   ): Promise<Result> {
     if (this.lifetime.signal.aborted) throw new Error('coremate-mobile: task runner is disposed')
-    if (this.active !== undefined) throw new Error('coremate-mobile: another OpenGUI task is already running')
+    const sessionId = requireTaskIdentity(parent.session?.id, 'sessionId')
+    if (this.activeBySession.has(sessionId)) {
+      throw new Error('coremate-mobile: another OpenGUI task is already running in this session')
+    }
     const controller = new AbortController()
-    const sessionIdentity = parent.session?.id ?? parent.id
-    const ownerSessionId = sessionIdentity === undefined ? undefined : String(sessionIdentity)
+    const combinedSignal = AbortSignal.any([signal, this.lifetime.signal, controller.signal])
+    combinedSignal.throwIfAborted()
+    const identity: OpenGuiTaskIdentity = {
+      sessionId,
+      taskId: requireTaskIdentity(this.createId(), 'taskId'),
+      attemptId: requireTaskIdentity(this.createId(), 'attemptId'),
+    }
     const active: ActiveOpenGuiTask<Context> = {
+      identity,
       controller,
+      signal: combinedSignal,
       agents: new WeakSet(),
       phase,
       result: undefined as unknown as Promise<unknown>,
       context: undefined,
-      ...(ownerSessionId === undefined ? {} : { ownerSessionId }),
+      deviceIds: [],
     }
-    this.active = active
-    const combinedSignal = AbortSignal.any([signal, this.lifetime.signal, controller.signal])
+    this.activeBySession.set(sessionId, active)
+    const markStopping = (): void => { active.phase = 'stopping' }
+    combinedSignal.addEventListener('abort', markStopping, { once: true })
     const lease = this.lease(active, combinedSignal)
-    active.result = operation(lease)
     try {
-      return await active.result as Result
+      active.result = Promise.resolve(operation(lease))
+    } catch (error) {
+      active.result = Promise.reject(error)
+    }
+    try {
+      const result = await active.result as Result
+      combinedSignal.throwIfAborted()
+      return result
     } finally {
-      if (this.active === active) this.active = undefined
+      combinedSignal.removeEventListener('abort', markStopping)
+      if (this.browserOwner === active) this.browserOwner = undefined
+      if (this.activeBySession.get(sessionId) === active) this.activeBySession.delete(sessionId)
     }
   }
 
-  /** Return the active lease only for a router agent explicitly bound by its root task. */
+  /** Return the active lease only for a nested agent explicitly bound by its root task. */
   nestedLease(agent: object, signal?: AbortSignal): OpenGuiTaskLease<Context> | undefined {
-    const active = this.active
+    const active = this.activeByAgent.get(agent)
     if (active === undefined || !active.agents.has(agent)) return undefined
+    if (this.activeBySession.get(active.identity.sessionId) !== active || active.signal.aborted) {
+      throw new Error('coremate-mobile: nested agent belongs to an inactive OpenGUI task')
+    }
     return this.lease(active, AbortSignal.any([
-      this.lifetime.signal,
-      active.controller.signal,
+      active.signal,
       ...(signal === undefined ? [] : [signal]),
     ]))
   }
 
-  isActive(): boolean { return this.active !== undefined }
+  isActive(sessionId?: string): boolean {
+    return sessionId === undefined
+      ? this.activeBySession.size > 0
+      : this.activeBySession.has(sessionId)
+  }
 
-  state(): CoremateTaskState {
-    const phase = this.active?.phase ?? 'idle'
+  state(sessionIdInput: string): CoremateTaskState {
+    const sessionId = requireTaskIdentity(sessionIdInput, 'sessionId')
+    const active = this.activeBySession.get(sessionId)
+    const phase = active?.phase ?? 'idle'
     return {
+      sessionId,
       active: phase !== 'idle',
       phase,
       selectionLocked: phase === 'routing' || phase === 'running' || phase === 'stopping',
-      ...(this.active?.ownerSessionId === undefined ? {} : { ownerSessionId: this.active.ownerSessionId }),
+      ...(active === undefined ? {} : {
+        taskId: active.identity.taskId,
+        attemptId: active.identity.attemptId,
+      }),
+      deviceIds: active?.deviceIds ?? [],
     }
   }
 
-  cancel(): boolean {
-    const active = this.active
-    if (active === undefined || active.controller.signal.aborted) return false
+  states(): readonly CoremateTaskState[] {
+    return [...this.activeBySession.keys()].map(sessionId => this.state(sessionId))
+  }
+
+  cancel(sessionIdInput: string, taskIdInput: string): boolean {
+    const sessionId = requireTaskIdentity(sessionIdInput, 'sessionId')
+    const taskId = requireTaskIdentity(taskIdInput, 'taskId')
+    const active = this.activeBySession.get(sessionId)
+    if (active === undefined || active.identity.taskId !== taskId || active.signal.aborted) return false
     active.phase = 'stopping'
     active.controller.abort(new Error('coremate-mobile: OpenGUI task stopped by user'))
     return true
+  }
+
+  /** Internal lifecycle cancellation for a session that is actually being disposed. */
+  cancelSession(sessionIdInput: string): boolean {
+    const sessionId = requireTaskIdentity(sessionIdInput, 'sessionId')
+    const active = this.activeBySession.get(sessionId)
+    if (active === undefined || active.signal.aborted) return false
+    active.phase = 'stopping'
+    active.controller.abort(new Error('coremate-mobile: owning session was disposed'))
+    return true
+  }
+
+  cancelAll(): void {
+    for (const active of this.activeBySession.values()) {
+      if (active.controller.signal.aborted) continue
+      active.phase = 'stopping'
+      active.controller.abort(new Error('coremate-mobile: plugin disposed during OpenGUI task'))
+    }
+  }
+
+  browserOwnerIdentity(): OpenGuiTaskIdentity | undefined {
+    return this.browserOwner === undefined ? undefined : { ...this.browserOwner.identity }
   }
 
   async dispose(): Promise<void> {
     if (!this.lifetime.signal.aborted) {
       this.lifetime.abort(new Error('coremate-mobile: plugin disposed during OpenGUI task'))
     }
-    const active = this.active
-    if (active !== undefined) await Promise.allSettled([active.result])
+    this.cancelAll()
+    await Promise.allSettled([...this.activeBySession.values()].map(active => active.result))
   }
 
   private lease(active: ActiveOpenGuiTask<Context>, signal: AbortSignal): OpenGuiTaskLease<Context> {
     return {
+      identity: active.identity,
       signal,
-      get ownerSessionId() { return active.ownerSessionId },
+      get deviceIds() { return active.deviceIds },
       get context() { return active.context },
       set context(value: Context | undefined) { active.context = value },
-      setPhase: phase => { if (this.active === active) active.phase = phase },
-      bindAgent: agent => { active.agents.add(agent) },
+      setPhase: phase => {
+        if (this.activeBySession.get(active.identity.sessionId) === active) active.phase = phase
+      },
+      setDeviceIds: deviceIds => {
+        if (this.activeBySession.get(active.identity.sessionId) === active) {
+          active.deviceIds = [...new Set(deviceIds)]
+        }
+      },
+      bindAgent: agent => {
+        active.agents.add(agent)
+        this.activeByAgent.set(agent, active)
+      },
+      acquireBrowser: () => {
+        if (this.activeBySession.get(active.identity.sessionId) !== active || signal.aborted) {
+          throw new Error('coremate-mobile: OpenGUI task is no longer active')
+        }
+        if (this.browserOwner !== undefined) throw new BrowserLeaseConflictError()
+        this.browserOwner = active
+        let released = false
+        return () => {
+          if (released) return
+          released = true
+          if (this.browserOwner === active && sameIdentity(this.browserOwner.identity, active.identity)) {
+            this.browserOwner = undefined
+          }
+        }
+      },
       recordCapabilityFailure: error => { active.capabilityError ??= error },
       capabilityFailure: () => active.capabilityError,
     }

@@ -7,6 +7,8 @@ export interface MirrorDeviceStatus {
   label: string
   model?: string
   selected: boolean
+  occupied: boolean
+  occupiedByCurrentSession: boolean
   connected: boolean
   phase: MirrorPhase
   downloadedBytes?: number
@@ -15,7 +17,10 @@ export interface MirrorDeviceStatus {
 }
 
 export interface MirrorStatus {
+  sessionId: string
   taskActive: boolean
+  taskId?: string
+  attemptId?: string
   taskPhase: CoremateTaskPhase
   selectionLocked: boolean
   hostPlatform: string
@@ -34,10 +39,17 @@ export interface RuntimeInfo {
 
 /** Lightweight activity state used by the composer stop control. */
 export interface CoremateTaskStatus {
+  sessionId: string
   active: boolean
   phase: CoremateTaskPhase
   selectionLocked: boolean
-  ownerSessionId?: string
+  taskId?: string
+  attemptId?: string
+  deviceIds: string[]
+}
+
+export interface CoremateTaskStatusResponse {
+  tasks: CoremateTaskStatus[]
 }
 
 export type CoremateTaskPhase = 'idle' | 'waiting-for-device' | 'routing' | 'running' | 'stopping'
@@ -50,6 +62,11 @@ export interface BrowserInstallStatus {
   totalBytes?: number
   downloadedBytes?: number
   message?: string
+  owner?: {
+    sessionId: string
+    taskId: string
+    attemptId: string
+  }
 }
 
 /** Release discovery and user-approved plugin update state exposed to the local client. */

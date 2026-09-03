@@ -1,18 +1,85 @@
 import type { CommandInvocation } from '@deepseek-ai/dsh-commands'
 import type { ContentBlock } from '@deepseek-ai/dsh-llm'
 import { describe, expect, it, vi } from 'vitest'
-import { CoremateTaskCoordinator, OpenGuiTaskManager, runPreparedOpenGuiTask } from '../src/phone-task.ts'
+import { BrowserLeaseConflictError, CoremateTaskCoordinator, OpenGuiTaskManager, runPreparedOpenGuiTask } from '../src/phone-task.ts'
+import type { OpenGuiTaskLease } from '../src/phone-task.ts'
+import { AsyncSemaphore } from '../src/concurrency.ts'
 
-const invocation = (rawInput: string, signal = new AbortController().signal): CommandInvocation => ({
+const invocation = (
+  rawInput: string,
+  signal = new AbortController().signal,
+  sessionId = 'session-owner',
+): CommandInvocation => ({
   commandId: 'command-test' as CommandInvocation['commandId'],
-  agent: { id: 'session-owner' } as CommandInvocation['agent'],
+  agent: { id: `agent-${sessionId}`, session: { id: sessionId } } as CommandInvocation['agent'],
   rawInput,
   signal,
 })
 
 const result = (runId: string, output: ContentBlock[] = [{ type: 'text', text: 'done' }]) => ({ runId, output })
 
+function taskRef<Context>(manager: OpenGuiTaskManager<Context>, sessionId = 'session-owner'): { sessionId: string, taskId: string } {
+  const state = manager.state(sessionId)
+  if (!state.taskId) throw new Error('expected an active task')
+  return { sessionId, taskId: state.taskId }
+}
+
 describe('OpenGUI task entry points', () => {
+  it('queues shared model preparation across sessions and cancels only the exact waiting task', async () => {
+    const manager = new OpenGuiTaskManager()
+    const preparation = new AsyncSemaphore(1)
+    const entered: string[] = []
+    let finishFirst!: () => void
+    const firstPreparation = new Promise<void>(resolve => { finishFirst = resolve })
+    const start = (sessionId: string) => {
+      const command = invocation('', new AbortController().signal, sessionId)
+      return manager.runRoot(command.agent, command.signal, 'waiting-for-device', lease => runPreparedOpenGuiTask(
+        command,
+        lease,
+        {
+          prepare: async interaction => {
+            const release = await preparation.acquire(interaction.signal)
+            try {
+              interaction.signal.throwIfAborted()
+              entered.push(sessionId)
+              if (sessionId === 'a') await firstPreparation
+              return 'vision'
+            } finally {
+              release()
+            }
+          },
+          waitForTargets: async () => [],
+          context: () => undefined,
+          execute: async () => sessionId,
+          recover: async () => undefined,
+        },
+      ))
+    }
+
+    const first = start('a')
+    await vi.waitFor(() => expect(entered).toEqual(['a']))
+    const second = start('b')
+    const third = start('c')
+    expect(manager.states().map(state => state.sessionId)).toEqual(['a', 'b', 'c'])
+    const thirdRejection = expect(third).rejects.toThrow('OpenGUI task stopped by user')
+    expect(manager.cancel('c', manager.state('c').taskId!)).toBe(true)
+    await thirdRejection
+    expect(entered).toEqual(['a'])
+    expect(manager.isActive('a')).toBe(true)
+    expect(manager.isActive('b')).toBe(true)
+    finishFirst()
+    await expect(Promise.all([first, second])).resolves.toEqual(['a', 'b'])
+    expect(entered).toEqual(['a', 'b'])
+  })
+
+  it('rejects a root task without an explicit DSH session identity', async () => {
+    const manager = new OpenGuiTaskManager()
+    const parent = { id: 'resident-agent-only' } as CommandInvocation['agent']
+
+    await expect(manager.runRoot(parent, new AbortController().signal, 'running', async () => 'never'))
+      .rejects.toThrow('sessionId must not be empty')
+  })
+
   it.each(['prepare', 'wait', 'recover'] as const)('cancels the lease-scoped %s phase', async (phase) => {
     const manager = new OpenGuiTaskManager<{ route: string, targets: string[] }>()
     const parentSignal = new AbortController().signal
@@ -40,10 +107,11 @@ describe('OpenGUI task entry points', () => {
 
     await vi.waitFor(() => expect(phaseSignal).toBeDefined())
     expect(phaseSignal).not.toBe(parentSignal)
-    expect(manager.cancel()).toBe(true)
+    const active = taskRef(manager)
+    expect(manager.cancel(active.sessionId, active.taskId)).toBe(true)
     await expect(running).rejects.toThrow('OpenGUI task stopped by user')
     expect(phaseSignal?.aborted).toBe(true)
-    expect(manager.state()).toEqual({ active: false, phase: 'idle', selectionLocked: false })
+    expect(manager.state('session-owner')).toEqual({ sessionId: 'session-owner', active: false, phase: 'idle', selectionLocked: false, deviceIds: [] })
   })
 
   it.each(['prepare', 'wait'] as const)('never advances after cancelled %s work settles late', async (phase) => {
@@ -78,7 +146,8 @@ describe('OpenGUI task entry points', () => {
     ))
 
     await vi.waitFor(() => expect(entered).toHaveBeenCalledOnce())
-    expect(manager.cancel()).toBe(true)
+    const active = manager.state('session-owner')
+    expect(manager.cancel('session-owner', active.taskId!)).toBe(true)
     release()
 
     await expect(running).rejects.toThrow('OpenGUI task stopped by user')
@@ -99,14 +168,14 @@ describe('OpenGUI task entry points', () => {
       return 'done'
     })
 
-    await vi.waitFor(() => expect(manager.state().phase).toBe('routing'))
+    await vi.waitFor(() => expect(manager.state('session-owner').phase).toBe('routing'))
     expect(manager.nestedLease(router)?.context).toEqual({ targets: ['phone-a'] })
     expect(manager.nestedLease(stranger)).toBeUndefined()
     await expect(manager.runRoot(invocation('').agent, new AbortController().signal, 'running', async () => 'second'))
       .rejects.toThrow('another OpenGUI task is already running')
     release()
     await expect(running).resolves.toBe('done')
-    expect(manager.state()).toEqual({ active: false, phase: 'idle', selectionLocked: false })
+    expect(manager.state('session-owner')).toEqual({ sessionId: 'session-owner', active: false, phase: 'idle', selectionLocked: false, deviceIds: [] })
   })
 
   it('attributes the root task to the actual session rather than the resident agent id', async () => {
@@ -118,10 +187,176 @@ describe('OpenGUI task entry points', () => {
       await gate
       return 'done'
     })
-    await vi.waitFor(() => expect(manager.state().active).toBe(true))
-    expect(manager.state().ownerSessionId).toBe('actual-session')
+    await vi.waitFor(() => expect(manager.state('actual-session').active).toBe(true))
+    expect(manager.state('actual-session').sessionId).toBe('actual-session')
     release()
     await running
+  })
+
+  it('runs different sessions concurrently while rejecting a second root in one session', async () => {
+    const ids = ['task-a', 'attempt-a', 'task-b', 'attempt-b']
+    const manager = new OpenGuiTaskManager(() => ids.shift()!)
+    let releaseA!: () => void
+    let releaseB!: () => void
+    const gateA = new Promise<void>(resolve => { releaseA = resolve })
+    const gateB = new Promise<void>(resolve => { releaseB = resolve })
+    const runningA = manager.runRoot(invocation('', undefined, 'session-a').agent, new AbortController().signal, 'running', async lease => {
+      lease.setDeviceIds(['device-a'])
+      await gateA
+      return 'A'
+    })
+    const runningB = manager.runRoot(invocation('', undefined, 'session-b').agent, new AbortController().signal, 'running', async lease => {
+      lease.setDeviceIds(['device-b'])
+      await gateB
+      return 'B'
+    })
+
+    expect(manager.states()).toEqual([
+      expect.objectContaining({ sessionId: 'session-a', taskId: 'task-a', attemptId: 'attempt-a', deviceIds: ['device-a'] }),
+      expect.objectContaining({ sessionId: 'session-b', taskId: 'task-b', attemptId: 'attempt-b', deviceIds: ['device-b'] }),
+    ])
+    await expect(manager.runRoot(invocation('', undefined, 'session-a').agent, new AbortController().signal, 'running', async () => 'duplicate'))
+      .rejects.toThrow('already running in this session')
+    releaseA()
+    await expect(runningA).resolves.toBe('A')
+    expect(manager.state('session-b').active).toBe(true)
+    releaseB()
+    await expect(runningB).resolves.toBe('B')
+  })
+
+  it('rejects a delayed stop for the previous task without aborting the replacement', async () => {
+    const ids = ['task-old', 'attempt-old', 'task-new', 'attempt-new']
+    const manager = new OpenGuiTaskManager(() => ids.shift()!)
+    const parent = invocation('').agent
+    await manager.runRoot(parent, new AbortController().signal, 'running', async () => 'old')
+    let newSignal!: AbortSignal
+    let release!: () => void
+    const gate = new Promise<void>(resolve => { release = resolve })
+    const replacement = manager.runRoot(parent, new AbortController().signal, 'running', async lease => {
+      newSignal = lease.signal
+      await gate
+      return 'new'
+    })
+
+    expect(manager.cancel('session-owner', 'task-old')).toBe(false)
+    expect(newSignal.aborted).toBe(false)
+    expect(manager.state('session-owner')).toMatchObject({ taskId: 'task-new', attemptId: 'attempt-new' })
+    release()
+    await expect(replacement).resolves.toBe('new')
+  })
+
+  it('does not let an agent bound to an old attempt enter its replacement', async () => {
+    const ids = ['task-old', 'attempt-old', 'task-new', 'attempt-new']
+    const manager = new OpenGuiTaskManager(() => ids.shift()!)
+    const parent = invocation('').agent
+    const oldAgent = {}
+    await manager.runRoot(parent, new AbortController().signal, 'running', async lease => {
+      lease.bindAgent(oldAgent)
+      return 'old'
+    })
+    let release!: () => void
+    const gate = new Promise<void>(resolve => { release = resolve })
+    const replacement = manager.runRoot(parent, new AbortController().signal, 'running', async () => {
+      await gate
+      return 'new'
+    })
+
+    expect(() => manager.nestedLease(oldAgent)).toThrow('nested agent belongs to an inactive OpenGUI task')
+    release()
+    await replacement
+  })
+
+  it('keeps the managed browser globally serial with exact owner release', async () => {
+    const ids = ['task-a', 'attempt-a', 'task-b', 'attempt-b']
+    const manager = new OpenGuiTaskManager(() => ids.shift()!)
+    let releaseA!: () => void
+    let releaseB!: () => void
+    let browserReleaseA!: () => void
+    let leaseB!: OpenGuiTaskLease
+    const runningA = manager.runRoot(invocation('', undefined, 'session-a').agent, new AbortController().signal, 'running', async lease => {
+      browserReleaseA = lease.acquireBrowser()
+      await new Promise<void>(resolve => { releaseA = resolve })
+      return 'A'
+    })
+    const runningB = manager.runRoot(invocation('', undefined, 'session-b').agent, new AbortController().signal, 'running', async lease => {
+      leaseB = lease
+      await new Promise<void>(resolve => { releaseB = resolve })
+      return 'B'
+    })
+
+    expect(manager.browserOwnerIdentity()).toEqual({ sessionId: 'session-a', taskId: 'task-a', attemptId: 'attempt-a' })
+    expect(() => leaseB.acquireBrowser()).toThrow(BrowserLeaseConflictError)
+    browserReleaseA()
+    const browserReleaseB = leaseB.acquireBrowser()
+    expect(manager.browserOwnerIdentity()?.sessionId).toBe('session-b')
+    browserReleaseA()
+    expect(manager.browserOwnerIdentity()?.sessionId).toBe('session-b')
+    browserReleaseB()
+    releaseA()
+    releaseB()
+    await Promise.all([runningA, runningB])
+  })
+
+  it('cancels only the session that is actually disposed', async () => {
+    const manager = new OpenGuiTaskManager()
+    const signals = new Map<string, AbortSignal>()
+    const run = (sessionId: string) => manager.runRoot(
+      invocation('', undefined, sessionId).agent,
+      new AbortController().signal,
+      'running',
+      lease => new Promise((_resolve, reject) => {
+        signals.set(sessionId, lease.signal)
+        lease.signal.addEventListener('abort', () => reject(lease.signal.reason), { once: true })
+      }),
+    )
+    const runningA = run('session-a')
+    const runningB = run('session-b')
+
+    expect(manager.cancelSession('session-a')).toBe(true)
+    await expect(runningA).rejects.toThrow('owning session was disposed')
+    expect(signals.get('session-b')?.aborted).toBe(false)
+    manager.cancelSession('session-b')
+    await expect(runningB).rejects.toThrow('owning session was disposed')
+  })
+
+  it('propagates parent cancellation to already-bound nested leases', async () => {
+    const manager = new OpenGuiTaskManager()
+    const parent = new AbortController()
+    const nestedAgent = {}
+    let release!: () => void
+    const gate = new Promise<void>(resolve => { release = resolve })
+    const running = manager.runRoot(invocation('').agent, parent.signal, 'running', async lease => {
+      lease.bindAgent(nestedAgent)
+      await gate
+      return 'late result'
+    })
+    const nested = manager.nestedLease(nestedAgent)!
+
+    parent.abort(new Error('parent disposed'))
+
+    expect(nested.signal.aborted).toBe(true)
+    expect(manager.state('session-owner').phase).toBe('stopping')
+    expect(() => manager.nestedLease(nestedAgent)).toThrow('inactive OpenGUI task')
+    release()
+    await expect(running).rejects.toThrow('parent disposed')
+  })
+
+  it('aborts and drains every concurrent session on plugin disposal', async () => {
+    const manager = new OpenGuiTaskManager()
+    const run = (sessionId: string) => manager.runRoot(
+      invocation('', undefined, sessionId).agent,
+      new AbortController().signal,
+      'running',
+      lease => new Promise((_resolve, reject) => {
+        lease.signal.addEventListener('abort', () => reject(lease.signal.reason), { once: true })
+      }),
+    )
+    const results = Promise.allSettled([run('session-a'), run('session-b')])
+
+    await manager.dispose()
+
+    expect((await results).map(result => result.status)).toEqual(['rejected', 'rejected'])
+    expect(manager.states()).toEqual([])
   })
 
   it('publishes /opengui metadata and forwards trimmed input to the shared runner', async () => {
@@ -220,7 +455,8 @@ describe('OpenGUI task entry points', () => {
     const running = coordinator.command(preflight, prepare, recover).handler(invocation('检查手机'))
 
     await vi.waitFor(() => expect(entered).toHaveBeenCalledOnce())
-    expect(coordinator.cancel()).toBe(true)
+    const active = coordinator.state('session-owner')
+    expect(coordinator.cancel('session-owner', active.taskId!)).toBe(true)
     release()
 
     await expect(running).resolves.toEqual({ kind: 'error', text: 'coremate-mobile: OpenGUI task stopped by user' })
@@ -247,12 +483,12 @@ describe('OpenGUI task entry points', () => {
     const running = coordinator.command(preflight, prepare).handler(invocation('检查手机'))
 
     await vi.waitFor(() => { expect(prepare).toHaveBeenCalledTimes(1) })
-    expect(coordinator.state()).toEqual({ active: true, phase: 'waiting-for-device', selectionLocked: false, ownerSessionId: 'session-owner' })
+    expect(coordinator.state('session-owner')).toMatchObject({ sessionId: 'session-owner', active: true, phase: 'waiting-for-device', selectionLocked: false, deviceIds: [] })
     expect(preflight).toHaveBeenCalledTimes(1)
     allowPhone()
     await expect(running).resolves.toEqual({ kind: 'success', text: 'done' })
     expect(order).toEqual(['prepare', 'preflight', 'start'])
-    expect(coordinator.state()).toEqual({ active: false, phase: 'idle', selectionLocked: false })
+    expect(coordinator.state('session-owner')).toEqual({ sessionId: 'session-owner', active: false, phase: 'idle', selectionLocked: false, deviceIds: [] })
   })
 
   it('can cancel while waiting for a phone after resolving the model without starting work', async () => {
@@ -264,8 +500,9 @@ describe('OpenGUI task entry points', () => {
     }))
     const running = coordinator.command(preflight, prepare).handler(invocation('浏览网页'))
 
-    await vi.waitFor(() => { expect(coordinator.state().phase).toBe('waiting-for-device') })
-    expect(coordinator.cancel()).toBe(true)
+    await vi.waitFor(() => { expect(coordinator.state('session-owner').phase).toBe('waiting-for-device') })
+    const active = coordinator.state('session-owner')
+    expect(coordinator.cancel('session-owner', active.taskId!)).toBe(true)
     await expect(running).resolves.toEqual({ kind: 'error', text: 'coremate-mobile: OpenGUI task stopped by user' })
     expect(prepare).toHaveBeenCalledTimes(1)
     expect(start).not.toHaveBeenCalled()
@@ -294,7 +531,7 @@ describe('OpenGUI task entry points', () => {
     await expect(unexpected.handler(invocation('observe phone'))).rejects.toBe('bad rejection')
   })
 
-  it('allows only one task across command and tool entry points', async () => {
+  it('allows only one root task per session across command and tool entry points', async () => {
     let release!: () => void
     const firstDone = new Promise<void>((resolve) => { release = resolve })
     const start = vi.fn(async (task: string) => {
@@ -306,7 +543,7 @@ describe('OpenGUI task entry points', () => {
 
     await expect(coordinator.command().handler(invocation('second'))).resolves.toEqual({
       kind: 'error',
-      text: 'coremate-mobile: another OpenGUI task is already running',
+      text: 'coremate-mobile: another OpenGUI task is already running in this session',
     })
     release()
     await expect(first).resolves.toEqual(result('run-first'))
@@ -339,9 +576,10 @@ describe('OpenGUI task entry points', () => {
     const running = coordinator.run('long task', invocation('').agent, new AbortController().signal)
 
     expect(coordinator.isActive()).toBe(true)
-    expect(coordinator.cancel()).toBe(true)
-    expect(coordinator.state()).toEqual({ active: true, phase: 'stopping', selectionLocked: true, ownerSessionId: 'session-owner' })
-    expect(coordinator.cancel()).toBe(false)
+    const active = coordinator.state('session-owner')
+    expect(coordinator.cancel('session-owner', active.taskId!)).toBe(true)
+    expect(coordinator.state('session-owner')).toMatchObject({ sessionId: 'session-owner', taskId: active.taskId, active: true, phase: 'stopping', selectionLocked: true, deviceIds: [] })
+    expect(coordinator.cancel('session-owner', active.taskId!)).toBe(false)
     expect(activeSignal?.aborted).toBe(true)
     await expect(running).rejects.toThrow('coremate-mobile: OpenGUI task stopped by user')
     expect(coordinator.isActive()).toBe(false)
