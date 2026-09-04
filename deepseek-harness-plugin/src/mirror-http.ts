@@ -261,7 +261,11 @@ export function installMirrorHttp(
               const sessionId = querySessionId(request, BROWSER_INSTALL_STATUS_PATH)
               const owner = coremateTasks.browserOwner()
               const browserStatus = await browser.status()
-              if (owner?.sessionId !== sessionId) {
+              const currentOwner = coremateTasks.browserOwner()
+              if (owner?.sessionId !== sessionId ||
+                currentOwner?.sessionId !== owner.sessionId ||
+                currentOwner.taskId !== owner.taskId ||
+                currentOwner.attemptId !== owner.attemptId) {
                 return sendJson(response, 200, {
                   phase: 'idle',
                   version: browserStatus.version,

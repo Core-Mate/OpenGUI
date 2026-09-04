@@ -17,6 +17,61 @@ afterEach(() => {
 })
 
 describe('OpenGUI client task status store', () => {
+  it('applies slow polls without overlapping requests and reconciles completion', async () => {
+    vi.useFakeTimers()
+    let tasks = [activeTask('session-a')]
+    const fetch = vi.fn(async () => {
+      await new Promise(resolve => setTimeout(resolve, 1_500))
+      return Response.json({ tasks })
+    })
+    vi.stubGlobal('fetch', fetch)
+    const store = new CoremateTaskStatusStore()
+    const disconnect = store.connect()
+    try {
+      await vi.advanceTimersByTimeAsync(1_500)
+      expect(store.getSnapshot('session-a').task.active).toBe(true)
+      expect(fetch).toHaveBeenCalledTimes(1)
+      tasks = []
+      await vi.advanceTimersByTimeAsync(2_500)
+      expect(store.getSnapshot('session-a').task.active).toBe(false)
+      expect(fetch).toHaveBeenCalledTimes(2)
+    } finally {
+      disconnect()
+    }
+  })
+
+  it('does not restart a disconnected poll after an ignored abort resolves', async () => {
+    vi.useFakeTimers()
+    let resolve!: (response: Response) => void
+    const fetch = vi.fn(() => new Promise<Response>(done => { resolve = done }))
+    vi.stubGlobal('fetch', fetch)
+    const store = new CoremateTaskStatusStore()
+    const disconnect = store.connect()
+    disconnect()
+    resolve(Response.json({ tasks: [activeTask('session-a')] }))
+    await vi.advanceTimersByTimeAsync(5_000)
+    expect(store.getSnapshot('session-a').task.active).toBe(false)
+    expect(fetch).toHaveBeenCalledTimes(1)
+  })
+
+  it('retries polling after a failure and stops scheduling on disconnect', async () => {
+    vi.useFakeTimers()
+    const fetch = vi.fn()
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValue(Response.json({ tasks: [activeTask('session-a')] }))
+    vi.stubGlobal('fetch', fetch)
+    const store = new CoremateTaskStatusStore()
+    const disconnect = store.connect()
+    try {
+      await vi.advanceTimersByTimeAsync(1_000)
+      expect(store.getSnapshot('session-a').task.active).toBe(true)
+    } finally {
+      disconnect()
+    }
+    await vi.advanceTimersByTimeAsync(5_000)
+    expect(fetch).toHaveBeenCalledTimes(2)
+  })
+
   it('reconciles concurrent Host tasks into independent session snapshots', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => Response.json({
       tasks: [activeTask('session-a'), activeTask('session-b')],

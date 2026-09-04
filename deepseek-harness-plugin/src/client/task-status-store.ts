@@ -90,7 +90,7 @@ export class CoremateTaskStatusStore {
   private readonly launchGenerations = new Map<string, number>()
   private readonly launchTimers = new Map<string, ReturnType<typeof setTimeout>>()
   private controller: AbortController | undefined
-  private timer: ReturnType<typeof setInterval> | undefined
+  private timer: ReturnType<typeof setTimeout> | undefined
   private refreshGeneration = 0
 
   getSnapshot = (sessionId?: string): CoremateTaskSnapshot => {
@@ -123,18 +123,27 @@ export class CoremateTaskStatusStore {
 
   connect(intervalMs = 1_000): () => void {
     if (!this.controller) {
-      this.controller = new AbortController()
-      void this.refresh(this.controller.signal).catch(() => {})
-      this.timer = setInterval(() => {
-        void this.refresh(this.controller?.signal).catch(() => {})
-      }, intervalMs)
+      const controller = new AbortController()
+      this.controller = controller
+      const poll = async (): Promise<void> => {
+        try {
+          await this.refresh(controller.signal)
+        } catch {
+          // Preserve the last trusted snapshot and retry after this request settles.
+        } finally {
+          if (!controller.signal.aborted && this.controller === controller) {
+            this.timer = setTimeout(poll, intervalMs)
+          }
+        }
+      }
+      void poll()
     }
 
     return () => {
       this.controller?.abort()
       this.refreshGeneration += 1
       this.controller = undefined
-      if (this.timer) clearInterval(this.timer)
+      if (this.timer) clearTimeout(this.timer)
       this.timer = undefined
       for (const timer of this.launchTimers.values()) clearTimeout(timer)
       this.launchTimers.clear()

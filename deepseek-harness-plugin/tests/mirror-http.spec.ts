@@ -51,11 +51,11 @@ async function setup(options: { selectionLocked?: boolean, phase?: 'waiting-for-
   }
   const browser = {
     enableInstallPrompt: () => () => {},
-    status: async () => ({ phase: options.browserOwner ? 'awaiting-confirmation' : 'ready', version: '1', hostPlatform: 'darwin/arm64' }),
+    status: vi.fn(async () => ({ phase: options.browserOwner ? 'awaiting-confirmation' : 'ready', version: '1', hostPlatform: 'darwin/arm64' })),
     approveInstall: vi.fn(() => true),
     declineInstall: vi.fn(() => true),
   }
-  const browserOwner = options.browserOwner
+  let browserOwner = options.browserOwner
     ? { sessionId: 'session-1', taskId: 'task-1', attemptId: 'attempt-1' }
     : undefined
   const cancel = vi.fn((sessionId: string, taskId: string) => (
@@ -113,10 +113,35 @@ async function setup(options: { selectionLocked?: boolean, phase?: 'waiting-for-
   servers.push(server)
   await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve))
   const address = server.address() as AddressInfo
-  return { base: `http://127.0.0.1:${address.port}`, device, previewRead, select, updater, browser, cancel }
+  return { base: `http://127.0.0.1:${address.port}`, device, previewRead, select, updater, browser, cancel,
+    setBrowserOwner(owner: typeof browserOwner) { browserOwner = owner },
+  }
 }
 
 describe('OpenGUI local preview HTTP surface', () => {
+  it.each([
+    undefined,
+    { sessionId: 'session-2', taskId: 'task-2', attemptId: 'attempt-2' },
+    { sessionId: 'session-1', taskId: 'task-2', attemptId: 'attempt-2' },
+    { sessionId: 'session-1', taskId: 'task-1', attemptId: 'attempt-2' },
+  ])('hides browser status when its owner changes during the read: %j', async (nextOwner) => {
+    const { base, browser, setBrowserOwner } = await setup({ browserOwner: true })
+    let resolve!: (status: Awaited<ReturnType<typeof browser.status>>) => void
+    let started!: () => void
+    const reading = new Promise<void>(done => { started = done })
+    browser.status.mockImplementationOnce(() => {
+      started()
+      return new Promise(done => { resolve = done })
+    })
+    const pending = fetch(`${base}${BROWSER_INSTALL_STATUS_PATH}?sessionId=session-1`)
+    await reading
+    setBrowserOwner(nextOwner)
+    resolve({ phase: 'awaiting-confirmation', version: '1', hostPlatform: 'darwin/arm64' })
+    const response = await pending
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({ phase: 'idle', version: '1', hostPlatform: 'darwin/arm64' })
+  })
+
   it('reports the actual DSH and OpenGUI runtime versions without local paths', async () => {
     const { base } = await setup()
     const response = await fetch(`${base}${RUNTIME_INFO_PATH}`)
