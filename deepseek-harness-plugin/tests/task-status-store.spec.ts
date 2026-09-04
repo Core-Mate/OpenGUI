@@ -1,77 +1,258 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { CoremateTaskStatusStore } from '../src/client/task-status-store.ts'
 
+const activeTask = (sessionId: string, taskId = `task-${sessionId}`) => ({
+  sessionId,
+  taskId,
+  attemptId: `attempt-${sessionId}`,
+  active: true as const,
+  phase: 'running' as const,
+  selectionLocked: true,
+  deviceIds: [`device-${sessionId}`],
+})
+
 afterEach(() => {
   vi.unstubAllGlobals()
   vi.useRealTimers()
 })
 
 describe('OpenGUI client task status store', () => {
-  it('keeps the Host stopping state instead of publishing an optimistic idle state', async () => {
+  it('settles a fast failed command before polling can observe its task', () => {
+    const store = new CoremateTaskStatusStore()
+    const launch = store.beginLaunch('session-b')!
+    store.reconcileCommand('session-b', { commandId: 'cmd-b', seq: 10, outcome: { kind: 'error', text: 'device busy' } })
+    expect(store.getSnapshot('session-b')).toMatchObject({ launching: false, launchError: 'device busy' })
+    expect(store.getSnapshot('session-a').launchError).toBeUndefined()
+    expect(store.finishLaunch('session-b', launch)).toBe(false)
+    expect(store.getSnapshot('session-b').launchError).toBe('device busy')
+  })
+
+  it('ignores old command completion after a newer launch or command', () => {
+    const store = new CoremateTaskStatusStore()
+    store.beginLaunch('session-a')
+    store.reconcileCommand('session-a', { commandId: 'old', seq: 10, outcome: null })
+    store.beginLaunch('session-a')
+    store.reconcileCommand('session-a', { commandId: 'old', seq: 10, outcome: { kind: 'error', text: 'old error' } })
+    expect(store.getSnapshot('session-a')).toMatchObject({ launching: true, launchError: undefined })
+    store.reconcileCommand('session-a', { commandId: 'new', seq: 20, outcome: { kind: 'success' } })
+    store.reconcileCommand('session-a', { commandId: 'old', seq: 10, outcome: { kind: 'error', text: 'old error' } })
+    expect(store.getSnapshot('session-a')).toMatchObject({ launching: false, launchError: undefined })
+  })
+
+  it('applies slow polls without overlapping requests and reconciles completion', async () => {
+    vi.useFakeTimers()
+    let tasks = [activeTask('session-a')]
+    const fetch = vi.fn(async () => {
+      await new Promise(resolve => setTimeout(resolve, 1_500))
+      return Response.json({ tasks })
+    })
+    vi.stubGlobal('fetch', fetch)
+    const store = new CoremateTaskStatusStore()
+    const disconnect = store.connect()
+    try {
+      await vi.advanceTimersByTimeAsync(1_500)
+      expect(store.getSnapshot('session-a').task.active).toBe(true)
+      expect(fetch).toHaveBeenCalledTimes(1)
+      tasks = []
+      await vi.advanceTimersByTimeAsync(2_500)
+      expect(store.getSnapshot('session-a').task.active).toBe(false)
+      expect(fetch).toHaveBeenCalledTimes(2)
+    } finally {
+      disconnect()
+    }
+  })
+
+  it('does not restart a disconnected poll after an ignored abort resolves', async () => {
+    vi.useFakeTimers()
+    let resolve!: (response: Response) => void
+    const fetch = vi.fn(() => new Promise<Response>(done => { resolve = done }))
+    vi.stubGlobal('fetch', fetch)
+    const store = new CoremateTaskStatusStore()
+    const disconnect = store.connect()
+    disconnect()
+    resolve(Response.json({ tasks: [activeTask('session-a')] }))
+    await vi.advanceTimersByTimeAsync(5_000)
+    expect(store.getSnapshot('session-a').task.active).toBe(false)
+    expect(fetch).toHaveBeenCalledTimes(1)
+  })
+
+  it('retries polling after a failure and stops scheduling on disconnect', async () => {
+    vi.useFakeTimers()
+    const fetch = vi.fn()
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValue(Response.json({ tasks: [activeTask('session-a')] }))
+    vi.stubGlobal('fetch', fetch)
+    const store = new CoremateTaskStatusStore()
+    const disconnect = store.connect()
+    try {
+      await vi.advanceTimersByTimeAsync(1_000)
+      expect(store.getSnapshot('session-a').task.active).toBe(true)
+    } finally {
+      disconnect()
+    }
+    await vi.advanceTimersByTimeAsync(5_000)
+    expect(fetch).toHaveBeenCalledTimes(2)
+  })
+
+  it('reconciles concurrent Host tasks into independent session snapshots', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({
+      tasks: [activeTask('session-a'), activeTask('session-b')],
+    })))
+    const store = new CoremateTaskStatusStore()
+
+    await store.refresh()
+
+    expect(store.getSnapshot('session-a').task).toEqual(activeTask('session-a'))
+    expect(store.getSnapshot('session-b').task).toEqual(activeTask('session-b'))
+    expect(store.getSnapshot('session-c').task.active).toBe(false)
+    expect(store.activeTasks()).toHaveLength(2)
+  })
+
+  it('derives idle only for an active task omitted by a trusted batch response', async () => {
     const responses = [
-      new Response(null, { status: 202 }),
-      Response.json({ active: true, phase: 'stopping', selectionLocked: true, ownerSessionId: 'session-owner' }),
+      Response.json({ tasks: [activeTask('session-a'), activeTask('session-b')] }),
+      Response.json({ tasks: [activeTask('session-b')] }),
     ]
     vi.stubGlobal('fetch', vi.fn(async () => responses.shift()!))
     const store = new CoremateTaskStatusStore()
 
-    await store.stop()
-
-    expect(store.getSnapshot().task).toEqual({
-      active: true,
-      phase: 'stopping',
-      selectionLocked: true,
-      ownerSessionId: 'session-owner',
-    })
-  })
-
-  it('rejects an unresponsive Host stop request', async () => {
-    vi.useFakeTimers()
-    vi.stubGlobal('fetch', vi.fn((_input: RequestInfo | URL, init?: RequestInit) => new Promise<Response>((_resolve, reject) => {
-      init?.signal?.addEventListener('abort', () => reject(init.signal?.reason), { once: true })
-    })))
-    const store = new CoremateTaskStatusStore()
-
-    const stopping = store.stop()
-    const result = expect(stopping).rejects.toThrow('停止 OpenGUI 操作超时，请检查 Host 后重试。')
-    await vi.advanceTimersByTimeAsync(5_000)
-
-    await result
-  })
-
-  it('keeps an accepted stop successful when its best-effort refresh hangs', async () => {
-    vi.useFakeTimers()
-    vi.stubGlobal('fetch', vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
-      if (input === '/coremate-mobile/task/stop') return Promise.resolve(Response.json({ accepted: true }, { status: 202 }))
-      return new Promise<Response>((_resolve, reject) => {
-        init?.signal?.addEventListener('abort', () => reject(init.signal?.reason), { once: true })
-      })
-    }))
-    const store = new CoremateTaskStatusStore()
-
-    const stopping = store.stop()
-    const result = expect(stopping).resolves.toBeUndefined()
-    await vi.advanceTimersByTimeAsync(1_000)
-
-    await result
-  })
-
-  it('blocks duplicate launches until Host activity is observed', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => Response.json({
-      active: true,
-      phase: 'waiting-for-device',
-      selectionLocked: false,
-      ownerSessionId: 'session-owner',
-    })))
-    const store = new CoremateTaskStatusStore()
-
-    expect(store.beginLaunch('session-owner')).toBe(true)
-    expect(store.beginLaunch()).toBe(false)
-    expect(store.isConsumedSession('session-owner')).toBe(true)
-    expect(store.getSnapshot().launching).toBe(true)
     await store.refresh()
-    expect(store.getSnapshot().launching).toBe(false)
-    expect(store.beginLaunch()).toBe(false)
+    await store.refresh()
+
+    expect(store.getSnapshot('session-a').task).toEqual({
+      sessionId: 'session-a',
+      active: false,
+      phase: 'idle',
+      selectionLocked: false,
+      deviceIds: [],
+    })
+    expect(store.getSnapshot('session-b').task.active).toBe(true)
+  })
+
+  it('retains the last trusted snapshots when status refresh fails', async () => {
+    const fetch = vi.fn()
+      .mockResolvedValueOnce(Response.json({ tasks: [activeTask('session-a')] }))
+      .mockRejectedValueOnce(new Error('offline'))
+    vi.stubGlobal('fetch', fetch)
+    const store = new CoremateTaskStatusStore()
+
+    await store.refresh()
+    await expect(store.refresh()).rejects.toThrow('offline')
+
+    expect(store.getSnapshot('session-a').task).toEqual(activeTask('session-a'))
+  })
+
+  it('does not turn active sessions idle after a malformed batch response', async () => {
+    const fetch = vi.fn()
+      .mockResolvedValueOnce(Response.json({ tasks: [activeTask('session-a')] }))
+      .mockResolvedValueOnce(Response.json({ active: false }))
+    vi.stubGlobal('fetch', fetch)
+    const store = new CoremateTaskStatusStore()
+
+    await store.refresh()
+    await expect(store.refresh()).rejects.toThrow('任务状态响应无效')
+
+    expect(store.getSnapshot('session-a').task.active).toBe(true)
+  })
+
+  it('ignores an older refresh response that arrives after a newer generation', async () => {
+    let first!: (response: Response) => void
+    let second!: (response: Response) => void
+    const fetch = vi.fn()
+      .mockImplementationOnce(() => new Promise<Response>(resolve => { first = resolve }))
+      .mockImplementationOnce(() => new Promise<Response>(resolve => { second = resolve }))
+    vi.stubGlobal('fetch', fetch)
+    const store = new CoremateTaskStatusStore()
+    const older = store.refresh()
+    const newer = store.refresh()
+
+    second(Response.json({ tasks: [activeTask('session-b')] }))
+    await newer
+    first(Response.json({ tasks: [activeTask('session-a')] }))
+    await older
+
+    expect(store.activeTasks()).toEqual([activeTask('session-b')])
+  })
+
+  it('drops asynchronous task rows without a complete identity', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({
+      tasks: [
+        { ...activeTask('session-a'), sessionId: undefined },
+        { ...activeTask('session-b'), taskId: undefined },
+        activeTask('session-c'),
+      ],
+    })))
+    const store = new CoremateTaskStatusStore()
+
+    await store.refresh()
+
+    expect(store.activeTasks()).toEqual([activeTask('session-c')])
+  })
+
+  it('posts an exact stop identity and keeps the returned stopping task', async () => {
+    const fetch = vi.fn()
+      .mockResolvedValueOnce(Response.json({ sessionId: 'session-a', taskId: 'task-a', accepted: true }, { status: 202 }))
+      .mockResolvedValueOnce(Response.json({
+        tasks: [{ ...activeTask('session-a', 'task-a'), phase: 'stopping' }],
+      }))
+    vi.stubGlobal('fetch', fetch)
+    const store = new CoremateTaskStatusStore()
+
+    await store.stop('session-a', 'task-a')
+
+    expect(fetch.mock.calls[0]).toEqual([
+      '/coremate-mobile/task/stop',
+      expect.objectContaining({ body: JSON.stringify({ sessionId: 'session-a', taskId: 'task-a' }) }),
+    ])
+    expect(store.getSnapshot('session-a').task.phase).toBe('stopping')
+  })
+
+  it('surfaces an exact stale-task conflict from the Host', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json(
+      { error: 'task_identity_mismatch' },
+      { status: 409 },
+    )))
+    const store = new CoremateTaskStatusStore()
+
+    await expect(store.stop('session-a', 'old-task')).rejects.toThrow('task_identity_mismatch')
+  })
+
+  it('ignores a stale launch callback after a newer generation starts', () => {
+    const store = new CoremateTaskStatusStore()
+    const first = store.beginLaunch('session-a')!
+    expect(store.finishLaunch('session-a', first)).toBe(true)
+    const second = store.beginLaunch('session-a')!
+
+    expect(store.finishLaunch('session-a', first, 'stale error')).toBe(false)
+    expect(store.getSnapshot('session-a')).toMatchObject({ launching: true, launchError: undefined })
+    expect(store.finishLaunch('session-a', second, 'current error')).toBe(true)
+    expect(store.getSnapshot('session-a')).toMatchObject({ launching: false, launchError: 'current error' })
+  })
+
+  it('isolates launch and bridge errors by session', () => {
+    const store = new CoremateTaskStatusStore()
+    const launch = store.beginLaunch('session-a')!
+    store.finishLaunch('session-a', launch, 'A failed')
+    store.setBridgeError('session-b', 'B failed')
+
+    expect(store.getSnapshot('session-a')).toMatchObject({ launchError: 'A failed', bridgeError: undefined })
+    expect(store.getSnapshot('session-b')).toMatchObject({ launchError: undefined, bridgeError: 'B failed' })
+  })
+
+  it('allows B and a new C to launch without changing A during repeated tab projection', () => {
+    const store = new CoremateTaskStatusStore()
+    const a = store.beginLaunch('session-a')!
+    const b = store.beginLaunch('session-b')!
+    expect(store.beginLaunch('session-a')).toBeUndefined()
+    for (const sessionId of ['session-a', 'session-b', 'session-a', 'session-b']) {
+      expect(store.getSnapshot(sessionId).launching).toBe(true)
+    }
+    const c = store.beginLaunch('session-c')!
+    expect(store.getSnapshot('session-a').launching).toBe(true)
+    expect(store.getSnapshot('session-b').launching).toBe(true)
+    store.finishLaunch('session-a', a)
+    store.finishLaunch('session-b', b)
+    store.finishLaunch('session-c', c)
   })
 
   it('marks a direct slash session consumed before the first Host poll', () => {

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import type { CSSProperties } from 'react'
-import type { ISessions } from '@deepseek-ai/dsh-client-runtime/client'
 import { readBrowserInstallStatus } from './BrowserInstallPrompt.tsx'
 import { useCoremateTaskStatus } from './task-status-store.ts'
 
@@ -25,25 +24,28 @@ const noticeStyle: CSSProperties = {
 
 export interface CoremateTaskNoticeProps {
   readonly coremateSessionId?: string
-  readonly coremateSessions?: ISessions
 }
 
-export function CoremateTaskNotice({ coremateSessionId, coremateSessions }: CoremateTaskNoticeProps): JSX.Element | null {
-  const { task, launching, launchError, bridgeError } = useCoremateTaskStatus()
-  const elsewhere = task.active && task.ownerSessionId !== undefined && task.ownerSessionId !== coremateSessionId
-  const [browserApproval, setBrowserApproval] = useState(false)
+export function CoremateTaskNotice({ coremateSessionId }: CoremateTaskNoticeProps): JSX.Element | null {
+  const { task, launching, launchError, bridgeError } = useCoremateTaskStatus(coremateSessionId)
+  const [approval, setApproval] = useState<{ sessionId: string, taskId: string }>()
 
   useEffect(() => {
-    if (!task.active || elsewhere) {
-      setBrowserApproval(false)
+    if (!coremateSessionId || !task.active || !task.taskId) {
+      setApproval(undefined)
       return
     }
     const controller = new AbortController()
     let timer: ReturnType<typeof setTimeout> | undefined
     const poll = async (): Promise<void> => {
       try {
-        const status = await readBrowserInstallStatus(controller.signal)
-        setBrowserApproval(status.phase === 'awaiting-confirmation')
+        const status = await readBrowserInstallStatus(coremateSessionId, controller.signal)
+        if (controller.signal.aborted) return
+        setApproval(status.phase === 'awaiting-confirmation' &&
+          status.owner?.sessionId === coremateSessionId &&
+          status.owner.taskId === task.taskId
+          ? { sessionId: coremateSessionId, taskId: task.taskId }
+          : undefined)
       } catch {
         // The optional Host route must not replace the existing task notice.
       } finally {
@@ -55,20 +57,16 @@ export function CoremateTaskNotice({ coremateSessionId, coremateSessions }: Core
       controller.abort()
       if (timer !== undefined) clearTimeout(timer)
     }
-  }, [elsewhere, task.active])
+  }, [coremateSessionId, task.active, task.taskId])
 
-  const message = launchError ?? bridgeError ?? (elsewhere
-    ? 'OpenGUI 正在另一会话执行'
-    : browserApproval
+  const browserApproval = approval !== undefined && approval.sessionId === coremateSessionId && approval.taskId === task.taskId
+  const message = launchError ?? bridgeError ?? (browserApproval
       ? 'OpenGUI 需要确认浏览器安装，请前往 OpenGUI Tab。'
       : launching ? 'OpenGUI 已接收任务，正在启动…' : undefined)
   if (message === undefined) return null
   return (
     <div role="status" style={noticeStyle} data-coremate-task-notice>
       <span>{message}</span>
-      {!elsewhere || coremateSessions === undefined ? null : (
-        <button type="button" onClick={() => coremateSessions.open(task.ownerSessionId as never)} style={{ minHeight: 32, padding: '0 10px', border: '1px solid var(--dsw-alias-border-l2, rgba(128,128,128,.35))', borderRadius: 8, color: 'inherit', background: 'transparent', font: 'inherit', fontWeight: 650, cursor: 'pointer' }}>返回任务</button>
-      )}
     </div>
   )
 }

@@ -1,7 +1,61 @@
 import { describe, expect, it, vi } from 'vitest'
-import { installActiveTaskSessionBridge, shouldForceNewSession } from '../src/client/session-bridge.ts'
+import { installActiveTaskSessionBridge, installSessionCommandTracking, shouldForceNewSession } from '../src/client/session-bridge.ts'
+import { CoremateTaskStatusStore } from '../src/client/task-status-store.ts'
+
+const activeTask = (sessionId: string) => ({
+  sessionId,
+  taskId: `task-${sessionId}`,
+  attemptId: `attempt-${sessionId}`,
+  active: true,
+  phase: 'running',
+  selectionLocked: true,
+  deviceIds: [],
+})
+
+const idleTask = (sessionId: string) => ({
+  sessionId,
+  active: false,
+  phase: 'idle',
+  selectionLocked: false,
+  deviceIds: [],
+})
 
 describe('OpenGUI active-task new-session bridge', () => {
+  it('tracks command outcomes from the owning session snapshot, including immediate failure', () => {
+    const listeners = new Set<() => void>()
+    const store = new CoremateTaskStatusStore()
+    const node = { kind: 'command', name: 'opengui', args: 'inspect phone', commandId: 'cmd-b', seq: 10, outcome: { kind: 'error', text: 'device busy' } }
+    const snapshot = { sessionId: 'session-b', nodes: [node] }
+    const session = {
+      sessionId: 'session-b',
+      getSnapshot: () => snapshot,
+      subscribe(listener: () => void) { listeners.add(listener); return () => { listeners.delete(listener) } },
+    }
+    store.beginLaunch('session-b')
+    const dispose = installSessionCommandTracking(session as never, store)
+    expect(store.getSnapshot('session-b')).toMatchObject({ launching: false, launchError: 'device busy' })
+    expect(store.isConsumedSession('session-b')).toBe(true)
+    snapshot.sessionId = 'session-a'
+    node.outcome.text = 'must not leak'
+    for (const listener of listeners) listener()
+    expect(store.getSnapshot('session-a').launchError).toBeUndefined()
+    expect(store.getSnapshot('session-b').launchError).toBe('device busy')
+    dispose()
+    expect(listeners.size).toBe(0)
+  })
+
+  it('keeps a consumed idle command session visible after Host marks it blank', () => {
+    let state = { byId: { 'session-b': { blank: true } } }
+    const store = new CoremateTaskStatusStore()
+    store.markConsumedSession('session-b')
+    const dispose = installActiveTaskSessionBridge({
+      sessions: { list: { getSnapshot: () => state, set: (next: typeof state) => { state = next } } },
+      workspaces: { startSession: vi.fn() },
+    } as never, store)
+    expect(state.byId['session-b'].blank).toBe(false)
+    dispose()
+  })
+
   it('only bypasses blank-session reuse for the active task owner', () => {
     expect(shouldForceNewSession('session-1', 'session-1', true)).toBe(true)
     expect(shouldForceNewSession('session-1', 'session-2', true)).toBe(false)
@@ -37,9 +91,10 @@ describe('OpenGUI active-task new-session bridge', () => {
     }
     const errors: Array<string | undefined> = []
     const store = {
-      getSnapshot: () => ({ task: { active: true, phase: 'running', selectionLocked: true, ownerSessionId: 'session-owner' } }),
+      getSnapshot: () => ({ task: activeTask('session-owner') }),
+      activeTasks: () => [activeTask('session-owner')],
       isConsumedSession: () => false,
-      setBridgeError: (value?: string) => { errors.push(value) },
+      setBridgeError: (_sessionId: string, value?: string) => { errors.push(value) },
     }
     const dispose = installActiveTaskSessionBridge({ sessions, workspaces: workspace } as never, store as never)
 
@@ -79,7 +134,8 @@ describe('OpenGUI active-task new-session bridge', () => {
       startSession: vi.fn(),
     }
     const store = {
-      getSnapshot: () => ({ task: { active: true, ownerSessionId: 'session-owner' } }),
+      getSnapshot: () => ({ task: activeTask('session-owner') }),
+      activeTasks: () => [activeTask('session-owner')],
       subscribe: (listener: () => void) => { storeListeners.add(listener); return () => storeListeners.delete(listener) },
       isConsumedSession: () => true,
       setBridgeError: vi.fn(),
@@ -110,9 +166,10 @@ describe('OpenGUI active-task new-session bridge', () => {
       },
       workspaces: workspace,
     } as never, {
-      getSnapshot: () => ({ task: { active: true, ownerSessionId: 'session-owner' } }),
+      getSnapshot: () => ({ task: activeTask('session-owner') }),
+      activeTasks: () => [activeTask('session-owner')],
       isConsumedSession: () => false,
-      setBridgeError: (value?: string) => { errors.push(value) },
+      setBridgeError: (_sessionId: string, value?: string) => { errors.push(value) },
     } as never)
 
     workspace.startSession()
@@ -143,7 +200,8 @@ describe('OpenGUI active-task new-session bridge', () => {
       },
       workspaces: workspace,
     } as never, {
-      getSnapshot: () => ({ task: { active: true, ownerSessionId: 'session-owner' } }),
+      getSnapshot: () => ({ task: activeTask('session-owner') }),
+      activeTasks: () => [activeTask('session-owner')],
       isConsumedSession: () => false,
       setBridgeError: vi.fn(),
     } as never)
@@ -177,7 +235,8 @@ describe('OpenGUI active-task new-session bridge', () => {
       sessions: { list: { getSnapshot: () => listState }, create, open },
       workspaces: workspace,
     } as never, {
-      getSnapshot: () => ({ task: { active: true, ownerSessionId: listState.current } }),
+      getSnapshot: (sessionId: string) => ({ task: activeTask(sessionId) }),
+      activeTasks: () => [activeTask('session-owner'), activeTask('session-other')],
       isConsumedSession: () => false,
       setBridgeError: vi.fn(),
     } as never)
@@ -206,7 +265,8 @@ describe('OpenGUI active-task new-session bridge', () => {
       },
       workspaces: workspace,
     } as never, {
-      getSnapshot: () => ({ task: { active: false, phase: 'idle', selectionLocked: false } }),
+      getSnapshot: (sessionId: string) => ({ task: idleTask(sessionId) }),
+      activeTasks: () => [],
       isConsumedSession: () => false,
       setBridgeError: vi.fn(),
     } as never)
@@ -231,7 +291,8 @@ describe('OpenGUI active-task new-session bridge', () => {
       },
       workspaces: workspace,
     } as never, {
-      getSnapshot: () => ({ task: { active: false, phase: 'idle', selectionLocked: false } }),
+      getSnapshot: (sessionId: string) => ({ task: idleTask(sessionId) }),
+      activeTasks: () => [],
       isConsumedSession: (id: string) => id === 'session-consumed',
       setBridgeError: vi.fn(),
     } as never)

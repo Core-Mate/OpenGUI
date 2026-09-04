@@ -1,4 +1,4 @@
-import type { ClientContext, ISessions, IWorkspaces, SessionId, SessionListState, WorkspaceId } from '@deepseek-ai/dsh-client-runtime/client'
+import type { ClientContext, ISessions, IWorkspaces, SessionFace, SessionId, SessionListState, WorkspaceId } from '@deepseek-ai/dsh-client-runtime/client'
 import type { CoremateTaskStatusStore } from './task-status-store.ts'
 
 type SessionCreator = ISessions & {
@@ -7,6 +7,23 @@ type SessionCreator = ISessions & {
 
 type WritableSessionList = ISessions['list'] & {
   set?(next: SessionListState): void
+}
+
+/** Observe the bound session independently of whichever conversation view is mounted. */
+export function installSessionCommandTracking(session: SessionFace, store: CoremateTaskStatusStore): () => void {
+  const sessionId = String(session.sessionId)
+  const sync = (): void => {
+    const snapshot = session.getSnapshot()
+    if (!sessionId || snapshot.sessionId !== sessionId) return
+    const command = snapshot.nodes.filter(node => node.kind === 'command' &&
+      (node.name === 'opengui' || node.name === 'coremate') && node.args?.trim())
+      .reduce<(typeof snapshot.nodes)[number] | undefined>((latest, node) =>
+        latest === undefined || node.seq > latest.seq ? node : latest, undefined)
+    if (command?.kind === 'command') store.reconcileCommand(sessionId, command)
+  }
+  const unsubscribe = session.subscribe(sync)
+  sync()
+  return unsubscribe
 }
 
 /** Keep a command-only task owner in DSH's sidebar, which filters blank rows. */
@@ -52,9 +69,11 @@ export function installActiveTaskSessionBridge(ctx: ClientContext, store: Corema
 
   const syncOwnerVisibility = (): void => {
     if (disposed) return
-    const task = store.getSnapshot().task
-    if (task.active && task.ownerSessionId !== undefined) {
-      surfaceSessionInList(sessions, task.ownerSessionId as SessionId)
+    for (const sessionId of Object.keys(sessions.list.getSnapshot().byId)) {
+      if (store.isConsumedSession(sessionId)) surfaceSessionInList(sessions, sessionId as SessionId)
+    }
+    for (const task of store.activeTasks()) {
+      surfaceSessionInList(sessions, task.sessionId as SessionId)
     }
   }
   const subscribeStore = (store as CoremateTaskStatusStore & { subscribe?: CoremateTaskStatusStore['subscribe'] }).subscribe
@@ -68,7 +87,7 @@ export function installActiveTaskSessionBridge(ctx: ClientContext, store: Corema
   syncOwnerVisibility()
 
   const createAndMaybeOpen = (target: WorkspaceId, origin: SessionId, requestGeneration: number): void => {
-    store.setBridgeError(undefined)
+    store.setBridgeError(String(origin), undefined)
     const operation = (async (): Promise<void> => {
       // SessionRuntime.create projects the new row and binding before resolving.
       // The raw Host RPC does not, which leaves this browser unable to open it.
@@ -76,7 +95,9 @@ export function installActiveTaskSessionBridge(ctx: ClientContext, store: Corema
       const current = sessions.list.getSnapshot().current
       if (!disposed && generation === requestGeneration && current === origin) sessions.open(id)
     })().catch(error => {
-      if (!disposed) store.setBridgeError(error instanceof Error ? error.message : String(error))
+      if (!disposed && generation === requestGeneration) {
+        store.setBridgeError(String(origin), error instanceof Error ? error.message : String(error))
+      }
     }).finally(() => {
       if (pending?.operation === operation) pending = undefined
       const next = queued
@@ -90,7 +111,8 @@ export function installActiveTaskSessionBridge(ctx: ClientContext, store: Corema
     const list = sessions.list.getSnapshot()
     const current = list.current
     const row = current === undefined ? undefined : list.byId[current]
-    const owner = store.getSnapshot().task.active ? store.getSnapshot().task.ownerSessionId : undefined
+    const currentTask = current === undefined ? undefined : store.getSnapshot(String(current)).task
+    const owner = currentTask?.active ? currentTask.sessionId : undefined
     const consumed = current !== undefined && store.isConsumedSession(String(current))
     if (current === undefined || row === undefined || !shouldForceNewSession(owner, String(current), row.blank, consumed)) {
       callOriginal(workspaceId)

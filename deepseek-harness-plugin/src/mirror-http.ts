@@ -11,9 +11,10 @@ import {
   RUNTIME_INFO_PATH,
 } from './mirror-contract.ts'
 import type { RuntimeInfo } from './mirror-contract.ts'
-import type { CoremateTaskState } from './phone-task.ts'
+import type { CoremateTaskState, OpenGuiTaskIdentity } from './phone-task.ts'
 import type { BrowserInstallStatus } from './browser.ts'
 import type { DeviceFleet, DeviceFleetSnapshot } from './device-fleet.ts'
+import { DeviceSelectionLockedError } from './device-fleet.ts'
 import type { PhonePreview } from './preview.ts'
 import type { ScrcpyMirror } from './scrcpy.ts'
 import type { ScrcpyVideoStreams } from './scrcpy-stream.ts'
@@ -22,8 +23,10 @@ import { acceptStreamWebSocket } from './websocket.ts'
 
 interface CoremateTaskControl {
   isActive(): boolean
-  state(): CoremateTaskState
-  cancel(): boolean
+  state(sessionId: string): CoremateTaskState
+  states(): readonly CoremateTaskState[]
+  cancel(sessionId: string, taskId: string): boolean
+  browserOwner(): OpenGuiTaskIdentity | undefined
 }
 
 interface BrowserInstallControl {
@@ -115,6 +118,23 @@ function stringArray(value: unknown, field: string): string[] {
   return [...new Set(value)]
 }
 
+function nonemptyString(value: unknown, field: string): string {
+  if (typeof value !== 'string' || value.trim().length === 0) throw new Error(`invalid_${field}`)
+  return value.trim()
+}
+
+function querySessionId(request: IncomingMessage, fallbackPath: string): string {
+  const url = new URL(request.url ?? fallbackPath, `http://${request.headers.host ?? 'localhost'}`)
+  return nonemptyString(url.searchParams.get('sessionId'), 'session_id')
+}
+
+function taskReference(body: Record<string, unknown>): { sessionId: string, taskId: string } {
+  return {
+    sessionId: nonemptyString(body.sessionId, 'session_id'),
+    taskId: nonemptyString(body.taskId, 'task_id'),
+  }
+}
+
 /** Register the web-only native-mirror control surface without making WebServer a mandatory Host dependency. */
 export function installMirrorHttp(
   ctx: Context,
@@ -133,10 +153,13 @@ export function installMirrorHttp(
       disposers.push(browser.enableInstallPrompt())
       updater.start()
       const signal = (): AbortSignal => AbortSignal.timeout(5_000)
-      const status = async (snapshot?: DeviceFleetSnapshot) => {
-        const task = coremateTasks.state()
+      const status = async (sessionId: string, snapshot?: DeviceFleetSnapshot) => {
+        const task = coremateTasks.state(sessionId)
         return {
-          ...mirror.status((snapshot ?? await fleet.snapshot(signal())).devices, task.active),
+          ...mirror.status((snapshot ?? await fleet.snapshotForSession(sessionId, signal())).devices, task.active),
+          sessionId,
+          ...(task.taskId === undefined ? {} : { taskId: task.taskId }),
+          ...(task.attemptId === undefined ? {} : { attemptId: task.attemptId }),
           taskPhase: task.phase,
           selectionLocked: task.selectionLocked,
         }
@@ -156,10 +179,12 @@ export function installMirrorHttp(
           async handler(request, response) {
             if (request.method !== 'GET') return sendJson(response, 405, { error: 'method_not_allowed' })
             try {
-              sendJson(response, 200, await status())
+              const sessionId = querySessionId(request, MIRROR_STATUS_PATH)
+              sendJson(response, 200, await status(sessionId))
             } catch (error) {
-              sendJson(response, 503, {
-                error: error instanceof Error ? error.message : '手机检测服务暂时不可用，请稍后重试。',
+              const message = error instanceof Error ? error.message : '手机检测服务暂时不可用，请稍后重试。'
+              sendJson(response, message === 'invalid_session_id' ? 400 : 503, {
+                error: message,
               })
             }
           },
@@ -232,28 +257,64 @@ export function installMirrorHttp(
           path: BROWSER_INSTALL_STATUS_PATH,
           async handler(request, response) {
             if (request.method !== 'GET') return sendJson(response, 405, { error: 'method_not_allowed' })
-            sendJson(response, 200, await browser.status())
+            try {
+              const sessionId = querySessionId(request, BROWSER_INSTALL_STATUS_PATH)
+              const owner = coremateTasks.browserOwner()
+              const browserStatus = await browser.status()
+              const currentOwner = coremateTasks.browserOwner()
+              if (owner?.sessionId !== sessionId ||
+                currentOwner?.sessionId !== owner.sessionId ||
+                currentOwner.taskId !== owner.taskId ||
+                currentOwner.attemptId !== owner.attemptId) {
+                return sendJson(response, 200, {
+                  phase: 'idle',
+                  version: browserStatus.version,
+                  hostPlatform: browserStatus.hostPlatform,
+                })
+              }
+              sendJson(response, 200, { ...browserStatus, owner })
+            } catch (error) {
+              sendJson(response, 400, { error: error instanceof Error ? error.message : 'invalid_request' })
+            }
           },
         }))
         disposers.push(httpCtx.webServer.register({
           kind: 'exact',
           path: BROWSER_INSTALL_APPROVE_PATH,
-          handler(request, response) {
+          async handler(request, response) {
             if (request.method !== 'POST') return sendJson(response, 405, { error: 'method_not_allowed' })
             if (!sameOriginMutation(request)) return sendJson(response, 403, { error: 'same_origin_required' })
-            if (!browser.approveInstall()) return sendJson(response, 409, { error: 'no_browser_installation_waiting' })
-            sendJson(response, 202, { accepted: true })
+            try {
+              const ref = taskReference(await readJson(request))
+              const owner = coremateTasks.browserOwner()
+              if (owner?.sessionId !== ref.sessionId || owner.taskId !== ref.taskId) {
+                return sendJson(response, 409, { error: 'browser_owner_mismatch' })
+              }
+              if (!browser.approveInstall()) return sendJson(response, 409, { error: 'no_browser_installation_waiting' })
+              sendJson(response, 202, { accepted: true, ...ref })
+            } catch (error) {
+              sendJson(response, 400, { error: error instanceof Error ? error.message : 'invalid_request' })
+            }
           },
         }))
         disposers.push(httpCtx.webServer.register({
           kind: 'exact',
           path: BROWSER_INSTALL_DECLINE_PATH,
-          handler(request, response) {
+          async handler(request, response) {
             if (request.method !== 'POST') return sendJson(response, 405, { error: 'method_not_allowed' })
             if (!sameOriginMutation(request)) return sendJson(response, 403, { error: 'same_origin_required' })
-            if (!browser.declineInstall()) return sendJson(response, 409, { error: 'no_browser_installation_waiting' })
-            coremateTasks.cancel()
-            sendJson(response, 202, { accepted: true })
+            try {
+              const ref = taskReference(await readJson(request))
+              const owner = coremateTasks.browserOwner()
+              if (owner?.sessionId !== ref.sessionId || owner.taskId !== ref.taskId) {
+                return sendJson(response, 409, { error: 'browser_owner_mismatch' })
+              }
+              if (!browser.declineInstall()) return sendJson(response, 409, { error: 'no_browser_installation_waiting' })
+              coremateTasks.cancel(ref.sessionId, ref.taskId)
+              sendJson(response, 202, { accepted: true, ...ref })
+            } catch (error) {
+              sendJson(response, 400, { error: error instanceof Error ? error.message : 'invalid_request' })
+            }
           },
         }))
         disposers.push(httpCtx.webServer.register({
@@ -292,13 +353,18 @@ export function installMirrorHttp(
           async handler(request, response) {
             if (request.method !== 'POST') return sendJson(response, 405, { error: 'method_not_allowed' })
             if (!sameOriginMutation(request)) return sendJson(response, 403, { error: 'same_origin_required' })
-            if (coremateTasks.state().selectionLocked) return sendJson(response, 409, { error: 'selection_locked_during_task' })
             try {
               const body = await readJson(request)
-              const snapshot = await fleet.select(stringArray(body.deviceIds, 'device_ids'), signal())
-              sendJson(response, 200, await status(snapshot))
+              const sessionId = nonemptyString(body.sessionId, 'session_id')
+              if (coremateTasks.state(sessionId).selectionLocked) {
+                return sendJson(response, 409, { error: 'selection_locked_during_task' })
+              }
+              const snapshot = await fleet.selectForSession(sessionId, stringArray(body.deviceIds, 'device_ids'), signal())
+              sendJson(response, 200, await status(sessionId, snapshot))
             } catch (error) {
-              sendJson(response, 400, { error: error instanceof Error ? error.message : 'invalid_request' })
+              sendJson(response, error instanceof DeviceSelectionLockedError ? 409 : 400, {
+                error: error instanceof Error ? error.message : 'invalid_request',
+              })
             }
           },
         }))
@@ -310,10 +376,11 @@ export function installMirrorHttp(
             if (!sameOriginMutation(request)) return sendJson(response, 403, { error: 'same_origin_required' })
             try {
               const body = await readJson(request)
+              const sessionId = nonemptyString(body.sessionId, 'session_id')
               const deviceIds = stringArray(body.deviceIds, 'device_ids')
               const devices = await fleet.resolveConnected(deviceIds, signal())
               for (const device of devices) mirror.requestStart(device)
-              sendJson(response, 202, await status())
+              sendJson(response, 202, await status(sessionId))
             } catch (error) {
               sendJson(response, 400, { error: error instanceof Error ? error.message : 'invalid_request' })
             }
@@ -325,17 +392,24 @@ export function installMirrorHttp(
           handler(request, response) {
             if (request.method !== 'GET') return sendJson(response, 405, { error: 'method_not_allowed' })
             if (!sameOriginRead(request)) return sendJson(response, 403, { error: 'same_origin_required' })
-            sendJson(response, 200, coremateTasks.state())
+            sendJson(response, 200, { tasks: coremateTasks.states() })
           },
         }))
         disposers.push(httpCtx.webServer.register({
           kind: 'exact',
           path: PHONE_TASK_STOP_PATH,
-          handler(request, response) {
+          async handler(request, response) {
             if (request.method !== 'POST') return sendJson(response, 405, { error: 'method_not_allowed' })
             if (!sameOriginMutation(request)) return sendJson(response, 403, { error: 'same_origin_required' })
-            if (!coremateTasks.cancel()) return sendJson(response, 409, { error: 'no_active_coremate_task' })
-            sendJson(response, 202, { accepted: true })
+            try {
+              const ref = taskReference(await readJson(request))
+              if (!coremateTasks.cancel(ref.sessionId, ref.taskId)) {
+                return sendJson(response, 409, { error: 'opengui_task_identity_mismatch' })
+              }
+              sendJson(response, 202, { accepted: true, ...ref })
+            } catch (error) {
+              sendJson(response, 400, { error: error instanceof Error ? error.message : 'invalid_request' })
+            }
           },
         }))
         disposers.push(httpCtx.webServer.register({
@@ -346,9 +420,10 @@ export function installMirrorHttp(
             if (!sameOriginMutation(request)) return sendJson(response, 403, { error: 'same_origin_required' })
             try {
               const body = await readJson(request)
+              const sessionId = nonemptyString(body.sessionId, 'session_id')
               const deviceIds = stringArray(body.deviceIds, 'device_ids')
               await Promise.all(deviceIds.map(id => mirror.stop(id)))
-              sendJson(response, 200, await status())
+              sendJson(response, 200, await status(sessionId))
             } catch (error) {
               sendJson(response, 400, { error: error instanceof Error ? error.message : 'invalid_request' })
             }

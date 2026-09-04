@@ -100,6 +100,10 @@ async function taskStatus() {
   }
 }
 
+function hasActiveTask(status) {
+  return Array.isArray(status?.tasks) ? status.tasks.length > 0 : status?.active === true
+}
+
 async function gitConfig(key) {
   try {
     return (await run('git', ['config', '--get', key])).stdout.trim() || undefined
@@ -176,7 +180,7 @@ async function deferredReload(head) {
   try {
     for (let attempt = 0; attempt < 8_640; attempt += 1) {
       const status = await taskStatus()
-      if (status === undefined || status.active !== true) {
+      if (status === undefined || !hasActiveTask(status)) {
         await reload(head)
         return
       }
@@ -195,7 +199,7 @@ async function afterPull() {
   await build(files)
   const head = (await run('git', ['rev-parse', '--short', 'HEAD'])).stdout.trim()
   const status = await taskStatus()
-  if (status?.active === true) {
+  if (hasActiveTask(status)) {
     const child = spawn(process.execPath, [fileURLToPath(import.meta.url), 'wait-reload', head], {
       detached: true,
       stdio: 'ignore',
