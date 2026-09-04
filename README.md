@@ -8,6 +8,10 @@
 </p>
 
 <p align="center">
+  <a href="https://trendshift.io/repositories/183339"><img src="https://trendshift.io/api/badge/trendshift/repositories/183339/daily?language=Kotlin" alt="OpenGUI — Trendshift Kotlin Repository of the Day #25" width="250" height="55"></a>
+</p>
+
+<p align="center">
   <a href="#use-opengui-in-deepseek-harness"><img src="https://img.shields.io/badge/INSTALL-DEEPSEEK_HARNESS_PLUGIN-6f42c1?style=for-the-badge" alt="Install the DeepSeek Harness plugin"></a>
   <a href="./skills/open-gui-bootstrap/SKILL.md"><img src="https://img.shields.io/badge/BOOTSTRAP-WITH_AI_AGENTS-ffb000?style=for-the-badge" alt="Bootstrap with Claude Code, Codex, or OpenCode"></a>
   <img src="https://img.shields.io/badge/SYSTEM-MULTI_ROLE_OPERATOR-1f6feb?style=for-the-badge" alt="Multi-role operator system">

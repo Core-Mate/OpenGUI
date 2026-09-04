@@ -7,6 +7,10 @@
 </p>
 
 <p align="center">
+  <a href="https://trendshift.io/repositories/183339"><img src="https://trendshift.io/api/badge/trendshift/repositories/183339/daily?language=Kotlin" alt="OpenGUI — Trendshift Kotlin デイリーランキング第25位" width="250" height="55"></a>
+</p>
+
+<p align="center">
   <a href="#deepseek-harnessでopenguiを使う"><img src="https://img.shields.io/badge/INSTALL-DEEPSEEK_HARNESS_PLUGIN-6f42c1?style=for-the-badge" alt="DeepSeek Harnessプラグインをインストール"></a>
   <a href="./skills/open-gui-bootstrap/SKILL.md"><img src="https://img.shields.io/badge/BOOTSTRAP-WITH_AI_AGENTS-ffb000?style=for-the-badge" alt="Claude Code、Codex、OpenCode でブートストラップ"></a>
   <img src="https://img.shields.io/badge/SYSTEM-MULTI_ROLE_OPERATOR-1f6feb?style=for-the-badge" alt="マルチロールオペレーターシステム">
