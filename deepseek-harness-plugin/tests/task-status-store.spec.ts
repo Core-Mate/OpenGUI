@@ -17,6 +17,28 @@ afterEach(() => {
 })
 
 describe('OpenGUI client task status store', () => {
+  it('settles a fast failed command before polling can observe its task', () => {
+    const store = new CoremateTaskStatusStore()
+    const launch = store.beginLaunch('session-b')!
+    store.reconcileCommand('session-b', { commandId: 'cmd-b', seq: 10, outcome: { kind: 'error', text: 'device busy' } })
+    expect(store.getSnapshot('session-b')).toMatchObject({ launching: false, launchError: 'device busy' })
+    expect(store.getSnapshot('session-a').launchError).toBeUndefined()
+    expect(store.finishLaunch('session-b', launch)).toBe(false)
+    expect(store.getSnapshot('session-b').launchError).toBe('device busy')
+  })
+
+  it('ignores old command completion after a newer launch or command', () => {
+    const store = new CoremateTaskStatusStore()
+    store.beginLaunch('session-a')
+    store.reconcileCommand('session-a', { commandId: 'old', seq: 10, outcome: null })
+    store.beginLaunch('session-a')
+    store.reconcileCommand('session-a', { commandId: 'old', seq: 10, outcome: { kind: 'error', text: 'old error' } })
+    expect(store.getSnapshot('session-a')).toMatchObject({ launching: true, launchError: undefined })
+    store.reconcileCommand('session-a', { commandId: 'new', seq: 20, outcome: { kind: 'success' } })
+    store.reconcileCommand('session-a', { commandId: 'old', seq: 10, outcome: { kind: 'error', text: 'old error' } })
+    expect(store.getSnapshot('session-a')).toMatchObject({ launching: false, launchError: undefined })
+  })
+
   it('applies slow polls without overlapping requests and reconciles completion', async () => {
     vi.useFakeTimers()
     let tasks = [activeTask('session-a')]

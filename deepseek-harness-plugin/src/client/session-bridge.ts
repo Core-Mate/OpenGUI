@@ -1,4 +1,4 @@
-import type { ClientContext, ISessions, IWorkspaces, SessionId, SessionListState, WorkspaceId } from '@deepseek-ai/dsh-client-runtime/client'
+import type { ClientContext, ISessions, IWorkspaces, SessionFace, SessionId, SessionListState, WorkspaceId } from '@deepseek-ai/dsh-client-runtime/client'
 import type { CoremateTaskStatusStore } from './task-status-store.ts'
 
 type SessionCreator = ISessions & {
@@ -7,6 +7,23 @@ type SessionCreator = ISessions & {
 
 type WritableSessionList = ISessions['list'] & {
   set?(next: SessionListState): void
+}
+
+/** Observe the bound session independently of whichever conversation view is mounted. */
+export function installSessionCommandTracking(session: SessionFace, store: CoremateTaskStatusStore): () => void {
+  const sessionId = String(session.sessionId)
+  const sync = (): void => {
+    const snapshot = session.getSnapshot()
+    if (!sessionId || snapshot.sessionId !== sessionId) return
+    const command = snapshot.nodes.filter(node => node.kind === 'command' &&
+      (node.name === 'opengui' || node.name === 'coremate') && node.args?.trim())
+      .reduce<(typeof snapshot.nodes)[number] | undefined>((latest, node) =>
+        latest === undefined || node.seq > latest.seq ? node : latest, undefined)
+    if (command?.kind === 'command') store.reconcileCommand(sessionId, command)
+  }
+  const unsubscribe = session.subscribe(sync)
+  sync()
+  return unsubscribe
 }
 
 /** Keep a command-only task owner in DSH's sidebar, which filters blank rows. */
@@ -52,6 +69,9 @@ export function installActiveTaskSessionBridge(ctx: ClientContext, store: Corema
 
   const syncOwnerVisibility = (): void => {
     if (disposed) return
+    for (const sessionId of Object.keys(sessions.list.getSnapshot().byId)) {
+      if (store.isConsumedSession(sessionId)) surfaceSessionInList(sessions, sessionId as SessionId)
+    }
     for (const task of store.activeTasks()) {
       surfaceSessionInList(sessions, task.sessionId as SessionId)
     }

@@ -13,7 +13,7 @@ import {
 } from './promotion-data.ts'
 import { TaskStopButton } from './TaskStopButton.tsx'
 import { coremateCommandClaim, coremateTriggerSource } from './coremate-trigger.ts'
-import { installActiveTaskSessionBridge } from './session-bridge.ts'
+import { installActiveTaskSessionBridge, installSessionCommandTracking } from './session-bridge.ts'
 import { coremateTaskStatusStore } from './task-status-store.ts'
 
 export const inject = ['slots', 'conversationEvents', 'inputTriggers', 'sessions', 'workspaces']
@@ -78,9 +78,14 @@ export function apply(ctx: ClientContext): void {
   ctx.effect(() => ctx.inputTriggers.registerSource(coremateTriggerSource(ctx)))
   ctx.effect(() => coremateTaskStatusStore.connect())
   ctx.effect(() => installActiveTaskSessionBridge(ctx, coremateTaskStatusStore))
+  const trackedSessions = new WeakSet<object>()
   ctx.effect(() => (ctx.sessions as unknown as ISessions).provide({
     props: ['coremateDraftActions', 'coremateSessionId', 'coremateSessions'],
     resolve(binding) {
+      if (!trackedSessions.has(binding.session)) {
+        trackedSessions.add(binding.session)
+        ctx.effect(() => installSessionCommandTracking(binding.session, coremateTaskStatusStore))
+      }
       const coremateDraftActions: CoremateDraftActions = {
         claim(span) {
           const claimed = binding.ctx.bail(binding.ctx, 'slash/input-begin-command', {

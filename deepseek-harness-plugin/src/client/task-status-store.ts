@@ -15,6 +15,12 @@ export interface CoremateTaskSnapshot {
   readonly bridgeError: string | undefined
 }
 
+interface CommandStatus {
+  readonly commandId: string
+  readonly seq: number
+  readonly outcome: { readonly kind: 'success' | 'error'; readonly text?: string } | null
+}
+
 const STOP_TIMEOUT_MS = 5_000
 const STOP_REFRESH_TIMEOUT_MS = 1_000
 const PHASES = new Set<CoremateTaskStatus['phase']>([
@@ -89,6 +95,7 @@ export class CoremateTaskStatusStore {
   private readonly consumedSessionIds = new Set<string>()
   private readonly launchGenerations = new Map<string, number>()
   private readonly launchTimers = new Map<string, ReturnType<typeof setTimeout>>()
+  private readonly commands = new Map<string, { commandId: string; seq: number; outcome: string; generation: number }>()
   private controller: AbortController | undefined
   private timer: ReturnType<typeof setTimeout> | undefined
   private refreshGeneration = 0
@@ -280,8 +287,39 @@ export class CoremateTaskStatusStore {
   }
 
   markConsumedSession(sessionId: string): void {
-    if (!sessionId) return
+    if (!sessionId || this.consumedSessionIds.has(sessionId)) return
     this.consumedSessionIds.add(sessionId)
+    this.emit()
+  }
+
+  /** Command history also captures failures that finish between task polls. */
+  reconcileCommand(sessionId: string, command: CommandStatus): void {
+    if (!sessionId.trim() || !command.commandId || !Number.isSafeInteger(command.seq) || command.seq < 0) return
+    const previous = this.commands.get(sessionId)
+    const outcome = JSON.stringify(command.outcome)
+    let generation = this.launchGenerations.get(sessionId) ?? 0
+    if (previous) {
+      if (command.seq < previous.seq) return
+      if (command.seq === previous.seq) {
+        if (command.commandId !== previous.commandId || outcome === previous.outcome || generation !== previous.generation) return
+      }
+    }
+    if (!previous || command.seq > previous.seq) {
+      // The durable command owns completion now; invalidate pending admission callbacks.
+      generation += 1
+      this.launchGenerations.set(sessionId, generation)
+    }
+    this.commands.set(sessionId, { commandId: command.commandId, seq: command.seq, outcome, generation })
+    this.consumedSessionIds.add(sessionId)
+    this.clearLaunchTimer(sessionId)
+    this.snapshots.set(sessionId, {
+      ...this.getSnapshot(sessionId),
+      launching: false,
+      launchError: command.outcome?.kind === 'error'
+        ? command.outcome.text || 'OpenGUI 任务执行失败。'
+        : undefined,
+    })
+    this.emit()
   }
 
   finishLaunch(sessionId: string, generation: number, error?: string): boolean {
