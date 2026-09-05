@@ -44,6 +44,7 @@ jobs:
         with:
           name: opengui-codex-release
           path: ${{ runner.temp }}/opengui/.artifacts/
+          include-hidden-files: true
           if-no-files-found: error
   release-draft:
     needs: build

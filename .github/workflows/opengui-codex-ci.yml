@@ -48,5 +48,6 @@ jobs:
         with:
           name: opengui-codex-${{ matrix.os }}
           path: ${{ runner.temp }}/opengui/.artifacts/
+          include-hidden-files: true
           if-no-files-found: error
           retention-days: 7
