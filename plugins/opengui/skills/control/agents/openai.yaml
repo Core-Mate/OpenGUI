@@ -1,0 +1,6 @@
+interface:
+  display_name: "OpenGUI Android Control"
+  short_description: "Local Android screenshots, actions, and device wall"
+  default_prompt: "Use $control to inspect my authorized Android test phone."
+policy:
+  allow_implicit_invocation: true

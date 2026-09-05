@@ -1,0 +1,52 @@
+name: Standalone OpenGUI Codex CI
+
+on:
+  pull_request:
+    paths:
+      - 'plugins/opengui/**'
+      - '.github/workflows/opengui-codex-*.yml'
+  push:
+    paths:
+      - 'plugins/opengui/**'
+      - '.github/workflows/opengui-codex-*.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  standalone:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, macos-15-intel]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86
+        with:
+          version: 11.19.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 22.23.2
+      - name: Copy only the standalone source into an isolated build root
+        shell: bash
+        run: |
+          cp -R plugins/opengui "$RUNNER_TEMP/opengui"
+          test ! -e "$RUNNER_TEMP/deepseek-harness-plugin"
+      - name: Install without lifecycle hooks
+        working-directory: ${{ runner.temp }}/opengui
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Test and validate the isolated package
+        working-directory: ${{ runner.temp }}/opengui
+        run: pnpm check
+      - name: Produce the allowlisted upload and archive
+        working-directory: ${{ runner.temp }}/opengui
+        run: pnpm package
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: opengui-codex-${{ matrix.os }}
+          path: ${{ runner.temp }}/opengui/.artifacts/
+          if-no-files-found: error
+          retention-days: 7

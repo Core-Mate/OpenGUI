@@ -1,0 +1,25 @@
+{
+  "name": "opengui-codex",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Standalone local Android control for Codex on macOS",
+  "type": "module",
+  "license": "MIT",
+  "engines": { "node": ">=22.19.0" },
+  "packageManager": "pnpm@11.19.0",
+  "scripts": {
+    "build": "tsc --noEmit && tsdown",
+    "test": "vitest run",
+    "validate": "node scripts/validate.mjs",
+    "check": "pnpm test && pnpm build && pnpm validate",
+    "stage": "node scripts/stage.mjs",
+    "package": "node scripts/package.mjs"
+  },
+  "dependencies": { "tar": "7.5.22" },
+  "devDependencies": {
+    "@types/node": "24.10.1",
+    "tsdown": "0.22.2",
+    "typescript": "5.9.3",
+    "vitest": "4.0.18"
+  }
+}

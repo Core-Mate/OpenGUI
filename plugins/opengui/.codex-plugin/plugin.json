@@ -1,0 +1,26 @@
+{
+  "name": "opengui",
+  "version": "0.1.0",
+  "description": "Control authorized local Android devices from Codex on macOS, with screenshot-guided actions and a read-only device wall.",
+  "author": { "name": "Core-Mate", "url": "https://github.com/Core-Mate" },
+  "homepage": "https://github.com/Core-Mate/OpenGUI/tree/main/plugins/opengui",
+  "repository": "https://github.com/Core-Mate/OpenGUI",
+  "license": "MIT",
+  "keywords": ["android", "mobile", "local", "automation"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "OpenGUI",
+    "shortDescription": "Local Android control for Codex on macOS",
+    "longDescription": "Use screenshot-guided actions on one to four authorized local Android devices. Includes a read-only device wall. Requires local Codex on macOS, USB debugging, and an initial verified runtime download. Does not support cloud device access or concurrent control of the same phone by another agent.",
+    "developerName": "Core-Mate",
+    "category": "Developer Tools",
+    "capabilities": ["Interactive", "Read", "Write"],
+    "websiteURL": "https://opengui.ai",
+    "privacyPolicyURL": "https://github.com/Core-Mate/OpenGUI/blob/main/plugins/opengui/docs/privacy.md",
+    "termsOfServiceURL": "https://github.com/Core-Mate/OpenGUI/blob/main/plugins/opengui/docs/terms.md",
+    "defaultPrompt": ["Show my connected Android devices.", "Open Android Settings and show the current screen.", "Show a read-only wall of my test phones."],
+    "brandColor": "#28C9A5",
+    "composerIcon": "./assets/icon.svg",
+    "logo": "./assets/icon.svg"
+  }
+}
