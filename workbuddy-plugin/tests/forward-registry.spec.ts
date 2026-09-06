@@ -1,9 +1,13 @@
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, open, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { spawnSync } from 'node:child_process'
 vi.mock('node:child_process', async importOriginal => ({ ...await importOriginal<object>(), spawnSync: vi.fn() }))
+vi.mock('node:fs/promises', async importOriginal => {
+  const original = await importOriginal<typeof import('node:fs/promises')>()
+  return { ...original, open: vi.fn(original.open) }
+})
 import { OwnedForwardRegistry, parseAdbForwardList } from '../src/forward-registry.ts'
 
 const temporary: string[] = []
@@ -13,6 +17,16 @@ afterEach(async () => {
 })
 
 describe('plugin-owned ADB forward registry', () => {
+  it('retries a transient lock sharing violation without removing another writer lock', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'opengui-forward-sharing-'))
+    temporary.push(root)
+    const path = join(root, 'owned.json')
+    vi.mocked(open).mockRejectedValueOnce(Object.assign(new Error('sharing violation'), { code: 'EPERM' }))
+    const registry = new OwnedForwardRegistry(path)
+    const record = { serial: 'phone-A', port: 27183, scid: 'sharing', kind: 'text-input' as const }
+    await registry.track(record)
+    await expect(registry.list()).resolves.toEqual([record])
+  })
   it('parses only complete ADB forward rows', () => {
     expect(parseAdbForwardList('phone-A tcp:1001 localabstract:scrcpy_a\ninvalid\n')).toEqual([
       { serial: 'phone-A', local: 'tcp:1001', remote: 'localabstract:scrcpy_a' },

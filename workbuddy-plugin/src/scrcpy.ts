@@ -267,6 +267,7 @@ export class ScrcpyInstaller {
   }
 
   private async acquireInstallLock(path: string, signal: AbortSignal): Promise<() => Promise<void>> {
+    const sharingDeadline = Date.now() + 5000
     while (true) {
       signal.throwIfAborted()
       try {
@@ -277,11 +278,16 @@ export class ScrcpyInstaller {
           await rm(path, { force: true }).catch(() => undefined)
         }
       } catch (error) {
-        if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error
-        const age = await stat(path).then(value => Date.now() - value.mtimeMs).catch(() => 0)
-        if (age > 120_000) {
-          await rm(path, { force: true }).catch(() => undefined)
-          continue
+        const code = (error as NodeJS.ErrnoException).code
+        if (code !== 'EEXIST' && code !== 'EPERM') throw error
+        if (code === 'EPERM' && Date.now() >= sharingDeadline) throw error
+        // Sharing violations do not establish ownership or authorize stale-lock removal.
+        if (code === 'EEXIST') {
+          const age = await stat(path).then(value => Date.now() - value.mtimeMs).catch(() => 0)
+          if (age > 120_000) {
+            await rm(path, { force: true }).catch(() => undefined)
+            continue
+          }
         }
         await new Promise<void>((resolveWait, rejectWait) => {
           const timer = setTimeout(() => { cleanup(); resolveWait() }, 50)

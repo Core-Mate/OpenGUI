@@ -251,7 +251,9 @@ export class LocalAdbPhoneHost implements WorkBuddyPhoneHost {
 
   async openMirror(device: ResolvedWorkBuddyDevice, signal: AbortSignal): Promise<void> {
     await assertAdbReady(this.path, { repairPermissions: this.repairAdbPermissions })
-    await this.mirror.open(device.serial, device.name, signal)
+    signal.throwIfAborted()
+    // Once accepted, the device display belongs to the broker, not the caller's turn.
+    await this.mirror.open(device.serial, device.name, this.lifetime.signal)
   }
   closeMirror(serial: string): Promise<void> { return this.mirror.stop(serial) }
   mirrorStatus(serial: string): MirrorStatus { return this.mirror.status(serial) }

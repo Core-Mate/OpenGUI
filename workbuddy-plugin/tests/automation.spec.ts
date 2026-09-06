@@ -23,6 +23,21 @@ function fixture() {
 }
 
 describe('host-bound autonomous lifecycle', () => {
+  it('retains an established legacy viewing handle at final stop without retaining control', async () => {
+    const host = Object.assign(new FakeHost(), { openMirror: async () => {}, mirrorStatus: () => ({ phase: 'running' as const }) })
+    const service = new WorkBuddyOpenGuiService({ host })
+    cleanup.push(() => service.dispose())
+    const automation = new AutomationCoordinator(service)
+    const args = { purpose: 'mirror' }
+    const claim = await automation.event({ session_id: 'viewer', hook_event_name: 'PreToolUse', tool_name: 'opengui_open_session', tool_input: args })
+    const task = automation.consume(claim.hostContext, 'opengui_open_session', args)!
+    const session = await service.openSession(['phone-a'], AbortSignal.timeout(5000), 'mirror', { task: task.execution })
+    automation.attach(task, session.sessionId, false)
+    await service.openMirror(session.sessionId, undefined, AbortSignal.timeout(5000))
+    await automation.event({ session_id: 'viewer', hook_event_name: 'FinalStop' })
+    expect(service.retainsMirror(session.sessionId)).toBe(true)
+    await expect(service.openSession(['phone-a'], AbortSignal.timeout(5000))).resolves.toHaveProperty('sessionId')
+  })
   it('continues an unfinished task without opening a display or restoring control authority', async () => {
     const f = fixture()
     const { task, session } = await f.open()

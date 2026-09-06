@@ -263,6 +263,13 @@ export class OwnedForwardRegistry {
           await rm(lock, { force: true })
         }
       } catch (error) {
+        // Windows can report a sharing violation while another writer deletes its lock.
+        // Retry acquisition only; never infer that EPERM grants permission to remove it.
+        if ((error as NodeJS.ErrnoException).code === 'EPERM') {
+          if (Date.now() >= deadline) throw error
+          await new Promise(resolve => setTimeout(resolve, 10))
+          continue
+        }
         if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error
         try {
           if (Date.now() - (await stat(lock)).mtimeMs > 10_000) {

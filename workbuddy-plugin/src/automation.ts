@@ -191,6 +191,7 @@ export class AutomationCoordinator {
     // Snapshot exact owned ids before awaiting; obsolete cleanup cannot target a later task.
     await Promise.allSettled([...task.sessions].map(id => {
       if (this.bySession.get(id) !== task || this.service.findSession(id)?.state !== 'active') return Promise.resolve()
+      if (this.service.retainsMirror(id)) return Promise.resolve()
       return outcome === 'cancelled' ? this.service.cancel(id) : this.service.closeSession(id, { outcome: outcome === 'active' ? 'unknown' : outcome })
     }))
   }
