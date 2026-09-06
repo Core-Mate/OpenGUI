@@ -2,6 +2,8 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { spawnSync } from 'node:child_process'
+vi.mock('node:child_process', async importOriginal => ({ ...await importOriginal<object>(), spawnSync: vi.fn() }))
 import { OwnedForwardRegistry, parseAdbForwardList } from '../src/forward-registry.ts'
 
 const temporary: string[] = []
@@ -137,7 +139,17 @@ describe('plugin-owned ADB forward registry', () => {
     temporary.push(root)
     const registry = new OwnedForwardRegistry(join(root, 'owned.json'))
     await registry.track({ serial: 'phone-A', port: 1234, scid: 'signal', kind: 'video-stream' })
-    expect(registry.releaseAllSync('/usr/bin/true')).toEqual({ removed: 1, retained: 0 })
+    const spawn = vi.mocked(spawnSync)
+    spawn.mockReturnValueOnce({ status: 0, stdout: 'phone-A tcp:1234 localabstract:scrcpy_signal\n' } as ReturnType<typeof spawnSync>)
+      .mockReturnValueOnce({ status: 0 } as ReturnType<typeof spawnSync>)
+    expect(registry.releaseAllSync('synthetic-adb')).toEqual({ removed: 1, retained: 0 })
+    expect(spawn).toHaveBeenNthCalledWith(1, 'synthetic-adb', ['-s', 'phone-A', 'forward', '--list'], expect.any(Object))
+    expect(spawn).toHaveBeenNthCalledWith(2, 'synthetic-adb', ['-s', 'phone-A', 'forward', '--remove', 'tcp:1234'], expect.any(Object))
     await expect(registry.list()).resolves.toEqual([])
+    await registry.track({ serial: 'phone-A', port: 1234, scid: 'signal', kind: 'video-stream' })
+    spawn.mockReturnValueOnce({ status: 1 } as ReturnType<typeof spawnSync>)
+    expect(registry.releaseAllSync('synthetic-adb')).toEqual({ removed: 0, retained: 1 })
+    expect(await registry.list()).toHaveLength(1)
+    spawn.mockReset()
   })
 })
