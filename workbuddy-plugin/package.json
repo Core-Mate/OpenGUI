@@ -1,0 +1,35 @@
+{
+  "name": "opengui-mcp",
+  "version": "0.1.0",
+  "description": "Independent OpenGUI Android MCP runtime for WorkBuddy",
+  "type": "module",
+  "license": "SEE LICENSE IN LICENSE",
+  "repository": { "type": "git", "url": "https://github.com/Core-Mate/OpenGUI.git", "directory": "workbuddy-plugin" },
+  "bin": { "opengui-mcp": "lib/mcp.js" },
+  "files": ["lib", "assets", "LICENSE", "NOTICE.md", "README.md"],
+  "engines": { "node": "^22.19.0 || >=24" },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node scripts/finalize.mjs",
+    "test": "vitest run",
+    "check": "npm test && npm run build && node scripts/validate.mjs",
+    "pack:release": "npm run check && node scripts/package.mjs",
+    "smoke:packed": "node scripts/smoke-packed.mjs",
+    "test:browser": "npm run build && node scripts/test-confirmation-browser.mjs && node scripts/test-wall-browser.mjs",
+    "test:native": "npm run build && node scripts/test-native.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.29.0",
+    "ajv": "8.20.0",
+    "sharp": "0.35.4",
+    "tar": "7.5.22",
+    "yauzl": "3.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.19.0",
+    "@types/yauzl": "2.10.3",
+    "fflate": "0.8.3",
+    "typescript": "5.9.3",
+    "vitest": "3.2.7",
+    "yazl": "3.3.1"
+  }
+}

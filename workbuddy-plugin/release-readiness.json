@@ -1,0 +1,11 @@
+{
+  "version": "0.1.0",
+  "checks": {
+    "workbuddyImageToolFlow": { "verified": false, "evidence": "" },
+    "realDeviceActionsIncludingUnicode": { "verified": false, "evidence": "" },
+    "twoPhysicalDevicesAndConflict": { "verified": false, "evidence": "" },
+    "workbuddyConfirmationAcceptRejectCancel": { "verified": false, "evidence": "" },
+    "workbuddyStopRestartCleanup": { "verified": false, "evidence": "" },
+    "supportedDesktopPackagedStartup": { "verified": false, "evidence": "" }
+  }
+}

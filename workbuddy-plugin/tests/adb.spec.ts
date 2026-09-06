@@ -1,0 +1,132 @@
+import { chmod, mkdtemp, rm, stat, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { afterEach, describe, expect, it } from 'vitest'
+import {
+  actionCommand,
+  assertAdbReady,
+  normalizePhoneAction,
+  ObservationId,
+  parseDevices,
+  parseScreenSize,
+  selectAuthorizedSerial,
+  textInputCommands,
+} from '../src/adb.ts'
+
+const temporaryRoots: string[] = []
+
+afterEach(async () => {
+  await Promise.all(temporaryRoots.splice(0).map(root => rm(root, { recursive: true, force: true })))
+})
+
+describe('coremate-mobile ADB policy', () => {
+  it.skipIf(process.platform === 'win32')('repairs execute bits stripped from the packaged ADB runtime', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'opengui-adb-mode-'))
+    temporaryRoots.push(root)
+    const adb = join(root, 'adb')
+    await writeFile(adb, '#!/bin/sh\nexit 0\n')
+    await chmod(adb, 0o644)
+
+    await expect(assertAdbReady(adb, { repairPermissions: true })).resolves.toBeUndefined()
+    expect((await stat(adb)).mode & 0o111).toBe(0o111)
+  })
+
+  it.skipIf(process.platform === 'win32')('does not change permissions on a user-configured ADB path', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'opengui-custom-adb-mode-'))
+    temporaryRoots.push(root)
+    const adb = join(root, 'adb')
+    await writeFile(adb, '#!/bin/sh\nexit 0\n')
+    await chmod(adb, 0o644)
+
+    await expect(assertAdbReady(adb)).rejects.toThrow('configured ADB executable')
+    expect((await stat(adb)).mode & 0o111).toBe(0)
+  })
+
+  it('accepts one or more authorized devices and deterministically picks the first serial', () => {
+    const devices = parseDevices('List of devices attached\nzed device product:p model:Z\nignored unauthorized usb:1\nalpha device product:p model:A\noffline offline\n')
+    expect(selectAuthorizedSerial(devices)).toBe('alpha')
+  })
+
+  it('fails only when no authorized device exists', () => {
+    const devices = parseDevices('List of devices attached\nlocked unauthorized\nslow offline\n')
+    expect(() => selectAuthorizedSerial(devices)).toThrow('no authorized Android device')
+  })
+
+  it('uses the logical override display size when Android reports one', () => {
+    expect(parseScreenSize('Physical size: 1440x3120\nOverride size: 1080x2340\n'))
+      .toEqual({ width: 1080, height: 2340 })
+  })
+
+  it('builds only allowlisted shell argument arrays', () => {
+    const screen = { width: 1000, height: 2000, screenshotWidth: 1000, screenshotHeight: 2000 }
+    expect(actionCommand({
+      action: 'tap',
+      observationId: ObservationId('phone-observation-1'),
+      targetBBox: { left: 490, top: 490, right: 510, bottom: 510 },
+    }, screen))
+      .toEqual(['shell', 'input', 'tap', '500', '500'])
+    expect(actionCommand({ action: 'key', observationId: ObservationId('phone-observation-1'), key: 'Back' }, screen))
+      .toEqual(['shell', 'input', 'keyevent', 'KEYCODE_BACK'])
+    expect(() => actionCommand({ action: 'launch', observationId: ObservationId('phone-observation-1'), packageName: 'bad;name' }, screen))
+      .toThrow('packageName')
+  })
+
+  it('maps a screenshot-pixel target box into the device input space', () => {
+    expect(actionCommand({
+      action: 'tap',
+      observationId: ObservationId('observation-1'),
+      targetBBox: { left: 1_080, top: 120, right: 1_120, bottom: 190 },
+    }, {
+      width: 1_080,
+      height: 2_400,
+      screenshotWidth: 1_200,
+      screenshotHeight: 2_400,
+    })).toEqual(['shell', 'input', 'tap', '990', '155'])
+  })
+
+  it('maps M153 model coordinates from the bounded screenshot back to the device', () => {
+    expect(actionCommand({
+      action: 'tap',
+      observationId: ObservationId('m153-observation'),
+      targetBBox: { left: 440, top: 990, right: 484, bottom: 1_058 },
+    }, {
+      width: 1_264,
+      height: 2_800,
+      screenshotWidth: 925,
+      screenshotHeight: 2_048,
+    })).toEqual(['shell', 'input', 'tap', '631', '1400'])
+
+    expect(actionCommand({
+      action: 'swipe',
+      observationId: ObservationId('m153-observation'),
+      x1: 462,
+      y1: 1_536,
+      x2: 462,
+      y2: 512,
+      durationMs: 300,
+    }, {
+      width: 1_264,
+      height: 2_800,
+      screenshotWidth: 925,
+      screenshotHeight: 2_048,
+    })).toEqual(['shell', 'input', 'swipe', '631', '2100', '631', '700', '300'])
+  })
+
+  it('keeps safe ASCII on adb input text and rejects unacknowledged Unicode injection', () => {
+    expect(textInputCommands('hello world')).toEqual([
+      ['shell', 'input', 'text', 'hello%sworld'],
+    ])
+    expect(() => textInputCommands('你好，世界')).toThrow('acknowledged scrcpy')
+    expect(() => textInputCommands('\0')).toThrow('without NUL')
+    expect(() => textInputCommands('😀'.repeat(501))).toThrow('1-500 Unicode characters')
+  })
+
+  it('rejects missing or mismatched action fields before building ADB arguments', () => {
+    expect(() => normalizePhoneAction({ action: 'tap', targetBBox: {} })).toThrow('current observationId')
+    expect(() => normalizePhoneAction({ action: 'tap', observationId: 'phone-observation-1' })).toThrow('targetBBox')
+    expect(() => normalizePhoneAction({ action: 'key' })).toThrow('key requires one of')
+    expect(() => normalizePhoneAction({ action: 'text', text: 42 })).toThrow('text requires text')
+    expect(() => normalizePhoneAction({ action: 'shell', command: 'id' })).toThrow('unsupported action')
+    expect(normalizePhoneAction({ action: 'observe' })).toEqual({ action: 'observe' })
+  })
+})

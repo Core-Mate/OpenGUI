@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "opengui": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "--yes",
+        "--prefer-offline",
+        "--package=https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-v0.1.0/opengui-mcp-0.1.0.tgz",
+        "opengui-mcp"
+      ],
+      "runtime": { "type": "node", "version": "^22.19.0 || >=24" },
+      "timeout": 120000,
+      "staticEnv": { "NO_PROXY": "localhost,127.0.0.1,::1", "no_proxy": "localhost,127.0.0.1,::1" }
+    }
+  }
+}
