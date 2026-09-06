@@ -113,7 +113,11 @@ describe('persistent device displays', () => {
 
   it('releases disconnected control ownership while retaining displays beyond broker idle', async () => {
     const host = new DisplayHost(), service = new WorkBuddyOpenGuiService({ host })
+    // Establish the display before testing retention, independently of socket startup speed.
+    await service.start(signal())
     const idle = vi.fn(), broker = await startBroker({ token: 'test', port: 0, service, idleMs: 20, onIdle: idle })
+    await new Promise(resolve => setTimeout(resolve, 60))
+    expect(idle).not.toHaveBeenCalled()
     const a = await BrokerClient.connect(broker.port, 'test')
     try {
       await a.call('opengui_open_session', { deviceIds: ['phone-a'] }, signal())

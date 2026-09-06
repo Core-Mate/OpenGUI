@@ -28,6 +28,7 @@ describe('WorkBuddy broker isolation', () => {
     const host = Object.assign(new FakeHost(), {
       openMirror: async () => {}, closeMirror: async () => {},
       mirrorStatus: () => ({ phase: 'running' as const }),
+      hasMirrors: () => true,
     })
     const onIdle = vi.fn()
     const service = new WorkBuddyOpenGuiService({ host })
