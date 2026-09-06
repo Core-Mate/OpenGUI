@@ -31,6 +31,50 @@ Local state: `~/.workbuddy/opengui` (private token, owned-forward inventory, scr
 
 Do not run DSH, Codex, manual ADB, or another automation host against the same physical phone concurrently. WorkBuddy leases cannot coordinate those external owners. The package never runs `adb kill-server`, removes global forwards, or modifies another host's cache.
 
+## Install on macOS
+
+This is the source-install path for the unpublished `0.2.0` candidate. Use macOS with WorkBuddy 5.5.3 as the acceptance baseline, a vision-and-tool-capable model, Git, Node.js 22.19+ within 22.x or 24+, and npm. Building the native helpers requires Xcode command-line tools (`xcode-select -p` checks availability). ADB is bundled and scrcpy is downloaded and verified automatically; no Homebrew installation is needed. Prebuilt-package users do not need Xcode, but there is no published candidate download yet.
+
+Clone the candidate into a new directory, without replacing an existing checkout:
+
+```sh
+git clone --branch codex/workbuddy-vlm-persistent-mirror --single-branch \
+  https://github.com/Core-Mate/OpenGUI.git opengui-workbuddy-candidate
+cd opengui-workbuddy-candidate/workbuddy-plugin
+npm ci
+npm run pack:release
+npm run smoke:packed
+```
+
+If an old WorkBuddy OpenGUI installation is running, finish or cancel its tasks and explicitly close its mirrors before upgrading. Quit WorkBuddy before switching configuration. Do not kill unrelated scrcpy/ADB processes. Run the following in the same terminal and source directory, stopping if any command fails:
+
+```sh
+OPENGUI_ARCHIVE="$PWD/dist/opengui-mcp-0.2.0.tgz"
+(cd dist && shasum -a 256 -c opengui-mcp-0.2.0.tgz.sha256)
+OPENGUI_NODE="$(node -p 'process.execPath')"
+mkdir -p "$HOME/.workbuddy/opengui/packages"
+OPENGUI_INSTALL="$(mktemp -d "$HOME/.workbuddy/opengui/packages/0.2.0-local.XXXXXX")"
+npm install --prefix "$OPENGUI_INSTALL" --no-audit --no-fund "$OPENGUI_ARCHIVE"
+node scripts/install-local.mjs \
+  --package-dir "$OPENGUI_INSTALL/node_modules/opengui-mcp" \
+  --node "$OPENGUI_NODE"
+```
+
+Keep that Node executable available: WorkBuddy uses its absolute path for MCP and Hooks. The installer runs from the built source checkout, not from inside the tarball. It records backups and incrementally updates `~/.workbuddy/mcp.json`, `~/.workbuddy/settings.json`, and `~/.workbuddy/skills/opengui/SKILL.md`. Each installation gets a new package directory; keep the old one for rollback. Do not use the connector ZIP's Release URL until the matching Release asset has been published.
+
+### Verify the installation
+
+1. Reopen WorkBuddy. Enable/trust the `opengui` MCP if the host requests it, and select a model that can read MCP images and call tools.
+2. Connect an idle Android phone, enable USB debugging, and accept the phone's USB authorization prompt. Do not control the same phone through another host.
+3. Type `/opengui` and select the Skill. Send “List connected phones without operating them” to check tool discovery and actual device status without a phone action.
+4. On a phone whose screenshots may be sent to the selected model, send “Open Settings and report the Android version.” Verify a real mirror window, screenshot-based execution, the reported result, and release of control after completion. The mirror should remain open.
+
+If the Skill is missing, check `~/.workbuddy/skills/opengui/SKILL.md` and reopen WorkBuddy; an MCP entry alone is insufficient. If no tools appear, check the host's MCP trust/status and the installed Node/package paths. If automatic continuation is unavailable, check that `settings.json` still contains the installed lifecycle Hooks; do not work around it by typing “continue” repeatedly. USB authorization and macOS permission prompts require the user's system approval. Build and smoke-test success is not desktop or real-phone acceptance.
+
+### Roll back
+
+Finish tasks, close WorkBuddy's OpenGUI mirrors and quit WorkBuddy. `~/.workbuddy/opengui/local-install.json` records each affected file and its backup. Restore the previous MCP and Hook configuration, Skill, and previous installation metadata if present, then reopen WorkBuddy. A `null` backup means that file did not exist before installation; remove only this installation's entries if other settings have since been added. Preserve subsequent unrelated edits, old packages and caches. Never reset the entire WorkBuddy configuration or touch DSH/Codex state.
+
 ## Build and local testing
 
 Run from `workbuddy-plugin/`:

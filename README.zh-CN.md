@@ -12,6 +12,7 @@
 
 <p align="center">
   <a href="#在-deepseek-harness-中使用-opengui"><img src="https://img.shields.io/badge/INSTALL-DEEPSEEK_HARNESS_PLUGIN-6f42c1?style=for-the-badge" alt="安装 DeepSeek Harness 插件"></a>
+  <a href="#workbuddy-安装"><img src="https://img.shields.io/badge/INSTALL-WORKBUDDY_CANDIDATE-168a70?style=for-the-badge" alt="安装 WorkBuddy 候选版"></a>
   <a href="./skills/open-gui-bootstrap/SKILL.md"><img src="https://img.shields.io/badge/BOOTSTRAP-WITH_AI_AGENTS-ffb000?style=for-the-badge" alt="使用 Claude Code、Codex 或 OpenCode 启动"></a>
   <img src="https://img.shields.io/badge/SYSTEM-MULTI_ROLE_OPERATOR-1f6feb?style=for-the-badge" alt="Multi-role operator system">
   <img src="https://img.shields.io/badge/TASKS-UP_TO_12_HOURS-cf222e?style=for-the-badge" alt="Tasks up to 12 hours">
@@ -78,6 +79,22 @@ OpenGUI 正式支持 DSH `0.1.0-rc.7`、`0.1.0-rc.8`、`0.1.1-rc.1` 和 `0.1.1-r
 | 4 | Grok 视觉模型 | 目前作为实验选项，工具调用和操作稳定性还需要更多验证。 |
 
 具体模型的可用性、价格和策略会随版本及地区变化。无论选择哪家模型，都需要同时支持图片输入和工具调用。
+
+## WorkBuddy 安装
+
+WorkBuddy 使用独立的 [MCP + Skill + Hooks 插件](./workbuddy-plugin/README.zh-CN.md#macos-安装)，由当前视觉模型看图操作 Android 手机，默认打开只读 scrcpy 投屏窗口。不需要安装 DSH、部署完整 OpenGUI 后端或额外配置模型 API Key。
+
+当前 `0.2.0` 是 [PR #95](https://github.com/Core-Mate/OpenGUI/pull/95) 中的本地候选版，尚未正式发布或上架市场。安装以 macOS、WorkBuddy 5.5.3 为基线，Windows/Linux 打包检查通过不代表支持真机操作。按照 [macOS 安装步骤](./workbuddy-plugin/README.zh-CN.md#macos-安装)，将 MCP、`opengui` 技能和生命周期 Hooks 一起安装。安装器会备份相关 WorkBuddy 配置，保留其他插件。
+
+重开 WorkBuddy，按宿主提示启用并信任 `opengui` MCP，连接已授权 USB 调试的 Android 手机。在输入框选择 `/opengui`，发送：
+
+```text
+打开手机设置，查看并告诉我 Android 版本。
+```
+
+手机任务会把截图发送给当前模型。只想看投屏时，可以说“展示手机投屏，不截图给模型，也不要操作手机”。任务结束后投屏保留；关闭投屏窗口不会取消正在执行的任务，停止操作请使用 WorkBuddy 的停止按钮。
+
+找不到 `/opengui` 或任务不能自动续跑时，查看 [安装验证与排查](./workbuddy-plugin/README.zh-CN.md#安装验证与排查)。只添加 MCP 不会自动安装技能和 Hooks。
 
 ## 运行完整 OpenGUI 技术栈
 

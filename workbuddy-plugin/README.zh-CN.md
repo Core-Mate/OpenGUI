@@ -14,22 +14,53 @@ macOS 包内提供原生窗口辅助程序，每个控制任务首次操作前�
 
 DSH、Codex 的源码、依赖、安装配置、缓存和发布流程均不复用。手机控制逻辑从固定的公开版本移植到本目录，由本目录独立维护。
 
-## 使用方式
+## macOS 安装
 
-需要 WorkBuddy 5.5.3 或更新版本，以及支持工具调用和图片的模型。Android 手机开启 USB 调试后，必须由用户在手机上确认授权。
+当前提供未发布候选版的源码安装路径，以 macOS、WorkBuddy 5.5.3 为验收基线。需要支持工具调用和图片的模型，以及 Git、Node.js 22.19 及以上的 22.x 或 24 及以上版本、npm。源码构建还需要 Xcode 命令行工具，可用 `xcode-select -p` 检查。ADB 已随包提供，scrcpy 会自动下载并校验，不需要通过 Homebrew 安装。使用预构建包不需要 Xcode，但当前尚无正式发布的候选包下载入口。
 
-在本目录执行：
+克隆候选分支到新目录，不覆盖已有工作区：
 
 ```sh
+git clone --branch codex/workbuddy-vlm-persistent-mirror --single-branch \
+  https://github.com/Core-Mate/OpenGUI.git opengui-workbuddy-candidate
+cd opengui-workbuddy-candidate/workbuddy-plugin
 npm ci
-npm run check
 npm run pack:release
 npm run smoke:packed
 ```
 
-将本地 tarball 安装到 `~/.workbuddy/opengui/packages/` 下的不可变版本目录。结束旧 WorkBuddy OpenGUI 运行后，在已构建的源码包执行 `node scripts/install-local.mjs --package-dir <已安装包绝对路径> --node <宿主管理的Node绝对路径>`。安装器先备份，再增量合并 WorkBuddy MCP、Hook 配置及 `opengui` Skill，保留其他插件配置，拒绝软链接重定向。回退按 `opengui/local-install.json` 中的备份路径恢复配置和旧包路径，再重开 WorkBuddy，不删除缓存。
+升级前先完成或取消旧 WorkBuddy OpenGUI 任务，明确关闭旧投屏窗口，再退出 WorkBuddy。不要批量终止 scrcpy 或 ADB 进程。以下命令在同一个终端、上述源码目录执行，任一步失败就停止：
 
-可尝试“看看手机上的 Android 版本”或“在设备墙里查看这两台手机”。模型先列出设备，锁定一至四台手机，再根据截图逐步操作。每台手机每个会话最多 100 次观察/操作。任务结束要关闭会话；单独关闭设备墙页面不会释放手机。
+```sh
+OPENGUI_ARCHIVE="$PWD/dist/opengui-mcp-0.2.0.tgz"
+(cd dist && shasum -a 256 -c opengui-mcp-0.2.0.tgz.sha256)
+OPENGUI_NODE="$(node -p 'process.execPath')"
+mkdir -p "$HOME/.workbuddy/opengui/packages"
+OPENGUI_INSTALL="$(mktemp -d "$HOME/.workbuddy/opengui/packages/0.2.0-local.XXXXXX")"
+npm install --prefix "$OPENGUI_INSTALL" --no-audit --no-fund "$OPENGUI_ARCHIVE"
+node scripts/install-local.mjs \
+  --package-dir "$OPENGUI_INSTALL/node_modules/opengui-mcp" \
+  --node "$OPENGUI_NODE"
+```
+
+保留这个 Node 可执行文件，MCP 和 Hooks 使用它的绝对路径。安装脚本从已构建的源码目录运行，不在 tarball 内。安装器先备份，再增量更新 `~/.workbuddy/mcp.json`、`~/.workbuddy/settings.json` 和 `~/.workbuddy/skills/opengui/SKILL.md`，保留其他插件和 Hooks，拒绝软链接重定向。每次安装使用新目录，旧包保留用于回退。正式 Release 资源发布前，不要直接使用连接器 ZIP 中的 Release 下载地址。
+
+### 安装验证与排查
+
+1. 重开 WorkBuddy，按宿主提示启用并信任 `opengui` MCP，选择支持 MCP 图片和工具调用的模型。
+2. 连接空闲的 Android 手机，开启 USB 调试，并在手机上确认 USB 授权。不要让其他宿主同时操作这台手机。
+3. 输入 `/opengui` 并选中技能，发送“列出已连接手机，不操作手机”，确认工具可用且返回真实设备状态。
+4. 在允许截图发送给当前模型的手机上，发送“打开手机设置，查看并告诉我 Android 版本”。核对实际投屏窗口、看图操作、结果和任务结束后的控制锁释放，投屏应继续保留。
+
+找不到技能时，检查 `~/.workbuddy/skills/opengui/SKILL.md` 并重开 WorkBuddy，只配置 MCP 不够。找不到工具时，检查宿主的 MCP 信任和连接状态，以及 Node、安装包路径。提示无法自动续跑时，检查 `settings.json` 中是否保留本插件的生命周期 Hooks，不要用反复输入“继续”代替修复。USB 授权和 macOS 权限弹窗需要用户在系统界面批准。构建和冒烟检查通过，不等于桌面和真机验收通过。
+
+### 回退
+
+结束任务，关闭 WorkBuddy OpenGUI 投屏并退出 WorkBuddy。`~/.workbuddy/opengui/local-install.json` 记录配置文件及对应备份，恢复上一版 MCP、Hook 配置、Skill，以及存在的上一版安装元数据，再重开 WorkBuddy。备份为 `null` 表示安装前没有该文件；如果此后加入其他配置，只移除本次安装的条目。保留后续无关修改、旧包和缓存，不重置整个 WorkBuddy 配置，不动 DSH/Codex 数据。
+
+## 使用方式
+
+可尝试“看看手机上的 Android 版本”或“在设备墙里查看这两台手机”。模型先启动投屏，再为操作任务锁定一至四台手机，根据截图逐步操作。每台手机每个任务最多 100 次观察/操作，重连不重置。任务结束由模型和 Hooks 收尾，用户无需手动关闭控制会话。只想本机观看时，可以说“展示手机投屏，不截图给模型，也不要操作手机”。关闭投屏或设备墙只影响观看；停止手机任务请使用 WorkBuddy 的停止按钮。
 
 ## 安全与限制
 
