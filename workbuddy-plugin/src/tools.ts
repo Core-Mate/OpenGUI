@@ -1,4 +1,4 @@
-import type { WorkBuddyOpenGuiService, WorkBuddyObservation, ExternalSideEffect } from './service.ts'
+import type { WorkBuddyOpenGuiService, WorkBuddyObservation, OpenSessionOptions, SessionResult } from './service.ts'
 import { Ajv } from 'ajv'
 
 export interface WorkBuddyToolDefinition {
@@ -25,13 +25,11 @@ const deviceSchema = {
     id: { type: 'string' }, name: { type: 'string' }, model: { type: 'string' },
     state: { type: 'string' }, connected: { type: 'boolean' }, authorized: { type: 'boolean' },
     mirror: { type: 'object' },
+    displayError: { type: 'object' },
   },
   required: ['id', 'name', 'state', 'connected', 'authorized'],
 }
 const displaySchema = { type: 'object', properties: { devices: { type: 'array', items: deviceSchema } }, required: ['devices'] }
-const confirmationSchema = { type: 'object', properties: {
-  status: { type: 'string', const: 'confirmation_required' }, requestId: { type: 'string' }, confirmationUrl: { type: 'string' }, expiresAt: { type: 'string' },
-}, required: ['status', 'requestId', 'confirmationUrl', 'expiresAt'] }
 
 const sessionSchema = {
   type: 'object',
@@ -42,6 +40,8 @@ const sessionSchema = {
     mirrorResumeToken: { type: 'string' },
     state: { type: 'string', enum: ['active', 'cancelled', 'closed'] },
     activity: { type: 'string' },
+    leaseExpiresAt: { type: 'string' }, objective: { type: 'string' }, successCriteria: { type: 'string' },
+    result: { type: 'object' }, automation: { type: 'object' },
     createdAt: { type: 'string' }, closedAt: { type: 'string' }, lastError: { type: 'string' },
     deviceWallUrl: { type: 'string' },
     devices: {
@@ -51,7 +51,7 @@ const sessionSchema = {
         properties: {
           id: { type: 'string' }, name: { type: 'string' }, model: { type: 'string' },
           connected: { type: 'boolean' }, authorized: { type: 'boolean' },
-          operationCount: { type: 'integer' }, observationId: { type: 'string' },
+          operationCount: { type: 'integer' }, remainingOperations: { type: 'integer' }, observationId: { type: 'string' },
           mirror: { type: 'object', additionalProperties: false, properties: {
             phase: { type: 'string', enum: ['idle', 'downloading', 'extracting', 'launching', 'running', 'error'] },
             downloadedBytes: { type: 'number' }, totalBytes: { type: 'number' }, message: { type: 'string' },
@@ -72,6 +72,8 @@ const observationSchema = {
     sessionId: { type: 'string' }, deviceId: { type: 'string' }, observationId: { type: 'string' },
     unchangedFromObservationId: { type: 'string' }, width: { type: 'integer' }, height: { type: 'integer' },
     foregroundPackage: { type: 'string' },
+    capturedAt: { type: 'string' }, connectionEpoch: { type: 'integer' }, settled: { type: 'boolean' },
+    automation: { type: 'object' },
     screenshot: {
       type: 'object', additionalProperties: false,
       properties: {
@@ -121,7 +123,8 @@ export const OPENGUI_WORKBUDDY_TOOLS: readonly WorkBuddyToolDefinition[] = [
     description: 'Freeze and exclusively lock one to four task phones. Start persistent local read-only mirrors for authorized phones. Initial display must be verified once per task; subsequent minimization, occlusion or closure does not pause control. Finishing a task never closes windows. Omit deviceIds only with one authorized phone. Legacy purpose mirror takes no control lock.',
     inputSchema: {
       type: 'object', additionalProperties: false,
-      properties: { purpose: { type: 'string', enum: ['control', 'mirror'], default: 'control' }, deviceIds: { type: 'array', uniqueItems: true, minItems: 1, maxItems: 4, items: { type: 'string', minLength: 1 } } },
+      properties: { purpose: { type: 'string', enum: ['control', 'mirror'], default: 'control' }, deviceId, deviceIds: { type: 'array', uniqueItems: true, minItems: 1, maxItems: 4, items: { type: 'string', minLength: 1 } }, objective: { type: 'string', minLength: 1, maxLength: 2000 }, successCriteria: { type: 'string', minLength: 1, maxLength: 2000 } },
+      not: { properties: { deviceId: {}, deviceIds: {} }, required: ['deviceId', 'deviceIds'] },
     },
     outputSchema: sessionSchema,
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
@@ -137,12 +140,12 @@ export const OPENGUI_WORKBUDDY_TOOLS: readonly WorkBuddyToolDefinition[] = [
   {
     name: 'opengui_act',
     title: 'Act on OpenGUI Phone',
-    description: 'Perform one allowlisted Android action against the latest observation. Actions can change external state. Classify send, publish, purchase, or delete actions so OpenGUI can obtain immediate user confirmation before execution.',
+    description: 'Perform one allowlisted action within the user-authorized task against the latest real image. No redundant plugin approval is requested. Respect host restrictions and task scope. Inspect the returned image before deciding another action; never replay an uncertain mutation.',
     inputSchema: {
       type: 'object', additionalProperties: false,
       properties: {
         sessionId, deviceId,
-        confirmationRequestId: { type: 'string', minLength: 1, description: 'Reference the approved local request while resubmitting exactly the same action. Never approve a request on behalf of the user.' },
+        confirmationRequestId: { type: 'string', minLength: 1, description: 'Deprecated compatibility field; ignored, never grants permission.' },
         action: { type: 'string', enum: ['tap', 'swipe', 'text', 'key', 'launch', 'wait'] },
         observationId: { type: 'string', minLength: 1 },
         targetBBox: {
@@ -157,12 +160,12 @@ export const OPENGUI_WORKBUDDY_TOOLS: readonly WorkBuddyToolDefinition[] = [
         packageName: { type: 'string' }, waitMs: { type: 'integer', minimum: 100, maximum: 10000 },
         externalSideEffect: {
           type: 'string', enum: ['none', 'send', 'publish', 'purchase', 'delete'], default: 'none',
-          description: 'Classify the immediate effect. Non-none values trigger a user confirmation before execution.',
+          description: 'Deprecated compatibility metadata; never grants permission or triggers plugin approval.',
         },
       },
       required: ['sessionId', 'action', 'observationId'],
     },
-    outputSchema: { type: 'object', anyOf: [observationSchema, confirmationSchema] },
+    outputSchema: observationSchema,
     annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true },
   },
   {
@@ -184,12 +187,19 @@ export const OPENGUI_WORKBUDDY_TOOLS: readonly WorkBuddyToolDefinition[] = [
   {
     name: 'opengui_close_session',
     title: 'Close OpenGUI Session',
-    description: 'Normally finish a session, release its phone locks, and clean local resources.',
-    inputSchema: { type: 'object', additionalProperties: false, properties: { sessionId }, required: ['sessionId'] },
+    description: 'Finish control and release its phone locks, never persistent displays. Report outcome and final observation evidence. Resource cleanup alone does not prove task completion.',
+    inputSchema: { type: 'object', additionalProperties: false, properties: { sessionId,
+      outcome: { type: 'string', enum: ['completed', 'blocked', 'unknown', 'cancelled'] },
+      summary: { type: 'string', maxLength: 2000 },
+      evidenceObservationIds: { type: 'array', maxItems: 4, items: { type: 'string', minLength: 1 } },
+    }, required: ['sessionId'] },
     outputSchema: sessionSchema,
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   },
-] as const
+].map(tool => ({ ...tool, inputSchema: { ...tool.inputSchema, properties: {
+  ...tool.inputSchema.properties,
+  hostContext: { type: 'string', minLength: 1, description: 'Internal single-use WorkBuddy hook context. Automatically injected by the installed hook; never invent or reuse it.' },
+} } })) as readonly WorkBuddyToolDefinition[]
 
 const ajv = new Ajv({ allErrors: true, strict: true })
 const validators = new Map(OPENGUI_WORKBUDDY_TOOLS.map(tool => [tool.name, ajv.compile(tool.inputSchema)]))
@@ -223,7 +233,7 @@ export async function callOpenGuiTool(
   name: string,
   args: Record<string, unknown>,
   signal: AbortSignal,
-  confirmedExternalSideEffect = false,
+  options: OpenSessionOptions = {},
 ): Promise<unknown> {
   validateToolArguments(name, args)
   switch (name) {
@@ -231,7 +241,7 @@ export async function callOpenGuiTool(
     case 'opengui_list_devices':
       return { devices: await service.listDevices(signal) }
     case 'opengui_open_session':
-      return service.openSession(deviceIds(args.deviceIds), signal, args.purpose as 'control' | 'mirror' | undefined)
+      return service.openSession(args.deviceId ? [requiredString(args.deviceId, 'deviceId')] : deviceIds(args.deviceIds), signal, args.purpose as 'control' | 'mirror' | undefined, { ...options, objective: optionalString(args.objective, 'objective'), successCriteria: optionalString(args.successCriteria, 'successCriteria') })
     case 'opengui_open_mirror':
       if (!args.sessionId) return service.deviceMirror(requiredString(args.deviceId, 'deviceId'), false, signal)
       return service.openMirror(requiredString(args.sessionId, 'sessionId'), optionalString(args.deviceId, 'deviceId'), signal)
@@ -244,7 +254,7 @@ export async function callOpenGuiTool(
       return service.act(
         requiredString(args.sessionId, 'sessionId'),
         optionalString(args.deviceId, 'deviceId'),
-        { ...args, confirmedExternalSideEffect },
+        args,
         signal,
       )
     case 'opengui_status':
@@ -253,17 +263,14 @@ export async function callOpenGuiTool(
     case 'opengui_cancel':
       return service.cancel(requiredString(args.sessionId, 'sessionId'))
     case 'opengui_close_session':
-      return service.closeSession(requiredString(args.sessionId, 'sessionId'))
+      return service.closeSession(requiredString(args.sessionId, 'sessionId'), args.outcome ? {
+        outcome: args.outcome as SessionResult['outcome'],
+        ...(typeof args.summary === 'string' ? { summary: args.summary } : {}),
+        ...(Array.isArray(args.evidenceObservationIds) ? { evidenceObservationIds: args.evidenceObservationIds as string[] } : {}),
+      } : undefined)
     default:
       throw new Error(`opengui: unknown tool ${name}`)
   }
-}
-
-export function requestedSideEffect(args: Record<string, unknown>): ExternalSideEffect {
-  const value = args.externalSideEffect
-  if (value === undefined || value === 'none') return 'none'
-  if (value === 'send' || value === 'publish' || value === 'purchase' || value === 'delete') return value
-  throw new Error('opengui: externalSideEffect must be none, send, publish, purchase, or delete')
 }
 
 export function isWorkBuddyObservation(value: unknown): value is WorkBuddyObservation {

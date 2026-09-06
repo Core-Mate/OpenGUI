@@ -11,6 +11,8 @@ import { AsyncSemaphore } from './concurrency.ts'
 import type { EncodedPhoneScreenshot } from './screenshot.ts'
 import { PhoneExecutionState, PhoneOperationQueue, waitForPhoneUi } from './phone-execution.ts'
 import type { PhoneExecutionSnapshot } from './phone-execution.ts'
+import { errorInfo, OpenGuiError, retryRead } from './errors.ts'
+import { frameChanged, sampleFrame } from './vision.ts'
 
 /** Host-neutral phone observation used by the WorkBuddy runtime. */
 export interface RawPhoneObservation {
@@ -20,6 +22,8 @@ export interface RawPhoneObservation {
   readonly width: number
   readonly height: number
   readonly foregroundPackage: string
+  readonly capturedAt?: string
+  readonly settled?: boolean
   readonly image: {
     readonly data: Buffer
     readonly mediaType: 'image/jpeg'
@@ -48,6 +52,8 @@ export interface PhoneControllerOptions {
   readonly maxOperations: () => number
   readonly mediaPermits?: AsyncSemaphore
   readonly now?: () => number
+  readonly settleIntervalMs?: number
+  readonly settleTimeoutMs?: number
 }
 
 function currentPackage(output: string): string {
@@ -97,6 +103,8 @@ export class PhoneController {
     signal: AbortSignal,
   ): Promise<RawPhoneObservation> {
     return this.queue.run(actor, async () => {
+      let dispatched = false
+      try {
       signal.throwIfAborted()
       this.execution.beginOperation(actor, this.options.maxOperations())
       const normalized = { ...input }
@@ -111,14 +119,6 @@ export class PhoneController {
       if (stored === undefined || stored.value.observationId !== action.observationId) {
         throw new Error('opengui: current phone observation is unavailable')
       }
-      if (input.verifyCurrentFrame === true) {
-        this.execution.consumeObservation(actor)
-        const raw = await this.options.runAdb(['-s', serial, 'exec-out', 'screencap', '-p'], signal, true)
-        const encoded = await this.options.encodeScreenshot(Buffer.isBuffer(raw) ? raw : Buffer.from(raw))
-        if (createHash('sha256').update(encoded.data).digest('hex') !== stored.fingerprint) {
-          throw new Error('opengui: phone changed after confirmation; observe and request approval again')
-        }
-      }
       const screen: PhoneCoordinateSpace = {
         width: stored.value.width,
         height: stored.value.height,
@@ -131,6 +131,22 @@ export class PhoneController {
         return this.capture(actor, serial, signal)
       }
 
+      // Consume the supplied credential while checking the current real frame.
+      // If it changed, the model must see a new observation, never reuse coordinates.
+      const current = await this.capture(actor, serial, signal)
+      const currentState = this.execution.current(actor, current.observationId)
+      const region = action.action === 'tap' ? {
+        left: action.targetBBox.left / stored.value.image.width,
+        top: action.targetBBox.top / stored.value.image.height,
+        right: action.targetBBox.right / stored.value.image.width,
+        bottom: action.targetBBox.bottom / stored.value.image.height,
+      } : undefined
+      if (current.width !== stored.value.width || current.height !== stored.value.height
+        || current.foregroundPackage !== stored.value.foregroundPackage
+        || (before.visual && currentState.visual && (frameChanged(before.visual, currentState.visual) || (region && frameChanged(before.visual, currentState.visual, region))))) {
+        throw new OpenGuiError('screen_changed', 'opengui: phone changed before dispatch; observe the new screen before acting', 'not_executed', 'observe')
+      }
+
       const scrcpyText = action.action === 'text' && !canUseAdbInputText(action.text)
       const command = action.action === 'text' ? undefined : actionCommand(action, screen)
       const commands = action.action === 'text'
@@ -141,17 +157,39 @@ export class PhoneController {
       }
 
       const signature = JSON.stringify(scrcpyText ? ['scrcpy-text', action.text] : commands)
-      this.execution.assertActionAllowed(actor, signature)
+      this.execution.assertActionAllowed(actor, signature, before)
       this.execution.consumeObservation(actor)
       signal.throwIfAborted()
+      dispatched = true
       if (scrcpyText) await this.options.pasteUnicode(serial, action.text, signal)
       else for (const candidate of commands) await this.options.runAdb(['-s', serial, ...candidate], signal)
 
-      const after = await this.capture(actor, serial, signal)
+      const after = await this.captureSettled(actor, serial, signal)
       const afterState = this.execution.current(actor, after.observationId)
-      this.execution.recordActionResult(actor, signature, before.screenshotFingerprint, afterState.screenshotFingerprint)
+      this.execution.recordActionResult(actor, signature, before, afterState)
       return after
+      } catch (error) {
+        this.execution.consumeObservation(actor)
+        const info = errorInfo(error)
+        throw new OpenGuiError(info.code, info.message, dispatched ? 'outcome_unknown' : info.executionState, dispatched ? 'observe' : info.recovery)
+      }
     })
+  }
+
+  private async captureSettled(actor: object, serial: string, signal: AbortSignal): Promise<RawPhoneObservation> {
+    const interval = this.options.settleIntervalMs ?? 250
+    const timeout = this.options.settleTimeoutMs ?? 2000
+    const deadline = Date.now() + timeout
+    let previous = await this.capture(actor, serial, signal)
+    while (Date.now() + interval <= deadline) {
+      const before = this.execution.current(actor, previous.observationId)
+      await waitForPhoneUi(interval, signal)
+      const current = await this.capture(actor, serial, signal)
+      const after = this.execution.current(actor, current.observationId)
+      if (before.visual && after.visual && !frameChanged(before.visual, after.visual)) return { ...current, settled: true }
+      previous = current
+    }
+    return { ...previous, settled: false }
   }
 
   private async targetFor(actor: object, signal: AbortSignal): Promise<string> {
@@ -162,11 +200,11 @@ export class PhoneController {
     this.execution.consumeObservation(actor)
     const releaseMedia = await this.mediaPermits.acquire(signal)
     try {
-      const [sizeRaw, focusRaw, pngRaw] = await Promise.all([
+      const [sizeRaw, focusRaw, pngRaw] = await retryRead(() => Promise.all([
         this.options.runAdb(['-s', serial, 'shell', 'wm', 'size'], signal),
         this.options.runAdb(['-s', serial, 'shell', 'dumpsys', 'window', 'windows'], signal),
         this.options.runAdb(['-s', serial, 'exec-out', 'screencap', '-p'], signal, true),
-      ])
+      ]), signal)
       const screen = parseScreenSize(String(sizeRaw))
       const png = Buffer.isBuffer(pngRaw) ? pngRaw : Buffer.from(pngRaw)
       const encoded = await this.options.encodeScreenshot(png)
@@ -182,6 +220,8 @@ export class PhoneController {
         width: encoded.sourceWidth ?? screen.width,
         height: encoded.sourceHeight ?? screen.height,
         foregroundPackage: currentPackage(String(focusRaw)),
+        capturedAt: new Date(this.now()).toISOString(),
+        settled: false,
         image: unchanged?.value.image ?? {
           data: encoded.data,
           mediaType: 'image/jpeg',
@@ -192,7 +232,9 @@ export class PhoneController {
         },
       }
       this.observations.set(actor, { value, fingerprint })
-      this.execution.recordObservation(actor, { observationId, screenshotFingerprint: fingerprint })
+      const visual = await sampleFrame(encoded.data)
+      signal.throwIfAborted()
+      this.execution.recordObservation(actor, { observationId, screenshotFingerprint: fingerprint, visual })
       return value
     } finally {
       releaseMedia()

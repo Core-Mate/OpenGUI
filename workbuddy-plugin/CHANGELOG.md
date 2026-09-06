@@ -1,4 +1,13 @@
-# OpenGUI for WorkBuddy 0.1.0
+# OpenGUI for WorkBuddy 0.2.0 candidate
+
+Not released. Broker protocol 7 requires an explicit local runtime switch.
+
+- Native WorkBuddy Hooks bind tasks, continue recoverable unfinished work, and release control on stop or inactivity without closing displays.
+- Authorized phone tasks no longer use plugin confirmation forms or approval flags; host restrictions and task scope still apply.
+- Fresh per-device result evidence, bounded image stabilization, persistent task budgets, and reconnect-safe progress checks prevent blind action replay and false completion.
+- Local candidate installation preserves and backs up WorkBuddy MCP, Hook and Skill configuration. DSH and Codex remain separate.
+
+## 0.1.0 candidate history
 
 ## 中文
 

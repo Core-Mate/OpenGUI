@@ -2,6 +2,7 @@ import { spawn, type ChildProcess } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { ScrcpyInstaller, resolveScrcpyAsset } from './scrcpy.ts'
 import { probeWindow, type WindowEvidence } from './window-probe.ts'
+import { retryRead } from './errors.ts'
 
 export interface MirrorStatus {
   phase: 'idle' | 'downloading' | 'extracting' | 'launching' | 'running' | 'error'
@@ -91,7 +92,7 @@ export class NativeMirror {
   private async launch(serial: string, label: string, entry: Entry, signal: AbortSignal): Promise<void> {
     const asset = resolveScrcpyAsset()
     if (!asset) throw new Error('opengui: native mirroring is unsupported on this platform')
-    const installed = await this.options.installer.ensure(asset, signal, progress => { entry.status = { ...progress } })
+    const installed = await retryRead(() => this.options.installer.ensure(asset, signal, progress => { entry.status = { ...progress } }), signal)
     signal.throwIfAborted()
     entry.status = { phase: 'launching' }
     entry.executable = installed.executable

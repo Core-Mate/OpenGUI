@@ -4,7 +4,7 @@ import { startMcp } from './mcp-server.ts'
 import { VERSION } from './state.ts'
 
 if (process.argv.includes('--help')) {
-  process.stdout.write('OpenGUI for WorkBuddy\nUsage: opengui-mcp [--help | --version]\nStarts a local MCP stdio server with seven Android session tools.\nNo DSH or Codex installation is read or modified.\n')
+  process.stdout.write('OpenGUI for WorkBuddy\nUsage: opengui-mcp [--help | --version]\nStarts a local MCP stdio server with eleven Android tools.\nNo DSH or Codex installation is read or modified.\n')
 } else if (process.argv.includes('--version')) {
   process.stdout.write(`${VERSION}\n`)
 } else if (process.argv.length > 2) {

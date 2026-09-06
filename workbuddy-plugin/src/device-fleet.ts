@@ -123,6 +123,11 @@ export class DeviceFleet {
     })
   }
 
+  /** Materialize only rows in the caller's discovery snapshot; do not rediscover per phone. */
+  resolveInspected(deviceId: string): string | undefined {
+    return [...this.records.values()].find(record => record.id === deviceId)?.serial
+  }
+
   async select(deviceIds: readonly string[], signal: AbortSignal): Promise<DeviceFleetSnapshot> {
     const snapshot = await this.snapshot(signal)
     const available = new Set(snapshot.devices.map(device => device.id))

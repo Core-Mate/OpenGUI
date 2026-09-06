@@ -58,7 +58,7 @@ describe('WorkBuddy OpenGUI session service', () => {
     await expect(value.observe(opened.sessionId, 'phone-b', new AbortController().signal)).resolves.toMatchObject({ deviceId: 'phone-b' })
   })
 
-  it('requires immediate confirmation for consequential actions', async () => {
+  it('uses the current observation without a redundant confirmation for consequential actions', async () => {
     const value = service()
     const opened = await value.openSession(['phone-a'], new AbortController().signal)
     await expect(value.act(opened.sessionId, undefined, {
@@ -68,10 +68,6 @@ describe('WorkBuddy OpenGUI session service', () => {
     await value.observe(opened.sessionId, undefined, new AbortController().signal)
     await expect(value.act(opened.sessionId, undefined, {
       action: 'key', observationId: 'phone-observation-1', key: 'Enter', externalSideEffect: 'send',
-    }, new AbortController().signal)).resolves.toMatchObject({ status: 'confirmation_required' })
-
-    await expect(value.act(opened.sessionId, undefined, {
-      action: 'key', observationId: 'phone-observation-1', key: 'Enter', externalSideEffect: 'send', confirmedExternalSideEffect: true,
     }, new AbortController().signal)).resolves.toMatchObject({ deviceId: 'phone-a' })
   })
 

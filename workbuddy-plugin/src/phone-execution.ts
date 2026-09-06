@@ -1,17 +1,20 @@
 import { ObservationId } from './adb.ts'
 import { randomUUID } from 'node:crypto'
 import type { ObservationId as ObservationIdType } from './adb.ts'
+import { frameChanged, type VisualFrame } from './vision.ts'
 
 /** Minimal observation identity retained outside the durable tool result. */
 export interface PhoneFrameState {
   observationId: ObservationIdType
   screenshotFingerprint: string
+  visual?: VisualFrame
 }
 
 interface NoProgressState {
   signature: string
   screenshotFingerprint: string
   count: number
+  frame: PhoneFrameState
 }
 
 interface AgentPhoneState {
@@ -90,7 +93,7 @@ export class PhoneExecutionState {
   /** Publish a completed observation as the only current frame. */
   recordObservation(agent: object, frame: PhoneFrameState): void {
     const state = this.state(agent)
-    if (state.latest !== undefined && state.latest.screenshotFingerprint !== frame.screenshotFingerprint) {
+    if (state.latest !== undefined && this.changed(state.latest, frame)) {
       delete state.noProgress
     }
     state.latest = frame
@@ -107,27 +110,31 @@ export class PhoneExecutionState {
   }
 
   /** Reject a fourth identical action after three unchanged resulting frames. */
-  assertActionAllowed(agent: object, signature: string): void {
+  assertActionAllowed(agent: object, signature: string, before: PhoneFrameState): void {
     const state = this.state(agent)
     const noProgress = state.noProgress
     if (noProgress?.count === 3
       && noProgress.signature === signature
-      && noProgress.screenshotFingerprint === state.latest?.screenshotFingerprint) {
+      && !this.changed(noProgress.frame, before)) {
       throw new Error('opengui: repeated action made no screen progress three times; choose another action or report blocked')
     }
   }
 
   /** Update the repeated-action fuse from the frame before and after one mutation. */
-  recordActionResult(agent: object, signature: string, beforeFingerprint: string, afterFingerprint: string): void {
+  recordActionResult(agent: object, signature: string, before: PhoneFrameState, after: PhoneFrameState): void {
     const state = this.state(agent)
-    if (beforeFingerprint !== afterFingerprint) {
+    if (this.changed(before, after)) {
       delete state.noProgress
       return
     }
     const previous = state.noProgress
-    state.noProgress = previous?.signature === signature && previous.screenshotFingerprint === afterFingerprint
-      ? { ...previous, count: previous.count + 1 }
-      : { signature, screenshotFingerprint: afterFingerprint, count: 1 }
+    state.noProgress = previous?.signature === signature && !this.changed(previous.frame, after)
+      ? { ...previous, count: previous.count + 1, frame: after }
+      : { signature, screenshotFingerprint: after.screenshotFingerprint, count: 1, frame: after }
+  }
+
+  private changed(before: PhoneFrameState, after: PhoneFrameState): boolean {
+    return before.visual && after.visual ? frameChanged(before.visual, after.visual) : before.screenshotFingerprint !== after.screenshotFingerprint
   }
 
   /** Return a copy of one actor's bounded execution state. */

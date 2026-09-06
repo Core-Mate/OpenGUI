@@ -24,6 +24,8 @@ async function controller(maxOperations = 100) {
     pasteUnicode,
     encodeScreenshot: encodePhoneScreenshotFrame,
     maxOperations: () => maxOperations,
+    settleIntervalMs: 1,
+    settleTimeoutMs: 5,
   })
   const actor = {}
   value.assignTarget(actor, 'serial-a')
@@ -31,6 +33,21 @@ async function controller(maxOperations = 100) {
 }
 
 describe('shared OpenGUI phone controller', () => {
+  it('never replays a dispatched action whose result screenshot failed', async () => {
+    const { value, actor, runAdb, commands } = await controller()
+    const before = await value.observe(actor, new AbortController().signal)
+    const original = runAdb.getMockImplementation()!
+    let sent = false
+    runAdb.mockImplementation(async (args, abort, buffer) => {
+      if (args.includes('screencap') && sent) throw new Error('capture failed')
+      if (args.includes('keyevent')) sent = true
+      return original(args, abort, buffer)
+    })
+    const action = { action: 'key', key: 'Enter', observationId: before.observationId }
+    await expect(value.execute(actor, action, new AbortController().signal)).rejects.toMatchObject({ executionState: 'outcome_unknown' })
+    await expect(value.execute(actor, action, new AbortController().signal)).rejects.toMatchObject({ executionState: 'not_executed' })
+    expect(commands.filter(args => args.includes('keyevent'))).toHaveLength(1)
+  })
   it('invalidates the old observation when refresh fails', async () => {
     const { value, actor, runAdb, commands } = await controller()
     const signal = AbortSignal.timeout(5000)
@@ -44,16 +61,17 @@ describe('shared OpenGUI phone controller', () => {
     expect(commands.some(args => args.includes('keyevent'))).toBe(true)
   })
 
-  it('refuses an approved action if the phone frame has changed', async () => {
+  it('refuses an action before dispatch if the phone frame has changed', async () => {
     const { value, actor, runAdb, commands } = await controller()
     const signal = AbortSignal.timeout(5000)
     const frame = await value.observe(actor, signal)
     const changed = await sharp({ create: { width: 100, height: 200, channels: 3, background: '#ffffff' } }).png().toBuffer()
-    runAdb.mockResolvedValueOnce(changed)
-    await expect(value.execute(actor, { action: 'key', key: 'Enter', observationId: frame.observationId, verifyCurrentFrame: true }, signal)).rejects.toThrow('changed after confirmation')
+    const original = runAdb.getMockImplementation()!
+    runAdb.mockImplementation(async (args, abort, buffer) => args.includes('screencap') ? changed : original(args, abort, buffer))
+    await expect(value.execute(actor, { action: 'key', key: 'Enter', observationId: frame.observationId }, signal)).rejects.toMatchObject({ code: 'screen_changed', executionState: 'not_executed' })
     expect(commands.some(args => args.includes('keyevent'))).toBe(false)
     const fresh = await value.observe(actor, signal)
-    await value.execute(actor, { action: 'key', key: 'Enter', observationId: fresh.observationId, verifyCurrentFrame: true }, signal)
+    await value.execute(actor, { action: 'key', key: 'Enter', observationId: fresh.observationId }, signal)
     expect(commands.some(args => args.includes('keyevent'))).toBe(true)
   })
   it('returns bounded image coordinates and foreground package metadata', async () => {

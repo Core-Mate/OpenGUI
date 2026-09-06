@@ -6,7 +6,7 @@
       "args": [
         "--yes",
         "--prefer-offline",
-        "--package=https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-v0.1.0/opengui-mcp-0.1.0.tgz",
+        "--package=https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-v0.2.0/opengui-mcp-0.2.0.tgz",
         "opengui-mcp"
       ],
       "runtime": { "type": "node", "version": "^22.19.0 || >=24" },

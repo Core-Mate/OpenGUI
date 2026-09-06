@@ -22,11 +22,23 @@ async function fixture() {
   mirror.stop.mockResolvedValue(undefined)
   mirror.dispose.mockResolvedValue(undefined)
   vi.spyOn(host, 'listDevices').mockImplementation(async () => devices)
+  vi.spyOn(host, 'inspectDevices').mockImplementation(async () => devices)
   vi.spyOn(host, 'resolveDevices').mockImplementation(async ids => devices.filter(d => ids?.includes(d.id)))
   return { host, set: (next: ResolvedWorkBuddyDevice[]) => { devices = next } }
 }
 
 describe('real host display reconciliation', () => {
+  it('isolates one failed mirror inspection and never rediscoveries each phone', async () => {
+    const f = await fixture()
+    f.set([device('a'), device('b')])
+    const unavailable = vi.fn()
+    f.host.onDeviceUnavailable = unavailable
+    mirror.inspect.mockImplementation(async serial => { if (serial === 'serial-b') throw new Error('device b vanished'); return { phase: 'running', ready: true } })
+    await f.host.activateMirrors(AbortSignal.timeout(5000))
+    expect(f.host.resolveDevices).not.toHaveBeenCalled()
+    expect(unavailable).not.toHaveBeenCalled()
+    expect(f.host.discoveryError).toContain('device b vanished')
+  })
   it('displays more than four authorized devices while skipping unauthorized devices', async () => {
     const f = await fixture()
     f.set(['a', 'b', 'c', 'd', 'e'].map(id => device(id)).concat(device('locked', false)))

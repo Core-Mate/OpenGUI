@@ -9,9 +9,9 @@ import { managedAdbPath } from '../lib/adb.js'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 import { BrokerClient } from '../lib/broker-client.js'
-import { brokerPort, brokerToken } from '../lib/state.js'
+import { brokerPort, brokerToken, VERSION } from '../lib/state.js'
 
-const archive = resolve(process.argv[2] ?? 'dist/opengui-mcp-0.1.0.tgz')
+const archive = resolve(process.argv[2] ?? `dist/opengui-mcp-${VERSION}.tgz`)
 const npmCli = process.env.npm_execpath
 assert(npmCli, 'Run through npm run smoke:packed')
 const temporary = await mkdtemp(join(tmpdir(), 'opengui-workbuddy-pack-'))

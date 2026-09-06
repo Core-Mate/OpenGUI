@@ -14,7 +14,7 @@ afterEach(async () => { for (const close of cleanup.splice(0).reverse()) await c
 async function client(capabilities: ClientCapabilities = {}, action: 'accept' | 'decline' | 'cancel' = 'accept', confirm = true) {
   const [a, b] = InMemoryTransport.createLinkedPair()
   const service = new WorkBuddyOpenGuiService({ host: new FakeHost() })
-  const connection = { call: vi.fn((name, args, signal, confirmed) => callOpenGuiTool(service, name, args, signal, confirmed)), close: vi.fn() }
+  const connection = { call: vi.fn((name, args, signal) => callOpenGuiTool(service, name, args, signal)), close: vi.fn() }
   const server = await startMcp(b, async () => connection)
   const client = new Client({ name: 'workbuddy-test', version: '1' }, { capabilities })
   if (capabilities.elicitation) client.setRequestHandler(ElicitRequestSchema, async () => ({ action, content: { confirm } }))
@@ -24,6 +24,32 @@ async function client(capabilities: ClientCapabilities = {}, action: 'accept' | 
 }
 
 describe('standard MCP transport', () => {
+  it('reconnects the next independent call after an established connection closes', async () => {
+    const [a, b] = InMemoryTransport.createLinkedPair()
+    let disconnect: (() => void) | undefined
+    let dead = false
+    const first = {
+      call: vi.fn(async () => { if (dead) throw new Error('disconnected'); return { devices: [] } }),
+      close: vi.fn(),
+      onDisconnect: (listener: () => void) => { disconnect = listener; return () => {} },
+    }
+    const second = { call: vi.fn(async () => ({ devices: [] })), close: vi.fn() }
+    const connect = vi.fn().mockResolvedValueOnce(first).mockResolvedValue(second)
+    const server = await startMcp(b, connect)
+    const c = new Client({ name: 'established-recovery', version: '1' })
+    cleanup.push(() => server.close(), () => c.close())
+    await c.connect(a)
+    expect((await c.callTool({ name: 'opengui_list_devices', arguments: {} })).isError).not.toBe(true)
+    dead = true
+    disconnect?.()
+    expect((await c.callTool({ name: 'opengui_list_devices', arguments: {} })).isError).not.toBe(true)
+    expect(connect).toHaveBeenCalledTimes(2)
+    expect(first.call).toHaveBeenCalledTimes(1)
+    expect(second.call).toHaveBeenCalledTimes(1)
+    disconnect?.()
+    await c.callTool({ name: 'opengui_list_devices', arguments: {} })
+    expect(connect).toHaveBeenCalledTimes(2)
+  })
   it('retries a failed initial connection on a later call without replaying calls', async () => {
     const [a, b] = InMemoryTransport.createLinkedPair()
     const connection = { call: vi.fn(async () => ({ devices: [] })), close: vi.fn() }
@@ -61,7 +87,7 @@ describe('standard MCP transport', () => {
     const { client: c, connection } = await client()
     const listed = await c.listTools()
     expect(listed.tools.map(tool => tool.name)).toEqual(OPENGUI_WORKBUDDY_TOOLS.map(tool => tool.name))
-    expect(c.getServerVersion()).toMatchObject({ name: 'opengui-workbuddy', version: '0.1.0' })
+    expect(c.getServerVersion()).toMatchObject({ name: 'opengui-workbuddy', version: '0.2.0' })
     expect(connection.call).not.toHaveBeenCalled()
   })
 
@@ -83,7 +109,7 @@ describe('standard MCP transport', () => {
     [{ elicitation: { form: {} } }, 'accept', false, false],
     [{ elicitation: { form: {} } }, 'accept', true, true],
     [{ elicitation: {} }, 'accept', true, true],
-  ] as const)('gates consequential actions for capabilities %j, response %s/%s', async (caps, action, confirm, allowed) => {
+  ] as const)('does not request redundant plugin approval for capabilities %j, response %s/%s', async (caps, action, confirm, _allowed) => {
     const { client: c, connection } = await client(caps, action, confirm)
     const session = await c.callTool({ name: 'opengui_open_session', arguments: { deviceIds: ['phone-a'] } })
     await c.callTool({ name: 'opengui_observe', arguments: { sessionId: session.structuredContent!.sessionId } })
@@ -91,11 +117,11 @@ describe('standard MCP transport', () => {
     const result = await c.callTool({ name: 'opengui_act', arguments: {
       sessionId: session.structuredContent!.sessionId, action: 'key', key: 'Enter', observationId: 'phone-observation-1', externalSideEffect: 'send',
     } })
-    const fallback = !('elicitation' in caps) || ('elicitation' in caps && 'url' in caps.elicitation)
-    expect(result.isError === true).toBe(!allowed && !fallback)
-    if (fallback) expect(result.structuredContent).toMatchObject({ status: 'confirmation_required' })
-    expect(connection.call.mock.calls.filter(call => call[0] === 'opengui_act')).toHaveLength(allowed || fallback ? 1 : 0)
-    if (allowed) expect(connection.call.mock.calls[0]![3]).toBe(true)
+    expect(result.isError).not.toBe(true)
+    expect(result.structuredContent).toHaveProperty('observationId')
+    expect(result.structuredContent).not.toHaveProperty('confirmationUrl')
+    expect(connection.call.mock.calls.filter(call => call[0] === 'opengui_act')).toHaveLength(1)
+    expect(connection.call.mock.calls[0]).toHaveLength(3)
   })
 
   it('rejects unknown tools and schema violations as tool errors', async () => {

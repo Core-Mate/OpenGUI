@@ -49,7 +49,7 @@ describe('local host visual control independent of window visibility', () => {
       expect(writes).toHaveLength(2)
       captureFails = true
       await expect(service.observe(session.sessionId, undefined, signal)).rejects.toThrow('capture failed')
-      await expect(service.act(session.sessionId, undefined, { action: 'key', key: 'Home', observationId: frame.observationId }, signal)).rejects.toThrow('observe the phone')
+      await expect(service.act(session.sessionId, undefined, { action: 'key', key: 'Home', observationId: frame.observationId }, signal)).rejects.toMatchObject({ code: 'observation_required', executionState: 'not_executed' })
       expect(writes).toHaveLength(2)
     } finally {
       await service.dispose()

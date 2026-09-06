@@ -16,7 +16,7 @@ assert.equal(pkg.version, VERSION)
 assert.equal(meta.version, VERSION)
 assert.equal(meta.type, 'mcp')
 assert.equal(meta.source, 'opengui')
-assert.equal(meta.minWorkbuddyVersion, '5.3.14')
+assert.equal(meta.minWorkbuddyVersion, '5.5.3')
 assert.equal(pkg.peerDependencies, undefined)
 assert.equal(meta.auth_mode, undefined)
 assert.deepEqual(Object.keys(config.mcpServers), ['opengui'])
@@ -25,6 +25,7 @@ assert.equal(config.mcpServers.opengui.command, 'npx')
 assert.equal(config.mcpServers.opengui.runtime.type, 'node')
 assert.equal(OPENGUI_WORKBUDDY_TOOLS.length, 11)
 assert.equal(new Set(OPENGUI_WORKBUDDY_TOOLS.map(tool => tool.name)).size, 11)
+for (const path of ['lib/host-hook.js', 'lib/automation.js', 'lib/opengui-SKILL.md']) assert((await stat(join(root, path))).size > 0)
 if (process.platform === 'darwin') for (const arch of ['arm64', 'x64']) for (const helper of ['window-helper', 'mirror-launcher']) assert((await stat(join(root, `lib/native/${helper}-${arch}`))).mode & 0o111)
 assert((await readFile(join(root, 'lib/mcp.js'), 'utf8')).startsWith('#!/usr/bin/env node'))
 if (process.platform !== 'win32') assert(((await stat(join(root, 'lib/mcp.js'))).mode & 0o111) !== 0)
@@ -61,7 +62,7 @@ await sources(join(root, 'src'))
 if (process.argv.includes('--release')) {
   const readiness = await json('release-readiness.json')
   assert.equal(readiness.version, VERSION)
-  for (const name of ['workbuddyImageToolFlow', 'realDeviceActionsIncludingUnicode', 'twoPhysicalDevicesAndConflict', 'workbuddyConfirmationAcceptRejectCancel', 'workbuddyStopRestartCleanup', 'supportedDesktopPackagedStartup']) {
+  for (const name of ['workbuddyImageToolFlow', 'realDeviceActionsIncludingUnicode', 'twoPhysicalDevicesAndConflict', 'workbuddyAutonomousContinuationAndStop', 'workbuddyStopRestartCleanup', 'supportedDesktopPackagedStartup']) {
     const check = readiness.checks[name]
     assert(check?.verified === true && typeof check.evidence === 'string' && check.evidence.trim().length > 0, `Unverified release gate: ${name}`)
   }

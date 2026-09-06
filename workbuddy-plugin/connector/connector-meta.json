@@ -7,8 +7,8 @@
   "description_en": "Control locally connected Android phones from WorkBuddy and monitor up to four phones in a read-only device wall.",
   "source": "opengui",
   "type": "mcp",
-  "version": "0.1.0",
-  "minWorkbuddyVersion": "5.3.14",
+  "version": "0.2.0",
+  "minWorkbuddyVersion": "5.5.3",
   "examples_zh": ["看看手机上的 Android 版本", "在设备墙里查看这两台手机的画面"],
   "examples_en": ["Check the Android version on my phone", "Show these two phones in the device wall"]
 }
