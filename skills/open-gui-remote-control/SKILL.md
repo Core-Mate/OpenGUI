@@ -1,16 +1,16 @@
 ---
 name: open-gui-remote-control
-description: Control an Android phone through OpenGUI from Codex or Claude Code. Use when an agent should list online devices, run a natural-language mobile task, check execution status, pause, resume, or cancel through the local OpenGUI backend and CLI.
+description: Control an Android phone through OpenGUI from an AI coding agent such as Claude Code, Codex, or OpenCode. Use when an agent should list online devices, run a natural-language mobile task, check execution status, pause, resume, or cancel through the local OpenGUI backend and CLI.
 ---
 
 # OpenGUI Remote Control
 
-Use this skill when Codex or Claude Code needs to operate an Android phone through OpenGUI.
+Use this skill when an AI coding agent such as Claude Code, Codex, or OpenCode needs to operate an Android phone through OpenGUI.
 
 The agent should not drive the phone with raw `adb shell input` commands. The supported path is:
 
 ```text
-Codex / Claude Code
+Claude Code / Codex / OpenCode
   -> server CLI or REST API
   -> OpenGUI backend task/execution services
   -> standby dispatch
@@ -24,6 +24,7 @@ Start this skill when the user asks for any of these:
 
 - "Use OpenGUI to control my phone"
 - "让 Codex 操控手机"
+- "Use OpenCode to control my phone through OpenGUI"
 - "Run this task on the Android device"
 - "Use the OpenGUI CLI"
 - "List OpenGUI devices"
@@ -36,7 +37,7 @@ If the user asks to install or bootstrap OpenGUI from scratch, use `open-gui-boo
 
 - First obtain or locate a runnable OpenGUI checkout. The CLI cannot work without the repository.
 - Use the repository CLI first: `cd server && pnpm opengui -- ...`.
-- Use `--json` whenever the result will be parsed by Codex or Claude Code.
+- Use `--json` whenever the result will be parsed by the coding agent.
 - Do not ask the user to run terminal commands that the agent can run.
 - Ask the user only for physical phone actions, Android permissions, or missing secrets.
 - Do not change Android socket event names or payloads.
@@ -49,7 +50,7 @@ If the user asks to install or bootstrap OpenGUI from scratch, use `open-gui-boo
 OpenGUI's runnable source checkout is:
 
 ```text
-https://github.com/Core-Mate/open-gui
+https://github.com/Core-Mate/OpenGUI
 ```
 
 The checkout must contain both:
@@ -91,8 +92,8 @@ find . -maxdepth 3 -type f -path '*/client/start.sh' -print
 If no runnable checkout exists and the user wants the agent to set it up locally, clone the public repository:
 
 ```bash
-git clone https://github.com/Core-Mate/open-gui.git
-cd open-gui
+git clone https://github.com/Core-Mate/OpenGUI.git
+cd OpenGUI
 ```
 
 If the destination already exists, do not overwrite it. Enter the existing directory, inspect `git status`, and pull only when the user asked for the latest code or when the checkout is clean enough to update safely.
@@ -181,7 +182,7 @@ Base URL priority:
 
 ### 1. Obtain the runnable checkout
 
-Find or clone `https://github.com/Core-Mate/open-gui`.
+Find or clone `https://github.com/Core-Mate/OpenGUI`.
 
 Then work from the repository root that contains both:
 
@@ -257,6 +258,12 @@ pnpm opengui -- run <taskId> --device <deviceId> --json
 ```
 
 Capture `executionId` from the response.
+
+Before continuing, make sure the user knows that the active execution can be stopped with:
+
+```bash
+pnpm opengui -- cancel <executionId> --json
+```
 
 ### 6. Poll status
 

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-label="OpenGUI">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ffe76a"/><stop offset=".52" stop-color="#ffc423"/><stop offset=".53" stop-color="#d88931"/><stop offset="1" stop-color="#c97726"/></linearGradient></defs>
+  <rect width="128" height="128" rx="28" fill="#171717"/>
+  <rect x="8" y="8" width="112" height="112" rx="21" fill="none" stroke="#2a2a2a" stroke-width="4"/>
+  <text x="64" y="84" text-anchor="middle" font-family="Arial Black, Impact, sans-serif" font-size="66" font-weight="900" fill="url(#g)" stroke="#111" stroke-width="4">O</text>
+</svg>

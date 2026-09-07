@@ -7,11 +7,16 @@
 </p>
 
 <p align="center">
-  <a href="./skills/open-gui-bootstrap/SKILL.md"><img src="https://img.shields.io/badge/BOOTSTRAP-WITH_CLAUDE_OR_CODEX-ffb000?style=for-the-badge" alt="Claude または Codex でブートストラップ"></a>
+  <a href="https://trendshift.io/repositories/183339"><img src="https://trendshift.io/api/badge/trendshift/repositories/183339/daily?language=Kotlin" alt="OpenGUI — Trendshift Kotlin デイリーランキング第25位" width="250" height="55"></a>
+</p>
+
+<p align="center">
+  <a href="#deepseek-harnessでopenguiを使う"><img src="https://img.shields.io/badge/INSTALL-DEEPSEEK_HARNESS_PLUGIN-6f42c1?style=for-the-badge" alt="DeepSeek Harnessプラグインをインストール"></a>
+  <a href="./skills/open-gui-bootstrap/SKILL.md"><img src="https://img.shields.io/badge/BOOTSTRAP-WITH_AI_AGENTS-ffb000?style=for-the-badge" alt="Claude Code、Codex、OpenCode でブートストラップ"></a>
   <img src="https://img.shields.io/badge/SYSTEM-MULTI_ROLE_OPERATOR-1f6feb?style=for-the-badge" alt="マルチロールオペレーターシステム">
   <img src="https://img.shields.io/badge/TASKS-UP_TO_12_HOURS-cf222e?style=for-the-badge" alt="最大12時間のタスク">
   <img src="https://img.shields.io/badge/MODELS-CLAUDE_OPUS_|_QWEN_|_DOUBAO_|_BYO_API-2f9e44?style=for-the-badge" alt="推奨モデルプロファイル">
-  <a href="./docs/get-started.md"><img src="https://img.shields.io/badge/MANUAL_SETUP-DOCS-4b4b4b?style=for-the-badge" alt="手動セットアップドキュメント"></a>
+  <a href="./docs/get-started.ja-JP.md"><img src="https://img.shields.io/badge/MANUAL_SETUP-DOCS-4b4b4b?style=for-the-badge" alt="手動セットアップドキュメント"></a>
 </p>
 
 <p align="center">
@@ -22,6 +27,11 @@
   OpenGUI は、AI エージェントが実機上の Android アプリ UI を見て、理解し、操作できるようにします。
 </p>
 
+<p align="center">
+  <strong>推奨：DeepSeek HarnessでOpenGUIを直接使えます。</strong><br>
+  Codexに1つのプロンプトを送るだけで、検証済みプラグインのダウンロード、DSHへのインストール、DSHの起動まで進みます。バックエンド一式のデプロイは不要です。
+</p>
+
 ## Demo
 
 <p align="center">
@@ -30,20 +40,65 @@
 
 OpenGUI は実際の Android アプリ UI を読み取り、次のステップを計画し、モバイル操作を実行して、構造化された結果を返します。
 
-## Quick Start
+## DeepSeek HarnessでOpenGUIを使う
 
-OpenGUI を最も早く試す方法は、Claude Code または Codex にブートストラップを任せることです。
+macOSでは、`main` ブランチの安定したインストーラーSkillをCodexに実行させる方法が最短です。実行するたびに最新の安定版OpenGUIプラグインを解決してインストールし、ロールバック用に明示的なバージョン指定も利用できます。Node.js 22.19以降または24以降が必要で、互換性のあるDSHバージョンは自動的にインストールされます。次の内容を1つのプロンプトとして送信します：
+
+```text
+Install and run the OpenGUI installer Skill from https://github.com/Core-Mate/OpenGUI/tree/main/deepseek-harness-plugin/skills/opengui-coremate-install for my DSH web profile. Install the latest stable release. Proceed autonomously, and only pause when I need to authorize or select a phone, add or select a DSH workspace, or provide fallback visual-model credentials.
+```
+
+Skillは公開ReleaseのパッケージとチェックサムをダウンロードしてSHA-256を検証し、OpenGUIプラグインだけをインストールします。必要な場合はDSHを起動して開き、既存のプラグインと設定は保持します。管理対象のDSHを再起動したか、既存のプロセスを終了してインストーラーを再実行する必要があるかは、インストーラーが表示します。LinuxまたはWindowsでは、[手動パッケージガイド](./deepseek-harness-plugin/README.md#1-download-the-release-package)を使用してください。
+
+OpenGUIはDSH `0.1.0-rc.7`、`0.1.0-rc.8`、`0.1.1-rc.1`、`0.1.1-rc.2`を正式にサポートし、新規インストールでは`0.1.1-rc.2`を使用します。macOSインストーラーは、選択したバージョンと完全に一致する`PATH` runtimeだけを再利用し、それ以外の場合はOpenGUIのDSH homeに分離されたmanaged runtimeをインストールします。バージョンの明示的な選択には`--dsh-version VERSION`を使用できます。DSH `0.1.2-alpha.4`はサポート対象外です。既存のDSH、ワークスペース、モデル設定、認証情報、スマートフォン認証は保持されます。DSH `0.1.0` RCはDSH `0.1.1` RCが書き込む新しい認証情報形式を読み取れないため、インストーラーはファイルを変更する前にこの状態のダウングレードを拒否し、別のDSH homeの使用を案内します。
+
+インストール後、DSHでワークスペースを追加または選択し、認証済みのAndroidスマートフォンを接続して選択してから、次を送信します：
+
+```text
+@OpenGUI Open Settings and report the Android version
+```
+
+このプラグインは、OpenGUIバックエンド一式を必要とせず、DSHにスマートフォンとブラウザの操作機能を追加します。現在のソース実装はDSH Sessionごとに1つのルートタスクを受け付け、デバイスが競合しない別のTabも受け付けます。管理対象ブラウザは引き続きグローバルに直列実行されます。これはソースの動作説明であり、リリース済みであることを示すものではありません。[ユースケース](./deepseek-harness-plugin/docs/use-cases.md)を確認するか、[v0.1.13リリースパッケージ](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.13)をダウンロードできます。
+
+主なユースケース：
+
+- 許可されたデバイスでのUI自動操作テストと回帰テスト
+- 投稿、メッセージ送信、アカウント変更の前に人が確認するソーシャルメディア管理とリード調査
+- アカウント所有者とゲームのルールが自動化を認めている場合の反復的なゲームテストとゲーム内ワークフロー
+
+GUI操作向けの現在の推奨順：
+
+| 優先度 | モデルファミリー | ガイダンス |
+|---|---|---|
+| 1 | Doubao VLM | ビジュアルGUI操作の第一候補です。 |
+| 2 | Qwen VLM | 実用的な代替候補ですが、一部のソーシャルメディア向けプロンプトは安全ポリシーの影響を受けやすい場合があります。 |
+| 3 | OpenAIのビジョン対応モデル | 利用できますが、スクリーンショットを多用するタスクでは一般にコストが高くなります。 |
+| 4 | Grokのビジョン対応モデル | 現時点では実験的な選択肢です。ツール利用と操作の安定性には、さらに検証が必要です。 |
+
+モデルの提供状況、料金、ポリシーは、バージョンや地域によって異なります。どのプロバイダーを選ぶ場合も、画像入力とツール呼び出しの両方に対応したモデルが必要です。
+
+## OpenGUIスタック一式を実行する
+
+OpenGUIのバックエンドとAndroidクライアント一式を実行する場合は、Claude Code、Codex、またはOpenCodeにブートストラップを任せることができます。
 
 ```text
 Read ./skills/open-gui-bootstrap/SKILL.md and help me run OpenGUI. Only ask me for phone-side actions.
 ```
 
+Skill のパスを明示したこのプロンプトは OpenCode でも使用できます。このリポジトリでは Skill をトップレベルの `skills/` に配置しているため、OpenCode では自動検出に頼らず、上記のようにパスを指定してください。OpenCode が標準で検出する `.opencode/skills/` と `.agents/skills/` については、[Agent Skills ドキュメント](https://opencode.ai/docs/skills/)を参照してください。
+
+root 権限やブートローダーのアンロックは不要です。OpenGUI は Android 標準の `AccessibilityService` API を使ってスクリーンショットを取得し、タップ、スワイプ、テキスト入力、戻る、ホームなどの操作を実行します。ADB はローカルでの APK のインストールと起動、および `adb reverse` によるポート転送の設定にのみ使用され、端末を root 化したりシステムを変更したりすることはありません。
+
 必要なもの:
 
-- Android スマートフォンまたはエミュレーター
+- Android 11（API 30）以降のスマートフォンまたはエミュレーター
 - USB デバッグの有効化
-- AccessibilityService の有効化
+- ユーザー補助サービス（AccessibilityService）の有効化
+- オーバーレイ権限の許可と OpenGUI のバッテリー最適化除外
 - 実際のタスク実行に使うモデル API キー
+
+権限名と設定場所は Android メーカーによって異なります。最初のタスクを実行する前に、
+[Android 権限設定ガイド](./docs/android-permissions.ja-JP.md)のチェックリストを完了してください。
 
 OpenGUI はリポジトリ内のスクリプトを使ってバックエンドを起動し、Android クライアントをインストールします:
 
@@ -65,11 +120,23 @@ pnpm opengui -- devices --json
 pnpm opengui -- do "Observe the current Android screen and summarize what you see" --json
 ```
 
-手動セットアップガイド: [`docs/get-started.md`](./docs/get-started.md)
+`do` は execution を非同期で開始し、execution の作成後に戻ります。進捗をストリーミングしたり、完了まで待機したりはしません。レスポンスに含まれる `executionId` を使って現在の状態を確認します。
+
+```bash
+pnpm opengui -- status <executionId> --json
+```
+
+`status` は実行時点のスナップショットを 1 回返します。更新を確認するには、もう一度実行してください。`executionStatus` と、レスポンスに含まれる場合は `statusMessage`、`currentStep`、`executionResult`、`errorMessage` を確認します。`PENDING` は端末側での開始待ち、`RUNNING` は実行中、`FINISHED` は終了済みを意味します。詳細なフィールドは常に含まれるとは限らないため、`RUNNING` だけではモデル待ちか端末待ちかを区別できない場合があります。`do` 自体が `executionId` を返さない場合は、通常の非同期実行ではなく、リクエストまたは起動の問題として確認してください。実行中のタスクを停止する場合も、同じ `executionId` を使用します。
+
+```bash
+pnpm opengui -- cancel <executionId> --json
+```
+
+手動セットアップガイド: [`docs/get-started.ja-JP.md`](./docs/get-started.ja-JP.md)
 
 ## 最近の更新
 
-- `[2026.5.16]` [Codex / Claude Code リモートコントロール](./docs/codex-remote-control.zh-CN.md)を追加しました。ローカル REST API、`pnpm opengui -- ...` CLI、[`open-gui-remote-control`](./skills/open-gui-remote-control/SKILL.md) Skill により、コーディングエージェントから Android アプリタスクをディスパッチできます。
+- `[2026.5.16]` [Codex / Claude Code リモートコントロール](./docs/codex-remote-control.ja-JP.md)を追加しました。ローカル REST API、`pnpm opengui -- ...` CLI、[`open-gui-remote-control`](./skills/open-gui-remote-control/SKILL.md) Skill により、コーディングエージェントから Android アプリタスクをディスパッチできます。
 - `[2026.5.9]` [Discord IM エントリー](./docs/DISCORD.ja-JP.md)を追加しました。プレフィックスコマンド、スラッシュコマンド、allowlist、guild 単位のコマンド登録に対応し、Discord チャンネルから Android タスクをリモート実行できます。
 - `[2026.5.7]` Docker ベースのバックエンド起動時に、一般的な PostgreSQL / Redis ポート競合を避けられるようローカル起動フローを強化しました。
 - `[2026.5.1]` バックエンドのオンボーディングとして、`.env.example`、起動時チェック、graph agent 向け VLM 環境変数設定を整備しました。
@@ -82,8 +149,8 @@ OpenGUI は、AI が実際の Android スマートフォンを操作できるよ
 
 - **主要な Android アプリを操作**: X、Reddit、Hacker News、Telegram、WeChat、Weibo、小紅書などの Android アプリ上で、AI にモバイルタスクを実行させることができます。
 - **組み込みワークフローを実行**: バックエンド、Android クライアント、スタンバイディスパッチパス、組み込みタスク機能一式がすぐに実行可能な状態で含まれています。
-- **Claude や Codex にブートストラップさせる**: [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md) をモデルに指示し、目的を自然言語で説明すれば、セットアップ、ビルド、インストール、ローカルデバッグをモデルが処理します。
-- **Codex で Android アプリを操作**: OpenGUI の起動後、[`skills/open-gui-remote-control/SKILL.md`](./skills/open-gui-remote-control/SKILL.md) を Codex または Claude Code に渡すと、ローカル CLI 経由でデバイス一覧、タスクディスパッチ、execution 状態確認ができます。
+- **AI コーディングエージェントにブートストラップさせる**: [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md) を Claude Code、Codex、または OpenCode に渡し、目的を自然言語で説明すれば、セットアップ、ビルド、インストール、ローカルデバッグをエージェントが処理します。
+- **AI コーディングエージェントで Android アプリを操作**: OpenGUI の起動後、[`skills/open-gui-remote-control/SKILL.md`](./skills/open-gui-remote-control/SKILL.md) を Claude Code、Codex、または OpenCode に渡すと、ローカル CLI 経由でデバイス一覧、タスクディスパッチ、execution 状態確認ができます。
 - **リモートワーカーとしてスマートフォンを操作**: Feishu、Telegram、Discord、REST API 経由でタスクをディスパッチし、デバイスをスタンバイ状態に保ち、バックエンドから構造化された結果を受け取ることができます。
 
 ## 特徴
@@ -125,7 +192,7 @@ OpenGUI は、明示的なオーケストレーションレイヤーを持つモ
 
 ## 現在の制限
 
-- Android 実機またはエミュレーターが必要です。
+- Android 11（API 30）以降の実機またはエミュレーターが必要です。
 - USB デバッグと AccessibilityService 権限が必要です。
 - 実行品質は、モデル、アプリ UI、ネットワーク状態、タスクの長さに依存します。
 - 現時点では OS レベルの常駐アシスタントではありません。タスクは手動、または設定済みのディスパッチ経路から起動します。
@@ -140,16 +207,17 @@ OpenGUI は、明示的なオーケストレーションレイヤーを持つモ
 - 実行リカバリーと失敗レポートを改善する。
 - Android GUI Agent の信頼性 benchmark タスクを追加する。
 - モデル設定とコスト削減プロファイルのドキュメントを拡充する。
+- OpenGUIの技術スタック一式を自分で運用したくないチーム向けに、ホスト型OpenGUI Agentサービスを提供する。
 
 ## OpenGUI の使い方
 
-### 1. Claude や Codex を使う場合
+### 1. Claude Code、Codex、または OpenCode を使う場合
 
 [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md) から始めてください。
 
 手順はシンプルです:
 
-1. Claude または Codex にスキルを指示する
+1. Claude Code、Codex、または OpenCode に Skill を指示する
 2. タスクを自然言語で説明する
 3. バックエンドのブートストラップ、APK ビルド、インストール、ローカルデバッグをモデルに任せる
 
@@ -161,13 +229,14 @@ OpenGUI は、明示的なオーケストレーションレイヤーを持つモ
 - オーバーレイまたはバッテリー権限の付与
 - API キーまたはボット認証情報の入力
 
-バックエンドと Android client が起動したら、[`skills/open-gui-remote-control/SKILL.md`](./skills/open-gui-remote-control/SKILL.md) を使って Codex または Claude Code にローカル CLI 経由でスマートフォンを操作させることができます:
+バックエンドと Android client が起動したら、[`skills/open-gui-remote-control/SKILL.md`](./skills/open-gui-remote-control/SKILL.md) を使って Claude Code、Codex、または OpenCode にローカル CLI 経由でスマートフォンを操作させることができます:
 
 ```bash
 cd server
 pnpm opengui -- devices --json
 pnpm opengui -- do "Observe the current Android screen and summarize what you see" --json
 pnpm opengui -- status <executionId> --json
+pnpm opengui -- cancel <executionId> --json
 ```
 
 推奨プロファイル:
@@ -226,7 +295,7 @@ cd client
 
 参考ドキュメント:
 
-- [docs/get-started.md](./docs/get-started.md)
+- [docs/get-started.ja-JP.md](./docs/get-started.ja-JP.md)
 - [server/start.sh](./server/start.sh)
 - [client/start.sh](./client/start.sh)
 - [server/apps/backend/README.md](./server/apps/backend/README.md)
@@ -281,7 +350,7 @@ flowchart LR
 ## ドキュメント
 
 - [skills/open-gui-bootstrap/SKILL.md](./skills/open-gui-bootstrap/SKILL.md)
-- [docs/get-started.md](./docs/get-started.md)
+- [docs/get-started.ja-JP.md](./docs/get-started.ja-JP.md)
 - [server/apps/backend/README.md](./server/apps/backend/README.md)
 - [docs/DISCORD.ja-JP.md](./docs/DISCORD.ja-JP.md)
 - [client/README.md](./client/README.md)
@@ -290,6 +359,10 @@ flowchart LR
 - [CLAUDE.md](./CLAUDE.md)
 
 ## コミュニティ / サポート
+
+[OpenGUI Discordコミュニティ](https://discord.gg/pqHHw7XgJ3)では、GUIエージェント技術、実際のユースケース、リリース情報について話し合えます。確認済みのWeChatコミュニティへの参加方法は、準備ができ次第ここで公開します。
+
+ホスト型OpenGUI Agentサービスの開始後、コミュニティメンバーはAgentのトライアルクレジットを申請できるようになります。提供数、申請条件、有効期間はサービス開始時に案内します。
 
 特に有用なプロジェクトフィードバック:
 

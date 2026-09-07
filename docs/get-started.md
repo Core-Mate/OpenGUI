@@ -1,10 +1,14 @@
+<p align="center">
+  <strong>Language:</strong> <a href="./get-started.md">English</a> | <a href="./get-started.zh-CN.md">简体中文</a> | <a href="./get-started.ja-JP.md">日本語</a>
+</p>
+
 # OpenGUI Getting Started
 
 This repository already contains the runnable backend and Android client.
 
-## Option 1: Bootstrap with Claude or Codex
+## Option 1: Bootstrap with Claude Code, Codex, or OpenCode
 
-Open Claude Code or Codex from the OpenGUI repository root, then ask it to read
+Open Claude Code, Codex, or OpenCode from the OpenGUI repository root, then ask it to read
 the bootstrap skill.
 
 Start with the bootstrap skill:
@@ -17,9 +21,14 @@ Recommended prompt:
 Read ./skills/open-gui-bootstrap/SKILL.md and help me run OpenGUI. Only ask me for phone-side actions.
 ```
 
-Claude Code or Codex does not connect to the phone directly. The skill guides
-the local setup: it starts the backend, builds or installs the Android client,
+The bootstrap skill guides the local backend and Android client setup: it starts the backend, builds or installs the Android client,
 runs adb setup, and checks whether the phone is visible to OpenGUI.
+
+The same prompt works in OpenCode. Because this repository keeps the Skill in
+the top-level `skills/` directory, specify the path explicitly as shown above.
+OpenCode's automatic discovery instead searches locations such as
+`.opencode/skills/` and `.agents/skills/`; see its [Agent Skills documentation](https://opencode.ai/docs/skills/).
+No OpenCode-specific OpenGUI configuration is required.
 
 The skill should use the repository scripts directly:
 
@@ -61,15 +70,16 @@ What `server/start.sh` does:
 - pushes schema and seeds default backend data
 - starts the backend on port `7777`
 
-Required keys for a practical first run:
+For the default first-run setup, add only your model API key:
 
 - `VLM_API_KEY`
-- `VLM_BASE_URL`
-- `VLM_MODEL`
 
 The backend currently uses the `VLM_*` variables as the shared
 OpenAI-compatible model configuration for graph agents. They are used by
 planning, supervision, summarization, and the executor vision path.
+
+`VLM_BASE_URL` and `VLM_MODEL` already have defaults in `.env.example`. Change
+them only when using a different OpenAI-compatible provider or model.
 
 Example:
 
@@ -79,8 +89,9 @@ VLM_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 VLM_MODEL=qwen3.6-plus
 ```
 
-The backend can start without these values, but real task execution will fail
-when the graph needs to call the model.
+The backend can start without `VLM_API_KEY`, but real task execution will fail
+when the graph needs to call the model. LangSmith tracing and IM channel
+credentials are optional for the first run.
 
 Useful endpoints after startup:
 
@@ -88,6 +99,16 @@ Useful endpoints after startup:
 - Docs: `http://localhost:7777/docs`
 
 ### 2. Connect a device and install the Android client
+
+Root access and an unlocked bootloader are not required. OpenGUI captures
+screenshots and performs gestures through Android's standard
+`AccessibilityService` APIs. ADB is used to install and launch the APK and to
+configure `adb reverse` for the local backend; it does not root or modify the
+Android system.
+
+The current Android client requires Android 11 (API 30) or newer. Android 9
+(API 28) and other older releases are not supported by the screenshot-based
+execution path. The client currently targets Android 15 (API 35).
 
 ```bash
 cd client
@@ -102,6 +123,17 @@ What `client/start.sh` does:
 - builds the debug APK
 - installs the APK
 - launches `com.coremate.opengui/.login.SplashActivity`
+
+The `adb reverse` mapping belongs to the current ADB device connection. It may
+be lost after the phone is disconnected and reconnected, the phone reboots, or
+the ADB server restarts. If the Android client can no longer reach the local
+backend, reconnect the device and run:
+
+```bash
+adb reverse tcp:7777 tcp:7777
+```
+
+Running `client/start.sh` again also recreates the mapping.
 
 ### 3. Complete phone-side permissions
 

@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+hook_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+plugin_root="$(cd "${hook_dir}/.." && pwd)"
+exec node "${plugin_root}/scripts/dev-auto-reload.mjs" after-pull

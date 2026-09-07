@@ -1,0 +1,5 @@
+- id: coremate-mobile
+  config:
+    baseURL: https://gateway.example/v1
+    api: openai-responses
+    model: vision-model

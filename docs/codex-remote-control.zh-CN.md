@@ -1,3 +1,7 @@
+<p align="center">
+  <strong>语言切换：</strong><a href="./codex-remote-control.md">English</a> | <a href="./codex-remote-control.zh-CN.md">简体中文</a> | <a href="./codex-remote-control.ja-JP.md">日本語</a>
+</p>
+
 # 用 Codex 控制 Android 手机
 
 OpenGUI 让 Codex / Claude Code 可以把自然语言任务交给一台真实 Android 手机执行。Codex 不直接点坐标，也不直接处理 Android socket 协议；它通过 OpenGUI 后端创建任务，后端再把执行请求交给在线的 Android client。
@@ -35,7 +39,7 @@ flowchart LR
 本地手机控制应运行在连接 Android 手机的开发机上。这个环境需要能运行 Node.js 22、pnpm、Docker、Java 和 adb，并且已经拿到 OpenGUI 仓库：
 
 ```text
-https://github.com/Core-Mate/open-gui
+https://github.com/Core-Mate/OpenGUI
 ```
 
 可运行的 OpenGUI 仓库包含：
@@ -85,7 +89,18 @@ Skill 会优先使用仓库里的 CLI。对应的本地命令是：
 cd server
 pnpm opengui -- devices --json
 pnpm opengui -- do "观察当前手机屏幕，简要描述你看到了什么，然后结束" --json
+```
+
+`do` 会异步启动 execution，并在创建完成后返回；它不会持续输出进度，也不会等待任务结束。响应中会包含 `executionId`，使用它查询当前状态：
+
+```bash
 pnpm opengui -- status <executionId> --json
+```
+
+`status` 每次返回一个状态快照，需要更新时可以再次执行。请查看 `executionStatus`，以及返回结果中存在的 `statusMessage`、`currentStep`、`executionResult` 或 `errorMessage`。`PENDING` 表示 execution 正在等待手机端启动，`RUNNING` 表示正在执行，`FINISHED` 表示已经结束。细粒度字段不一定始终存在，因此 `RUNNING` 状态不一定能区分当前是在等待模型还是等待手机。如果 `do` 本身没有返回 `executionId`，应将其视为请求或启动异常，而不是正常的异步执行。需要停止正在执行的任务时，继续使用同一个 `executionId`：
+
+```bash
+pnpm opengui -- cancel <executionId> --json
 ```
 
 多台设备在线时，先读取设备列表，再指定目标设备：
@@ -111,7 +126,7 @@ OpenGUI 的执行状态保存在后端。Android client 上传截图和设备状
 
 ## 故障处理
 
-仓库路径不对时，检查当前目录或子目录是否存在 `server/package.json` 和 `client/start.sh`。如果不存在，使用 `https://github.com/Core-Mate/open-gui` 获取可运行仓库。
+仓库路径不对时，检查当前目录或子目录是否存在 `server/package.json` 和 `client/start.sh`。如果不存在，使用 `https://github.com/Core-Mate/OpenGUI` 获取可运行仓库。
 
 `devices` 返回空时，检查 Android client 是否连上 backend：backend 是否运行，手机是否打开 OpenGUI App，USB debugging 是否授权，`adb reverse tcp:7777 tcp:7777` 是否执行，Accessibility Service 和悬浮窗权限是否开启。
 

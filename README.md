@@ -8,7 +8,12 @@
 </p>
 
 <p align="center">
-  <a href="./skills/open-gui-bootstrap/SKILL.md"><img src="https://img.shields.io/badge/BOOTSTRAP-WITH_CLAUDE_OR_CODEX-ffb000?style=for-the-badge" alt="Bootstrap with Claude or Codex"></a>
+  <a href="https://trendshift.io/repositories/183339"><img src="https://trendshift.io/api/badge/trendshift/repositories/183339/daily?language=Kotlin" alt="OpenGUI — Trendshift Kotlin Repository of the Day #25" width="250" height="55"></a>
+</p>
+
+<p align="center">
+  <a href="#use-opengui-in-deepseek-harness"><img src="https://img.shields.io/badge/INSTALL-DEEPSEEK_HARNESS_PLUGIN-6f42c1?style=for-the-badge" alt="Install the DeepSeek Harness plugin"></a>
+  <a href="./skills/open-gui-bootstrap/SKILL.md"><img src="https://img.shields.io/badge/BOOTSTRAP-WITH_AI_AGENTS-ffb000?style=for-the-badge" alt="Bootstrap with Claude Code, Codex, or OpenCode"></a>
   <img src="https://img.shields.io/badge/SYSTEM-MULTI_ROLE_OPERATOR-1f6feb?style=for-the-badge" alt="Multi-role operator system">
   <img src="https://img.shields.io/badge/TASKS-UP_TO_12_HOURS-cf222e?style=for-the-badge" alt="Tasks up to 12 hours">
   <img src="https://img.shields.io/badge/MODELS-CLAUDE_OPUS_|_QWEN_|_DOUBAO_|_BYO_API-2f9e44?style=for-the-badge" alt="Recommended model profiles">
@@ -23,6 +28,11 @@
   OpenGUI helps AI agents see, understand, and operate Android app interfaces on real devices.
 </p>
 
+<p align="center">
+  <strong>Recommended: use OpenGUI directly in DeepSeek Harness.</strong><br>
+  Paste one prompt into Codex. It downloads the verified plugin, installs it into DSH, and opens DSH. No full backend deployment is required.
+</p>
+
 ## Demo
 
 <p align="center">
@@ -31,24 +41,76 @@
 
 OpenGUI reads a real Android app UI, plans the next step, takes mobile actions, and returns structured results.
 
-## Quick Start
+## Use OpenGUI in DeepSeek Harness
 
-The fastest way to try OpenGUI is to let Claude Code or Codex bootstrap it for you.
+The shortest path on macOS is to let Codex run the stable installer Skill from `main`. Each run resolves the latest stable OpenGUI plugin release, while an explicit version remains available for rollback. It requires Node.js 22.19+ or 24+ and installs the compatible DSH version automatically. Paste this as one prompt:
 
-Open Claude Code or Codex from the OpenGUI repository root and paste:
+```text
+Install and run the OpenGUI installer Skill from https://github.com/Core-Mate/OpenGUI/tree/main/deepseek-harness-plugin/skills/opengui-coremate-install for my DSH web profile. Install the latest stable release. Proceed autonomously, and only pause when I need to authorize or select a phone, add or select a DSH workspace, or provide fallback visual-model credentials.
+```
+
+The Skill downloads the public release package and checksum, verifies SHA-256, installs only the OpenGUI plugin, starts DSH when needed, and opens DSH. It preserves unrelated DSH plugins and settings. The installer reports whether it reloaded a managed DSH or whether you need to quit an existing process and rerun it. For Linux or Windows, use the [manual package guide](./deepseek-harness-plugin/README.md#1-download-the-release-package).
+
+OpenGUI supports DSH `0.1.0-rc.7`, `0.1.0-rc.8`, `0.1.1-rc.1`, and `0.1.1-rc.2`; new installs default to `0.1.1-rc.2`. The macOS installer reuses a `PATH` runtime only when it exactly matches the selected version, otherwise it installs an isolated managed runtime under the OpenGUI DSH home. Use `--dsh-version VERSION` to select a supported version. DSH `0.1.2-alpha.4` is not supported. Existing DSH installations, workspaces, model settings, credentials, and phone authorizations are preserved. DSH `0.1.0` RCs cannot read the versioned credential store written by DSH `0.1.1` RCs, so the installer refuses that state downgrade before changing any files and recommends a separate DSH home.
+
+After installation, add or select a DSH workspace, connect and select an authorized Android phone, then send:
+
+```text
+@OpenGUI Open Settings and report the Android version
+```
+
+The plugin adds phone and browser operation to DSH without requiring the full OpenGUI backend stack. The current source implementation admits one OpenGUI task per DSH session and separate tabs on non-conflicting phone sets; the managed browser remains globally serial. This source behavior is not a release claim. See more [use cases](./deepseek-harness-plugin/docs/use-cases.md) or download the [v0.1.13 release package](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.13).
+
+Good fits include:
+
+- automated UI operation and regression testing on authorized devices
+- social media management and lead research, with human confirmation before publishing, messaging, or account changes
+- repetitive game testing and in-game workflows where the account owner and game rules permit automation
+
+For GUI execution, our current recommendation order is:
+
+| Priority | Model family | Guidance |
+|---|---|---|
+| 1 | Doubao VLM | Recommended first for visual GUI execution. |
+| 2 | Qwen VLM | A practical alternative, but some social media prompts may be more sensitive to model safety policies. |
+| 3 | OpenAI vision-capable models | Capable, but generally the higher-cost option for screenshot-heavy tasks. |
+| 4 | Grok vision-capable models | Experimental for this workflow; tool use and action reliability still need more validation. |
+
+Model availability, pricing, and policy behavior vary by version and region. Whichever provider you choose, the model must support both image input and tool calling.
+
+## Run the Full OpenGUI Stack
+
+To run the full OpenGUI backend and Android client, let Claude Code, Codex, or OpenCode bootstrap it for you.
+
+Open Claude Code, Codex, or OpenCode from the OpenGUI repository root and paste:
 
 ```text
 Read ./skills/open-gui-bootstrap/SKILL.md and help me run OpenGUI. Only ask me for phone-side actions.
 ```
 
-Claude Code or Codex does not connect to the phone directly. It reads the bootstrap skill, starts the local backend, builds or installs the Android client, runs the required adb setup, and checks whether the phone is visible to OpenGUI.
+In this bootstrap flow, the coding agent reads the skill, starts the local backend, builds or installs the Android client, runs the required adb setup, and checks whether the phone is visible to OpenGUI.
+
+This explicit prompt also works in OpenCode. The repository keeps the Skill in
+`skills/`, so OpenCode users should include the path as shown instead of relying
+on automatic Skill discovery. See the [OpenCode Agent Skills documentation](https://opencode.ai/docs/skills/)
+for its native `.opencode/skills/` and `.agents/skills/` locations.
+
+Root access and an unlocked bootloader are not required. OpenGUI uses standard
+Android `AccessibilityService` APIs for screenshots and actions. ADB is used
+only to install and launch the APK and configure local port forwarding with
+`adb reverse`; it does not root the device or modify the Android system.
 
 You will need:
 
-- an Android phone or emulator
+- an Android 11 (API 30) or newer phone or emulator
 - USB debugging enabled
 - AccessibilityService enabled
+- overlay permission and battery optimization exemption enabled
 - model API keys for real task execution
+
+Permission names and menu locations vary across Android vendors. Complete the
+[Android permission setup guide](./docs/android-permissions.md) before running
+the first task.
 
 The bootstrap flow uses the repository scripts to start the backend and install the Android client:
 
@@ -70,11 +132,33 @@ pnpm opengui -- devices --json
 pnpm opengui -- do "Observe the current Android screen and summarize what you see" --json
 ```
 
+`do` starts the execution asynchronously and returns after the execution is
+created; it does not stream progress or wait for completion. The response
+includes an `executionId`. Use it to check the current status:
+
+```bash
+pnpm opengui -- status <executionId> --json
+```
+
+`status` returns one snapshot, so run it again whenever you want an update.
+Check `executionStatus` and, when present, `statusMessage`, `currentStep`,
+`executionResult`, or `errorMessage`. `PENDING` means the execution is waiting
+to start on the phone, `RUNNING` means it is active, and `FINISHED` means it has
+completed. Fine-grained fields are not always present, so a `RUNNING` snapshot
+may not distinguish a model wait from a phone wait. If `do` itself does not
+return an `executionId`, treat that as a request or startup problem rather than
+normal asynchronous execution. Keep the same `executionId` if you need to stop
+the active task:
+
+```bash
+pnpm opengui -- cancel <executionId> --json
+```
+
 Manual setup guide: [`docs/get-started.md`](./docs/get-started.md).
 
 ## Recent Updates
 
-- `[2026.5.16]` Added [Codex / Claude Code remote control](./docs/codex-remote-control.zh-CN.md) with a local REST API, `pnpm opengui -- ...` CLI, and the [`open-gui-remote-control`](./skills/open-gui-remote-control/SKILL.md) Skill for dispatching Android app tasks from coding agents.
+- `[2026.5.16]` Added [Codex / Claude Code remote control](./docs/codex-remote-control.md) with a local REST API, `pnpm opengui -- ...` CLI, and the [`open-gui-remote-control`](./skills/open-gui-remote-control/SKILL.md) Skill for dispatching Android app tasks from coding agents.
 - `[2026.5.9]` Added a [Discord IM channel](./docs/DISCORD.md) for remote Android task dispatch, including prefix commands, slash commands, allowlists, and guild-scoped command registration.
 - `[2026.5.7]` Hardened local startup to avoid common PostgreSQL and Redis port conflicts during Docker-based backend setup.
 - `[2026.5.1]` Improved backend onboarding with `.env.example`, startup checks, and graph-agent VLM environment configuration.
@@ -87,8 +171,8 @@ You can use the same repository in four practical ways:
 
 - **Operate mainstream Android apps**: let AI handle mobile tasks inside X, Reddit, Hacker News, Telegram, WeChat, Weibo, Xiaohongshu, and other Android apps on a real phone.
 - **Run shipped workflows**: the repository already includes a runnable backend, Android client, standby dispatch path, and a set of built-in task capabilities.
-- **Let Claude or Codex bootstrap it for you**: point the model at [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md), describe the goal in plain language, and let it handle setup, build, install, and local debugging.
-- **Let Codex control Android apps**: after OpenGUI is running, point Codex or Claude Code at [`skills/open-gui-remote-control/SKILL.md`](./skills/open-gui-remote-control/SKILL.md) to list devices, dispatch tasks, and track executions through the local CLI.
+- **Let an AI coding agent bootstrap it for you**: point Claude Code, Codex, or OpenCode at [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md), describe the goal in plain language, and let it handle setup, build, install, and local debugging.
+- **Let an AI coding agent control Android apps**: after OpenGUI is running, point Claude Code, Codex, or OpenCode at [`skills/open-gui-remote-control/SKILL.md`](./skills/open-gui-remote-control/SKILL.md) to list devices, dispatch tasks, and track executions through the local CLI.
 - **Operate phones as remote workers**: dispatch tasks through Feishu, Telegram, Discord, or REST API, keep devices on standby, and get structured results back from the backend.
 
 - [Join the Discord community](https://discord.gg/pqHHw7XgJ3)
@@ -132,7 +216,7 @@ The source code currently exposes these pieces:
 
 ## Current Limitations
 
-- Requires an Android device or emulator.
+- Requires an Android 11 (API 30) or newer device or emulator.
 - Requires USB debugging and AccessibilityService permissions.
 - Execution quality depends on the model, app UI, network state, and task length.
 - Not an always-on OS-level assistant yet; tasks are currently triggered manually or through configured dispatch channels.
@@ -147,17 +231,18 @@ The source code currently exposes these pieces:
 - Improve execution recovery and failure reporting.
 - Add benchmark tasks for Android GUI agent reliability.
 - Expand docs for model configuration and cost-saving profiles.
+- Launch a hosted OpenGUI Agent service for teams that want GUI operation without running the full stack themselves.
 
 ## How to Use OpenGUI
 
-### 1. With Claude or Codex
+### 1. With Claude Code, Codex, or OpenCode
 
 Start with [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md).
 
 The intended flow is:
 
 1. clone OpenGUI locally
-2. open Claude Code or Codex from the OpenGUI repo root
+2. open Claude Code, Codex, or OpenCode from the OpenGUI repo root
 3. ask it to read the bootstrap skill
 4. let it handle backend bootstrap, APK build, install, adb setup, and local debugging
 
@@ -171,13 +256,14 @@ It should only stop for:
 
 Under the hood, OpenGUI still needs both the local backend and Android client running. The bootstrap skill is the guided path for getting those pieces running without manually following every setup step.
 
-After the backend and Android client are running, use [`skills/open-gui-remote-control/SKILL.md`](./skills/open-gui-remote-control/SKILL.md) to let Codex or Claude Code control the phone through the local CLI:
+After the backend and Android client are running, use [`skills/open-gui-remote-control/SKILL.md`](./skills/open-gui-remote-control/SKILL.md) to let Claude Code, Codex, or OpenCode control the phone through the local CLI:
 
 ```bash
 cd server
 pnpm opengui -- devices --json
 pnpm opengui -- do "Observe the current Android screen and summarize what you see" --json
 pnpm opengui -- status <executionId> --json
+pnpm opengui -- cancel <executionId> --json
 ```
 
 Recommended profiles:
@@ -299,6 +385,10 @@ flowchart LR
 - [CLAUDE.md](./CLAUDE.md)
 
 ## Community / Support
+
+Join the [OpenGUI Discord community](https://discord.gg/pqHHw7XgJ3) to discuss GUI agent development, share real use cases, and get release updates. A verified WeChat community entry will be published here when it is ready.
+
+Community members will also be able to apply for trial Agent credits when the hosted OpenGUI Agent service opens. Availability, eligibility, and validity will be announced with the service.
 
 The most useful project feedback is:
 
