@@ -8,6 +8,9 @@ This repository already contains the runnable backend and Android client.
 
 ## Option 1: Bootstrap with Claude Code, Codex, or OpenCode
 
+Open Claude Code, Codex, or OpenCode from the OpenGUI repository root, then ask it to read
+the bootstrap skill.
+
 Start with the bootstrap skill:
 
 - [`skills/open-gui-bootstrap/SKILL.md`](../skills/open-gui-bootstrap/SKILL.md)
@@ -17,6 +20,9 @@ Recommended prompt:
 ```text
 Read ./skills/open-gui-bootstrap/SKILL.md and help me run OpenGUI. Only ask me for phone-side actions.
 ```
+
+The bootstrap skill guides the local backend and Android client setup: it starts the backend, builds or installs the Android client,
+runs adb setup, and checks whether the phone is visible to OpenGUI.
 
 The same prompt works in OpenCode. Because this repository keeps the Skill in
 the top-level `skills/` directory, specify the path explicitly as shown above.
@@ -28,6 +34,22 @@ The skill should use the repository scripts directly:
 
 - `server/start.sh`
 - `client/start.sh`
+
+It should only stop for phone-side actions or credentials:
+
+- connecting an Android device or starting an emulator
+- approving USB debugging
+- enabling Accessibility Service
+- granting overlay or screen-related permissions
+- providing model API credentials
+
+After setup, run a basic smoke test:
+
+```bash
+cd server
+pnpm opengui -- devices --json
+pnpm opengui -- do "Observe the current Android screen and summarize what you see" --json
+```
 
 ## Option 2: Manual setup
 

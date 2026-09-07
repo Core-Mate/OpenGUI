@@ -99,9 +99,13 @@ If `/opengui` is missing or tasks do not continue automatically, see [installati
 
 To run the full OpenGUI backend and Android client, let Claude Code, Codex, or OpenCode bootstrap it for you.
 
+Open Claude Code, Codex, or OpenCode from the OpenGUI repository root and paste:
+
 ```text
 Read ./skills/open-gui-bootstrap/SKILL.md and help me run OpenGUI. Only ask me for phone-side actions.
 ```
+
+In this bootstrap flow, the coding agent reads the skill, starts the local backend, builds or installs the Android client, runs the required adb setup, and checks whether the phone is visible to OpenGUI.
 
 This explicit prompt also works in OpenCode. The repository keeps the Skill in
 `skills/`, so OpenCode users should include the path as shown instead of relying
@@ -125,7 +129,7 @@ Permission names and menu locations vary across Android vendors. Complete the
 [Android permission setup guide](./docs/android-permissions.md) before running
 the first task.
 
-OpenGUI will use the repository scripts to start the backend and install the Android client:
+The bootstrap flow uses the repository scripts to start the backend and install the Android client:
 
 ```bash
 cd server
@@ -253,11 +257,12 @@ The source code currently exposes these pieces:
 
 Start with [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md).
 
-The intended flow is simple:
+The intended flow is:
 
-1. point Claude Code, Codex, or OpenCode at the skill
-2. describe the task in plain language
-3. let the model handle backend bootstrap, APK build, install, and local debugging
+1. clone OpenGUI locally
+2. open Claude Code, Codex, or OpenCode from the OpenGUI repo root
+3. ask it to read the bootstrap skill
+4. let it handle backend bootstrap, APK build, install, adb setup, and local debugging
 
 It should only stop for:
 
@@ -266,6 +271,8 @@ It should only stop for:
 - enabling AccessibilityService
 - granting overlay or battery permissions
 - providing API keys or bot credentials
+
+Under the hood, OpenGUI still needs both the local backend and Android client running. The bootstrap skill is the guided path for getting those pieces running without manually following every setup step.
 
 After the backend and Android client are running, use [`skills/open-gui-remote-control/SKILL.md`](./skills/open-gui-remote-control/SKILL.md) to let Claude Code, Codex, or OpenCode control the phone through the local CLI:
 
