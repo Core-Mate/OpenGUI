@@ -4,6 +4,21 @@
 
 ### Documentation
 - Added a troubleshooting guide for backend connection, Android permissions, model configuration, and local Redis/PostgreSQL conflicts.
+
+## [0.1.2] - 2026-05-16
+
+### Codex / Claude Code remote control
+
+**Server**
+- Added `RemoteControlModule` with REST endpoints for listing devices, creating and running tasks, and controlling executions.
+- Added shared dispatch logic that reuses the existing standby socket path to send executions to online Android devices.
+- Reused the remote-control dispatch path from IM commands to avoid separate execution routing logic.
+
+**CLI and Skills**
+- Added `pnpm opengui -- ...` for local device listing, task dispatch, status checks, pause, resume, and cancel.
+- Added the `open-gui-remote-control` Skill so Codex / Claude Code can operate Android phones through OpenGUI.
+- Added Chinese documentation for using Codex to control Android phones through OpenGUI.
+
 ## [0.1.0] - 2026-03-30
 
 ### Initial source-available release

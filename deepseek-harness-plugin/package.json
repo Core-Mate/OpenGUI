@@ -1,0 +1,150 @@
+{
+  "name": "dsh-coremate-mobile",
+  "version": "0.1.13",
+  "description": "Dual-host OpenGUI plugin for DeepSeek Harness and Codex Android control",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Core-Mate/OpenGUI.git",
+    "directory": "deepseek-harness-plugin"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "bin": {
+    "opengui-codex": "./lib/codex-cli.js"
+  },
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./invariant": {
+      "types": "./lib/types/invariant.d.ts",
+      "default": "./lib/invariant.js"
+    },
+    "./client": {
+      "types": "./lib/types/client/index.d.ts",
+      "default": "./lib/client.js"
+    },
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    ".codex-plugin",
+    ".mcp.json",
+    "assets",
+    "codex-public",
+    "cordis.patch.yml",
+    "docs",
+    "skills",
+    "lib/codex-cli.js",
+    "lib/codex-mcp.js",
+    "lib/index.js",
+    "lib/invariant.js",
+    "lib/client.js",
+    "lib/client.js.map",
+    "lib/types/**/*.d.ts"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json && tsdown && node scripts/finalize-codex-bundle.mjs",
+    "codex:cli": "node lib/codex-cli.js",
+    "codex:validate": "node scripts/validate-codex-plugin.mjs",
+    "codex:stage-public": "node scripts/stage-public-codex-plugin.mjs",
+    "check:dsh-compatibility": "node scripts/check-dsh-compatibility.mjs",
+    "dev:auto-reload": "node scripts/dev-auto-reload.mjs install",
+    "test": "vitest run",
+    "check": "pnpm run test && pnpm run build && pnpm run codex:validate",
+    "prepare": "pnpm run build && node scripts/dev-auto-reload.mjs install --if-linked"
+  },
+  "engines": {
+    "node": "^22.19.0 || >=24"
+  },
+  "packageManager": "pnpm@11.19.0",
+  "license": "MIT",
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-runtime",
+        "@deepseek-ai/dsh-client-connection",
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "@deepseek-ai/dsh-client-ui-input-trigger",
+        "@deepseek-ai/dsh-client-ui-layout"
+      ],
+      "platform": "web"
+    }
+  },
+  "dependencies": {
+    "@deepseek-ai/schemastery": "3.18.1",
+    "@earendil-works/pi-ai": "0.82.1",
+    "puppeteer-core": "25.8.0",
+    "sharp": "0.35.3",
+    "tar": "7.5.22",
+    "yauzl": "3.4.0"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": ">=4.0.1 <5",
+    "@deepseek-ai/dsh-agent": "0.1.0-rc.7 || 0.1.0-rc.8 || 0.1.1-rc.1 || 0.1.1-rc.2",
+    "@deepseek-ai/dsh-attachment": "0.1.0-rc.7 || 0.1.0-rc.8 || 0.1.1-rc.1 || 0.1.1-rc.2",
+    "@deepseek-ai/dsh-brand": "0.1.0-rc.7 || 0.1.0-rc.8 || 0.1.1-rc.1 || 0.1.1-rc.2",
+    "@deepseek-ai/dsh-client-runtime": "0.1.0-rc.7 || 0.1.0-rc.8 || 0.1.1-rc.1 || 0.1.1-rc.2",
+    "@deepseek-ai/dsh-client-connection": "0.1.0-rc.7 || 0.1.0-rc.8 || 0.1.1-rc.1 || 0.1.1-rc.2",
+    "@deepseek-ai/dsh-client-ui-conversation": "0.1.0-rc.7 || 0.1.0-rc.8 || 0.1.1-rc.1 || 0.1.1-rc.2",
+    "@deepseek-ai/dsh-client-ui-input-trigger": "0.1.0-rc.7 || 0.1.0-rc.8 || 0.1.1-rc.1 || 0.1.1-rc.2",
+    "@deepseek-ai/dsh-client-ui-layout": "0.1.0-rc.7 || 0.1.0-rc.8 || 0.1.1-rc.1 || 0.1.1-rc.2",
+    "@deepseek-ai/dsh-client-ui-slots": "0.1.0-rc.7 || 0.1.0-rc.8 || 0.1.1-rc.1 || 0.1.1-rc.2",
+    "@deepseek-ai/dsh-commands": "0.1.0-rc.7 || 0.1.0-rc.8 || 0.1.1-rc.1 || 0.1.1-rc.2",
+    "@deepseek-ai/dsh-credentials": "0.1.0-rc.7 || 0.1.0-rc.8 || 0.1.1-rc.1 || 0.1.1-rc.2",
+    "@deepseek-ai/dsh-host-webserver": "0.1.0-rc.7 || 0.1.0-rc.8 || 0.1.1-rc.1 || 0.1.1-rc.2",
+    "@deepseek-ai/dsh-invariants": "0.1.0-rc.7 || 0.1.0-rc.8 || 0.1.1-rc.1 || 0.1.1-rc.2",
+    "@deepseek-ai/dsh-llm": "0.1.0-rc.7 || 0.1.0-rc.8 || 0.1.1-rc.1 || 0.1.1-rc.2",
+    "@deepseek-ai/dsh-llm-pi-ai": "0.1.0-rc.7 || 0.1.0-rc.8 || 0.1.1-rc.1 || 0.1.1-rc.2",
+    "@deepseek-ai/dsh-session": "0.1.0-rc.7 || 0.1.0-rc.8 || 0.1.1-rc.1 || 0.1.1-rc.2",
+    "@deepseek-ai/dsh-settings": "0.1.0-rc.7 || 0.1.0-rc.8 || 0.1.1-rc.1 || 0.1.1-rc.2",
+    "@deepseek-ai/dsh-subagent": "0.1.0-rc.7 || 0.1.0-rc.8 || 0.1.1-rc.1 || 0.1.1-rc.2",
+    "@deepseek-ai/dsh-system-prompt": "0.1.0-rc.7 || 0.1.0-rc.8 || 0.1.1-rc.1 || 0.1.1-rc.2",
+    "@deepseek-ai/dsh-tools": "0.1.0-rc.7 || 0.1.0-rc.8 || 0.1.1-rc.1 || 0.1.1-rc.2",
+    "@deepseek-ai/dsh-user-questions": "0.1.0-rc.7 || 0.1.0-rc.8 || 0.1.1-rc.1 || 0.1.1-rc.2",
+    "react": "^18.2.0"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "4.0.1",
+    "@deepseek-ai/dsh-agent": "0.1.1-rc.2",
+    "@deepseek-ai/dsh-app-boot": "0.1.1-rc.2",
+    "@deepseek-ai/dsh-attachment": "0.1.1-rc.2",
+    "@deepseek-ai/dsh-attachment-local": "0.1.1-rc.2",
+    "@deepseek-ai/dsh-brand": "0.1.1-rc.2",
+    "@deepseek-ai/dsh-client-runtime": "0.1.1-rc.2",
+    "@deepseek-ai/dsh-client-connection": "0.1.1-rc.2",
+    "@deepseek-ai/dsh-client-ui-conversation": "0.1.1-rc.2",
+    "@deepseek-ai/dsh-client-ui-input-trigger": "0.1.1-rc.2",
+    "@deepseek-ai/dsh-client-ui-layout": "0.1.1-rc.2",
+    "@deepseek-ai/dsh-client-ui-slots": "0.1.1-rc.2",
+    "@deepseek-ai/dsh-commands": "0.1.1-rc.2",
+    "@deepseek-ai/dsh-credentials": "0.1.1-rc.2",
+    "@deepseek-ai/dsh-host-webserver": "0.1.1-rc.2",
+    "@deepseek-ai/dsh-invariants": "0.1.1-rc.2",
+    "@deepseek-ai/dsh-llm": "0.1.1-rc.2",
+    "@deepseek-ai/dsh-llm-pi-ai": "0.1.1-rc.2",
+    "@deepseek-ai/dsh-loader-smoke": "0.1.1-rc.2",
+    "@deepseek-ai/dsh-session": "0.1.1-rc.2",
+    "@deepseek-ai/dsh-settings": "0.1.1-rc.2",
+    "@deepseek-ai/dsh-settings-file": "0.1.1-rc.2",
+    "@deepseek-ai/dsh-subagent": "0.1.1-rc.2",
+    "@deepseek-ai/dsh-system-prompt": "0.1.1-rc.2",
+    "@deepseek-ai/dsh-tools": "0.1.1-rc.2",
+    "@deepseek-ai/dsh-user-questions": "0.1.1-rc.2",
+    "@types/node": "^24.10.1",
+    "@types/react": "~18.3.1",
+    "@types/yauzl": "2.10.3",
+    "@types/yazl": "2.4.6",
+    "react": "^18.3.1",
+    "tsdown": "^0.22.2",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18",
+    "yaml": "^2.8.1",
+    "yazl": "3.3.1"
+  }
+}

@@ -1,0 +1,65 @@
+name: GitHub Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.19.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.19.0
+          cache: pnpm
+
+      - name: Verify tag matches package version
+        shell: bash
+        run: test "v$(node -p "require('./package.json').version")" = "$GITHUB_REF_NAME"
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run check
+
+      - name: Pack release artifact
+        shell: bash
+        run: |
+          mkdir -p .artifacts
+          npm pack --pack-destination .artifacts
+
+      - name: Verify artifact and write checksum
+        shell: bash
+        run: |
+          archive="$(find .artifacts -maxdepth 1 -name '*.tgz' -print -quit)"
+          test -n "$archive"
+          tar -tzf "$archive" > "$RUNNER_TEMP/archive-files.txt"
+          tar -tvzf "$archive" > "$RUNNER_TEMP/archive-verbose.txt"
+          grep -Fx 'package/lib/index.js' "$RUNNER_TEMP/archive-files.txt"
+          grep -Fx 'package/cordis.patch.yml' "$RUNNER_TEMP/archive-files.txt"
+          grep -E '^-rwxr-xr-x .* package/assets/platform-tools/darwin/adb$' "$RUNNER_TEMP/archive-verbose.txt"
+          grep -E '^-rwxr-xr-x .* package/assets/platform-tools/linux-x64/adb$' "$RUNNER_TEMP/archive-verbose.txt"
+          archive_name="$(basename "$archive")"
+          (
+            cd .artifacts
+            sha256sum "$archive_name" > "$archive_name.sha256"
+          )
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh release create "$GITHUB_REF_NAME"
+          .artifacts/*.tgz
+          .artifacts/*.sha256
+          --verify-tag
+          --title "dsh-coremate-mobile $GITHUB_REF_NAME"
+          --generate-notes

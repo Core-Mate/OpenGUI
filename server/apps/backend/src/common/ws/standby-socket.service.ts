@@ -75,6 +75,11 @@ export class StandbySocketService implements OnModuleDestroy {
 		return null;
 	}
 
+	getOnlineDeviceById(deviceId: string): StandbySocket | null {
+		const socket = this.devices.get(deviceId);
+		return socket?.connected ? socket : null;
+	}
+
 	/**
 	 */
 	getOnlineDevices(): Array<{

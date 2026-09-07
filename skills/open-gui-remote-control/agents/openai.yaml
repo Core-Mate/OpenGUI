@@ -1,0 +1,4 @@
+interface:
+  display_name: "OpenGUI Remote Control"
+  short_description: "Control Android through OpenGUI from coding agents."
+  default_prompt: "Use $open-gui-remote-control to operate an Android phone through the local OpenGUI backend and CLI."

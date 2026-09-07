@@ -19,7 +19,7 @@ android {
 
     defaultConfig {
         applicationId = "com.coremate.opengui"
-        minSdk = 24
+        minSdk = 30
         targetSdk = 35
         versionCode = 1000031701
         versionName = "1.0.0317.01"

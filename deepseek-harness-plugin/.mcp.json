@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "opengui-local-android": {
+      "cwd": ".",
+      "command": "node",
+      "args": [
+        "./lib/codex-mcp.js"
+      ]
+    }
+  }
+}

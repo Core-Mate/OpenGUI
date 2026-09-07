@@ -1,0 +1,81 @@
+name: Standalone OpenGUI Codex Release
+
+on:
+  push:
+    tags:
+      - 'opengui-codex-v*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: opengui-codex-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify source and the independent Codex version
+        shell: bash
+        run: |
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+          version="$(node -p "require('./plugins/opengui/package.json').version")"
+          test "$GITHUB_REF_NAME" = "opengui-codex-v$version"
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86
+        with:
+          version: 11.19.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 22.23.2
+      - name: Copy the independent package
+        run: cp -R plugins/opengui "$RUNNER_TEMP/opengui"
+      - name: Build and validate without DSH
+        working-directory: ${{ runner.temp }}/opengui
+        run: |
+          pnpm install --frozen-lockfile --ignore-scripts
+          pnpm check
+          pnpm package
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: opengui-codex-release
+          path: ${{ runner.temp }}/opengui/.artifacts/
+          include-hidden-files: true
+          if-no-files-found: error
+  release-draft:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: opengui-codex-release
+          path: release-assets
+      - name: Create a reviewable GitHub release draft
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          version="${GITHUB_REF_NAME#opengui-codex-v}"
+          archive="opengui-codex-$version.tar.gz"
+          upload="opengui-codex-$version.zip"
+          test "$(find release-assets -maxdepth 1 -type f | wc -l | tr -d ' ')" = 4
+          (cd release-assets && sha256sum -c "$archive.sha256" && sha256sum -c "$upload.sha256")
+          tar -xOf "release-assets/$archive" opengui/docs/release-notes.md > "$RUNNER_TEMP/notes.md"
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            test "$(gh release view "$GITHUB_REF_NAME" --json isDraft --jq .isDraft)" = true
+          else
+            gh release create "$GITHUB_REF_NAME" --draft --verify-tag \
+              --title "OpenGUI for Codex $version" --notes-file "$RUNNER_TEMP/notes.md"
+          fi
+          gh release upload "$GITHUB_REF_NAME" \
+            "release-assets/$archive" "release-assets/$archive.sha256" \
+            "release-assets/$upload" "release-assets/$upload.sha256" --clobber
+          # Keep the release draft until real-device acceptance is recorded.
+          # Directory submission, approval, and publication are separate manual gates.

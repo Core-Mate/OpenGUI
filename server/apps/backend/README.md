@@ -36,7 +36,7 @@ pnpm start:prod
 cp .env.example .env
 ```
 
-基础运行至少需要 PostgreSQL、Redis 和模型配置。未配置 IM 机器人时，后端会正常启动，只跳过对应入口。
+基础运行至少需要 PostgreSQL、Redis 和模型配置。使用 `.env.example` 中的默认模型地址和模型名时，只需填写 `VLM_API_KEY`。未配置 IM 机器人时，后端会正常启动，只跳过对应入口。
 
 ### Graph Agent 模型配置
 
@@ -53,9 +53,10 @@ VLM_MODEL=qwen3.6-plus
 说明：
 
 - `VLM_API_KEY`：模型服务 API key，执行真实任务前必须配置。
-- `VLM_BASE_URL`：OpenAI-compatible endpoint。使用 OpenAI 默认接口时可以按实际 provider 配置。
-- `VLM_MODEL`：模型名，例如 `qwen3.6-plus` 或你的 provider 支持的其他模型。
-- 后端可以在缺少这些值时启动，但任务执行到模型调用时会失败。
+- `VLM_BASE_URL`：OpenAI-compatible endpoint，示例文件已提供默认值；更换 provider 时再修改。
+- `VLM_MODEL`：模型名，示例文件已提供默认值 `qwen3.6-plus`；更换模型时再修改。
+- 后端可以在缺少 `VLM_API_KEY` 时启动，但任务执行到模型调用时会失败。
+- LangSmith tracing 和 IM 机器人配置均为可选项，不影响首次本地启动。
 
 ### Discord 入口
 

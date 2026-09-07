@@ -1,6 +1,6 @@
 ---
 name: open-gui-bootstrap
-description: Launch and bootstrap OpenGUI from a plain-language user request. Use when Claude or Codex should install, configure, debug, and run the actual backend and Android client shipped in this repository while keeping manual setup to a minimum.
+description: Launch and bootstrap OpenGUI from a plain-language user request. Use when an AI coding agent such as Claude Code, Codex, or OpenCode should install, configure, debug, and run the backend and Android client shipped in this repository while keeping manual setup to a minimum.
 ---
 
 # OpenGUI Bootstrap
@@ -37,6 +37,7 @@ Typical trigger forms include:
 - "Install OpenGUI for me"
 - "Use Claude to start OpenGUI"
 - "Use Codex to get OpenGUI running"
+- "Use OpenCode to get OpenGUI running"
 - "Set up OpenGUI with my model APIs"
 - "Only tell me the phone-side steps"
 
@@ -45,16 +46,17 @@ Typical trigger forms include:
 - "Help me run OpenGUI on this machine."
 - "Use Claude Opus to bootstrap OpenGUI for me."
 - "Use Codex to get OpenGUI running and only tell me what I need to do on the phone."
+- "Use OpenCode to get OpenGUI running and only tell me what I need to do on the phone."
 - "Set up OpenGUI with Qwen 3.6 Plus for planning and Doubao Pro for VLM."
 - "Use my existing model APIs and get OpenGUI working."
 - "Help me bring up OpenGUI for a long mobile workflow."
 
 ## Core Rules
 
-- Treat Codex or Claude as the installer and operator.
+- Treat the current AI coding agent as the installer and operator.
 - Use the repository's actual scripts before inventing a custom flow.
 - Default to doing the work directly instead of explaining how to do it.
-- Do not ask the user to run terminal commands that Codex can run.
+- Do not ask the user to run terminal commands that the agent can run.
 - Ask the user only for physical actions, OS dialogs, secrets, or Android device interaction.
 - Before claiming setup is complete, verify each major step.
 - If the checkout is missing `server/` or `client/`, say so clearly and stop.
@@ -114,16 +116,18 @@ Expected behavior:
 - pushes schema and seeds data
 - starts the backend
 
-If the first run exits after creating `.env`, ask only for the keys still missing. The default practical keys are:
+If the first run exits after creating `.env`, ask only for the values still missing. With the repository defaults, ask for:
 
-- `CLAUDE_API_KEY`
 - `VLM_API_KEY`
 
-Optional keys include:
+`VLM_BASE_URL` and `VLM_MODEL` already have defaults. Ask for replacements only when the user chooses another OpenAI-compatible provider or model.
 
-- `ANTHROPIC_API_KEY` for creator-agent flows
+Optional configuration includes:
+
+- LangSmith tracing variables
 - `FEISHU_APP_ID` / `FEISHU_APP_SECRET`
 - `TELEGRAM_BOT_TOKEN`
+- Discord bot variables
 
 ### 4. Route model providers
 
@@ -158,6 +162,7 @@ Expected behavior:
 
 - checks `adb` and Java
 - verifies a device is connected
+- installs only on Android 11 (API 30) or newer, matching the app's minimum SDK
 - runs `adb reverse tcp:7777 tcp:7777`
 - builds the debug APK
 - installs it
@@ -197,5 +202,5 @@ Keep updates short and operational.
 
 Good:
 
-- "The backend script created `.env` and stopped. I need `CLAUDE_API_KEY` and `VLM_API_KEY` to continue."
+- "The backend script created `.env` and stopped. Add `VLM_API_KEY` to continue with the default model settings."
 - "The APK is built. Connect the phone by USB and tap Allow on the debugging dialog. I will install it after that."

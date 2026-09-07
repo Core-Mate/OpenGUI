@@ -1,0 +1,19 @@
+- id: llm
+  name: '@deepseek-ai/dsh-llm'
+- id: system-prompt
+  name: '@deepseek-ai/dsh-system-prompt'
+- id: tools
+  name: '@deepseek-ai/dsh-tools'
+- id: commands
+  name: '@deepseek-ai/dsh-commands'
+- id: subagents
+  name: '@deepseek-ai/dsh-subagent'
+- id: settings
+  name: '@deepseek-ai/dsh-settings-file'
+  config:
+    path: !!js dshHomePath('settings.yaml')
+    watch: false
+- id: attachments
+  name: '@deepseek-ai/dsh-attachment-local'
+  config:
+    dshHome: !!js dshHomePath()

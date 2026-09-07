@@ -1,0 +1,181 @@
+name: DeepSeek Harness Plugin Release
+
+on:
+  push:
+    tags:
+      - 'dsh-coremate-mobile-v*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dsh-plugin-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.actor == 'HarveySang' || github.actor == 'VicarDa'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: deepseek-harness-plugin
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify release source and version
+        shell: bash
+        run: |
+          git fetch --no-tags origin main
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs'
+
+          const pkg = JSON.parse(readFileSync('package.json', 'utf8'))
+          const codex = JSON.parse(readFileSync('.codex-plugin/plugin.json', 'utf8'))
+          const publicCodex = JSON.parse(readFileSync('codex-public/.codex-plugin/plugin.json', 'utf8'))
+          const expectedTag = `dsh-coremate-mobile-v${pkg.version}`
+          if (expectedTag !== process.env.GITHUB_REF_NAME) {
+            throw new Error(`tag ${process.env.GITHUB_REF_NAME} does not match ${expectedTag}`)
+          }
+          if (codex.version !== pkg.version || publicCodex.version !== pkg.version) throw new Error('Codex manifest versions are out of sync')
+          if (codex.name !== 'opengui' || publicCodex.name !== 'opengui') throw new Error('Codex public identity is out of sync')
+          if (codex.mcpServers !== './.mcp.json' || 'mcpServers' in publicCodex) throw new Error('local/public Codex transport boundary is invalid')
+          const installer = readFileSync('skills/opengui-coremate-install/scripts/install-macos.sh', 'utf8')
+          const skill = readFileSync('skills/opengui-coremate-install/SKILL.md', 'utf8')
+          const agent = readFileSync('skills/opengui-coremate-install/agents/openai.yaml', 'utf8')
+          if (!installer.includes('/releases?per_page=100') || !installer.includes('--version VERSION')) {
+            throw new Error('installer must resolve the latest stable release and retain an explicit version override')
+          }
+          if (!skill.includes('latest stable OpenGUI release')) throw new Error('Skill latest-release guidance is out of sync')
+          if (!agent.includes('latest stable OpenGUI release')) throw new Error('Skill agent latest-release guidance is out of sync')
+          NODE
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        with:
+          version: 11.19.0
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.19.0
+          cache: pnpm
+          cache-dependency-path: deepseek-harness-plugin/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run check
+
+      - name: Pack and verify the only release artifact
+        shell: bash
+        run: |
+          rm -rf release-assets
+          mkdir release-assets
+          archive="dsh-coremate-mobile-$(node -p "require('./package.json').version").tgz"
+          npm pack --pack-destination release-assets
+          test -f "release-assets/$archive"
+          test "$(find release-assets -maxdepth 1 -type f | wc -l | tr -d ' ')" = 1
+          tar -tzf "release-assets/$archive" > "$RUNNER_TEMP/archive-files.txt"
+          tar -tvzf "release-assets/$archive" > "$RUNNER_TEMP/archive-verbose.txt"
+          grep -Fx 'package/lib/index.js' "$RUNNER_TEMP/archive-files.txt"
+          grep -Fx 'package/lib/codex-mcp.js' "$RUNNER_TEMP/archive-files.txt"
+          grep -Fx 'package/lib/codex-cli.js' "$RUNNER_TEMP/archive-files.txt"
+          grep -Fx 'package/.codex-plugin/plugin.json' "$RUNNER_TEMP/archive-files.txt"
+          grep -Fx 'package/.mcp.json' "$RUNNER_TEMP/archive-files.txt"
+          grep -Fx 'package/skills/control/SKILL.md' "$RUNNER_TEMP/archive-files.txt"
+          grep -Fx 'package/skills/opengui-coremate-install/dsh-compatibility.json' "$RUNNER_TEMP/archive-files.txt"
+          grep -Fx 'package/codex-public/.codex-plugin/plugin.json' "$RUNNER_TEMP/archive-files.txt"
+          grep -Fx 'package/cordis.patch.yml' "$RUNNER_TEMP/archive-files.txt"
+          grep -Fx 'package/assets/platform-tools/win32-x64/adb.exe' "$RUNNER_TEMP/archive-files.txt"
+          grep -Fx 'package/assets/platform-tools/win32-x64/AdbWinApi.dll' "$RUNNER_TEMP/archive-files.txt"
+          grep -Fx 'package/assets/platform-tools/win32-x64/AdbWinUsbApi.dll' "$RUNNER_TEMP/archive-files.txt"
+          grep -E '^-rwxr-xr-x .* package/lib/codex-cli.js$' "$RUNNER_TEMP/archive-verbose.txt"
+          grep -E '^-rwxr-xr-x .* package/assets/platform-tools/darwin/adb$' "$RUNNER_TEMP/archive-verbose.txt"
+          grep -E '^-rwxr-xr-x .* package/assets/platform-tools/linux-x64/adb$' "$RUNNER_TEMP/archive-verbose.txt"
+          (
+            cd release-assets
+            sha256sum "$archive" > "$archive.sha256"
+          )
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dsh-coremate-mobile-release-assets
+          path: deepseek-harness-plugin/release-assets/
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: dsh-coremate-mobile-release-assets
+          path: release-assets
+
+      - name: Create or finish the public GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          version="${GITHUB_REF_NAME#dsh-coremate-mobile-v}"
+          archive="dsh-coremate-mobile-${version}.tgz"
+          checksum="${archive}.sha256"
+          test -f "release-assets/$archive"
+          test -f "release-assets/$checksum"
+          test "$(find release-assets -maxdepth 1 -type f | wc -l | tr -d ' ')" = 2
+
+          tag_type="$(gh api "repos/${GH_REPO}/git/ref/tags/${GITHUB_REF_NAME}" --jq .object.type)"
+          tag_sha="$(gh api "repos/${GH_REPO}/git/ref/tags/${GITHUB_REF_NAME}" --jq .object.sha)"
+          if [[ "$tag_type" == tag ]]; then
+            tag_sha="$(gh api "repos/${GH_REPO}/git/tags/${tag_sha}" --jq .object.sha)"
+          fi
+          [[ "$tag_sha" == "$GITHUB_SHA" ]]
+
+          notes="$RUNNER_TEMP/dsh-release-notes.md"
+          notes_source="$RUNNER_TEMP/dsh-release-notes-source.md"
+          tar -xOf "release-assets/$archive" package/docs/public-submission/release-notes.md > "$notes_source"
+          expected_heading="# OpenGUI ${version} Plugin Release Notes"
+          [[ "$(head -n 1 "$notes_source")" == "$expected_heading" ]]
+          printf 'OpenGUI plugin for DeepSeek Harness v%s.\n\n' "$version" > "$notes"
+          tail -n +3 "$notes_source" >> "$notes"
+
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            draft="$(gh api "repos/${GH_REPO}/releases/tags/${GITHUB_REF_NAME}" --jq .draft)"
+            if [[ "$draft" != true ]]; then
+              published_title="$(gh release view "$GITHUB_REF_NAME" --json name --jq .name)"
+              published_notes="$(gh release view "$GITHUB_REF_NAME" --json body --jq .body)"
+              [[ "$published_title" == "dsh-coremate-mobile v${version}" ]]
+              [[ "$published_notes" == "$(cat "$notes")" ]]
+              assets="$(gh release view "$GITHUB_REF_NAME" --json assets --jq '.assets[].name' | sort)"
+              expected="$(printf '%s\n%s\n' "$archive" "$checksum" | sort)"
+              [[ "$assets" == "$expected" ]]
+              mkdir "$RUNNER_TEMP/published-assets"
+              gh release download "$GITHUB_REF_NAME" \
+                --pattern "$archive" \
+                --pattern "$checksum" \
+                --dir "$RUNNER_TEMP/published-assets"
+              cmp "release-assets/$archive" "$RUNNER_TEMP/published-assets/$archive"
+              cmp "release-assets/$checksum" "$RUNNER_TEMP/published-assets/$checksum"
+              exit 0
+            fi
+          else
+            gh release create "$GITHUB_REF_NAME" --draft --verify-tag \
+              --title "dsh-coremate-mobile v${version}" \
+              --notes-file "$notes"
+          fi
+
+          gh release edit "$GITHUB_REF_NAME" \
+            --title "dsh-coremate-mobile v${version}" \
+            --notes-file "$notes"
+          gh release upload "$GITHUB_REF_NAME" \
+            "release-assets/$archive" \
+            "release-assets/$checksum" \
+            --clobber
+          assets="$(gh release view "$GITHUB_REF_NAME" --json assets --jq '.assets[].name' | sort)"
+          expected="$(printf '%s\n%s\n' "$archive" "$checksum" | sort)"
+          [[ "$assets" == "$expected" ]]
+          gh release edit "$GITHUB_REF_NAME" --draft=false

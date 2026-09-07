@@ -1,0 +1,125 @@
+#!/bin/sh
+# The public launcher never invokes npm, DSH, sudo, or install hooks.
+set -eu
+umask 077
+plugin_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd -P)
+case "${1:---help}" in
+  --help|-h)
+    printf '%s\n' 'OpenGUI for Codex — local Android control on macOS' \
+      'Usage: sh scripts/opengui --setup | --doctor | --interfaces | <opengui_interface> [json]' \
+      'First use downloads a pinned Node runtime after a native confirmation.' \
+      'Use dedicated test devices. Never share a phone with production automation.'
+    exit 0 ;;
+  --version) printf '%s\n' '0.1.0'; exit 0 ;;
+esac
+if [ "$(uname -s)" != Darwin ]; then
+  printf '%s\n' 'OpenGUI supports local macOS only.' >&2
+  exit 1
+fi
+case "$(uname -m)" in
+  arm64)
+    runtime_arch=arm64
+    archive_sha=61130f394c1630d211dd50aecc4353d379480f36d3ac913cd85dbba1aed585c6 ;;
+  x86_64)
+    runtime_arch=x64
+    archive_sha=58e99022c2ff89395576cc7fd4d98cea24bb68081475d5f88b801ee8729fb026 ;;
+  *) printf '%s\n' 'Unsupported macOS architecture.' >&2; exit 1 ;;
+esac
+runtime_version=22.23.2
+data_root=${OPENGUI_CODEX_DATA_DIR:-"$HOME/.codex/opengui-codex"}
+case "$data_root" in
+  /*) ;;
+  *) printf '%s\n' 'OPENGUI_CODEX_DATA_DIR must be an absolute path.' >&2; exit 1 ;;
+esac
+case "$data_root" in
+  /|"$HOME"|"$HOME/.codex"|"$HOME/.codex/opengui"|*/.dsh|*/.dsh/*|*/../*|*/..|*/./*|*/.|*/)
+    printf '%s\n' 'Refusing an unsafe or legacy runtime directory.' >&2; exit 1 ;;
+esac
+runtime_parent="$data_root/runtime"
+runtime_dir="$runtime_parent/node-v$runtime_version-darwin-$runtime_arch"
+runtime_lock="$runtime_parent/install.lock"
+install_stage=
+lock_owned=false
+cleanup() {
+  if [ -n "$install_stage" ] && [ -d "$install_stage" ]; then
+    rm -rf -- "$install_stage"
+  fi
+  if [ "$lock_owned" = true ]; then
+    rm -f -- "$runtime_lock/pid"
+    rmdir -- "$runtime_lock" 2>/dev/null || true
+  fi
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+for private_dir in "$data_root" "$runtime_parent"; do
+  if [ -L "$private_dir" ]; then
+    printf '%s\n' 'Runtime directories may not be symbolic links.' >&2; exit 1
+  fi
+  mkdir -p -- "$private_dir"
+  if [ "$(stat -f '%u' "$private_dir")" != "$(id -u)" ]; then
+    printf '%s\n' 'Runtime directory has a different owner.' >&2; exit 1
+  fi
+  chmod 700 "$private_dir"
+done
+valid_runtime() {
+  [ ! -L "$runtime_dir" ] && [ ! -L "$runtime_dir/bin/node" ] &&
+  [ -x "$runtime_dir/bin/node" ] && [ -f "$runtime_dir/.verified" ] || return 1
+  recorded_archive=$(sed -n '1p' "$runtime_dir/.verified")
+  recorded_binary=$(sed -n '2p' "$runtime_dir/.verified")
+  [ "$recorded_archive" = "$archive_sha" ] || return 1
+  current_binary=$(shasum -a 256 "$runtime_dir/bin/node" | awk '{print $1}')
+  [ "$recorded_binary" = "$current_binary" ]
+}
+if ! valid_runtime; then
+  wait_count=0
+  while ! valid_runtime; do
+    if mkdir "$runtime_lock" 2>/dev/null; then
+      lock_owned=true
+      printf '%s\n' "$$" > "$runtime_lock/pid"
+      break
+    fi
+    wait_count=$((wait_count + 1))
+    if [ "$wait_count" -gt 240 ]; then
+      printf '%s\n' "Runtime installation is busy or interrupted. Inspect $runtime_lock before retrying; no lock was removed." >&2
+      exit 1
+    fi
+    sleep 1
+  done
+  if ! valid_runtime; then
+    approval=$(/usr/bin/osascript -e 'try' \
+      -e 'display dialog "OpenGUI needs to download Node.js 22.23.2 (about 50 MB) from nodejs.org into its private local cache. No system installation, sudo, or DSH changes. Allow this download?" with title "OpenGUI runtime setup" buttons {"Cancel", "Download"} default button "Cancel" cancel button "Cancel" giving up after 60' \
+      -e 'if gave up of result then return "cancel"' -e 'return button returned of result' \
+      -e 'on error' -e 'return "cancel"' -e 'end try')
+    if [ "$approval" != Download ]; then printf '%s\n' 'Runtime setup cancelled.' >&2; exit 1; fi
+    install_stage=$(mktemp -d "$runtime_parent/.install.XXXXXXXX")
+    archive_name="node-v$runtime_version-darwin-$runtime_arch"
+    /usr/bin/curl --proto '=https' --proto-redir '=https' --tlsv1.2 --fail --location \
+      --connect-timeout 10 --max-time 180 --retry 2 \
+      "https://nodejs.org/dist/v$runtime_version/$archive_name.tar.gz" \
+      --output "$install_stage/node.tar.gz" >&2
+    downloaded_sha=$(shasum -a 256 "$install_stage/node.tar.gz" | awk '{print $1}')
+    if [ "$downloaded_sha" != "$archive_sha" ]; then
+      printf '%s\n' 'Node archive checksum mismatch. Nothing was installed.' >&2; exit 1
+    fi
+    tar -xzf "$install_stage/node.tar.gz" -C "$install_stage"
+    extracted="$install_stage/$archive_name"
+    if [ -L "$extracted/bin/node" ] || [ ! -x "$extracted/bin/node" ]; then
+      printf '%s\n' 'The verified archive has no usable Node binary.' >&2; exit 1
+    fi
+    binary_sha=$(shasum -a 256 "$extracted/bin/node" | awk '{print $1}')
+    printf '%s\n%s\n' "$archive_sha" "$binary_sha" > "$extracted/.verified"
+    if [ -e "$runtime_dir" ] || [ -L "$runtime_dir" ]; then
+      mv -- "$runtime_dir" "$install_stage/previous"
+    fi
+    if ! mv -- "$extracted" "$runtime_dir"; then
+      if [ -e "$install_stage/previous" ]; then mv -- "$install_stage/previous" "$runtime_dir"; fi
+      exit 1
+    fi
+  fi
+fi
+cleanup
+trap - EXIT INT TERM
+if [ "${1:-}" = --setup ]; then shift; set -- --doctor "$@"; fi
+export OPENGUI_CODEX_DATA_DIR="$data_root"
+exec "$runtime_dir/bin/node" "$plugin_root/lib/cli.js" "$@"

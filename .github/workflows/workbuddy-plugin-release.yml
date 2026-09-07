@@ -1,0 +1,41 @@
+name: WorkBuddy Plugin Release
+
+on:
+  push:
+    tags:
+      - 'opengui-workbuddy-v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: workbuddy-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: macos-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: workbuddy-plugin
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.19.0'
+          cache: npm
+          cache-dependency-path: workbuddy-plugin/package-lock.json
+      - name: Require main ancestry
+        run: git merge-base --is-ancestor HEAD origin/main
+      - run: npm ci
+      - run: npm run pack:release
+      - run: npm run smoke:packed
+      - name: Require real WorkBuddy acceptance
+        run: node scripts/validate.mjs --release
+      - name: Publish immutable WorkBuddy assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/publish.mjs

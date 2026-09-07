@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security vulnerability report
+    url: https://github.com/Core-Mate/OpenGUI/security/policy
+    about: Please report security vulnerabilities privately instead of opening a public issue.
+  - name: OpenGUI documentation
+    url: https://github.com/Core-Mate/OpenGUI#readme
+    about: Start with the README and setup docs if you are trying OpenGUI for the first time.
