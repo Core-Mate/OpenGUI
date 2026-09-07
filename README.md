@@ -13,6 +13,7 @@
 
 <p align="center">
   <a href="#use-opengui-in-deepseek-harness"><img src="https://img.shields.io/badge/INSTALL-DEEPSEEK_HARNESS_PLUGIN-6f42c1?style=for-the-badge" alt="Install the DeepSeek Harness plugin"></a>
+  <a href="#use-opengui-in-workbuddy"><img src="https://img.shields.io/badge/INSTALL-WORKBUDDY_CANDIDATE-168a70?style=for-the-badge" alt="Install the WorkBuddy candidate"></a>
   <a href="./skills/open-gui-bootstrap/SKILL.md"><img src="https://img.shields.io/badge/BOOTSTRAP-WITH_AI_AGENTS-ffb000?style=for-the-badge" alt="Bootstrap with Claude Code, Codex, or OpenCode"></a>
   <img src="https://img.shields.io/badge/SYSTEM-MULTI_ROLE_OPERATOR-1f6feb?style=for-the-badge" alt="Multi-role operator system">
   <img src="https://img.shields.io/badge/TASKS-UP_TO_12_HOURS-cf222e?style=for-the-badge" alt="Tasks up to 12 hours">
@@ -77,6 +78,22 @@ For GUI execution, our current recommendation order is:
 | 4 | Grok vision-capable models | Experimental for this workflow; tool use and action reliability still need more validation. |
 
 Model availability, pricing, and policy behavior vary by version and region. Whichever provider you choose, the model must support both image input and tool calling.
+
+## Use OpenGUI in WorkBuddy
+
+WorkBuddy has a separate [MCP + Skill + Hooks connector](./workbuddy-plugin/README.md#install-on-macos). It uses WorkBuddy's current visual model to operate Android phones and opens read-only scrcpy windows by default. No DSH installation, full OpenGUI backend, or extra model API key is required.
+
+Version `0.2.0` is a local candidate in [PR #95](https://github.com/Core-Mate/OpenGUI/pull/95), not a published Release or marketplace installation. Start with macOS and WorkBuddy 5.5.3; Windows/Linux package checks do not establish phone-control support. Follow the [macOS installation steps](./workbuddy-plugin/README.md#install-on-macos) to build the candidate and install its MCP, `opengui` Skill and lifecycle Hooks together. The installer preserves other plugins and backs up the affected WorkBuddy configuration.
+
+After restarting WorkBuddy, enable/trust the `opengui` MCP if prompted, connect a USB-debugging-authorized Android phone, select `/opengui`, and send:
+
+```text
+Open Settings and report the Android version on my phone.
+```
+
+Phone tasks send screenshots to the selected model. For local viewing only, ask “Show my phone screens without taking screenshots for the model or operating the phones.” Task completion leaves the mirrors open. Closing a mirror does not cancel a running task; use WorkBuddy's stop control to stop execution.
+
+If `/opengui` is missing or tasks do not continue automatically, see [installation checks and troubleshooting](./workbuddy-plugin/README.md#verify-the-installation). MCP alone does not install the Skill or Hooks.
 
 ## Run the Full OpenGUI Stack
 
