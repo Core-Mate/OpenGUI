@@ -15,7 +15,9 @@ export function installSessionCommandTracking(session: SessionFace, store: Corem
   const sync = (): void => {
     const snapshot = session.getSnapshot()
     if (!sessionId || snapshot.sessionId !== sessionId) return
-    const command = snapshot.nodes.filter(node => node.kind === 'command' &&
+    // 0.1.5: the nodes mirror is undefined for sessions whose Chat view never mounted.
+    const nodes = snapshot.nodes ?? []
+    const command = nodes.filter(node => node.kind === 'command' &&
       (node.name === 'opengui' || node.name === 'coremate') && node.args?.trim())
       .reduce<(typeof snapshot.nodes)[number] | undefined>((latest, node) =>
         latest === undefined || node.seq > latest.seq ? node : latest, undefined)
