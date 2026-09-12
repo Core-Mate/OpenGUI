@@ -120,7 +120,7 @@ export function installActiveTaskSessionBridge(ctx: ClientContext, store: Corema
     }
     const target = workspaceId ?? ownerWorkspace(workspaces, current)
     if (target === undefined) { callOriginal(workspaceId); return }
-    if (pending?.target === target && pending.origin === current) return
+    if (pending !== undefined && pending.target === target && pending.origin === current) return
     const requestGeneration = ++generation
     if (pending !== undefined) {
       queued = { target, origin: current, generation: requestGeneration }

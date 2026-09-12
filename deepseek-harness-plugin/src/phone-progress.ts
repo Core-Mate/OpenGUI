@@ -1,7 +1,8 @@
 /** Relay OpenGUI child-agent activity into the user-visible parent conversation. */
 
-import { CallId } from '@deepseek-ai/dsh-llm'
+import { ToolCallId as CallId } from '@deepseek-ai/dsh-llm'
 import type { ContentBlock } from '@deepseek-ai/dsh-llm'
+import { SessionSeq } from '@deepseek-ai/dsh-session'
 import type { Session, SessionEvent } from '@deepseek-ai/dsh-session'
 
 export interface PhoneTaskProgressSource {
@@ -15,18 +16,17 @@ const RELAYED_TYPES = new Set<SessionEvent['type']>([
   'turn/end',
   'step/start',
   'step/end',
-  'assistant/chunk',
   'assistant/message',
   'tool/call',
   'tool/result',
-  'tool/code-dispatch-start',
-  'tool/code-dispatch',
+  'tool/ptc-dispatch-start',
+  'tool/ptc-dispatch',
 ])
 
 function nextTurn(session: Session): number {
   let next = 1
   let open: number | undefined
-  for (const event of session.events) {
+  for (const event of session.snapshotEvents()) {
     if (event.type === 'turn/start') {
       open = event.data.turn
       next = Math.max(next, event.data.turn + 1)
@@ -42,11 +42,15 @@ function nextTurn(session: Session): number {
 
 type RelayedSurfaceEvent = Extract<SessionEvent, { type: 'assistant/message' | 'tool/result' }>
 
-function mappedSources(event: RelayedSurfaceEvent, seqs: ReadonlyMap<number, number>): number[] | undefined {
+function mappedSources(event: RelayedSurfaceEvent, seqs: ReadonlyMap<number, number>): SessionSeq[] | undefined {
   if (event.sourceEventSeqs === undefined) return undefined
-  const mapped = event.sourceEventSeqs.map(seq => seqs.get(seq))
-  if (mapped.some(seq => seq === undefined)) return undefined
-  return mapped as number[]
+  const mapped: SessionSeq[] = []
+  for (const seq of event.sourceEventSeqs) {
+    const resolved = seqs.get(seq)
+    if (resolved === undefined) return undefined
+    mapped.push(SessionSeq(resolved))
+  }
+  return mapped
 }
 
 /**
@@ -108,21 +112,11 @@ export function relayPhoneTaskProgress(source: PhoneTaskProgressSource): PhoneTa
         if (openStep?.child === event.data.turn && openStep.step === event.data.step) openStep = undefined
         break
       }
-      case 'assistant/chunk':
-        mirrored = source.parent.append('assistant/chunk', {
-          ...event.data,
-          turn: parentTurn(event.data.turn),
-        })
-        break
-      case 'assistant/message': {
-        const sourceEventSeqs = mappedSources(event, seqs)
+            case 'assistant/message': {
         mirrored = source.parent.append('assistant/message', {
           ...event.data,
           turn: parentTurn(event.data.turn),
-        }, {
-          surfaceOp: 'append',
-          ...(sourceEventSeqs === undefined ? {} : { sourceEventSeqs }),
-        })
+        }, { surfaceOp: 'append' })
         lastAssistantMessageSeq = mirrored.seq
         break
       }
@@ -143,11 +137,11 @@ export function relayPhoneTaskProgress(source: PhoneTaskProgressSource): PhoneTa
         })
         break
       }
-      case 'tool/code-dispatch-start':
-        mirrored = source.parent.append('tool/code-dispatch-start', event.data)
+      case 'tool/ptc-dispatch-start':
+        mirrored = source.parent.append('tool/ptc-dispatch-start', event.data)
         break
-      case 'tool/code-dispatch':
-        mirrored = source.parent.append('tool/code-dispatch', event.data)
+      case 'tool/ptc-dispatch':
+        mirrored = source.parent.append('tool/ptc-dispatch', event.data)
         break
     }
     if (mirrored !== undefined) seqs.set(event.seq, mirrored.seq)
@@ -231,7 +225,7 @@ export function relayNestedTaskProgress(source: NestedTaskProgressSource): () =>
         arguments: parsedArguments(event.data.arguments),
       }
       open.set(originalCallId, nested)
-      source.parent.append('tool/code-dispatch-start', {
+      source.parent.append('tool/ptc-dispatch-start', {
         rootCallId: source.rootCallId,
         parentCallId: source.rootCallId,
         ...nested,
@@ -244,7 +238,7 @@ export function relayNestedTaskProgress(source: NestedTaskProgressSource): () =>
     if (nested === undefined) return
     open.delete(originalCallId)
     const result = event.data.message.content[0]
-    source.parent.append('tool/code-dispatch', {
+    source.parent.append('tool/ptc-dispatch', {
       rootCallId: source.rootCallId,
       parentCallId: source.rootCallId,
       ...nested,
@@ -266,7 +260,7 @@ export function relayNestedTaskProgress(source: NestedTaskProgressSource): () =>
     stopped = true
     unsubscribe()
     for (const nested of open.values()) {
-      source.parent.append('tool/code-dispatch', {
+      source.parent.append('tool/ptc-dispatch', {
         rootCallId: source.rootCallId,
         parentCallId: source.rootCallId,
         ...nested,

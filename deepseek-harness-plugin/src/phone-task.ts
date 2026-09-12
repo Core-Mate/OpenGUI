@@ -6,7 +6,7 @@
 import { randomUUID } from 'node:crypto'
 import type { CommandDefinition, CommandInvocation, CommandResult } from '@deepseek-ai/dsh-commands'
 import type { AgentOptions } from '@deepseek-ai/dsh-agent'
-import type { CallId, ContentBlock } from '@deepseek-ai/dsh-llm'
+import type { ToolCallId as CallId, ContentBlock } from '@deepseek-ai/dsh-llm'
 import { cleanCoremateSuggestionBlocks } from './suggestions.ts'
 
 export const OPENGUI_USAGE = `Usage: /opengui <task>

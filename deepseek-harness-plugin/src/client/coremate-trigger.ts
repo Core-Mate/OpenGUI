@@ -121,7 +121,6 @@ export function coremateTriggerSource(
         return COREMATE_SCENES.map(scene => ({
           name: scene.name,
           description: scene.description,
-          icon: scene.name === '自由描述' ? '✎' : '✳',
           hint: scene.name === '自由描述' ? '输入任务' : '填入提示词',
         }))
       }
@@ -129,7 +128,6 @@ export function coremateTriggerSource(
         ? [{
             name: NAME,
             description: '操作已连接的 Android 手机，按需调用托管浏览器',
-            icon: '✳',
             hint: '输入任务',
           }]
         : []

@@ -1,10 +1,10 @@
 /** Model capability inspection and narrowly scoped llm-pi-ai declarations. */
 
 import type { ModelModality, LlmConfigurableProvider } from '@deepseek-ai/dsh-llm'
-import { SettingsConflictError, settingsNamespace } from '@deepseek-ai/dsh-settings'
+import { SettingsConflictError } from '@deepseek-ai/dsh-settings'
 import type { SettingsDescriptor, SettingsPathOp } from '@deepseek-ai/dsh-settings'
 
-const PI_AI_NS = settingsNamespace('llm-pi-ai')
+const PI_AI_NS = 'llm-pi-ai'
 
 export interface ModelRoute {
   readonly provider: string
