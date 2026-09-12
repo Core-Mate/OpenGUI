@@ -35,7 +35,7 @@ Before a public-directory submission, run `pnpm run build`, then use `pnpm codex
 
 Before installing, confirm that:
 
-- The official DeepSeek Harness is installed and starts successfully. Supported versions are `0.1.0-rc.7`, `0.1.0-rc.8`, `0.1.1-rc.1`, and `0.1.1-rc.2`; the preferred version is `0.1.1-rc.2`.
+- The official DeepSeek Harness is installed and starts successfully. Supported versions are `0.1.0-rc.7`, `0.1.0-rc.8`, `0.1.1-rc.1`, `0.1.1-rc.2`, and `0.1.5-rc.1`; the preferred version is `0.1.1-rc.2`.
 - Node.js is `^22.19.0` or `>=24`.
 - The installation machine can access the public GitHub Releases for this repository.
 - The DSH conversation model should support image input and tool calling. If it does not, OpenGUI can guide the user through configuring a separate OpenAI-compatible visual-model fallback.
@@ -54,7 +54,7 @@ Ask Codex to install the repository skill from [`deepseek-harness-plugin/skills/
 
 If port 3080 belongs to an OpenGUI-managed DSH, the installer safely reloads that LaunchAgent. It never terminates an unowned DSH process; in that case the new LaunchAgent takes over after the next login. The manual package flow below remains available on every supported host.
 
-The exact supported DSH releases are `0.1.0-rc.7`, `0.1.0-rc.8`, `0.1.1-rc.1`, and `0.1.1-rc.2`; the default is `0.1.1-rc.2`. DSH `0.1.2-alpha.4` is explicitly unsupported. A `PATH` runtime is reused only when it exactly matches the selected version; otherwise the installer uses a versioned managed runtime. If the default download fails, the installer may fall back to the highest already-installed compatible managed runtime and reports that choice. An explicit `--dsh-version` never falls back silently. Existing DSH installations, workspaces, settings, credentials, and phone authorizations are preserved. The page header reports the Host component version actually loaded, which can be newer than the selected CLI version because DSH RC packages use compatible internal dependency ranges.
+The exact supported DSH releases are `0.1.0-rc.7`, `0.1.0-rc.8`, `0.1.1-rc.1`, `0.1.1-rc.2`, and `0.1.5-rc.1`; the default is `0.1.1-rc.2`. DSH `0.1.2-alpha.4` is explicitly unsupported. A `PATH` runtime is reused only when it exactly matches the selected version; otherwise the installer uses a versioned managed runtime. If the default download fails, the installer may fall back to the highest already-installed compatible managed runtime and reports that choice. An explicit `--dsh-version` never falls back silently. Existing DSH installations, workspaces, settings, credentials, and phone authorizations are preserved. The page header reports the running DSH CLI version when available, falling back to the Host component version. DSH CLI and internal component prereleases can differ. Development builds use the 0.1.5-rc.2 SDK and the last published client-runtime types (0.1.1-rc.2); the packaged compatibility matrix verifies each supported host independently.
 
 DSH `0.1.0-rc.7` and `0.1.0-rc.8` use a flat credential store, while DSH `0.1.1` RCs migrate it to a versioned layout that the older RCs cannot read. On a DSH home that still uses the flat layout, the previous release combination can be restored with `./skills/opengui-coremate-install/scripts/install-macos.sh --version 0.1.10 --dsh-version 0.1.0-rc.7`. On a migrated DSH home, the installer refuses that state downgrade before changing any file; use a separate `--dsh-home` for the older DSH version instead.
 

@@ -37,7 +37,7 @@ codex plugin add opengui@opengui-local
 
 开始安装前，请确认：
 
-- 已安装并能启动官方 DeepSeek Harness；受支持版本为 `0.1.0-rc.7`、`0.1.0-rc.8`、`0.1.1-rc.1` 和 `0.1.1-rc.2`，首选版本为 `0.1.1-rc.2`。
+- 已安装并能启动官方 DeepSeek Harness；受支持版本为 `0.1.0-rc.7`、`0.1.0-rc.8`、`0.1.1-rc.1`、`0.1.1-rc.2` 和 `0.1.5-rc.1`，首选版本为 `0.1.1-rc.2`。
 - Node.js 版本为 `^22.19.0` 或 `>=24`。
 - 安装机器能访问本仓库公开的 GitHub Releases。
 - DSH 当前会话模型应支持图片输入和工具调用；若不兼容，OpenGUI 可引导用户配置独立的 OpenAI 兼容视觉模型作为回退。
@@ -56,7 +56,7 @@ codex plugin add opengui@opengui-local
 
 如果 3080 端口属于 OpenGUI 管理的 DSH，安装器会安全更新并重启对应 LaunchAgent；如果属于其他 DSH 进程，安装器绝不会强制终止它，新 LaunchAgent 会在下次登录后接管。下面的手动安装方式仍适用于所有受支持的系统。
 
-精确支持的 DSH 版本是 `0.1.0-rc.7`、`0.1.0-rc.8`、`0.1.1-rc.1` 和 `0.1.1-rc.2`，默认使用 `0.1.1-rc.2`；`0.1.2-alpha.4` 明确不受支持。安装器只会复用与所选版本完全一致的 `PATH` runtime，否则使用按版本隔离的 managed runtime。默认版本下载失败时，安装器可以回退到本机已有的最高兼容 managed runtime，并明确提示；显式传入 `--dsh-version` 时不会静默回退。现有 DSH、工作区、设置、凭据和手机授权都不会被替换。页头展示的是 Host 实际加载的组件版本；由于 DSH RC 包的内部依赖使用兼容范围，它可能比所选 CLI 版本更新。
+精确支持的 DSH 版本是 `0.1.0-rc.7`、`0.1.0-rc.8`、`0.1.1-rc.1`、`0.1.1-rc.2` 和 `0.1.5-rc.1`，默认使用 `0.1.1-rc.2`；`0.1.2-alpha.4` 明确不受支持。安装器只会复用与所选版本完全一致的 `PATH` runtime，否则使用按版本隔离的 managed runtime。默认版本下载失败时，安装器可以回退到本机已有的最高兼容 managed runtime，并明确提示；显式传入 `--dsh-version` 时不会静默回退。现有 DSH、工作区、设置、凭据和手机授权都不会被替换。页头优先展示正在运行的 DSH CLI 版本，无法读取时再展示 Host 组件版本；两者的预发布版本号可能不同。开发构建使用 0.1.5-rc.2 SDK 和最后发布的 client-runtime 类型（0.1.1-rc.2），打包后的兼容矩阵会分别验证每个受支持宿主。
 
 DSH `0.1.0-rc.7` 和 `0.1.0-rc.8` 使用扁平凭据格式，而 DSH `0.1.1` RC 会把它迁移为旧 RC 无法读取的版本化格式。如果当前 DSH home 仍使用旧格式，可以执行 `./skills/opengui-coremate-install/scripts/install-macos.sh --version 0.1.10 --dsh-version 0.1.0-rc.7` 恢复上一版组合；如果已经迁移，安装器会在改动任何文件前拒绝这种状态降级，此时请为旧 DSH 使用独立的 `--dsh-home`。
 

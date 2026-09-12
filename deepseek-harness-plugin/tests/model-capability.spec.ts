@@ -1,4 +1,4 @@
-import { SettingsConflictError, settingsNamespace } from '@deepseek-ai/dsh-settings'
+import { SettingsConflictError } from '@deepseek-ai/dsh-settings'
 import type { SettingsDescriptor, SettingsPathOp } from '@deepseek-ai/dsh-settings'
 import { describe, expect, it, vi } from 'vitest'
 import {
@@ -9,7 +9,7 @@ import {
   type PiAiSettingsServices,
 } from '../src/model-capability.ts'
 
-const ns = settingsNamespace('llm-pi-ai')
+const ns = 'llm-pi-ai'
 const route: ModelRoute = { provider: 'gateway', model: 'vision-model' }
 const directory = [{
   provider: 'gateway', displayName: 'Gateway', settingsNs: String(ns),

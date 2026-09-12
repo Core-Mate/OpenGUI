@@ -17,7 +17,7 @@ import { coremateCommandClaim, coremateTriggerSource } from './coremate-trigger.
 import { installActiveTaskSessionBridge, installSessionCommandTracking } from './session-bridge.ts'
 import { coremateTaskStatusStore } from './task-status-store.ts'
 
-export const inject = ['slots', 'uiConversation', 'uiSession', 'inputTriggers', 'sessions', 'workspaces']
+export const inject = ['slots', 'inputTriggers', 'sessions', 'workspaces']
 
 interface ConversationInputDockSlots {
   inject(name: 'conversation.input.dock', effect: () => () => void): void
@@ -73,14 +73,26 @@ interface ConversationViewSlots {
 
 /** Add OpenGUI's command, task controls, promotion card, and dedicated workbench. */
 export function apply(ctx: ClientContext): void {
-  ctx.uiConversation.events.register(coremateCommandContextDefinition)
-  ctx.uiConversation.events.register(corematePromotionDefinition)
-  ctx.uiConversation.events.register(coremateSuggestionDefinition)
+  // Cordis injection maps describe required services, not optional dependencies.
+  // Each supported DSH generation exposes exactly one of these service sets.
+  ctx.inject(['conversationEvents'], legacy => {
+    installClient(legacy, legacy.conversationEvents as unknown as typeof ctx.uiConversation.events,
+      legacy.sessions as unknown as typeof ctx.uiSession)
+  })
+  ctx.inject(['uiConversation', 'uiSession'], modern => {
+    installClient(modern, modern.uiConversation.events, modern.uiSession)
+  })
+}
+
+function installClient(ctx: ClientContext, events: ClientContext['uiConversation']['events'], sessionUi: ClientContext['uiSession']): void {
+  events.register(coremateCommandContextDefinition)
+  events.register(corematePromotionDefinition)
+  events.register(coremateSuggestionDefinition)
   ctx.effect(() => ctx.inputTriggers.registerSource(coremateTriggerSource(ctx)))
   ctx.effect(() => coremateTaskStatusStore.connect())
   ctx.effect(() => installActiveTaskSessionBridge(ctx, coremateTaskStatusStore))
   const trackedSessions = new WeakSet<object>()
-  ctx.effect(() => ctx.uiSession.provide({
+  ctx.effect(() => sessionUi.provide({
     props: ['coremateDraftActions', 'coremateSessionId', 'coremateSessions'],
     resolve(binding) {
       if (!trackedSessions.has(binding.session)) {

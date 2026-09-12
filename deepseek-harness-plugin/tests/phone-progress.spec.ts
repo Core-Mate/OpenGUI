@@ -1,103 +1,53 @@
 import type { SessionEvent } from '@deepseek-ai/dsh-session'
 import { Session, SessionId } from '@deepseek-ai/dsh-session'
-import { CallId, createAssistantMessage, createToolResultMessage } from '@deepseek-ai/dsh-llm'
-import { describe, expect, it, vi } from 'vitest'
+import { ToolCallId as CallId, createAssistantMessage, createToolResultMessage } from '@deepseek-ai/dsh-llm'
+import { describe, expect, it } from 'vitest'
 import { relayNestedTaskProgress, relayPhoneTaskProgress } from '../src/phone-progress.ts'
 
 describe('phone task chat progress', () => {
-  it('publishes a live child text delta into the parent chat before the task settles', () => {
+  it('publishes a completed message before the child task settles and closes on stop', () => {
     const child = Session.create(SessionId('child-phone'))
     const parent = Session.create(SessionId('parent-chat'))
     const listeners = new Set<(event: SessionEvent) => void>()
-    const subscribe = vi.fn((listener: (event: SessionEvent) => void) => {
-      listeners.add(listener)
-      return () => { listeners.delete(listener) }
-    })
-
     child.append('turn/start', { turn: 1 })
     child.append('step/start', { turn: 1, step: 1 })
-    const stop = relayPhoneTaskProgress({
-      initialEvents: child.events,
-      subscribe,
-      parent,
+    const relay = relayPhoneTaskProgress({
+      initialEvents: child.snapshotEvents(), parent,
+      subscribe(listener) { listeners.add(listener); return () => { listeners.delete(listener) } },
     })
-
-    const live = child.append('assistant/chunk', {
-      turn: 1,
-      step: 1,
-      chunk: { type: 'text-delta', index: 0, text: '正在打开小红书…' },
-    })
-    for (const listener of listeners) listener(live)
-
-    expect(parent.events.map(event => event.type)).toEqual([
-      'turn/start',
-      'step/start',
-      'assistant/chunk',
-    ])
-    expect(parent.events[2]).toMatchObject({
-      type: 'assistant/chunk',
-      data: { chunk: { type: 'text-delta', text: '正在打开小红书…' } },
-    })
-    expect(subscribe).toHaveBeenCalledOnce()
-
-    stop.dispose()
-    expect(listeners).toHaveLength(0)
-    expect(parent.events.slice(-2).map(event => event.type)).toEqual(['step/end', 'turn/end'])
+    const message = child.append('assistant/message', {
+      turn: 1, step: 1,
+      message: createAssistantMessage({ content: [{ type: 'text', text: 'Phone opened.' }], source: { provider: 'test', model: 'test' } }),
+    }, { surfaceOp: 'append' })
+    for (const listener of listeners) listener(message)
+    expect(parent.snapshotEvents().at(-1)).toMatchObject({ type: 'assistant/message', data: { message: { content: [{ type: 'text', text: 'Phone opened.' }] } } })
+    expect(relay.latestAssistantMessageSeq()).toBe(2)
+    relay.dispose()
+    expect(listeners.size).toBe(0)
+    expect(parent.snapshotEvents().slice(-2).map(event => event.type)).toEqual(['step/end', 'turn/end'])
   })
 
-  it('remaps final-message source sequences and preserves normal child closure', () => {
+  it('deduplicates replayed messages and preserves normal child closure', () => {
     const child = Session.create(SessionId('child-complete'))
     const parent = Session.create(SessionId('parent-complete'))
-    const listeners = new Set<(event: SessionEvent) => void>()
-    const publish = (event: SessionEvent): void => {
-      for (const listener of listeners) listener(event)
-    }
-
-    parent.append('todo/write', { todos: [] })
     child.append('turn/start', { turn: 1 })
     child.append('step/start', { turn: 1, step: 1 })
-    const stop = relayPhoneTaskProgress({
-      initialEvents: child.events,
-      subscribe(listener) {
-        listeners.add(listener)
-        return () => { listeners.delete(listener) }
-      },
-      parent,
+    let publish!: (event: SessionEvent) => void
+    const relay = relayPhoneTaskProgress({ parent, initialEvents: child.snapshotEvents(),
+      subscribe(listener) { publish = listener; return () => {} },
     })
-
-    const blockStart = child.append('assistant/chunk', {
-      turn: 1,
-      step: 1,
-      chunk: { type: 'block-start', index: 0, blockType: 'text' },
-    })
-    publish(blockStart)
-    const delta = child.append('assistant/chunk', {
-      turn: 1,
-      step: 1,
-      chunk: { type: 'text-delta', index: 0, text: '已打开小红书。' },
-    })
-    publish(delta)
     const message = child.append('assistant/message', {
-      turn: 1,
-      step: 1,
-      message: createAssistantMessage({
-        content: [{ type: 'text', text: '已打开小红书。' }],
-        source: { provider: 'coremate-mobile', model: 'phone-model' },
-      }),
-    }, { surfaceOp: 'append', sourceEventSeqs: [blockStart.seq, delta.seq] })
+      turn: 1, step: 1,
+      message: createAssistantMessage({ content: [{ type: 'text', text: 'Done' }], source: { provider: 'test', model: 'test' } }),
+    }, { surfaceOp: 'append' })
+    publish(message)
     publish(message)
     publish(child.append('step/end', { turn: 1, step: 1 }))
     publish(child.append('turn/end', { turn: 1, reason: { kind: 'completed' } }))
-
-    const mirroredMessage = parent.events.find(event => event.type === 'assistant/message')
-    expect(mirroredMessage).toMatchObject({
-      type: 'assistant/message',
-      sourceEventSeqs: [3, 4],
-      data: { message: { content: [{ type: 'text', text: '已打开小红书。' }] } },
-    })
-    const lengthBeforeStop = parent.events.length
-    stop.dispose()
-    expect(parent.events).toHaveLength(lengthBeforeStop)
+    const completed = parent.snapshotEvents()
+    expect(completed.filter(event => event.type === 'assistant/message')).toHaveLength(1)
+    relay.dispose()
+    expect(parent.snapshotEvents()).toEqual(completed)
   })
 
   it('shows nested agent tool calls beneath the running outer call without exposing reasoning', () => {
@@ -120,7 +70,7 @@ describe('phone task chat progress', () => {
     })
 
     const stop = relayNestedTaskProgress({
-      initialEvents: child.events,
+      initialEvents: child.snapshotEvents(),
       subscribe(listener) {
         listeners.add(listener)
         return () => { listeners.delete(listener) }
@@ -155,10 +105,10 @@ describe('phone task chat progress', () => {
       }),
     }, { surfaceOp: 'append' }))
 
-    const nested = parent.events.slice(3)
-    expect(nested.map(event => event.type)).toEqual(['tool/code-dispatch-start', 'tool/code-dispatch'])
+    const nested = parent.snapshotEvents().slice(3)
+    expect(nested.map(event => event.type)).toEqual(['tool/ptc-dispatch-start', 'tool/ptc-dispatch'])
     expect(nested[0]).toMatchObject({
-      type: 'tool/code-dispatch-start',
+      type: 'tool/ptc-dispatch-start',
       data: {
         rootCallId,
         parentCallId: rootCallId,
@@ -167,7 +117,7 @@ describe('phone task chat progress', () => {
       },
     })
     expect(nested[1]).toMatchObject({
-      type: 'tool/code-dispatch',
+      type: 'tool/ptc-dispatch',
       data: { rootCallId, name: 'browser_control', isError: false, content: [{ type: 'text', text: '百度已打开' }] },
     })
     expect(JSON.stringify(nested)).not.toContain('hidden chain of thought')
@@ -191,7 +141,7 @@ describe('phone task chat progress', () => {
     })
 
     const stop = relayNestedTaskProgress({
-      initialEvents: child.events,
+      initialEvents: child.snapshotEvents(),
       subscribe: () => () => {},
       parent,
       rootCallId,
@@ -199,12 +149,12 @@ describe('phone task chat progress', () => {
     })
     stop()
 
-    expect(parent.events.slice(1).map(event => event.type)).toEqual([
-      'tool/code-dispatch-start',
-      'tool/code-dispatch',
+    expect(parent.snapshotEvents().slice(1).map(event => event.type)).toEqual([
+      'tool/ptc-dispatch-start',
+      'tool/ptc-dispatch',
     ])
-    expect(parent.events.at(-1)).toMatchObject({
-      type: 'tool/code-dispatch',
+    expect(parent.snapshotEvents().at(-1)).toMatchObject({
+      type: 'tool/ptc-dispatch',
       data: { isError: true, content: [{ type: 'text', text: 'phone_control 已结束，但没有返回可展示的结果。' }] },
     })
   })
@@ -224,7 +174,7 @@ describe('phone task chat progress', () => {
       arguments: '{"task":"搜索上海"}',
     })
     const stop = relayPhoneTaskProgress({
-      initialEvents: router.events,
+      initialEvents: router.snapshotEvents(),
       subscribe(listener) {
         listeners.add(listener)
         return () => { listeners.delete(listener) }
@@ -241,16 +191,16 @@ describe('phone task chat progress', () => {
       name: 'browser_control',
       arguments: { action: 'observe' },
     }
-    publish(router.append('tool/code-dispatch-start', nestedData))
-    publish(router.append('tool/code-dispatch', {
+    publish(router.append('tool/ptc-dispatch-start', nestedData))
+    publish(router.append('tool/ptc-dispatch', {
       ...nestedData,
       isError: false,
       content: [{ type: 'text', text: '已观察页面' }],
     }))
 
-    expect(chat.events.slice(-2)).toMatchObject([
-      { type: 'tool/code-dispatch-start', data: nestedData },
-      { type: 'tool/code-dispatch', data: { ...nestedData, isError: false } },
+    expect(chat.snapshotEvents().slice(-2)).toMatchObject([
+      { type: 'tool/ptc-dispatch-start', data: nestedData },
+      { type: 'tool/ptc-dispatch', data: { ...nestedData, isError: false } },
     ])
     stop.dispose()
   })

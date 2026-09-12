@@ -16,7 +16,7 @@ import type { AdapterRegistrationHandle, ToolCallId as CallId, ContentBlock, Gen
 import { PiAiAdapter } from '@deepseek-ai/dsh-llm-pi-ai'
 import type { ResolvedPiAiProviderProfile } from '@deepseek-ai/dsh-llm-pi-ai'
 import { defineTool } from '@deepseek-ai/dsh-tools'
-import { SessionSeq } from '@deepseek-ai/dsh-session'
+import { SessionSeq, snapshotEvents, installSettingsSection } from './dsh-api.ts'
 import type { SessionEvent } from '@deepseek-ai/dsh-session'
 import type { ImageAttachmentRef } from '@deepseek-ai/dsh-attachment'
 import { AttachmentId } from '@deepseek-ai/dsh-attachment'
@@ -331,7 +331,7 @@ async function settleForeground(run: SubagentRun, progress?: ForegroundProgress)
         throw new Error('coremate-mobile: direct commands require a local OpenGUI agent for live chat progress')
       }
       const source = {
-        initialEvents: child.session.snapshotEvents(),
+        initialEvents: snapshotEvents(child.session),
         subscribe: (listener: (event: SessionEvent) => void) => child.ctx.on('session/event', (session, event) => {
           if (session === child.session) listener(event as SessionEvent)
         }),
@@ -670,7 +670,7 @@ export function apply(ctx: Context, baseConfig: Config): void {
   }
   refreshRoute()
 
-  ctx.settings.installSection(ctx, NS, Config, baseConfig, {
+  installSettingsSection(ctx, NS, Config, baseConfig, {
     setSource(source) { current = source },
     onChange: refreshRoute,
   })

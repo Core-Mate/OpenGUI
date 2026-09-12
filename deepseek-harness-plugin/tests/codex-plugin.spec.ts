@@ -30,7 +30,7 @@ describe('Codex plugin package', () => {
       .every(([, version]) => version === peerRange)).toBe(true)
     expect(Object.entries(pkg.devDependencies)
       .filter(([name]) => name.startsWith('@deepseek-ai/dsh-'))
-      .every(([, version]) => version === compatibility.preferredVersion)).toBe(true)
+      .every(([name, version]) => version === (name === '@deepseek-ai/dsh-client-runtime' ? '0.1.1-rc.2' : '0.1.5-rc.2'))).toBe(true)
     expect(plugin).toMatchObject({ name: 'opengui', skills: './skills/', mcpServers: './.mcp.json' })
     expect(publicPlugin).toMatchObject({ name: 'opengui', skills: './skills/' })
     expect(publicPlugin).not.toHaveProperty('mcpServers')

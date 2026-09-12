@@ -10,9 +10,9 @@ interface PackageInfo {
 
 const runtimeRequire = createRequire(import.meta.url)
 
-function installedPackageVersion(name: string): string | undefined {
+function installedPackageVersion(name: string, require = runtimeRequire): string | undefined {
   try {
-    const path = runtimeRequire.resolve(`${name}/package.json`)
+    const path = require.resolve(`${name}/package.json`)
     const value = JSON.parse(readFileSync(path, 'utf8')) as Partial<PackageInfo>
     return value.name === name && typeof value.version === 'string' ? value.version : undefined
   } catch {
@@ -31,7 +31,10 @@ export function packageInfo(): PackageInfo {
 
 /** Report the OpenGUI package and the DSH web Host package loaded in this process. */
 export function runtimeInfo(): RuntimeInfo {
-  const dshVersion = installedPackageVersion('@deepseek-ai/dsh-host-webserver') ?? 'unknown'
+  // The CLI and its component packages have separate prerelease versions.
+  const hostRequire = process.argv[1] ? createRequire(process.argv[1]) : runtimeRequire
+  const dshVersion = installedPackageVersion('@deepseek-ai/dsh', hostRequire)
+    ?? installedPackageVersion('@deepseek-ai/dsh-host-webserver') ?? 'unknown'
   const compatibility = dshCompatibilityManifest()
   return {
     dshVersion,
