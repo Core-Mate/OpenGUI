@@ -12,9 +12,9 @@ describe('OpenGUI runtime package information', () => {
     expect(runtimeInfo()).toEqual({
       dshVersion: manifest.devDependencies['@deepseek-ai/dsh-host-webserver'],
       openGuiVersion: manifest.version,
-      dshCompatibility: 'supported',
+      dshCompatibility: 'unsupported',
       preferredDshVersion: '0.1.1-rc.2',
-      supportedDshVersions: ['0.1.0-rc.7', '0.1.0-rc.8', '0.1.1-rc.1', '0.1.1-rc.2'],
+      supportedDshVersions: ['0.1.0-rc.7', '0.1.0-rc.8', '0.1.1-rc.1', '0.1.1-rc.2', '0.1.5-rc.1'],
     })
   })
 })

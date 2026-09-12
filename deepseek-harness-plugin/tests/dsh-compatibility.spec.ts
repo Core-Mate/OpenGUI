@@ -5,7 +5,7 @@ import {
   parseDshCompatibilityManifest,
 } from '../src/dsh-compatibility.ts'
 
-const SUPPORTED = ['0.1.0-rc.7', '0.1.0-rc.8', '0.1.1-rc.1', '0.1.1-rc.2']
+const SUPPORTED = ['0.1.0-rc.7', '0.1.0-rc.8', '0.1.1-rc.1', '0.1.1-rc.2', '0.1.5-rc.1']
 
 describe('DSH compatibility policy', () => {
   it('keeps one exact supported-version matrix with the newest verified default', () => {

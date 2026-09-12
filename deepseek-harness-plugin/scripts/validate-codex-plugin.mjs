@@ -34,8 +34,8 @@ if (!Object.entries(pkg.peerDependencies)
 }
 if (!Object.entries(pkg.devDependencies)
   .filter(([name]) => name.startsWith('@deepseek-ai/dsh-'))
-  .every(([, version]) => version === compatibility.preferredVersion)) {
-  throw new Error('all DSH development dependencies must use the preferred compatible version')
+  .every(([name, version]) => version === (name === '@deepseek-ai/dsh-client-runtime' ? '0.1.1-rc.2' : '0.1.5-rc.2'))) {
+  throw new Error('DSH development dependencies must match the 0.1.5 SDK baseline (client-runtime remains on its last published version)')
 }
 const server = mcp.mcpServers?.['opengui-local-android']
 if (server?.command !== 'node' || server.cwd !== '.' || server.args?.[0] !== './lib/codex-mcp.js') {

@@ -6,6 +6,7 @@ import { isAbsolute, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import puppeteer from 'puppeteer-core'
+import { fetchHostBoot, hostEntryUrl, isOpenGuiClientBundle } from './dsh-browser-compat.mjs'
 
 const execFile = promisify(execFileCallback)
 const root = new URL('../', import.meta.url)
@@ -62,17 +63,16 @@ async function freePort() {
 async function waitForHost(origin, child, logs) {
   const deadline = Date.now() + 90_000
   while (Date.now() < deadline) {
-    if (child.exitCode !== null) throw new Error(`DSH exited before startup with code ${child.exitCode}\n${logs()}`)
+    if (child.exitCode !== null) throw new Error(`DSH exited before startup with code ${child.exitCode}\n${logs().replace(/([?&]token=)[^\s&]+/gu, '$1[redacted]')}`)
     try {
-      const response = await fetch(origin, { signal: AbortSignal.timeout(2_000) })
-      const body = await response.text()
-      if (response.ok && body.includes('__DSH_BOOT__')) return
+      const entry = hostEntryUrl(origin, logs())
+      if (await fetchHostBoot(origin, entry)) return entry
     } catch {
       // Startup can take several seconds on an uncached DSH version.
     }
     await new Promise(resolveWait => setTimeout(resolveWait, 500))
   }
-  throw new Error(`Timed out waiting for DSH at ${origin}\n${logs()}`)
+  throw new Error(`Timed out waiting for DSH at ${origin}\n${logs().replace(/([?&]token=)[^\s&]+/gu, '$1[redacted]')}`)
 }
 
 async function stop(child) {
@@ -184,7 +184,7 @@ allowBuilds:
   host.stdout.on('data', chunk => { output += chunk })
   host.stderr.on('data', chunk => { output += chunk })
   const logs = () => output.slice(-12_000)
-  await waitForHost(origin, host, logs)
+  const entryUrl = await waitForHost(origin, host, logs)
 
   const runtimeResponse = await fetch(`${origin}/coremate-mobile/runtime/info`)
   if (!runtimeResponse.ok) throw new Error(`Runtime info returned HTTP ${runtimeResponse.status}`)
@@ -218,14 +218,14 @@ allowBuilds:
     if (message.type() === 'error') consoleErrors.push(message.text())
   })
   const pluginClientResponse = page.waitForResponse(
-    response => response.url().includes('/plugins/dsh-coremate-mobile/client.js'),
+    response => isOpenGuiClientBundle(response.url()),
     { timeout: 60_000 },
   )
   const clientTaskPoll = page.waitForResponse(
     response => response.url() === `${origin}/coremate-mobile/task/status`,
     { timeout: 60_000 },
   )
-  await page.goto(origin, { waitUntil: 'domcontentloaded', timeout: 60_000 })
+  await page.goto(entryUrl, { waitUntil: 'domcontentloaded', timeout: 60_000 })
   await page.waitForFunction(() => {
     const text = document.body.textContent ?? ''
     return text.includes('Continue') || text.includes('OpenGUI')
@@ -236,7 +236,7 @@ allowBuilds:
     const control = label?.closest('button, [role="button"]') ?? label
     if (control instanceof HTMLElement) control.click()
   })
-  const [clientResponse, taskPollResponse] = await Promise.all([pluginClientResponse, clientTaskPoll])
+  const [clientResponse, taskPollResponse] = await Promise.all([pluginClientResponse, clientTaskPoll]).catch(error => { throw new Error(`Client registration failed: ${error.message}; page errors: ${pageErrors.join(' | ')}; console errors: ${consoleErrors.join(' | ')}`) })
   if (!clientResponse.ok()) throw new Error(`OpenGUI client module returned HTTP ${clientResponse.status()}`)
   if (!taskPollResponse.ok()) throw new Error(`OpenGUI client task poll returned HTTP ${taskPollResponse.status()}`)
   if (pageErrors.length > 0) throw new Error(`Browser module errors: ${pageErrors.join(' | ')}`)
@@ -245,8 +245,9 @@ allowBuilds:
   const loaded = runtime.dshVersion === dshVersion ? '' : ` (Host components ${runtime.dshVersion})`
   process.stdout.write(`DSH ${dshVersion}${loaded}: package install, Host boot, runtime API, task API, and client registration passed\n`)
 } catch (error) {
-  if (output) process.stderr.write(`\nDSH output:\n${output.slice(-12_000)}\n`)
-  throw error
+  if (output) process.stderr.write(`\nDSH output:\n${output.slice(-12_000).replace(/([?&]token=)[^\s&]+/gu, '$1[redacted]')}\n`)
+  throw new Error(String(error instanceof Error ? error.stack ?? error.message : error)
+    .replace(/([?&]token=)[^\s&]+/gu, '$1[redacted]'))
 } finally {
   if (browser) await browser.close().catch(() => undefined)
   if (host) await stop(host)

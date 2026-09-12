@@ -1,6 +1,5 @@
 import type { CSSProperties } from 'react'
 import type { CommandNode } from '@deepseek-ai/dsh-client-runtime/client'
-import type { CommandRowProps } from '@deepseek-ai/dsh-client-ui-conversation/client'
 import { OpenGuiMark } from './OpenGuiMark.tsx'
 
 export interface OpenGuiCommandPresentation {
@@ -76,7 +75,7 @@ export function openGuiCommandPresentation(node: CommandNode): OpenGuiCommandPre
 }
 
 /** Visible lifecycle row for /opengui and its legacy /coremate alias. */
-export function OpenGuiCommandCard({ node }: CommandRowProps): JSX.Element {
+export function OpenGuiCommandCard({ node }: { node: CommandNode }): JSX.Element {
   const presentation = openGuiCommandPresentation(node)
   const running = presentation.state === 'running'
   const error = presentation.state === 'error'

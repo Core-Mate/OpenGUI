@@ -15,7 +15,9 @@ export function installSessionCommandTracking(session: SessionFace, store: Corem
   const sync = (): void => {
     const snapshot = session.getSnapshot()
     if (!sessionId || snapshot.sessionId !== sessionId) return
-    const command = snapshot.nodes.filter(node => node.kind === 'command' &&
+    // 0.1.5: the nodes mirror is undefined for sessions whose Chat view never mounted.
+    const nodes = snapshot.nodes ?? []
+    const command = nodes.filter(node => node.kind === 'command' &&
       (node.name === 'opengui' || node.name === 'coremate') && node.args?.trim())
       .reduce<(typeof snapshot.nodes)[number] | undefined>((latest, node) =>
         latest === undefined || node.seq > latest.seq ? node : latest, undefined)
@@ -120,7 +122,7 @@ export function installActiveTaskSessionBridge(ctx: ClientContext, store: Corema
     }
     const target = workspaceId ?? ownerWorkspace(workspaces, current)
     if (target === undefined) { callOriginal(workspaceId); return }
-    if (pending?.target === target && pending.origin === current) return
+    if (pending !== undefined && pending.target === target && pending.origin === current) return
     const requestGeneration = ++generation
     if (pending !== undefined) {
       queued = { target, origin: current, generation: requestGeneration }

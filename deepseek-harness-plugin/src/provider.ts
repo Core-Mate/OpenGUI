@@ -93,6 +93,7 @@ export function resolveMobileProfile(config: MobileProfileConfig): ResolvedPiAiP
     requestImagePixelBudget: DEFAULT_REQUEST_IMAGE_PIXEL_BUDGET,
     requestImageMaxBytes: DEFAULT_REQUEST_IMAGE_MAX_BYTES,
     retryPolicy: resolveRetryPolicy(undefined, 'coremate-mobile retryPolicy'),
+    modelErrors: new Map<string, string>(),
     configuredMaxTokens: new Map(),
     piProvider: createProvider({
       id: config.provider,

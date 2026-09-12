@@ -31,3 +31,21 @@ minimumReleaseAgeExclude:
   - '@deepseek-ai/dsh-tools@0.1.1-rc.2'
   - '@deepseek-ai/dsh-typert-protocol@0.1.1-rc.2'
   - '@deepseek-ai/dsh-user-approval@0.1.1-rc.2'
+
+overrides:
+  '@deepseek-ai/dsh-sandbox': 0.1.5-rc.2
+  '@deepseek-ai/dsh-typert-protocol': 0.1.5-rc.2
+  '@deepseek-ai/dsh-session-projection': 0.1.5-rc.2
+  '@deepseek-ai/dsh-util-crypto': 0.1.5-rc.2
+  '@deepseek-ai/dsh-util-values': 0.1.5-rc.2
+  '@deepseek-ai/dsh-timeout': 0.1.5-rc.2
+  '@deepseek-ai/dsh-scope': 0.1.5-rc.2
+  '@deepseek-ai/dsh-home-paths': 0.1.5-rc.2
+  '@deepseek-ai/dsh-atomic-write': 0.1.5-rc.2
+  '@deepseek-ai/dsh-code-runtime': 0.1.5-rc.2
+  '@deepseek-ai/dsh-launch-environment': 0.1.5-rc.2
+  '@deepseek-ai/dsh-loader-smoke': 0.1.5-rc.2
+  '@deepseek-ai/dsh-settings-file': 0.1.5-rc.2
+  '@deepseek-ai/dsh-user-approval': 0.1.5-rc.2
+  '@deepseek-ai/dsh-attachment-local': 0.1.5-rc.2
+  '@deepseek-ai/dsh-app-boot': 0.1.5-rc.2

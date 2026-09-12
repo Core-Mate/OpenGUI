@@ -12,12 +12,12 @@ import type { AgentOptions } from '@deepseek-ai/dsh-agent'
 import { credentialRef } from '@deepseek-ai/dsh-credentials'
 import type { AskUserQuestionAnswer } from '@deepseek-ai/dsh-user-questions'
 import { assertUsableApiKey, LlmError } from '@deepseek-ai/dsh-llm'
-import type { AdapterRegistrationHandle, CallId, ContentBlock, GenerateOptions, StreamChunk } from '@deepseek-ai/dsh-llm'
+import type { AdapterRegistrationHandle, ToolCallId as CallId, ContentBlock, GenerateOptions, StreamChunk } from '@deepseek-ai/dsh-llm'
 import { PiAiAdapter } from '@deepseek-ai/dsh-llm-pi-ai'
 import type { ResolvedPiAiProviderProfile } from '@deepseek-ai/dsh-llm-pi-ai'
-import { installSettingsSection, settingsNamespace } from '@deepseek-ai/dsh-settings'
 import { defineTool } from '@deepseek-ai/dsh-tools'
-import type { JsonValue, SessionEvent } from '@deepseek-ai/dsh-session'
+import { SessionSeq, snapshotEvents, installSettingsSection } from './dsh-api.ts'
+import type { SessionEvent } from '@deepseek-ai/dsh-session'
 import type { ImageAttachmentRef } from '@deepseek-ai/dsh-attachment'
 import { AttachmentId } from '@deepseek-ai/dsh-attachment'
 import type { SubagentResult, SubagentRun } from '@deepseek-ai/dsh-subagent'
@@ -79,11 +79,13 @@ export { resolveMobileProfile } from './provider.ts'
 export type { MobileApi, MobileProfileConfig } from './provider.ts'
 
 export const name = 'coremate-mobile'
+type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue }
+
 export const inject = ['llm', 'settings', 'tools', 'subagents', 'systemPrompt', 'attachments', 'commands']
 
 const PROVIDER = 'coremate-mobile'
-const NS = settingsNamespace('coremate-mobile')
-const LLM_PI_AI_NS = settingsNamespace('llm-pi-ai')
+const NS = 'coremate-mobile'
+const LLM_PI_AI_NS = 'llm-pi-ai'
 const API_KEY_ENV = 'COREMATE_MOBILE_API_KEY'
 const CANCELLED_TEXT = '本次 OpenGUI 任务未执行；当前模型尚未配置。手机画面和手动投屏不受影响，下次提交时会重新询问。'
 const ROOT_ROUTING_PROMPT = `When phone_agent is available, every request to inspect, operate, test, or coordinate an Android phone, mobile app, or mobile game must use phone_agent. This routing is based on the user's intent; the user does not need to mention OpenGUI, @OpenGUI, or /opengui. Never substitute Bash, shell commands, raw adb, or another UI-control path. If phone_agent cannot start, report the OpenGUI connection or configuration problem instead of bypassing it.`
@@ -329,9 +331,9 @@ async function settleForeground(run: SubagentRun, progress?: ForegroundProgress)
         throw new Error('coremate-mobile: direct commands require a local OpenGUI agent for live chat progress')
       }
       const source = {
-        initialEvents: child.session.events,
+        initialEvents: snapshotEvents(child.session),
         subscribe: (listener: (event: SessionEvent) => void) => child.ctx.on('session/event', (session, event) => {
-          if (session === child.session) listener(event)
+          if (session === child.session) listener(event as SessionEvent)
         }),
         parent: progress.parent.session,
       }
@@ -1014,7 +1016,7 @@ export function apply(ctx: Context, baseConfig: Config): void {
         return {
           kind: 'success',
           text: text.length > 0 ? text : `OpenGUI task completed (run ${result.runId}).`,
-          ...(result.sourceEventSeq === undefined ? {} : { sourceEventSeq: result.sourceEventSeq }),
+          ...(result.sourceEventSeq === undefined ? {} : { sourceEventSeq: SessionSeq(result.sourceEventSeq) }),
         }
       } catch (error) {
         if (error instanceof OpenGuiTaskCancelled) return { kind: 'success', text: error.message }
