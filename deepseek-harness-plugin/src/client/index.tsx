@@ -1,4 +1,5 @@
-import type { ClientContext, ISessions } from '@deepseek-ai/dsh-client-runtime/client'
+import type { ClientContext } from '@deepseek-ai/dsh-client-runtime/client'
+import type {} from '@deepseek-ai/dsh-client-ui-session/client'
 import type {} from '@deepseek-ai/dsh-client-ui-layout/client'
 import { CorematePromotionCard } from './CorematePromotionCard.tsx'
 import { CoremateClaimBridge, type CoremateDraftActions } from './CoremateClaimBridge.tsx'
@@ -16,7 +17,7 @@ import { coremateCommandClaim, coremateTriggerSource } from './coremate-trigger.
 import { installActiveTaskSessionBridge, installSessionCommandTracking } from './session-bridge.ts'
 import { coremateTaskStatusStore } from './task-status-store.ts'
 
-export const inject = ['slots', 'conversationEvents', 'inputTriggers', 'sessions', 'workspaces']
+export const inject = ['slots', 'uiConversation', 'uiSession', 'inputTriggers', 'sessions', 'workspaces']
 
 interface ConversationInputDockSlots {
   inject(name: 'conversation.input.dock', effect: () => () => void): void
@@ -72,14 +73,14 @@ interface ConversationViewSlots {
 
 /** Add OpenGUI's command, task controls, promotion card, and dedicated workbench. */
 export function apply(ctx: ClientContext): void {
-  ctx.conversationEvents.register(coremateCommandContextDefinition)
-  ctx.conversationEvents.register(corematePromotionDefinition)
-  ctx.conversationEvents.register(coremateSuggestionDefinition)
+  ctx.uiConversation.events.register(coremateCommandContextDefinition)
+  ctx.uiConversation.events.register(corematePromotionDefinition)
+  ctx.uiConversation.events.register(coremateSuggestionDefinition)
   ctx.effect(() => ctx.inputTriggers.registerSource(coremateTriggerSource(ctx)))
   ctx.effect(() => coremateTaskStatusStore.connect())
   ctx.effect(() => installActiveTaskSessionBridge(ctx, coremateTaskStatusStore))
   const trackedSessions = new WeakSet<object>()
-  ctx.effect(() => (ctx.sessions as unknown as ISessions).provide({
+  ctx.effect(() => ctx.uiSession.provide({
     props: ['coremateDraftActions', 'coremateSessionId', 'coremateSessions'],
     resolve(binding) {
       if (!trackedSessions.has(binding.session)) {

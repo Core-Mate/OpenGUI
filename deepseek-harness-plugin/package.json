@@ -117,6 +117,7 @@
     "@deepseek-ai/dsh-attachment-local": "0.1.5-rc.2",
     "@deepseek-ai/dsh-brand": "0.1.5-rc.2",
     "@deepseek-ai/dsh-client-runtime": "0.1.1-rc.2",
+    "@deepseek-ai/dsh-client-ui-session": "0.1.5-rc.2",
     "@deepseek-ai/dsh-client-connection": "0.1.5-rc.2",
     "@deepseek-ai/dsh-client-ui-conversation": "0.1.5-rc.2",
     "@deepseek-ai/dsh-client-ui-input-trigger": "0.1.5-rc.2",

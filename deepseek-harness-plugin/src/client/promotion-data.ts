@@ -1,7 +1,5 @@
-import type {
-  ConversationNodeDefinition,
-  ConversationTurnDataMap,
-} from '@deepseek-ai/dsh-client-runtime/client'
+import type { ConversationNodeDefinition } from '@deepseek-ai/dsh-client-ui-conversation/client'
+import type { ConversationTurnDataMap } from '@deepseek-ai/dsh-client-runtime/client'
 import { cleanCoremateSuggestionBlocks, type CoremateSuggestion } from '../suggestions.ts'
 
 interface TurnTailOwnerProps {
