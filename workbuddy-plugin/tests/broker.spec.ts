@@ -1,3 +1,4 @@
+import { ReadyViewer } from './ready-viewer.ts'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { startBroker } from '../src/broker.ts'
 import { BrokerClient } from '../src/broker-client.ts'
@@ -11,7 +12,7 @@ const signal = () => AbortSignal.timeout(5000)
 
 async function setup() {
   const host = new FakeHost()
-  const service = new WorkBuddyOpenGuiService({ host })
+  const service = new WorkBuddyOpenGuiService({ viewers: new ReadyViewer(), host })
   const broker = await startBroker({ port: 0, token: 'test-secret', service })
   disposers.push(broker.close)
   const a = await BrokerClient.connect(broker.port, 'test-secret')
@@ -74,7 +75,7 @@ describe('WorkBuddy broker isolation', () => {
       hasMirrors: () => true,
     })
     const onIdle = vi.fn()
-    const service = new WorkBuddyOpenGuiService({ host })
+    const service = new WorkBuddyOpenGuiService({ viewers: new ReadyViewer(), host })
     const broker = await startBroker({ port: 0, token: 'test', service, idleMs: 20, onIdle })
     disposers.push(broker.close)
     const a = await BrokerClient.connect(broker.port, 'test')
@@ -159,7 +160,7 @@ describe('WorkBuddy broker isolation', () => {
 
   it('exits after the last client leaves and the idle deadline expires', async () => {
     const onIdle = vi.fn()
-    const broker = await startBroker({ port: 0, token: 'test', service: new WorkBuddyOpenGuiService({ host: new FakeHost() }), idleMs: 20, onIdle })
+    const broker = await startBroker({ port: 0, token: 'test', service: new WorkBuddyOpenGuiService({ viewers: new ReadyViewer(), host: new FakeHost() }), idleMs: 20, onIdle })
     disposers.push(broker.close)
     await vi.waitFor(() => expect(onIdle).toHaveBeenCalledOnce())
     await expect(BrokerClient.connect(broker.port, 'test')).rejects.toThrow()

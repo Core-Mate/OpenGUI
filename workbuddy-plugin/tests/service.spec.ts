@@ -1,3 +1,4 @@
+import { ReadyViewer } from './ready-viewer.ts'
 import { afterEach, describe, expect, it } from 'vitest'
 import { WorkBuddyOpenGuiService } from '../src/service.ts'
 import { FakeHost } from './fake-host.ts'
@@ -7,7 +8,7 @@ afterEach(async () => { await Promise.all(services.splice(0).map(service => serv
 
 function service(host = new FakeHost()): WorkBuddyOpenGuiService {
   let nextSession = 1
-  const value = new WorkBuddyOpenGuiService({ host, createSessionId: () => `session-${nextSession++}` })
+  const value = new WorkBuddyOpenGuiService({ viewers: new ReadyViewer(), host, createSessionId: () => `session-${nextSession++}` })
   services.push(value)
   return value
 }
@@ -20,24 +21,25 @@ describe('WorkBuddy OpenGUI session service', () => {
     })
     const value = service(host)
     const session = await value.openSession(['phone-a', 'phone-b'], new AbortController().signal)
-    expect(opened).toEqual(['serial-a', 'serial-b'])
+    expect(opened).toEqual([])
     expect(session.devices.map(device => device.operationCount)).toEqual([0, 0])
     expect((await value.closeMirror(session.sessionId, 'phone-a')).state).toBe('active')
     await value.closeSession(session.sessionId)
     expect(host.released).toEqual(['serial-a', 'serial-b'])
     await value.openSession(['phone-a'], new AbortController().signal, 'mirror')
-    expect(opened).toHaveLength(2)
+    expect(opened).toHaveLength(1)
   })
 
-  it('blocks phone operations when automatic mirroring fails', async () => {
+  it('does not require a native window after video authorization', async () => {
     const host = Object.assign(new FakeHost(), {
       openMirror: async () => { throw new Error('unsupported desktop') },
       inspectMirror: async () => ({ phase: 'error' as const, ready: false }),
     })
     const value = service(host)
     const opened = await value.openSession(['phone-a'], new AbortController().signal)
-    expect(opened).toMatchObject({ state: 'active', lastError: expect.stringContaining('unsupported desktop') })
-    await expect(value.observe(opened.sessionId, undefined, new AbortController().signal)).rejects.toThrow('waiting_for_display')
+    expect(opened).toMatchObject({ state: 'active' })
+    expect(opened.lastError).toBeUndefined()
+    await expect(value.observe(opened.sessionId, undefined, new AbortController().signal)).resolves.toHaveProperty('observationId')
   })
   it('lists authorization state and freezes a one-phone session', async () => {
     const value = service()

@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 export const STAGED_PATHS = [
   '.codex-plugin', 'skills', 'scripts/opengui', 'assets', 'lib/cli.js',
-  'LICENSE', 'SOURCE.md', 'README.md', 'README.zh-CN.md', 'docs',
+  'LICENSE', 'VIDEO-NOTICE.md', 'SOURCE.md', 'README.md', 'README.zh-CN.md', 'docs',
 ]
 
 /** Build an allowlisted upload tree, never a tarball of the development checkout. */

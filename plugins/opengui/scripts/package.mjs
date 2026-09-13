@@ -16,8 +16,8 @@ try {
   const upload = join(output, 'opengui-codex-' + pkg.version + '.zip')
   // No npm lifecycle hooks, no DSH build, and no implicit publisher credentials.
   // Build fresh archives: updating an existing ZIP retains removed entries.
-  execFileSync('tar', ['-czf', join(temp, 'package.tar.gz'), '-C', temp, 'opengui'], { stdio: 'inherit' })
-  execFileSync('zip', ['-q', '-r', join(temp, 'package.zip'), 'opengui'], { cwd: temp, stdio: 'inherit' })
+  execFileSync('tar', ['-czf', join(temp, 'package.tar.gz'), '-C', temp, 'opengui'], { stdio: 'inherit', env: { ...process.env, COPYFILE_DISABLE: '1' } })
+  execFileSync('zip', ['-X', '-q', '-r', join(temp, 'package.zip'), 'opengui'], { cwd: temp, stdio: 'inherit' })
   await rename(join(temp, 'package.tar.gz'), archive)
   await rename(join(temp, 'package.zip'), upload)
   const installer = join(output, 'opengui-codex-' + pkg.version + '-install.command')

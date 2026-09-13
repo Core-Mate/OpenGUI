@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto'
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { mkdir, mkdtemp, readFile, realpath, rm, writeFile, readdir } from 'node:fs/promises'
+import { cp, mkdir, mkdtemp, readFile, realpath, rm, writeFile, readdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -11,6 +11,7 @@ const temporary = await realpath(await mkdtemp(join(tmpdir(), 'opengui-workbuddy
 try {
  const home = join(temporary, 'home with spaces'), config = join(home, '.workbuddy-ai'), stateRoot = join(home, '.workbuddy/opengui'), bin = join(home, 'bin')
  await mkdir(bin, { recursive: true })
+ if (process.env.OPENGUI_TEST_VIDEO_CACHE) await cp(process.env.OPENGUI_TEST_VIDEO_CACHE, join(stateRoot, 'scrcpy'), {recursive:true})
  // Only the isolated test host is considered stopped; never quit the real app.
  const app = join(temporary, 'WorkBuddy AI.app')
  const cli = join(app, 'Contents/Resources/app.asar.unpacked/cli')
@@ -23,7 +24,7 @@ try {
  await mkdir(config, {recursive:true})
  await writeFile(join(config, 'mcp.json'), JSON.stringify({mcpServers:{other:{command:'keep-me'}}}))
  await writeFile(join(config, 'settings.json'), JSON.stringify({custom:true,hooks:{Stop:[{hooks:[{type:'command',command:'other-hook'}]}]}}))
- const archive = join(root, 'dist/opengui-mcp-0.2.1.tgz')
+ const archive = join(root, 'dist/opengui-mcp-0.3.0.tgz')
  const installer = process.argv[2] ?? join(root, 'scripts/install-macos.command')
  const run = (extra={}) => spawnSync('bash', [installer, '--archive', archive, ...(process.argv[2] ? [] : ['--app', app])], {encoding:'utf8',env:{...process.env,HOME:home,WORKBUDDY_CONFIG_DIR:'',CODEBUDDY_CONFIG_DIR:'',WORKBUDDY_INSTANCE_NUMBER:'',TEST_APP:app,PATH:bin+':'+process.env.PATH,...extra}})
  let result=run({TEST_HOST_RUNNING:'0'}); assert.notEqual(result.status,0); assert.match(result.stderr,/Quit WorkBuddy/)
@@ -38,7 +39,7 @@ try {
   timings.push(Date.now() - started)
   if (i === 1) assert.match(result.stdout, /ALREADY_CONFIGURED/)
   const state=JSON.parse(await readFile(join(stateRoot,`local-install-${createHash('sha256').update(config).digest('hex').slice(0,16)}.json`)))
-  assert.equal(state.version,'0.2.1'); assert.equal(state.configRoot, config); assert(state.backups.every(b=>b.backup===null || b.backup.includes('before-opengui')))
+  assert.equal(state.version,'0.3.0'); assert.equal(state.configRoot, config); assert(state.backups.every(b=>b.backup===null || b.backup.includes('before-opengui')))
   assert((await readFile(join(state.packageDir,'scripts/install-local.mjs'),'utf8')).includes('mergeHostHooks'))
  }
  assert.equal((await readdir(join(stateRoot, 'packages'))).length, 1, 'Repeat installation must reuse the same package directory')

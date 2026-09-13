@@ -1,3 +1,4 @@
+import { ReadyViewer } from './ready-viewer.ts'
 import { afterEach, describe, expect, it } from 'vitest'
 import { AutomationCoordinator } from '../src/automation.ts'
 import { WorkBuddyOpenGuiService } from '../src/service.ts'
@@ -6,7 +7,7 @@ import { FakeHost } from './fake-host.ts'
 const cleanup: Array<() => Promise<unknown>> = []
 afterEach(async () => { for (const close of cleanup.splice(0)) await close() })
 function fixture() {
-  const service = new WorkBuddyOpenGuiService({ host: new FakeHost() })
+  const service = new WorkBuddyOpenGuiService({ viewers: new ReadyViewer(), host: new FakeHost() })
   const automation = new AutomationCoordinator(service)
   cleanup.push(() => service.dispose())
   const claim = async (host: string, name: string, args: Record<string, unknown> = {}) => {
@@ -25,7 +26,7 @@ function fixture() {
 describe('host-bound autonomous lifecycle', () => {
   it('retains an established legacy viewing handle at final stop without retaining control', async () => {
     const host = Object.assign(new FakeHost(), { openMirror: async () => {}, mirrorStatus: () => ({ phase: 'running' as const }) })
-    const service = new WorkBuddyOpenGuiService({ host })
+    const service = new WorkBuddyOpenGuiService({ viewers: new ReadyViewer(), host })
     cleanup.push(() => service.dispose())
     const automation = new AutomationCoordinator(service)
     const args = { purpose: 'mirror' }

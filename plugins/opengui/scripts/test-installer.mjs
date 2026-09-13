@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
 import { execFileSync, spawnSync } from 'node:child_process'
-import { cp, copyFile, mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises'
+import { cp, copyFile, mkdir, mkdtemp, readFile, readdir, realpath, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -13,6 +13,7 @@ try {
   const home = join(temporary, 'home with spaces')
   const codexHome = join(home, '.codex')
   const bin = join(home, 'bin')
+  if (process.env.OPENGUI_TEST_VIDEO_CACHE) await cp(process.env.OPENGUI_TEST_VIDEO_CACHE, join(codexHome, 'opengui-codex/scrcpy'), {recursive:true})
   await mkdir(bin, { recursive: true })
   const fixture = join(bin, 'codex')
   await writeFile(fixture, `#!${process.execPath}
@@ -42,21 +43,32 @@ else if (args[1] === 'add') {
   await writeFile(join(runtime, '.verified'), archiveSha + '\n' + digest + '\n')
   await writeFile(join(codexHome, 'config.toml'), '# Existing unrelated settings\n')
   const env = { ...process.env, HOME: home, CODEX_HOME: codexHome, PATH: bin + ':' + process.env.PATH }
-  const archive = join(root, '.artifacts/opengui-codex-0.1.0.tar.gz')
+  const archive = join(root, '.artifacts/opengui-codex-0.2.0.tar.gz')
   const script = join(root, 'scripts/install-macos.command')
   const run = (file = archive, extra = {}) => spawnSync('bash', [script, '--archive', file], { env: { ...env, ...extra }, encoding: 'utf8' })
-  let result = run(); assert.equal(result.status, 0, result.stderr)
-  assert.match(result.stdout, /Installed. Start a NEW/)
-  result = run(); assert.equal(result.status, 0, result.stderr)
+  const timings = [], started = Date.now()
+  let result = run(); timings.push(Date.now() - started); assert.equal(result.status, 0, result.stderr)
+  assert.match(result.stdout, /CONFIG_WRITTEN; hostLoaded=unverified/)
+  const packageRoot = join(codexHome, 'opengui-codex/packages')
+  const installedPackage = join(packageRoot, (await readdir(packageRoot))[0])
+  const firstReceipt = (await readdir(installedPackage)).find(name => name.startsWith('install-receipt-'))
+  assert(firstReceipt, 'Each attempt must retain an independent recovery receipt')
+  const originalInventory = await readFile(join(installedPackage, firstReceipt, 'previous-marketplaces.json'), 'utf8')
+  const repeated = Date.now()
+  result = run(); timings.push(Date.now() - repeated); assert.equal(result.status, 0, result.stderr)
+  assert.equal(await readFile(join(installedPackage, firstReceipt, 'previous-marketplaces.json'), 'utf8'), originalInventory, 'Repeat install must not overwrite original recovery evidence')
+  assert.equal((await readdir(installedPackage)).filter(name => name.startsWith('install-receipt-')).length, 2)
   assert.equal(await readFile(join(codexHome, 'config.toml'), 'utf8'), '# Existing unrelated settings\n')
   await writeFile(join(bin, 'curl'), '#!/bin/sh\nexit 22\n', { mode: 0o755 })
   result = spawnSync('bash', [script], { env, encoding: 'utf8' })
   assert.notEqual(result.status, 0); assert.match(result.stderr, /No downloadable codex/)
   const bad = join(temporary, 'bad.tar.gz'); await cp(archive, bad); await writeFile(bad + '.sha256', '0'.repeat(64))
   result = run(bad); assert.notEqual(result.status, 0); assert.match(result.stderr, /checksum mismatch/)
+  await writeFile(join(home, 'plugins.json'), '{"installed":[]}')
   result = run(archive, { FAIL_INSTALL: '1' }); assert.notEqual(result.status, 0)
   assert.equal(await readFile(join(codexHome, 'config.toml'), 'utf8'), '# Existing unrelated settings\n')
   await writeFile(join(home, 'plugins.json'), JSON.stringify({ installed: [{ name: 'opengui', marketplaceName: 'personal', pluginId: 'opengui@personal' }] }))
   result = run(); assert.notEqual(result.status, 0); assert.match(result.stderr, /another source/)
+  console.log(JSON.stringify({ firstInstallMs: timings[0], repeatInstallMs: timings[1], codexHost: 'fixture', privateNode: 'fixture', videoDownload: process.env.OPENGUI_TEST_VIDEO_CACHE ? 'verified-cache' : 'real' }))
   console.log('PASS: packaged install, repeat install, spaces, checksum rejection, host failure and duplicate-source rejection; existing configuration retained.')
 } finally { await rm(temporary, { recursive: true, force: true }) }

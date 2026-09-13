@@ -61,7 +61,9 @@ export async function handleHostHook(
     if (kind === 'PreToolUse' && tool) {
       if (typeof result.hostContext !== 'string') throw new Error('opengui: hook binding unavailable')
       // Input binding does not set permissionDecision=allow or bypass host policy.
-      return { hookSpecificOutput: { hookEventName: 'PreToolUse', modifiedInput: tool.inject(result.hostContext) } }
+      const updatedInput = tool.inject(result.hostContext)
+      // 5.5.3 consumes updatedInput; retain modifiedInput for older host adapters.
+      return { hookSpecificOutput: { hookEventName: 'PreToolUse', updatedInput, modifiedInput: updatedInput } }
     }
     return result
   } finally { connection.close() }

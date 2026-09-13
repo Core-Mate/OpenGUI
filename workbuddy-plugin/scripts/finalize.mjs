@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 
 await chmod(new URL('../lib/mcp.js', import.meta.url), 0o755)
 await copyFile(new URL('../connector/skills/control/SKILL.md', import.meta.url), new URL('../lib/opengui-SKILL.md', import.meta.url))
+await copyFile(new URL('../connector/skills/control/references.md', import.meta.url), new URL('../lib/opengui-reference.md', import.meta.url))
 for (const name of ['confirmation.js', 'confirmation.d.ts']) await rm(new URL(`../lib/${name}`, import.meta.url), { force: true })
 if (process.platform === 'darwin') {
   const dir = new URL('../lib/native/', import.meta.url)

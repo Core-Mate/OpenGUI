@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": ".artifacts/browser",
+    "rewriteRelativeImportExtensions": true
+  },
+  "include": ["src/viewer.ts"]
+}

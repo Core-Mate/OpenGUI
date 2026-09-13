@@ -12,8 +12,8 @@ async function setup() {
   host.preview = vi.fn(host.preview)
   const service = new WorkBuddyOpenGuiService({ host })
   services.push(service)
-  const a = await service.openSession(['phone-a'], AbortSignal.timeout(5000))
-  const b = await service.openSession(['phone-b'], AbortSignal.timeout(5000))
+  const a = await service.openSession(['phone-a'], AbortSignal.timeout(5000), 'mirror')
+  const b = await service.openSession(['phone-b'], AbortSignal.timeout(5000), 'mirror')
   return { a, b, host, service }
 }
 

@@ -20,7 +20,7 @@ export interface Request {
   owner?: string
 }
 export interface Response { ok: boolean; result?: unknown; error?: string }
-export interface Hello { version: string; protocol: number; activeSessions: number }
+export interface Hello { version: string; protocol: number; activeSessions: number; activeViewers?: number }
 export function request(name: string, args: Record<string, unknown> = {}, owner = process.env.CODEX_THREAD_ID): Request {
   return { version: VERSION, protocol: PROTOCOL_VERSION, name, args, ...(owner ? { owner } : {}) }
 }
@@ -176,12 +176,12 @@ export async function startDaemon(options: DaemonOptions): Promise<{ endpoint: s
         try {
           const value = JSON.parse(input.trim()) as Request
           if (value.name === '__ping__') {
-            respond({ ok: true, result: { version: VERSION, protocol: PROTOCOL_VERSION, activeSessions: service.activeSessionCount } satisfies Hello })
+            respond({ ok: true, result: { version: VERSION, protocol: PROTOCOL_VERSION, activeSessions: service.activeSessionCount, activeViewers: Number(service.viewers.active) } satisfies Hello })
             return
           }
           if (value.version !== VERSION || value.protocol !== PROTOCOL_VERSION) throw new Error('opengui: incompatible CLI protocol or version')
           if (value.name === '__shutdown__') {
-            if (service.activeSessionCount > 0) throw new Error('opengui: close active sessions before stopping this daemon')
+            if (service.activeSessionCount > 0 || service.viewers.active) throw new Error('opengui: close active sessions before stopping this daemon')
             respond({ ok: true, result: { state: 'stopping' } })
             setImmediate(() => { void close() })
             return
@@ -207,7 +207,7 @@ export async function startDaemon(options: DaemonOptions): Promise<{ endpoint: s
           signal.throwIfAborted()
           const result = value.name === 'opengui_list_sessions'
             ? { sessions: service.listSessions().filter(item => owners.get(item.sessionId) === value.owner) }
-            : await callOpenGuiTool(service, value.name, value.args, signal, confirmed)
+            : await callOpenGuiTool(service, value.name, value.args, signal, confirmed, value.owner)
           if (value.name === 'opengui_open_session') {
             ownedSession = (result as { sessionId: string }).sessionId
             owners.set(ownedSession, value.owner)
@@ -263,7 +263,7 @@ export async function startDaemon(options: DaemonOptions): Promise<{ endpoint: s
     sweeping = true
     void (async () => {
       await service.expireIdleSessions()
-      if (service.activeSessionCount === 0 && operations.size === 0 && Date.now() - lastRequest >= (options.idleMs ?? DAEMON_IDLE_MS)) await close()
+      if (service.activeSessionCount === 0 && !service.viewers.active && operations.size === 0 && Date.now() - lastRequest >= (options.idleMs ?? DAEMON_IDLE_MS)) await close()
     })().catch(() => {}).finally(() => { sweeping = false })
   }, options.sweepMs ?? 10_000)
   sweep.unref()

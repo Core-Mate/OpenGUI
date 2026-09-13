@@ -1,3 +1,4 @@
+import { ReadyViewer } from './ready-viewer.ts'
 import { describe, expect, it, vi } from 'vitest'
 import { FakeHost } from './fake-host.ts'
 import { WorkBuddyOpenGuiService } from '../src/service.ts'
@@ -22,7 +23,7 @@ const signal = (): AbortSignal => AbortSignal.timeout(5000)
 
 describe('persistent device displays', () => {
   it('starts every authorized display without locks or screenshots and reuses it across tasks', async () => {
-    const host = new DisplayHost(), service = new WorkBuddyOpenGuiService({ host })
+    const host = new DisplayHost(), service = new WorkBuddyOpenGuiService({ viewers: new ReadyViewer(), host })
     try {
       await service.listDevices(signal())
       expect(host.mirrors.size).toBe(0)
@@ -42,19 +43,19 @@ describe('persistent device displays', () => {
     { phase: 'running' as const, visible: false, rendererReady: true, ready: false },
     { phase: 'running' as const, visible: true, rendererReady: false, ready: false },
     { phase: 'error' as const, ready: false, message: 'Permission missing' },
-  ])('blocks operations when display evidence is incomplete: %j', async status => {
-    const host = new DisplayHost(), service = new WorkBuddyOpenGuiService({ host })
+  ])('does not confuse native window status with established browser video: %j', async status => {
+    const host = new DisplayHost(), service = new WorkBuddyOpenGuiService({ viewers: new ReadyViewer(), host })
     try {
       host.activateMirrors = async () => { host.mirrors.set('serial-a', status) }
       const session = await service.openSession(['phone-a'], signal())
       host.mirrors.set('serial-a', status)
-      await expect(service.observe(session.sessionId, undefined, signal())).rejects.toThrow('waiting_for_display')
-      expect((await service.status(session.sessionId, signal())).devices[0]!.operationCount).toBe(0)
+      await expect(service.observe(session.sessionId, undefined, signal())).resolves.toHaveProperty('observationId')
+      expect((await service.status(session.sessionId, signal())).devices[0]!.operationCount).toBe(1)
     } finally { await service.dispose() }
   })
 
   it('keeps an established session running after an explicit close but still honors cancellation', async () => {
-    const host = new DisplayHost(), service = new WorkBuddyOpenGuiService({ host })
+    const host = new DisplayHost(), service = new WorkBuddyOpenGuiService({ viewers: new ReadyViewer(), host })
     try {
       const session = await service.openSession(['phone-a'], signal())
       const frame = await service.observe(session.sessionId, undefined, signal())
@@ -67,7 +68,7 @@ describe('persistent device displays', () => {
   })
 
   it('invalidates observations on device disconnection, not on window closure', async () => {
-    const host = new DisplayHost(), service = new WorkBuddyOpenGuiService({ host })
+    const host = new DisplayHost(), service = new WorkBuddyOpenGuiService({ viewers: new ReadyViewer(), host })
     try {
       const session = await service.openSession(['phone-a'], signal())
       const frame = await service.observe(session.sessionId, undefined, signal())
@@ -85,7 +86,7 @@ describe('persistent device displays', () => {
     { phase: 'idle' as const, ready: false },
     { phase: 'error' as const, ready: false, message: 'Renderer exited' },
   ])('continues screenshot-driven control after an established display changes: %j', async status => {
-    const host = new DisplayHost(), service = new WorkBuddyOpenGuiService({ host })
+    const host = new DisplayHost(), service = new WorkBuddyOpenGuiService({ viewers: new ReadyViewer(), host })
     try {
       const session = await service.openSession(['phone-a'], signal())
       const frame = await service.observe(session.sessionId, undefined, signal())
@@ -100,7 +101,7 @@ describe('persistent device displays', () => {
   })
 
   it('does not grant a viewing session control or permit it to close a foreign task display', async () => {
-    const host = new DisplayHost(), service = new WorkBuddyOpenGuiService({ host })
+    const host = new DisplayHost(), service = new WorkBuddyOpenGuiService({ viewers: new ReadyViewer(), host })
     try {
       const viewing = await service.openSession(['phone-a'], signal(), 'mirror')
       const control = await service.openSession(['phone-a'], signal())
@@ -112,7 +113,7 @@ describe('persistent device displays', () => {
   })
 
   it('releases disconnected control ownership while retaining displays beyond broker idle', async () => {
-    const host = new DisplayHost(), service = new WorkBuddyOpenGuiService({ host })
+    const host = new DisplayHost(), service = new WorkBuddyOpenGuiService({ viewers: new ReadyViewer(), host })
     // Establish the display before testing retention, independently of socket startup speed.
     await service.start(signal())
     const idle = vi.fn(), broker = await startBroker({ token: 'test', port: 0, service, idleMs: 20, onIdle: idle })

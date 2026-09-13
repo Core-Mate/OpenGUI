@@ -1,3 +1,4 @@
+import { ReadyViewer } from './ready-viewer.ts'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -28,7 +29,7 @@ describe('local host visual control independent of window visibility', () => {
     io.mirror.status.mockImplementation(() => ({ phase: 'running', rendererReady: true, visible: ready, ready }))
     io.mirror.inspect.mockImplementation(async () => io.mirror.status())
     const host = new LocalAdbPhoneHost({ stateDir })
-    const service = new WorkBuddyOpenGuiService({ host })
+    const service = new WorkBuddyOpenGuiService({ viewers: new ReadyViewer(), host })
     const signal = AbortSignal.timeout(10000)
     try {
       const session = await service.openSession(undefined, signal)

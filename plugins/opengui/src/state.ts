@@ -4,8 +4,8 @@ import { homedir, tmpdir } from 'node:os'
 import { isAbsolute, join, parse, resolve, sep } from 'node:path'
 import type { CodexObservation } from './codex/service.ts'
 
-export const VERSION = '0.1.0'
-export const PROTOCOL_VERSION = 2
+export const VERSION = '0.2.0'
+export const PROTOCOL_VERSION = 3
 export const SESSION_IDLE_MS = 30 * 60_000
 export const DAEMON_IDLE_MS = 5 * 60_000
 export const OBSERVATION_RETENTION_MS = 24 * 60 * 60_000

@@ -3,7 +3,7 @@
 set -euo pipefail
 umask 077
 HOST=codex
-VERSION=0.1.0
+VERSION=0.2.0
 ARCHIVE_NAME=opengui-codex-$VERSION.tar.gz
 usage() {
   echo "OpenGUI for $HOST $VERSION (macOS arm64/x64)"
@@ -109,11 +109,28 @@ if (types.some(p => !['-', 'd'].includes(p[0]))) throw Error('Archive links or s
 const packages = path.join(root, 'packages');
 fs.mkdirSync(packages, { recursive: true });
 if (fs.lstatSync(packages).isSymbolicLink()) throw Error('Redirected packages directory');
-const install = fs.mkdtempSync(path.join(packages, version + '-'));
-execFileSync('tar', ['-xzf', archive, '-C', install]);
+const archiveHash = require('node:crypto').createHash('sha256').update(fs.readFileSync(archive)).digest('hex');
+const cache = path.join(packages, version + '-' + archiveHash.slice(0, 16));
+let install;
+if (fs.existsSync(cache)) {
+  if (fs.lstatSync(cache).isSymbolicLink() || fs.readFileSync(path.join(cache, '.archive-sha256'), 'utf8') !== archiveHash) throw Error('CACHE_INVALID: preserve the existing package and inspect its receipt');
+  install = cache;
+} else {
+  install = fs.mkdtempSync(path.join(packages, version + '-staging-'));
+  execFileSync('tar', ['-xzf', archive, '-C', install]);
+  fs.writeFileSync(path.join(install, '.archive-sha256'), archiveHash, {mode: 0o600});
+  fs.renameSync(install, cache); install = cache;
+}
 const manifest = JSON.parse(fs.readFileSync(path.join(install, 'opengui/.codex-plugin/plugin.json')));
 if (manifest.name !== 'opengui' || manifest.version !== version) throw Error('Archive plugin/version mismatch');
 execFileSync(process.execPath, [path.join(install, 'opengui/lib/cli.js'), '--help'], { stdio: 'pipe' });
+try {
+  execFileSync(process.execPath, [path.join(install, 'opengui/lib/cli.js'), '--prepare-video'], { stdio: 'inherit', env: { ...process.env, OPENGUI_CODEX_DATA_DIR: root } });
+} catch (error) {
+  console.error('VIDEO_PREPARE_FAILED: previous configuration retained. Retry this installer with the same --archive after restoring network access.');
+  throw error;
+}
+execFileSync(process.execPath, [path.join(install, 'opengui/lib/cli.js'), '--check-upgrade'], { stdio: 'inherit', env: { ...process.env, OPENGUI_CODEX_DATA_DIR: root } });
 const marketDir = path.join(install, '.agents/plugins');
 fs.mkdirSync(marketDir, { recursive: true });
 fs.writeFileSync(path.join(marketDir, 'marketplace.json'), JSON.stringify({
@@ -124,14 +141,19 @@ fs.writeFileSync(path.join(marketDir, 'marketplace.json'), JSON.stringify({
 const codexHome = process.env.CODEX_HOME || path.join(require('node:os').homedir(), '.codex');
 const config = path.join(codexHome, 'config.toml');
 if (fs.existsSync(config) && fs.lstatSync(config).isSymbolicLink()) throw Error('Redirected Codex configuration');
-if (fs.existsSync(config)) fs.copyFileSync(config, path.join(install, 'config.toml.before-install'));
-fs.writeFileSync(path.join(install, 'previous-plugins.json'), JSON.stringify(listing, null, 2));
-console.log('Recovery files and immutable package: ' + install);
+const recoveryDir = fs.mkdtempSync(path.join(install, 'install-receipt-'));
+if (fs.existsSync(config)) fs.copyFileSync(config, path.join(recoveryDir, 'config.toml.before-install'));
+fs.writeFileSync(path.join(recoveryDir, 'previous-plugins.json'), JSON.stringify(listing, null, 2));
+console.log('Recovery files: ' + recoveryDir + '; immutable package: ' + install);
 const markets = JSON.parse(run(['marketplace', 'list', '--json'])).marketplaces;
 if (!Array.isArray(markets)) throw Error('Unsupported Codex marketplace inventory');
 const previous = markets.find(m => m.name === 'opengui-standalone');
 if (previous && (previous.marketplaceSource?.sourceType !== 'local' || !previous.root.startsWith(packages + path.sep))) throw Error('Existing marketplace is not owned by this installer; configuration retained');
-fs.writeFileSync(path.join(install, 'previous-marketplaces.json'), JSON.stringify(markets, null, 2));
+fs.writeFileSync(path.join(recoveryDir, 'previous-marketplaces.json'), JSON.stringify(markets, null, 2));
+if (previous?.root === install && listing.installed.some(p => p.name === 'opengui' && p.marketplaceName === 'opengui-standalone' && p.enabled && p.version === version)) {
+  console.log('ALREADY_CONFIGURED: resources cached; hostLoaded=unverified; viewerAvailable=unverified.');
+  process.exit(0);
+}
 let removed = false, added = false;
 try {
   if (previous) { run(['marketplace', 'remove', 'opengui-standalone']); removed = true; }
@@ -147,10 +169,10 @@ try {
       if (listing.installed.some(p => p.marketplaceName === 'opengui-standalone' && p.enabled)) run(['add', 'opengui@opengui-standalone']);
     }
   } catch (recovery) { console.error('Automatic source recovery failed: ' + recovery.message); }
-  console.error('Installation failed. Inspect the saved inventories and configuration backup in ' + install);
+  console.error('Installation failed. Inspect the saved inventories and configuration backup in ' + recoveryDir);
   throw error;
 }
-console.log('Installed. Start a NEW Codex chat, choose OpenGUI, and ask: list connected phones without operating them.');
+console.log('CONFIG_WRITTEN; hostLoaded=unverified; viewerAvailable=unverified. Start a NEW Codex chat, choose OpenGUI, and ask: list connected phones without operating them.');
 console.log('Rollback: finish OpenGUI tasks, then reinstall the previous version using its installer; previous packages and configuration backup are retained.');
 
 INSTALL_JS

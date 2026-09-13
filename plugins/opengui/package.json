@@ -1,6 +1,6 @@
 {
   "name": "opengui-codex",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Standalone local Android control for Codex on macOS",
   "type": "module",
@@ -8,6 +8,7 @@
   "engines": { "node": ">=22.19.0" },
   "packageManager": "pnpm@11.19.0",
   "scripts": {
+    "test:viewer": "tsc -p tsconfig.browser.json && node scripts/test-viewer-browser.mjs .artifacts/browser/src/viewer.js",
     "build": "tsc --noEmit && tsdown",
     "test": "vitest run",
     "validate": "node scripts/validate.mjs",

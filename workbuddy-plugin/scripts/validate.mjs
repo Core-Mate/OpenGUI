@@ -26,8 +26,8 @@ assert.deepEqual(Object.keys(config.mcpServers), ['opengui'])
 assert(config.mcpServers.opengui.args.includes(`--package=https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-v${VERSION}/opengui-mcp-${VERSION}.tgz`))
 assert.equal(config.mcpServers.opengui.command, 'npx')
 assert.equal(config.mcpServers.opengui.runtime.type, 'node')
-assert.equal(OPENGUI_WORKBUDDY_TOOLS.length, 11)
-assert.equal(new Set(OPENGUI_WORKBUDDY_TOOLS.map(tool => tool.name)).size, 11)
+assert.equal(OPENGUI_WORKBUDDY_TOOLS.length, 14)
+assert.equal(new Set(OPENGUI_WORKBUDDY_TOOLS.map(tool => tool.name)).size, 14)
 for (const path of ['lib/host-hook.js', 'lib/automation.js', 'lib/opengui-SKILL.md']) assert((await stat(join(root, path))).size > 0)
 if (process.platform === 'darwin') for (const arch of ['arm64', 'x64']) for (const helper of ['window-helper', 'mirror-launcher']) assert((await stat(join(root, `lib/native/${helper}-${arch}`))).mode & 0o111)
 assert((await readFile(join(root, 'lib/mcp.js'), 'utf8')).startsWith('#!/usr/bin/env node'))
@@ -35,7 +35,8 @@ if (process.platform !== 'win32') assert(((await stat(join(root, 'lib/mcp.js')))
 const skill = await readFile(join(root, 'connector/skills/control/SKILL.md'), 'utf8')
 for (const key of ['description', 'description_zh', 'description_en', 'author', 'version']) assert(new RegExp(`^${key}: .+`, 'm').test(skill))
 assert(skill.includes(`version: ${VERSION}`))
-for (const tool of OPENGUI_WORKBUDDY_TOOLS) assert(skill.includes(tool.name))
+const reference = await readFile(join(root, 'connector/skills/control/references.md'), 'utf8')
+for (const tool of OPENGUI_WORKBUDDY_TOOLS) assert((skill + reference).includes(tool.name))
 
 const hashes = {
   'darwin/adb': '1811e253b21b12cbfda7201ebaf86c10e7ddcb5c606a7a81f7c82b4c429c2d3b',
@@ -70,4 +71,4 @@ if (process.argv.includes('--release')) {
     assert(check?.verified === true && typeof check.evidence === 'string' && check.evidence.trim().length > 0, `Unverified release gate: ${name}`)
   }
 }
-console.log('WorkBuddy manifest, eleven-tool contract, production isolation, native helpers, and bundled ADB hashes verified.')
+console.log('WorkBuddy manifest, fourteen-tool contract, production isolation, native helpers, and bundled ADB hashes verified.')

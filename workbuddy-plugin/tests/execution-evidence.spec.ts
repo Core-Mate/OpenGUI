@@ -1,3 +1,4 @@
+import { ReadyViewer } from './ready-viewer.ts'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import sharp from 'sharp'
 import { WorkBuddyOpenGuiService, createControlTask } from '../src/service.ts'
@@ -10,7 +11,7 @@ afterEach(async () => { vi.useRealTimers(); for (const close of cleanup.splice(0
 const signal = () => AbortSignal.timeout(5000)
 function fixture(leaseMs = 600_000) {
   const host = new FakeHost()
-  const service = new WorkBuddyOpenGuiService({ host, leaseMs })
+  const service = new WorkBuddyOpenGuiService({ viewers: new ReadyViewer(), host, leaseMs })
   cleanup.push(() => service.dispose())
   return { host, service }
 }

@@ -10,9 +10,9 @@ describe('WorkBuddy native hook adapter', () => {
     const connection = { hostEvent: vi.fn(async () => ({ hostContext: 'single-use' })), close: vi.fn() }
     const result = await handleHostHook(event, async () => connection)
     const expected = { ...args, hostContext: 'single-use' }
-    expect(result).toEqual({ hookSpecificOutput: { hookEventName: 'PreToolUse', modifiedInput: {
-      ...event.tool_input, params: stringify ? JSON.stringify(expected) : expected,
-    } } })
+    const updated = { ...event.tool_input, params: stringify ? JSON.stringify(expected) : expected }
+    // WorkBuddy 5.5.3 ToolHookManager reads updatedInput; older adapters read modifiedInput.
+    expect(result).toEqual({ hookSpecificOutput: { hookEventName: 'PreToolUse', updatedInput: updated, modifiedInput: updated } })
     expect(JSON.stringify(result)).not.toContain('permissionDecision')
     expect(connection.hostEvent).toHaveBeenCalledWith(expect.objectContaining({ session_id: 'native-host-id', tool_name: 'opengui_observe', tool_input: args }), expect.any(AbortSignal))
     expect(connection.close).toHaveBeenCalledTimes(1)

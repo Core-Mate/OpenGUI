@@ -1,11 +1,41 @@
 {
-  "version": "0.2.1",
+  "version": "0.3.0",
   "checks": {
-    "workbuddyImageToolFlow": { "verified": false, "evidence": "" },
-    "realDeviceActionsIncludingUnicode": { "verified": false, "evidence": "" },
-    "twoPhysicalDevicesAndConflict": { "verified": false, "evidence": "" },
-    "workbuddyAutonomousContinuationAndStop": { "verified": false, "evidence": "" },
-    "workbuddyStopRestartCleanup": { "verified": false, "evidence": "" },
-    "supportedDesktopPackagedStartup": { "verified": false, "evidence": "" }
+    "workbuddyImageToolFlow": {
+      "verified": false,
+      "evidence": ""
+    },
+    "realDeviceActionsIncludingUnicode": {
+      "verified": false,
+      "evidence": ""
+    },
+    "twoPhysicalDevicesAndConflict": {
+      "verified": false,
+      "evidence": ""
+    },
+    "workbuddyAutonomousContinuationAndStop": {
+      "verified": false,
+      "evidence": ""
+    },
+    "workbuddyStopRestartCleanup": {
+      "verified": false,
+      "evidence": ""
+    },
+    "supportedDesktopPackagedStartup": {
+      "verified": false,
+      "evidence": ""
+    },
+    "domesticVisibleVideoAndHooks": {
+      "verified": true,
+      "evidence": "docs/plans/2026-09-13-viewer-candidate-acceptance.md: intermediate candidate on native 5.5.3; first frame 11377 ms, automation.available=true, task-ended playback. Final decoder configuration-reset patch tested in browser, not reinstalled while Mac locked."
+    },
+    "overseasNativeViewer": {
+      "verified": false,
+      "evidence": "Client unavailable; config fixture only."
+    },
+    "realVideoPerformanceAndSoak": {
+      "verified": false,
+      "evidence": "Phone rotation, dynamic FPS, end-to-end latency and 30-minute real-device resource soak are not yet accepted."
+    }
   }
 }

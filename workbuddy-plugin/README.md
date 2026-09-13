@@ -1,134 +1,42 @@
-# OpenGUI for WorkBuddy
+# OpenGUI for WorkBuddy 0.3.0
 
-[中文说明](README.zh-CN.md)
+[中文说明](README.zh-CN.md). macOS candidate, protocol 8. No public release or directory approval is implied by these files.
 
-Independent local **MCP + Skill + lifecycle Hooks** connector for autonomous Android control, native read-only mirroring, and a read-only device wall. Version `0.2.1` (broker protocol `7`) is a testing candidate, not a stable release or a marketplace-approved connector.
+OpenGUI opens real-time phone video beside the current chat using WorkBuddy built-in `present_files` with the Viewer URL and current working directory. A visible decoded H.264 frame must reach the backend before the first phone observation or action. An opening request or screenshot preview is insufficient. Video is read-only and local; model observations still use explicit screenshots.
 
-Every OpenGUI request begins with `opengui_start`, displaying all connected authorized phones without taking control locks. Windows are read-only and silent, and persist across task completion, cancellation and MCP recycling. Only user-requested closure or device/runtime failure ends them. Phone tasks use the current WorkBuddy VLM in a screenshot–action–screenshot loop; standalone viewing sends no images to the model. On macOS the bundled helper verifies initial window visibility and renderer readiness once per control task. Subsequent minimization, occlusion, desktop switching, closure or renderer exit does not revoke control: the model receives independent phone screenshots. Initial display failure is reported and blocks operation until startup succeeds; it is never silently bypassed. First use downloads verified scrcpy into the independent WorkBuddy cache.
+## Task flow
 
-## Installer compatibility and repair
+1. List devices and freeze the sole authorized phone or the user's selected devices (one to four).
+2. Call `opengui_open_viewer`, open its URL in the host's right browser, and call `opengui_viewer_status` with `waitMs: 30000` once. A timeout is terminal for that logical task, including repeated opens; report the blocker.
+3. For pure viewing, finish. For control, call `opengui_open_session` with the same `viewerId` and devices, then observe and act one screenshot at a time.
+4. Close/cancel control when finished. Watching continues. Hiding pauses video; closing the last page releases its source within the cleanup budget. Reopening watching does not restart the task.
 
-Version 0.2.1 is an unpublished repair candidate; 0.2.0 is already a public prerelease. Use assets from the same published tag, or a maintainer-provided matching candidate archive.
+After first display authorization, video failure or page closure does not cancel healthy screenshot control. Physical disconnection still invalidates observations; never switch phones or replay uncertain actions. Each task owns control exclusively. Viewer credentials never authorize phone actions. Independent host processes cannot coordinate external controllers, so do not control the same phone through another host concurrently.
 
-The installer checks the selected application before downloading: WorkBuddy 5.5.3 minimum, product-specific configuration directory, Hook declarations, and running Electron/helper processes. Use `--check` for a read-only preflight and `--app /absolute/WorkBuddy.app` when multiple bundles exist. The installer reads the application's `cli/product.json`, including the overseas `.workbuddy-ai` directory. A verified custom directory can be supplied with `--config-root`; `WORKBUDDY_CONFIG_DIR` and numbered instances are also supported.
+## Installation and migration
 
-Host configuration is separate from the stable runtime directory `~/.workbuddy/opengui`. Per-configuration receipts preserve independent instances. Explicit `--repair-legacy` restores a confirmed mistaken legacy installation only when an installation receipt proves ownership and the entire file still matches the installed digest. Subsequent edits are retained and reported. Same-version installation reuses verified downloads and dependencies, returning `ALREADY_CONFIGURED` when configuration is unchanged. `CONFIG_WRITTEN` does not prove host loading, Hook delivery or phone acceptance; restart and verify read-only discovery first.
+Use the supplied installer and matching archive with adjacent SHA-256 sidecars:
 
-## What it does
+```sh
+bash scripts/install-macos.command --archive /absolute/path/opengui-mcp-0.3.0.tgz
+```
 
-- Discover USB/ADB-authorized Android phones; freeze one to four per session.
-- Observe bounded screenshots and execute one allowlisted action at a time: tap, swipe, text, key, launch, or wait.
-- View each session's phones in a private loopback device wall.
-- Keep WorkBuddy connections isolated through a per-user broker. Different phones may run concurrently; the same phone cannot be shared by WorkBuddy sessions.
-- Execute the user's authorized task without redundant plugin confirmation pages or approval flags. Host restrictions, account authentication and USB authorization remain mandatory.
-- Continue unfinished recoverable tasks through native WorkBuddy Stop feedback, up to ten continuations. FinalStop, SessionEnd and a ten-minute execution-inactivity lease release control without closing mirrors.
+The installer prepares private Node, verifies the package and scrcpy resources, and only then changes this host's configuration. Complete old phone tasks and close old displays before upgrading. No migration force-kills an old runtime. Repeated installation reuses verified caches; download failure reports its stage and leaves previous configuration available. Keep the old installer/archive and recovery record to reinstall the old version. The installer reports configuration, host loading and real-viewer acceptance separately.
 
-There is no DSH/Codex dependency, installer, UI injection, browser agent, custom model service, cloud gateway, or API-key requirement. Those production plugins and their state remain separate. WorkBuddy's selected model must support tools and MCP images. Semantic classification of an arbitrary tap is the assistant's responsibility; the runtime cannot infer its consequence from coordinates.
+WorkBuddy 5.5.3 domestic and overseas configuration discovery, running-host preflight, per-configuration receipts, and native Hooks are retained. Use `--check` or `--app /absolute/WorkBuddy.app` for explicit preflight. Legacy `opengui_start` and native mirror tools are compatibility-only, on explicit request. They never substitute for browser first-frame authorization.
 
-## Requirements and privacy
+## Runtime and privacy
 
-- WorkBuddy 5.5.3 or newer; actual host acceptance is tracked separately in `release-readiness.json`.
-- Node `^22.19.0 || >=24`, declared in the connector for WorkBuddy's managed runtime.
-- Bundled ADB: macOS arm64/x64, Linux x64, Windows x64. Other architectures need an explicit compatible `OPENGUI_ADB_PATH`; Unicode support is limited to the pinned scrcpy platforms.
-- Android USB debugging and user-approved authorization. The connector never accepts that authorization automatically.
-- First installation needs GitHub, nodejs.org and npm access. Unicode input downloads a checksum-pinned official scrcpy archive on first use. A cached installation may be restarted offline after all required dependencies and scrcpy assets are cached.
+Each plugin independently packages scrcpy 4.1 transport and browser H.264 decoding: maximum dimension 960, 30 fps, 2 Mbps, no audio and no video control channel. Up to four per-device sources are shared within this host. Clients use bounded queues and recover on configuration/key frames. There is no shared background service or dependency on DSH.
 
-Screenshots and visible phone data are returned to the current WorkBuddy model. They are not written to disk by this runtime, although WorkBuddy may retain tool results. Device-wall URLs contain private viewing capabilities; do not share them. HTTP serves only `127.0.0.1`, checks Host/Origin and per-session tokens, sends no-store headers, and loads no remote assets. The wall stops reading frames after session termination.
+The local HTTP/WebSocket server checks loopback Host, Origin and private viewer credentials. Do not share Viewer URLs. Phone screenshots sent to the model follow host data policies; video is not sent frame by frame. Session locks and observation authority are never restored after restart. See VIDEO-NOTICE.md and LICENSE for provenance.
 
-Local state: `~/.workbuddy/opengui` (private token, owned-forward inventory, scrcpy cache). Windows uses inherited filesystem ACLs. `OPENGUI_WORKBUDDY_HOME` isolates tests; separate roots must never control the same phone concurrently. Version mismatches fail closed. For upgrades, explicitly finish old tasks and close old displays before switching the MCP path to an immutable new package directory. Never force-close existing displays or overwrite the running installation. Keep the previous configuration, Skill and package for rollback.
-
-Do not run DSH, Codex, manual ADB, or another automation host against the same physical phone concurrently. WorkBuddy leases cannot coordinate those external owners. The package never runs `adb kill-server`, removes global forwards, or modifies another host's cache.
-
-## Install on macOS
-
-The host-specific release now includes `opengui-workbuddy-<version>-install.command`
-and its SHA-256 sidecar. After publication, download and verify the installer, quit
-WorkBuddy after finishing phone tasks, and run it with `bash`. It fetches the matching
-verified package, prepares private Node, installs with lifecycle scripts disabled,
-and invokes the configuration installer shipped inside the package. No source checkout,
-system Node, Xcode, or user-run tests are required. Existing MCP servers, Hooks,
-configuration backups and old version directories are preserved. Reopen WorkBuddy
-and trust the MCP before read-only device discovery.
-
-For unpublished candidates use `bash scripts/install-macos.command --archive /absolute/opengui-mcp-0.2.1.tgz`
-with the adjacent `.sha256` file. This does not bypass public release acceptance.
-See the [Chinese installation guide](README.zh-CN.md#macos-安装) and the
-[agent installation Skill](../skills/opengui-plugin-install/SKILL.md).
-
-### Maintainer candidate builds
-
-Build once with `npm ci`, `npm run pack:release`, and `npm run smoke:packed`
-in this directory. This build machine needs Node/npm and Xcode command-line tools.
-Transfer the tarball, sidecar and installer from `dist/` to the test Mac; the test
-Mac needs no build tools. The configuration installer is included inside the tarball.
-
-### Verify the installation
-
-1. Reopen WorkBuddy. Enable/trust the `opengui` MCP if the host requests it, and select a model that can read MCP images and call tools.
-2. Connect an idle Android phone, enable USB debugging, and accept the phone's USB authorization prompt. Do not control the same phone through another host.
-3. Type `/opengui` and select the Skill. Send “List connected phones without operating them” to check tool discovery and actual device status without a phone action.
-4. On a phone whose screenshots may be sent to the selected model, send “Open Settings and report the Android version.” Verify a real mirror window, screenshot-based execution, the reported result, and release of control after completion. The mirror should remain open.
-
-If the Skill is missing, check `~/.workbuddy/skills/opengui/SKILL.md` and reopen WorkBuddy; an MCP entry alone is insufficient. If no tools appear, check the host's MCP trust/status and the installed Node/package paths. If automatic continuation is unavailable, check that `settings.json` still contains the installed lifecycle Hooks; do not work around it by typing “continue” repeatedly. USB authorization and macOS permission prompts require the user's system approval. Build and smoke-test success is not desktop or real-phone acceptance.
-
-### Roll back
-
-Finish tasks, close WorkBuddy's OpenGUI mirrors and quit WorkBuddy. `~/.workbuddy/opengui/local-install-<configuration-id>.json` records each affected file and its backup. Restore the previous MCP and Hook configuration, Skill, and previous installation metadata if present, then reopen WorkBuddy. A `null` backup means that file did not exist before installation; remove only this installation's entries if other settings have since been added. Preserve subsequent unrelated edits, old packages and caches. Never reset the entire WorkBuddy configuration or touch DSH/Codex state.
-
-## Build and local testing
-
-Run from `workbuddy-plugin/`:
+## Verification
 
 ```sh
 npm ci
-npm run check
 npm run pack:release
 npm run smoke:packed
 ```
 
-`check` runs independent tests, TypeScript compilation, connector validation, source-isolation checks, and bundled ADB hash checks. It never builds the production plugins. `smoke:packed` starts the tarball through npm's isolated cache, checks MCP initialization/discovery/ping, launches its private broker, lists ADB devices read-only, and repeats with `--offline`. It cleans only the authenticated broker launched in its temporary state root. It sends no phone actions and is not WorkBuddy end-to-end acceptance.
-
-Developers with `agent-browser` installed can run `npm run test:browser` to verify Chromium device-wall image updates and stop behavior using synthetic data only. This QA tool is not an end-user dependency. On macOS, `npm run test:native` verifies immediate readiness logs and graceful/forced cleanup of synthetic child processes; it never opens or operates a phone.
-
-Install the local tarball in an immutable version directory under `~/.workbuddy/opengui/packages/`. Stop the old WorkBuddy OpenGUI runtime before switching. Run `node scripts/install-local.mjs --package-dir <absolute-installed-opengui-mcp-directory> --node <managed-node-executable>` from this built source package. The installer backs up and incrementally merges WorkBuddy `mcp.json`, `settings.json` and the `opengui` Skill, retaining other plugins and hooks. It refuses redirected configuration paths. This local override does not use the unpublished Release URL. Roll back using the backup paths in `opengui/local-install.json`, restore the previous MCP package path, and restart WorkBuddy; do not delete other hosts' data or the retained cache.
-
-Try “Check the Android version on my phone.” A single connected phone is selected automatically; an explicit device name takes precedence. VLM tasks send phone screenshots to the current model; get permission for sensitive content. Close control sessions with the actual outcome and latest observation evidence, never displays. Closing resources alone records an unknown outcome, not success. Legacy mirror handles retain their private resume capability, but new viewing requests need no session. Closing or minimizing an established window affects viewing only; use `opengui_cancel` to stop the task. Recovery does not reopen closed windows. Physical disconnection invalidates observations; a new control session and fresh images are required after connection loss. No failed phone action is automatically replayed.
-
-Hooks bind the native host session to each direct MCP call or DeferExecuteTool wrapper through a short-lived, exact-argument token. A model-supplied task ID is not authority. Hooks never approve or execute phone actions and never alter returned images. Missing hook context is explicitly reported as automatic continuation unavailable. The original logical task retains its frozen phones and 100 observations/actions per device across new connections; status polls and mirroring do not renew the control lease. User interruption wins over Stop continuation.
-
-Actions use current observation credentials, consumed before dispatch. Transient read failures get at most two retries. An uncertain mutation must be verified from a new screenshot, not replayed. Pixel-difference checks compare the overall page and tap region; post-action stabilization samples every 250 ms for up to two seconds and reports unsettled frames rather than waiting indefinitely. Three repeated no-progress actions require a different strategy. These image checks are not semantic proof of task success. Deprecated confirmation fields confer no permission and no confirmation UI remains.
-
-Builds on macOS require Xcode command-line tools and bundle arm64/x64 window helpers; end users do not need a compiler. Helpers inspect metadata only and never capture pixels. Accessibility permission may be needed to raise windows; denial blocks operation. Windows/Linux display verification is not yet supported, so phone operations fail closed there rather than claiming macOS parity.
-
-## Distribution
-
-Candidate tag convention: `opengui-workbuddy-v0.2.1` (not created by local installation). `pack:release` creates:
-
-- `dist/opengui-mcp-0.2.1.tgz` and `.sha256`
-- `dist/opengui-workbuddy-connector-0.2.1.zip` and `.sha256`
-- `dist/opengui-workbuddy-0.2.1-install.command` and `.sha256`
-
-The ZIP contains `opengui/connector-meta.json`, `mcp.json`, `icon.svg`, and `skills/control/SKILL.md`. Its npx command pins the matching GitHub Release tarball. Do not distribute this candidate manifest as installable until that asset exists. The tarball includes code, ADB, notices, and package metadata; npm resolves its pinned runtime dependencies. No npm publish step is required.
-
-The WorkBuddy-only workflows do not modify the DSH/Codex pipelines. Stable publication additionally requires all real-host acceptance entries in `release-readiness.json` to be verified with evidence. A successful build, local archive, pushed commit, GitHub Release, and WorkBuddy marketplace approval are distinct states. Release assets are immutable; a rerun compares existing bytes and fails rather than replacing mismatched files.
-
-Submit the verified connector ZIP to the WorkBuddy team separately. See the official [connector format](https://open.workbuddy.cn/docs/connector) and [Skill format](https://open.workbuddy.cn/docs/skill).
-
-## Acceptance before stable release
-
-1. Load the candidate in the real WorkBuddy client, confirm eleven tools and actual images available to the selected model.
-2. Verify tap/swipe/ASCII and Unicode text/key/launch/wait on an authorized test phone. Never test payment, publication, or deletion on real accounts.
-3. With two physical phones, verify independent tasks and the device wall; prove a second task cannot take an occupied phone.
-4. Exercise native Stop continuation, FinalStop/SessionEnd cleanup, first-call recovery and user interruption; simulate authorized consequential actions without plugin confirmation UI.
-5. Stop a task, disconnect/restart WorkBuddy, verify only owned sessions and forwards are cleaned, and reconnect successfully.
-6. Run packaged startup on all claimed desktop platforms. Record real-host evidence before marking the release gates verified.
-
-See [NOTICE.md](NOTICE.md) for the fixed public-source provenance and third-party notices.
-
-### Public testing and stable releases
-
-Namespaced tag pushes publish an explicitly marked GitHub prerelease with the verified
-prebuilt assets. This testing lane does not mark any manual acceptance item as passed.
-Stable publication uses a manual workflow dispatch on that same version tag with
-`prerelease=false`; all existing `release-readiness.json` checks and evidence remain required.
-Published assets remain immutable in both lanes. The public directory is a separate approval.
+The browser test additionally needs development-only `agent-browser` and `ffmpeg`. It validates actual H.264 decode and canvas changes, first-frame receipts, continued playback after completion, and subscriber cleanup. End users do not need those tools. See the [candidate acceptance report](../docs/plans/2026-09-13-viewer-candidate-acceptance.md) for separate host, device, performance, installation and release evidence. Candidate packaging alone does not pass those gates.
