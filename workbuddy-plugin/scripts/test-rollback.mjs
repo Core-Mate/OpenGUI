@@ -35,6 +35,6 @@ try {
     assert.equal(settings.hooks.FinalStop.length, 1)
     assert(receipt.backups.length > 0)
   }
-  assert.deepEqual(versions, [oldVersion, '0.3.0', oldVersion, '0.3.0'])
+  assert.deepEqual(versions, [oldVersion, '0.3.1', oldVersion, '0.3.1'])
   console.log(JSON.stringify({ result: 'PASS', versions, scope: 'isolated configuration rollback using retained packages; no host runtime acceptance' }))
 } finally { await rm(temporary, { recursive: true, force: true }) }

@@ -1,6 +1,6 @@
-# OpenGUI for WorkBuddy 0.3.0
+# OpenGUI for WorkBuddy 0.3.1
 
-[中文说明](README.zh-CN.md). macOS candidate, protocol 8. No public release or directory approval is implied by these files.
+[中文说明](README.zh-CN.md). macOS public-testing candidate, protocol 8. Marketplace approval and the remaining real-device gates are separate.
 
 OpenGUI opens real-time phone video beside the current chat using WorkBuddy built-in `present_files` with the Viewer URL and current working directory. A visible decoded H.264 frame must reach the backend before the first phone observation or action. An opening request or screenshot preview is insufficient. Video is read-only and local; model observations still use explicit screenshots.
 
@@ -18,12 +18,14 @@ After first display authorization, video failure or page closure does not cancel
 Use the supplied installer and matching archive with adjacent SHA-256 sidecars:
 
 ```sh
-bash scripts/install-macos.command --archive /absolute/path/opengui-mcp-0.3.0.tgz
+bash scripts/install-macos.command --archive /absolute/path/opengui-mcp-0.3.1.tgz
 ```
 
-The installer prepares private Node, verifies the package and scrcpy resources, and only then changes this host's configuration. Complete old phone tasks and close old displays before upgrading. No migration force-kills an old runtime. Repeated installation reuses verified caches; download failure reports its stage and leaves previous configuration available. Keep the old installer/archive and recovery record to reinstall the old version. The installer reports configuration, host loading and real-viewer acceptance separately.
+The installer prepares private Node, verifies the package and scrcpy resources, and only then changes this host's configuration. On WorkBuddy 5.5.6+, the application may stay open: MCP configuration is watched live, while external Hook changes are reviewed in `/hooks` and the installed Skill is confirmed in `/skills`. Start a new task only if the current task does not refresh. Older compatible hosts use the Command-Q fallback reported by preflight.
 
-WorkBuddy 5.5.3 domestic and overseas configuration discovery, running-host preflight, per-configuration receipts, and native Hooks are retained. Use `--check` or `--app /absolute/WorkBuddy.app` for explicit preflight. Legacy `opengui_start` and native mirror tools are compatibility-only, on explicit request. They never substitute for browser first-frame authorization.
+Complete old phone tasks and close old displays before upgrading. If an old broker remains, disable the old OpenGUI MCP and wait for its idle exit before retrying. No migration force-kills an old runtime. Repeated installation reuses verified caches; download failure reports its stage and leaves previous configuration available. Keep the old installer/archive and recovery record to reinstall the old version. The installer reports configuration, host loading and real-viewer acceptance separately.
+
+WorkBuddy 5.5.3 domestic and overseas configuration discovery, version-aware running-host preflight, per-configuration receipts, and native Hooks are retained. Use `--check` or `--app /absolute/WorkBuddy.app` for explicit preflight. Legacy `opengui_start` and native mirror tools are compatibility-only, on explicit request. They never substitute for browser first-frame authorization.
 
 ## Runtime and privacy
 

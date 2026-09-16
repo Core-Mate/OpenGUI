@@ -83,9 +83,9 @@ Model availability, pricing, and policy behavior vary by version and region. Whi
 
 WorkBuddy has a separate [MCP + Skill + Hooks connector](./workbuddy-plugin/README.md#install-on-macos). It uses WorkBuddy's current visual model to operate Android phones and opens read-only scrcpy windows by default. No DSH installation, full OpenGUI backend, or extra model API key is required.
 
-Version `0.2.0` is a local candidate in [PR #95](https://github.com/Core-Mate/OpenGUI/pull/95), not a published Release or marketplace installation. Start with macOS and WorkBuddy 5.5.3; Windows/Linux package checks do not establish phone-control support. Follow the [macOS installation steps](./workbuddy-plugin/README.md#install-on-macos) to build the candidate and install its MCP, `opengui` Skill and lifecycle Hooks together. The installer preserves other plugins and backs up the affected WorkBuddy configuration.
+Version `0.3.1` is a macOS public-testing prerelease, not marketplace approval or complete real-device acceptance. It installs the MCP, `opengui` Skill and lifecycle Hooks together, preserves other plugins, and backs up the affected WorkBuddy configuration. WorkBuddy 5.5.6+ supports the live installation flow; older compatible versions use the Command-Q fallback reported by preflight.
 
-After restarting WorkBuddy, enable/trust the `opengui` MCP if prompted, connect a USB-debugging-authorized Android phone, select `/opengui`, and send:
+After installation, enable/trust the `opengui` MCP if prompted, review the external Hook change in `/hooks`, confirm `opengui` in `/skills`, connect a USB-debugging-authorized Android phone, select `/opengui`, and send:
 
 ```text
 Open Settings and report the Android version on my phone.

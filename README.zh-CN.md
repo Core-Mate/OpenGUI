@@ -84,9 +84,9 @@ OpenGUI 正式支持 DSH `0.1.0-rc.7`、`0.1.0-rc.8`、`0.1.1-rc.1` 和 `0.1.1-r
 
 WorkBuddy 使用独立的 [MCP + Skill + Hooks 插件](./workbuddy-plugin/README.zh-CN.md#macos-安装)，由当前视觉模型看图操作 Android 手机，默认打开只读 scrcpy 投屏窗口。不需要安装 DSH、部署完整 OpenGUI 后端或额外配置模型 API Key。
 
-当前 `0.2.0` 是 [PR #95](https://github.com/Core-Mate/OpenGUI/pull/95) 中的本地候选版，尚未正式发布或上架市场。安装以 macOS、WorkBuddy 5.5.3 为基线，Windows/Linux 打包检查通过不代表支持真机操作。按照 [macOS 安装步骤](./workbuddy-plugin/README.zh-CN.md#macos-安装)，将 MCP、`opengui` 技能和生命周期 Hooks 一起安装。安装器会备份相关 WorkBuddy 配置，保留其他插件。
+当前 `0.3.1` 是 macOS 公测预发布版，不代表已经上架市场或完成全部真机验收。安装会把 MCP、`opengui` Skill 和生命周期 Hooks 一起配置，备份相关 WorkBuddy 配置并保留其他插件。WorkBuddy 5.5.6 及以上支持运行中安装；旧版兼容宿主会由预检明确要求 Command-Q。
 
-重开 WorkBuddy，按宿主提示启用并信任 `opengui` MCP，连接已授权 USB 调试的 Android 手机。在输入框选择 `/opengui`，发送：
+安装后按宿主提示启用并信任 `opengui` MCP，在 `/hooks` 中审查外部 Hook 变更，并在 `/skills` 中确认 `opengui`。连接已授权 USB 调试的 Android 手机，在输入框选择 `/opengui`，发送：
 
 ```text
 打开手机设置，查看并告诉我 Android 版本。
