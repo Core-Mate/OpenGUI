@@ -1,5 +1,7 @@
-# WorkBuddy 0.3.0 candidate
+# WorkBuddy 0.3.1 candidate
 
-Adds independent read-only real-time Viewers and first-visible-video authorization. Control completion preserves viewing; page closure preserves established control. Adds bounded H.264 recovery, native-host Skill routing, eager video-resource preparation, and upgrade checks. Protocol 8 rejects old runtimes; retain old packages and end old sessions/displays before switching. Existing observation safety and host isolation remain.
+Adds live installation for WorkBuddy 5.5.6 and newer. The host may stay open while the verified installer atomically writes the MCP, Skill, and Hook configuration. WorkBuddy watches the MCP file; the user reviews the external Hook change in `/hooks` and confirms the Skill in `/skills`. Older compatible hosts retain the Command-Q fallback.
 
-This candidate has not been published. See the candidate acceptance report for passed and outstanding gates. Do not equate source tests or a decoder capability check with installed-host real-device acceptance.
+Upgrades still stop if an old OpenGUI broker owns tasks or persistent displays. Finish those tasks, close their viewers or mirrors, disable the old OpenGUI MCP, and retry after the broker exits. The installer does not kill WorkBuddy or phone processes. Existing observation safety, host isolation, rollback receipts, and protocol 8 remain unchanged.
+
+This is a public-testing candidate. Stable publication still requires the gates in `release-readiness.json`.

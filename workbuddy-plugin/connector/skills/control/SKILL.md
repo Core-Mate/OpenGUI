@@ -6,7 +6,7 @@ description: Autonomously complete user-authorized Android phone tasks using rea
 description_zh: 根据真实截图全自动完成用户指定的 Android 手机任务，默认持续投屏，自动恢复、核验结果并释放控制锁；不重复询问已授权步骤。
 description_en: Complete authorized Android tasks through a real VLM screenshot-action loop, persistent local displays, bounded recovery and automatic task cleanup.
 category: productivity
-version: 0.3.0
+version: 0.3.1
 author: OpenGUI
 ---
 

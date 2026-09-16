@@ -3,13 +3,13 @@
 set -euo pipefail
 umask 077
 HOST=workbuddy
-VERSION=0.3.0
+VERSION=0.3.1
 ARCHIVE_NAME=opengui-mcp-$VERSION.tgz
 usage() {
   echo "OpenGUI for $HOST $VERSION (macOS arm64/x64)"
   echo "Usage: bash $0 [--check] [--repair-legacy] [--app /path/WorkBuddy.app] [--config-root /verified/path] [--archive /absolute/path/$ARCHIVE_NAME]"
   echo 'Downloads a verified prebuilt package and private Node. No sudo or source build.'
-  echo 'Finish existing OpenGUI tasks before upgrading. Keep old packages for rollback.'
+  echo 'Finish existing OpenGUI tasks before upgrading. WorkBuddy 5.5.6+ may stay open for live configuration.'
 }
 archive=
 app=
@@ -75,20 +75,30 @@ cli="$app/Contents/Resources/app.asar.unpacked/cli/dist/codebuddy.js"
 for event in UserPromptSubmit PreToolUse Stop SubagentStop FinalStop SessionEnd StopFailure; do
   grep -Fq "$event" "$cli" 2>/dev/null || fail HOST_HOOKS "The bundled CLI does not expose $event. Upgrade to a compatible WorkBuddy build."
 done
-ensure_stopped() {
-  local processes executable candidate
+host_is_running() {
+  local processes executable
   processes=$(ps -axo comm=) || fail HOST_PROCESS_CHECK 'Cannot inspect running applications.'
   while IFS= read -r executable; do
-    for candidate in "$app" "${candidates[@]:-}"; do
-      [ -n "$candidate" ] || continue
-      case "$executable" in "$candidate"/Contents/*) fail HOST_RUNNING 'Quit WorkBuddy with Command-Q after finishing phone tasks, then rerun this installer. No configuration was changed.' ;; esac
-    done
+    case "$executable" in "$app"/Contents/*) return 0 ;; esac
   done <<< "$processes"
+  return 1
+}
+host_running=false
+check_host_state() {
+  local previous=$host_running
+  host_running=false
+  if host_is_running; then
+    host_running=true
+    if (( 10#$major < 5 || (10#$major == 5 && 10#$minor < 5) || (10#$major == 5 && 10#$minor == 5 && 10#$patch < 6) )); then
+      fail HOST_RESTART_REQUIRED "WorkBuddy $host_version does not expose the verified live configuration flow. Finish OpenGUI tasks, quit WorkBuddy with Command-Q, then rerun this installer. No configuration was changed."
+    fi
+    [ "$previous" = true ] || stage 'LIVE_PREFLIGHT_OK: WorkBuddy may stay open. Finish any existing OpenGUI phone task before installation.'
+  fi
 }
 stage "Preflight: WorkBuddy $host_version; configuration: $config_root"
-ensure_stopped
+check_host_state
 if [ "$check_only" = true ]; then
-  stage 'PREFLIGHT_OK: no files changed. Hook declarations found; runtime delivery still requires host verification.'
+  stage 'PREFLIGHT_OK: no files changed. MCP live reload and /hooks review still require host verification.'
   exit 0
 fi
 # Refuse redirected parent directories before creating installation state.
@@ -173,13 +183,13 @@ if ! valid_node; then
   printf '%s\n%s\n' "$node_sha" "$(shasum -a 256 "$temporary/$node_name/bin/node" | awk '{print $1}')" > "$temporary/$node_name/.verified"
   mv "$temporary/$node_name" "$node_dir"
 fi
-ensure_stopped
+check_host_state
 stage "Installing configuration and checking runtime dependencies"
-"$node" - "$root" "$temporary/verified.tar.gz" "$VERSION" "$config_root" "$expected" "$0" "$app" "$repair_legacy" <<'INSTALL_JS'
+"$node" - "$root" "$temporary/verified.tar.gz" "$VERSION" "$config_root" "$expected" "$0" "$app" "$repair_legacy" "$host_running" <<'INSTALL_JS'
 const fs = require('node:fs');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
-const [root, archive, version, configRoot, archiveSha256, installer, app, repairLegacy] = process.argv.slice(2);
+const [root, archive, version, configRoot, archiveSha256, installer, app, repairLegacy, hostRunning] = process.argv.slice(2);
 const packages = path.join(root, 'packages');
 fs.mkdirSync(packages, { recursive: true });
 if (fs.lstatSync(packages).isSymbolicLink()) throw Error('Redirected packages directory');
@@ -209,9 +219,17 @@ try {
 execFileSync('bash', [installer, '--check', '--app', app, '--config-root', configRoot], {stdio: 'inherit'});
 execFileSync(process.execPath, [path.join(pkg, 'lib/check-upgrade.js')], { stdio: 'inherit', env: { ...process.env, OPENGUI_WORKBUDDY_HOME: root } });
 execFileSync(process.execPath, [path.join(pkg, 'scripts/install-local.mjs'), '--package-dir', pkg, '--node', process.execPath, '--config-root', configRoot, '--state-root', root, ...(repairLegacy === 'true' ? ['--repair-legacy'] : [])], { stdio: 'inherit' });
-console.log('CONFIG_WRITTEN: MCP, Skill and lifecycle Hooks configured. Host loading and Hook delivery are NOT yet verified. Reopen WorkBuddy, trust OpenGUI MCP, choose /opengui and ask to list phones without operating them.');
+if (hostRunning === 'true') {
+  console.log('LIVE_CONFIG_WRITTEN: MCP, Skill and lifecycle Hooks configured while WorkBuddy stayed open. In WorkBuddy, trust/enable the OpenGUI MCP, open /hooks to review and apply the external Hook change, then open /skills to confirm opengui. Start a new task only if the current task does not refresh. Verify by listing phones without operating them.');
+} else {
+  console.log('CONFIG_WRITTEN: MCP, Skill and lifecycle Hooks configured. Open WorkBuddy, trust/enable the OpenGUI MCP, open /hooks to review the Hooks, then verify read-only device discovery.');
+}
 console.log('Rollback receipt: see installState in the result above. Old packages and per-configuration receipts are retained.');
 
 INSTALL_JS
 
-stage "Finished. Reopen WorkBuddy and verify read-only device discovery."
+if [ "$host_running" = true ]; then
+  stage "Finished live configuration. Apply the Hook change in /hooks, confirm opengui in /skills, then verify read-only device discovery."
+else
+  stage "Finished. Open WorkBuddy and verify read-only device discovery."
+fi

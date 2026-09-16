@@ -1,3 +1,10 @@
+# OpenGUI for WorkBuddy 0.3.1 candidate
+
+- Allow WorkBuddy 5.5.6+ to stay open during a verified first installation or idle reconfiguration.
+- Use WorkBuddy's MCP file watcher, `/hooks` review flow, and `/skills` discovery instead of requiring Command-Q by default.
+- Keep older hosts on the restart path and block upgrades while an old OpenGUI broker still owns tasks or displays.
+- Preserve atomic configuration writes, unrelated MCP/Hooks, immutable packages, receipts, and rollback behavior.
+
 # OpenGUI for WorkBuddy 0.3.0 candidate
 
 - Add read-only H.264 video Viewers, visible first-frame gating, bounded reconnection and independent page/control lifecycles.

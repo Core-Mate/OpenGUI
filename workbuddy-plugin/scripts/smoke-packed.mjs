@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { mkdtemp, rm } from 'node:fs/promises'
+import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { spawn } from 'node:child_process'
@@ -21,7 +21,12 @@ await new Promise((resolve, reject) => { reservation.once('error', reject); rese
 const adbPort = reservation.address().port
 await new Promise(resolve => reservation.close(resolve))
 const adbSocket = `tcp:127.0.0.1:${adbPort}`
-const smokeEnv = { ...process.env, ADB_SERVER_SOCKET: adbSocket, ADB_MDNS_AUTO_CONNECT: 'none', ADB_LOCAL_TRANSPORT_MAX_PORT: '5554', ANDROID_USER_HOME: join(temporary, 'android') }
+const discoveryAdb = join(temporary, 'empty-adb')
+await writeFile(discoveryAdb, '#!/bin/sh\nif [ "$1" = devices ] && [ "$2" = -l ]; then printf "List of devices attached\\n\\n"; exit 0; fi\necho "Unexpected smoke ADB command" >&2\nexit 1\n', { mode: 0o755 })
+// The emulator scan starts at adb port 5555. Keep the maximum below that
+// range so a developer's running emulator cannot enter the packaged ADB probe.
+// Runtime discovery uses a deterministic empty adapter and never lists a real phone.
+const smokeEnv = { ...process.env, ADB_SERVER_SOCKET: adbSocket, ADB_MDNS_AUTO_CONNECT: 'none', ADB_LOCAL_TRANSPORT_MAX_PORT: '5553', ANDROID_USER_HOME: join(temporary, 'android'), OPENGUI_ADB_PATH: discoveryAdb }
 const adb = spawn(managedAdbPath(), ['-L', `tcp:${adbPort}`, '--one-device', `opengui-smoke-${randomUUID()}`, 'server', 'nodaemon'], { env: smokeEnv, stdio: ['ignore', 'ignore', 'pipe'] })
 let adbError, adbLog = ''
 adb.on('error', error => { adbError = error })

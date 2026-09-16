@@ -26,7 +26,7 @@ const packagesRoot = await realpath(join(stateRoot, 'packages'))
 assert(!relative(packagesRoot, packageDir).startsWith('..') && relative(packagesRoot, packageDir), 'Install from an immutable WorkBuddy version directory')
 const pkg = JSON.parse(await readFile(join(packageDir, 'package.json'), 'utf8'))
 assert.equal(pkg.name, 'opengui-mcp')
-assert.equal(pkg.version, '0.3.0')
+assert.equal(pkg.version, '0.3.1')
 assert.match(execFileSync(node, ['--version'], { encoding: 'utf8' }).trim(), /^v(?:22\.(?:19|2\d|[3-9]\d)|2[4-9]\.|[3-9]\d\.)/)
 const quote = value => process.platform === 'win32' ? `'${value.replaceAll("'", "''")}'` : `'${value.replaceAll("'", `'"'"'`)}'`
 const command = `${quote(node)} ${quote(join(packageDir, 'lib', 'host-hook.js'))}`
@@ -75,7 +75,8 @@ for (let i = 0; i < targets.length; i++) {
   backups.push({ path, backup: original[i] === undefined ? null : backup, installedSha256: createHash('sha256').update(values[i]).digest('hex') })
 }
 // Prepare all bytes and the recovery journal before switching any entry.
-// A live client must be stopped by the caller; never overwrite concurrent edits.
+// WorkBuddy can watch these files live. Preserve the compare-before-rename checks
+// so a simultaneous host or user edit wins instead of being overwritten.
 if (await optional(installState)) await copyFile(installState, `${installState}.before-${stamp}`)
 await assertStatePath()
 const journal = `${installState}.pending-${stamp}`

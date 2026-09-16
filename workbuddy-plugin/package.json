@@ -1,6 +1,6 @@
 {
   "name": "opengui-mcp",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Independent OpenGUI Android MCP runtime for WorkBuddy",
   "type": "module",
   "license": "SEE LICENSE IN LICENSE",
