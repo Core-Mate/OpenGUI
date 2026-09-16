@@ -1,3 +1,4 @@
+import { ReadyViewer } from './ready-viewer.ts'
 import { EventEmitter } from 'node:events'
 import type { ChildProcess, spawn } from 'node:child_process'
 import { describe, expect, it, vi } from 'vitest'
@@ -102,7 +103,7 @@ describe('WorkBuddy native mirror', () => {
       openMirror: async () => { phase = 'running' }, closeMirror: async () => { phase = 'idle' },
       mirrorStatus: () => ({ phase }),
     })
-    const service = new WorkBuddyOpenGuiService({ host: adapter })
+    const service = new WorkBuddyOpenGuiService({ viewers: new ReadyViewer(), host: adapter })
     try {
       const session = await service.openSession(['phone-a'], AbortSignal.timeout(5000), 'mirror')
       await service.openMirror(session.sessionId, undefined, AbortSignal.timeout(5000))

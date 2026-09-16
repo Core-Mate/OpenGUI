@@ -72,6 +72,18 @@ const observationSchema = {
 }
 
 export const OPENGUI_CODEX_TOOLS: readonly CodexToolDefinition[] = [
+  ...(['open', 'status', 'close'] as const).map(action => ({
+    name: action === 'status' ? 'opengui_viewer_status' : `opengui_${action}_viewer`,
+    title: 'OpenGUI Real-time Viewer',
+    description: action === 'open' ? 'Create or reuse this task’s read-only video wall. Open its URL with the host browser tool, then wait for a visible decoded first frame before observing or acting.' : action === 'status' ? 'Wait at most 30 seconds for verified first video frames. Timeout is terminal for this task; never recreate sessions to bypass it.' : 'Close watching only; established control continues.',
+    inputSchema: { type: 'object', additionalProperties: false, properties: action === 'open'
+      ? { deviceIds: { type: 'array', uniqueItems: true, minItems: 1, maxItems: 4, items: { type: 'string', minLength: 1 } } }
+      : { viewerId: { type: 'string', minLength: 1 }, ...(action === 'status' ? { waitMs: { type: 'integer', minimum: 0, maximum: 30000 } } : {}) },
+      ...(action === 'open' ? {} : { required: ['viewerId'] }) },
+    outputSchema: { type: 'object' },
+    annotations: { readOnlyHint: action === 'status', destructiveHint: false, idempotentHint: true, openWorldHint: false },
+  })),
+
   {
     name: 'opengui_list_sessions',
     title: 'List OpenGUI Sessions',
@@ -96,6 +108,7 @@ export const OPENGUI_CODEX_TOOLS: readonly CodexToolDefinition[] = [
       type: 'object', additionalProperties: false,
       properties: {
         deviceIds: { type: 'array', uniqueItems: true, minItems: 1, maxItems: 4, items: { type: 'string', minLength: 1 } },
+        viewerId: { type: 'string', minLength: 1 },
         mode: { type: 'string', enum: ['control', 'observe'], default: 'control' },
       },
     },
@@ -190,15 +203,20 @@ export async function callOpenGuiTool(
   args: Record<string, unknown>,
   signal: AbortSignal,
   confirmedExternalSideEffect = false,
+  owner = 'local',
 ): Promise<unknown> {
   validateToolArguments(name, args)
   switch (name) {
+    case 'opengui_open_viewer': return service.openViewer(deviceIds(args.deviceIds), signal, owner)
+    case 'opengui_viewer_status': return service.viewers.status(requiredString(args.viewerId, 'viewerId'), owner, Number(args.waitMs ?? 0), signal)
+    case 'opengui_close_viewer': return service.viewers.closeViewer(requiredString(args.viewerId, 'viewerId'), owner)
+
     case 'opengui_list_sessions':
       return { sessions: service.listSessions() }
     case 'opengui_list_devices':
       return { devices: await service.listDevices(signal) }
     case 'opengui_open_session':
-      return service.openSession(deviceIds(args.deviceIds), signal, args.mode === 'observe' ? 'observe' : 'control')
+      return service.openSession(deviceIds(args.deviceIds), signal, args.mode === 'observe' ? 'observe' : 'control', owner, optionalString(args.viewerId, 'viewerId'))
     case 'opengui_observe':
       return service.observe(requiredString(args.sessionId, 'sessionId'), optionalString(args.deviceId, 'deviceId'), signal)
     case 'opengui_act':

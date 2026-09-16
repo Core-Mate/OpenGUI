@@ -3,7 +3,7 @@
 set -euo pipefail
 umask 077
 HOST=workbuddy
-VERSION=0.2.1
+VERSION=0.3.0
 ARCHIVE_NAME=opengui-mcp-$VERSION.tgz
 usage() {
   echo "OpenGUI for $HOST $VERSION (macOS arm64/x64)"
@@ -200,7 +200,14 @@ if (!reusable) {
   fs.renameSync(install, cache);
   pkg = path.join(cache, 'node_modules/opengui-mcp');
 }
+try {
+  execFileSync(process.execPath, [path.join(pkg, 'lib/prepare-video.js')], { stdio: 'inherit', env: { ...process.env, OPENGUI_WORKBUDDY_HOME: root } });
+} catch (error) {
+  console.error('VIDEO_PREPARE_FAILED: old configuration retained. Restore network access and rerun this installer with the same --archive.');
+  throw error;
+}
 execFileSync('bash', [installer, '--check', '--app', app, '--config-root', configRoot], {stdio: 'inherit'});
+execFileSync(process.execPath, [path.join(pkg, 'lib/check-upgrade.js')], { stdio: 'inherit', env: { ...process.env, OPENGUI_WORKBUDDY_HOME: root } });
 execFileSync(process.execPath, [path.join(pkg, 'scripts/install-local.mjs'), '--package-dir', pkg, '--node', process.execPath, '--config-root', configRoot, '--state-root', root, ...(repairLegacy === 'true' ? ['--repair-legacy'] : [])], { stdio: 'inherit' });
 console.log('CONFIG_WRITTEN: MCP, Skill and lifecycle Hooks configured. Host loading and Hook delivery are NOT yet verified. Reopen WorkBuddy, trust OpenGUI MCP, choose /opengui and ask to list phones without operating them.');
 console.log('Rollback receipt: see installState in the result above. Old packages and per-configuration receipts are retained.');

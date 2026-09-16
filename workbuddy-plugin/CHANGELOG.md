@@ -1,3 +1,11 @@
+# OpenGUI for WorkBuddy 0.3.0 candidate
+
+- Add read-only H.264 video Viewers, visible first-frame gating, bounded reconnection and independent page/control lifecycles.
+- Open the current task's right browser through built-in `present_files`; keep native scrcpy as an explicit compatibility entry.
+- Prepare scrcpy 4.1 during installation; use protocol 8 and retain prior packages and recovery receipts.
+- Fix native WorkBuddy 5.5.3 Hook binding by emitting `updatedInput` alongside the legacy `modifiedInput` field.
+- Add real-decoder browser checks, four-source synthetic soak tooling and installed-host acceptance records.
+
 # OpenGUI for WorkBuddy 0.2.1 candidate
 
 - Discover the selected WorkBuddy bundle and its product-specific configuration root before downloading packages.

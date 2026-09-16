@@ -48,12 +48,12 @@ export class OwnedForwardRegistry {
     })
   }
 
-  async release(record: OwnedForward, runAdb: ForwardAdbRunner): Promise<boolean> {
+  async release(record: OwnedForward, runAdb: ForwardAdbRunner, timeoutMs = 5_000): Promise<boolean> {
     let forwards: ListedForward[]
     try {
       const listed = await runAdb(
         ['-s', record.serial, 'forward', '--list'],
-        AbortSignal.timeout(5_000),
+        AbortSignal.timeout(timeoutMs),
       )
       forwards = parseAdbForwardList(String(listed ?? ''))
     } catch {
@@ -72,7 +72,7 @@ export class OwnedForwardRegistry {
     try {
       await runAdb(
         ['-s', record.serial, 'forward', '--remove', local],
-        AbortSignal.timeout(5_000),
+        AbortSignal.timeout(timeoutMs),
       )
     } catch {
       return false

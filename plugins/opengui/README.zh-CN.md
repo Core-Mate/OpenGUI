@@ -1,55 +1,29 @@
-# OpenGUI Codex 独立插件
+# OpenGUI for Codex 0.2.0 候选版
 
-仅支持 macOS arm64/x64 上的本地 Codex，用截图驱动 Android 操作并提供只读设备墙。
-当前是候选源码包，不代表已发布或通过公开目录审核。
+本轮支持 macOS，协议版本 3。这是本地候选交付，不代表已公开发布或所有真机验收通过。
 
-- 与生产 DSH 完全分开维护源码、依赖、版本和发布流程，不改动或重载 DSH。
-- 首次使用原生弹窗确认下载固定 Node 运行时，校验后保存在独立目录；不改系统 PATH。
-- 最多冻结四台测试设备；只读监控不占控制锁。
-- 发送、发布、购买、删除需要对话确认和原生单次确认。
-- 取消/关闭清理会话截图；空闲会话 30 分钟过期，空闲守护进程 5 分钟退出。
+使用流程：选择手机 → `opengui_open_viewer` → 宿主在聊天右侧打开 URL → `opengui_viewer_status` 最多等待 30 秒 → 真实视频首帧验证成功 → 打开关联 viewerId 的控制会话 → 截图与动作。
 
-## 普通用户安装
+Codex 使用原生 open_in_codex，将浏览器放在当前任务右侧。短 CLI 连接按宿主 CODEX_THREAD_ID 归属任务。
 
-正式发布后，从对应 [Codex Release](https://github.com/Core-Mate/OpenGUI/releases) 下载
-`opengui-codex-版本-install.command` 及其 `.sha256`，在下载目录校验后运行：
+投屏不会把每帧发给模型。纯观看不需要控制会话和持续模型调用。模型仍通过截图接口观察、按最新 observationId 操作。初始视频没有显示时，零手机操作；超时后报告阻塞，不重复建会话绕过。
+
+首次展示成功后，关闭或隐藏页面不停止 AI 任务；任务完成或取消不关闭仍开着的投屏。手机断连时不换另一台设备，不自动重放结果不确定的动作。再次打开观看不会重启任务。
+
+## 安装
+
+核对安装器及归档旁的 SHA-256 文件，结束旧任务、关闭旧展示后运行：
 
 ```sh
-shasum -a 256 -c opengui-codex-0.1.0-install.command.sha256
-bash opengui-codex-0.1.0-install.command
+bash scripts/install-macos.command --archive /绝对路径/opengui-codex-0.2.0.tar.gz
 ```
 
-安装器自动下载并校验预构建包、准备私有 Node、注册独立插件来源。需要带插件管理功能的
-Codex CLI，不需要 Git、pnpm、Xcode 或源码构建。完成后新开对话，选择 OpenGUI，先说
-“列出已连接手机，不操作手机”。USB 授权仍需在手机上批准。
+安装器自动准备独立 Node 与 scrcpy 资源，缓存完整时复用；准备失败保留旧配置，并输出恢复步骤。保留独立 opengui-standalone 插件源，不覆盖同名的其他来源。
 
-也可让 Agent 使用仓库的 [安装 Skill](../../skills/opengui-plugin-install/SKILL.md)，
-说“帮我安装 OpenGUI Codex 插件”。它会自动查找匹配的正式版本并校验安装文件。
-当前尚未正式发布；没有完整 Release 时会明确停止，不会偷偷转为源码构建。
+安装结果分别报告“配置完成”“宿主已加载”“设备墙可用”，写入配置不是验收通过。安装后在实际宿主选择 OpenGUI Skill，先检查只读设备发现，再验收右侧视频与截图操作。
 
-升级前结束旧任务。同名插件冲突会提示，不会自动移除。旧包和配置备份保存在
-`~/.codex/opengui-codex/packages`，使用 `CODEX_HOME` 时跟随该目录。回退可运行旧版本安装器。
+## 回退和验收
 
-维护者测试候选包：`bash scripts/install-macos.command --archive /绝对路径/opengui-codex-0.1.0.tar.gz`，
-同目录需有归档的 `.sha256` 文件。
+回退前结束当前控制任务、关闭展示；使用保留的旧版安装器和旧归档重新安装。安装目录保留旧包及配置恢复记录。不要强杀其他宿主进程，不要整体覆盖配置或删除无关插件。
 
-## 开发者构建
-
-开发时在本目录运行 `pnpm install --frozen-lockfile --ignore-scripts`、
-`pnpm check` 和 `pnpm package`。打包产物位于 `.artifacts/`。
-原仓库 marketplace 保持原样，安装器自动使用独立来源，不要求用户自行搭建 marketplace。
-
-会话操作使用宿主提供的 `CODEX_THREAD_ID` 绑定当前任务，缺少该身份时拒绝执行。
-会话列表仅返回当前任务的会话；设备墙令牌也按会话隔离。此机制防止任务间误操作，
-不防御能伪造环境变量或读取本地文件的同用户恶意进程。动作失败后必须重新观察，
-旧截图凭据不可重用；同一手机重连后保留身份。协议已升级为 2，旧守护进程须先
-完成会话并退出，再使用新版。
-
-首次使用运行 `sh scripts/opengui --setup`，随后运行 `--doctor`。
-ADB 服务不存在时，`--setup-adb-server` 在原生确认后启动；已有服务不兼容时拒绝，
-不会自动重启。ADB 和手机仍是共享资源，不能保证跨宿主互斥，
-因此不要在生产 DSH 主机或正在被其他程序控制的手机上验收。
-
-完整使用方法、异常恢复和回退步骤见 [English README](README.md)；
-数据边界见 [隐私说明](docs/privacy.md)。自动化检查、真机验收、GitHub Release、
-提交审核、审核通过和正式上架须分别确认。
+两端分别独立构建和打包，不依赖 DSH。当前验证结果及尚未通过的项目见候选验收报告。浏览器支持解码、模拟视频通过、真机播放、宿主自动操作、发布上线是不同证据。

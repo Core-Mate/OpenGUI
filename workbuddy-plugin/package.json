@@ -1,14 +1,15 @@
 {
   "name": "opengui-mcp",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Independent OpenGUI Android MCP runtime for WorkBuddy",
   "type": "module",
   "license": "SEE LICENSE IN LICENSE",
   "repository": { "type": "git", "url": "https://github.com/Core-Mate/OpenGUI.git", "directory": "workbuddy-plugin" },
   "bin": { "opengui-mcp": "lib/mcp.js" },
-  "files": ["scripts/install-local.mjs", "lib", "assets", "LICENSE", "NOTICE.md", "README.md"],
+  "files": ["scripts/install-local.mjs", "lib", "assets", "LICENSE", "NOTICE.md", "VIDEO-NOTICE.md", "README.md"],
   "engines": { "node": "^22.19.0 || >=24" },
   "scripts": {
+    "test:viewer": "npm run build && node scripts/test-viewer-browser.mjs",
     "build": "tsc -p tsconfig.json && node scripts/finalize.mjs",
     "test": "vitest run",
     "check": "npm test && npm run build && node scripts/validate.mjs",

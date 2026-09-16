@@ -1,3 +1,4 @@
+import { ReadyViewer } from './ready-viewer.ts'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { CodexOpenGuiService } from '../src/codex/service.ts'
 import { SESSION_IDLE_MS } from '../src/state.ts'
@@ -8,7 +9,9 @@ const services: CodexOpenGuiService[] = []
 afterEach(async () => { await Promise.all(services.splice(0).map(service => service.dispose())) })
 const signal = () => new AbortController().signal
 function create(host = new FakeHost(), now = Date.now, onSessionClosed?: (id: string) => Promise<void>) {
-  const service = new CodexOpenGuiService({ host, now, onSessionClosed })
+  const service = new CodexOpenGuiService({ viewers: new ReadyViewer(), host, now, onSessionClosed })
+  // Exercise the retained legacy wall separately from real-video gating tests.
+  service.viewers.find = () => undefined as never
   services.push(service)
   return service
 }

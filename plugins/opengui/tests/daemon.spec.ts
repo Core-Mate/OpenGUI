@@ -1,3 +1,4 @@
+import { ReadyViewer } from './ready-viewer.ts'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mkdtemp, readdir, rm, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -14,7 +15,7 @@ async function daemon(confirm = vi.fn(async () => false)) {
   const root = await mkdtemp(join(tmpdir(), 'opengui-daemon-test-'))
   cleanup.push(() => rm(root, { recursive: true, force: true }))
   const host = new FakeHost()
-  const service = new CodexOpenGuiService({ host })
+  const service = new CodexOpenGuiService({ viewers: new ReadyViewer(), host })
   const server = await startDaemon({ root, service, confirm })
   cleanup.push(server.close)
   return { root, host, service, confirm, ...server }

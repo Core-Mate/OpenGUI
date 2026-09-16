@@ -1,3 +1,4 @@
+import { ReadyViewer } from './ready-viewer.ts'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { WorkBuddyOpenGuiService } from '../src/service.ts'
 import { FakeHost } from './fake-host.ts'
@@ -7,7 +8,7 @@ const services: WorkBuddyOpenGuiService[] = []
 afterEach(async () => { await Promise.all(services.splice(0).map(service => service.dispose())) })
 const signal = () => AbortSignal.timeout(5000)
 function setup(host = new FakeHost()) {
-  const service = new WorkBuddyOpenGuiService({ host })
+  const service = new WorkBuddyOpenGuiService({ viewers: new ReadyViewer(), host })
   services.push(service)
   return { service, host }
 }

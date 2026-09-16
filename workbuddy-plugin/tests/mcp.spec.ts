@@ -1,3 +1,4 @@
+import { ReadyViewer } from './ready-viewer.ts'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js'
@@ -13,7 +14,7 @@ afterEach(async () => { for (const close of cleanup.splice(0).reverse()) await c
 
 async function client(capabilities: ClientCapabilities = {}, action: 'accept' | 'decline' | 'cancel' = 'accept', confirm = true) {
   const [a, b] = InMemoryTransport.createLinkedPair()
-  const service = new WorkBuddyOpenGuiService({ host: new FakeHost() })
+  const service = new WorkBuddyOpenGuiService({ viewers: new ReadyViewer(), host: new FakeHost() })
   const connection = { call: vi.fn((name, args, signal) => callOpenGuiTool(service, name, args, signal)), close: vi.fn() }
   const server = await startMcp(b, async () => connection)
   const client = new Client({ name: 'workbuddy-test', version: '1' }, { capabilities })
@@ -87,7 +88,7 @@ describe('standard MCP transport', () => {
     const { client: c, connection } = await client()
     const listed = await c.listTools()
     expect(listed.tools.map(tool => tool.name)).toEqual(OPENGUI_WORKBUDDY_TOOLS.map(tool => tool.name))
-    expect(c.getServerVersion()).toMatchObject({ name: 'opengui-workbuddy', version: '0.2.1' })
+    expect(c.getServerVersion()).toMatchObject({ name: 'opengui-workbuddy', version: '0.3.0' })
     expect(connection.call).not.toHaveBeenCalled()
   })
 

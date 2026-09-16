@@ -49,7 +49,7 @@ try {
     try {
       await client.connect(transport, { timeout: 120_000 })
       const { tools } = await client.listTools()
-      assert.equal(tools.length, 11)
+      assert.equal(tools.length, 14)
       await client.ping()
       const devices = await client.callTool({ name: 'opengui_list_devices', arguments: {} })
       assert.notEqual(devices.isError, true, JSON.stringify(devices.content))
@@ -60,7 +60,7 @@ try {
       brokerPid = probe.brokerPid
       probe.close()
       assert(brokerPid && brokerPid !== process.pid)
-      console.log(`${offline ? 'Offline cached' : 'Fresh isolated cache'}: packed stdio, eleven tools, ping, broker startup, and read-only ADB discovery passed.`)
+      console.log(`${offline ? 'Offline cached' : 'Fresh isolated cache'}: packed stdio, fourteen tools, ping, broker startup, and read-only ADB discovery passed.`)
     } finally {
       await client.close()
       if (brokerPid) {

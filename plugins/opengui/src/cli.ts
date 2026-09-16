@@ -4,11 +4,13 @@ import { realpathSync } from 'node:fs'
 import { access } from 'node:fs/promises'
 import { constants } from 'node:fs'
 import { fileURLToPath } from 'node:url'
+import { join } from 'node:path'
+import { ScrcpyInstaller, resolveScrcpyAsset } from './scrcpy.ts'
 import { managedAdbPath } from './adb.ts'
 import { assertCompatibleAdbServer } from './adb-guard.ts'
 import { confirmLocalSetup } from './confirmation.ts'
 import { OPENGUI_CODEX_TOOLS, validateToolArguments } from './codex/tools.ts'
-import { ensureDaemon, request, sendRequest, startDaemon } from './daemon.ts'
+import { ensureDaemon, ping, request, sendRequest, startDaemon } from './daemon.ts'
 import { VERSION, daemonEndpoint, dataDirectory } from './state.ts'
 
 export async function runCli(argv: readonly string[], signal = new AbortController().signal): Promise<unknown> {
@@ -17,7 +19,7 @@ export async function runCli(argv: readonly string[], signal = new AbortControll
     return {
       name: 'OpenGUI for Codex', version: VERSION,
       usage: 'opengui <interface> [json] (JSON can also be read from stdin)',
-      commands: ['--help', '--version', '--interfaces', '--doctor', '--setup-adb-server', '--shutdown-daemon'],
+      commands: ['--help', '--version', '--interfaces', '--doctor', '--prepare-video', '--setup-adb-server', '--shutdown-daemon'],
       interfaces: OPENGUI_CODEX_TOOLS.map(tool => tool.name),
       platform: 'Local macOS arm64/x64 only. Use a dedicated non-production device environment.',
     }
@@ -26,6 +28,25 @@ export async function runCli(argv: readonly string[], signal = new AbortControll
   if (name === '--interfaces') return { interfaces: OPENGUI_CODEX_TOOLS }
   if (process.platform !== 'darwin' || !['arm64', 'x64'].includes(process.arch)) {
     throw new Error('opengui: local Android control is supported only on macOS arm64/x64')
+  }
+  if (name === '--check-upgrade') {
+    const hello = await ping(daemonEndpoint())
+    if (hello) {
+      if (hello.activeSessions > 0 || hello.activeViewers) throw new Error('upgrade_blocked: finish old control tasks and close old viewers using the old runtime, then rerun the installer')
+      const response = await sendRequest(daemonEndpoint(), { ...request('__shutdown__'), version: hello.version, protocol: hello.protocol }, signal)
+      if (!response.ok) throw new Error(response.error)
+    }
+    return { upgrade: 'ready', forcedTermination: false }
+  }
+  if (name === '--prepare-video') {
+    const asset = resolveScrcpyAsset()
+    if (!asset) throw new Error('video_unsupported_platform')
+    const installer = new ScrcpyInstaller({ cacheDir: join(dataDirectory(), 'scrcpy') })
+    const cached = await installer.isInstalled(asset)
+    const started = Date.now()
+    let lastProgress = 0
+    await installer.ensure(asset, AbortSignal.any([signal, AbortSignal.timeout(600_000)]), progress => { if (Date.now() - lastProgress >= 1000 || progress.phase !== 'downloading') { lastProgress = Date.now(); process.stderr.write(`video_prepare: ${progress.phase} ${progress.downloadedBytes ?? 0} bytes\n`) } })
+    return { videoResources: 'ready', cached, elapsedMs: Date.now() - started, hostLoaded: 'unverified', viewerAvailable: 'unverified' }
   }
   if (name === '--doctor') {
     const adb = managedAdbPath()

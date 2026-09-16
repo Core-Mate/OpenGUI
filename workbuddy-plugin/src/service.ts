@@ -1,3 +1,5 @@
+import { ViewerServer, type ViewerStreams } from './viewer.ts'
+import { ScrcpyVideoStreams } from './scrcpy-stream.ts'
 import { randomUUID } from 'node:crypto'
 import { join } from 'node:path'
 import { workbuddyStateDir } from './state.ts'
@@ -37,6 +39,7 @@ export interface ResolvedWorkBuddyDevice extends WorkBuddyDeviceInfo {
 }
 
 export interface WorkBuddyPhoneHost {
+  readonly videoStreams?: ViewerStreams
   activateMirrors?(signal: AbortSignal): Promise<void>
   inspectMirror?(serial: string): Promise<MirrorStatus>
   hasMirrors?(): boolean
@@ -66,6 +69,7 @@ export interface LocalAdbPhoneHostOptions {
 
 /** Local USB/ADB Host adapter shared by the WorkBuddy MCP and CLI transports. */
 export class LocalAdbPhoneHost implements WorkBuddyPhoneHost {
+  readonly videoStreams: ScrcpyVideoStreams
   onDeviceUnavailable?: (serial: string) => void
   private readonly lifetime = new AbortController()
   private watching: ReturnType<typeof setTimeout> | undefined
@@ -95,6 +99,7 @@ export class LocalAdbPhoneHost implements WorkBuddyPhoneHost {
     this.forwardRegistry = new OwnedForwardRegistry(join(stateDir, 'owned-forwards.json'))
     const installer = new ScrcpyInstaller({ cacheDir: join(stateDir, 'scrcpy') })
     this.mirror = new NativeMirror({ adbPath: this.path, installer, onEnded: serial => this.onMirrorEnded?.(serial) })
+    this.videoStreams = new ScrcpyVideoStreams({ adbPath: () => this.path, runAdb: (args, signal) => run(args, signal), installer, forwardRegistry: this.forwardRegistry })
     const asset = resolveScrcpyAsset()
     this.textInput = new ScrcpyTextInput({
       adbPath: () => this.path,
@@ -293,6 +298,7 @@ export type ExternalSideEffect = 'none' | 'send' | 'publish' | 'purchase' | 'del
 export type WorkBuddySessionState = 'active' | 'cancelled' | 'closed'
 
 export interface ControlTask {
+  viewerOwner?: string
   readonly operations: Map<string, number>
   readonly displaysEstablished: Set<string>
   readonly actors: Map<string, object>
@@ -307,6 +313,8 @@ export interface SessionResult {
   evidenceObservationIds?: readonly string[]
 }
 export interface OpenSessionOptions {
+  owner?: string
+  viewerId?: string | undefined
   task?: ControlTask
   objective?: string | undefined
   successCriteria?: string | undefined
@@ -328,6 +336,7 @@ interface SessionDevice {
 }
 
 interface SessionRecord {
+  viewerId?: string
   readonly task: ControlTask
   lastActivity: number
   leaseTimer?: ReturnType<typeof setTimeout>
@@ -394,6 +403,7 @@ export interface WorkBuddyObservation {
 }
 
 export interface WorkBuddyOpenGuiServiceOptions {
+  readonly viewers?: ViewerServer
   readonly host?: WorkBuddyPhoneHost
   readonly createSessionId?: () => string
   readonly leaseMs?: number
@@ -408,6 +418,7 @@ export class WorkBuddyOpenGuiService {
   private readonly createSessionId: () => string
   private readonly sessions = new Map<string, SessionRecord>()
   private readonly locks = new Map<string, string>()
+  readonly viewers: ViewerServer
   private readonly wall: DeviceWallServer
   private disposed = false
 
@@ -415,6 +426,10 @@ export class WorkBuddyOpenGuiService {
     this.leaseMs = options.leaseMs ?? 10 * 60_000
     this.now = options.now ?? Date.now
     this.host = options.host ?? new LocalAdbPhoneHost()
+    this.viewers = options.viewers ?? new ViewerServer(this.host.videoStreams ?? {
+      async prepare() { throw new Error('video_unavailable') },
+      async subscribe() { throw new Error('video_unavailable') }, async dispose() {},
+    })
     this.host.onDeviceUnavailable = serial => {
       const id = this.locks.get(serial)
       const record = id ? this.sessions.get(id) : undefined
@@ -442,11 +457,22 @@ export class WorkBuddyOpenGuiService {
     )
   }
 
+  async openViewer(deviceIds: readonly string[] | undefined, signal: AbortSignal, options: OpenSessionOptions = {}) {
+    const owner = options.owner ?? options.task?.viewerOwner ?? 'local'
+    if (options.task) options.task.viewerOwner = owner
+    const devices = await this.host.resolveDevices(deviceIds ?? options.task?.selectedDeviceIds, signal)
+    if (options.task?.selectedDeviceIds && devices.some(d => !options.task!.selectedDeviceIds!.includes(d.id))) throw new Error('device_frozen')
+    if (options.task) options.task.selectedDeviceIds ??= devices.map(d => d.id)
+    return this.viewers.open(owner, devices, signal)
+  }
+
   listDevices(signal: AbortSignal): Promise<readonly WorkBuddyDeviceInfo[]> {
     return this.host.listDevices(signal)
   }
 
-  hasPersistentMirrors(): boolean { return this.host.hasMirrors?.() ?? false }
+  endViewerTask(owner: string): void { this.viewers.endOwner(owner) }
+
+  hasPersistentMirrors(): boolean { return this.viewers.active || (this.host.hasMirrors?.() ?? false) }
 
   async start(signal: AbortSignal): Promise<{ devices: readonly (WorkBuddyDeviceInfo & { mirror?: MirrorStatus })[] }> {
     await this.host.activateMirrors?.(signal)
@@ -511,8 +537,10 @@ export class WorkBuddyOpenGuiService {
     if (conflicts.length > 0) {
       throw new Error(`opengui: ${conflicts.map(device => device.name).join(', ')} is already locked by another session`)
     }
+    const selectedViewer = purpose === 'control' ? this.viewers.find(options.owner ?? task.viewerOwner ?? 'local', devices, options.viewerId) : undefined
     const id = this.createSessionId()
     const record: SessionRecord = {
+      ...(selectedViewer ? { viewerId: selectedViewer } : {}),
       task,
       lastActivity: this.now(),
       purpose,
@@ -546,10 +574,10 @@ export class WorkBuddyOpenGuiService {
       await this.wall.start()
       signal.throwIfAborted()
       if (this.disposed) throw new Error('opengui: runtime is shutting down')
-      if (!options.skipActivation && this.host.activateMirrors) {
+      if (purpose === 'mirror' && !options.skipActivation && this.host.activateMirrors) {
         await this.host.activateMirrors(signal)
         record.mirrorRequested = true
-      } else if (!options.skipActivation && purpose === 'control' && this.host.openMirror) {
+      } else if (purpose === 'mirror' && !options.skipActivation && this.host.openMirror) {
         record.mirrorRequested = true
         const launchSignal = AbortSignal.any([signal, record.controller.signal])
         const results = await Promise.allSettled(record.devices.map(item => this.track(record,
@@ -660,14 +688,15 @@ export class WorkBuddyOpenGuiService {
 
   private snapshot(record: SessionRecord): WorkBuddySessionStatus {
     for (const item of record.devices) {
-      if (this.host.mirrorStatus?.(item.device.serial).ready) item.displayEstablished = true
+      if (record.viewerId) { try { this.viewers.assertReady(record.viewerId); item.displayEstablished = true } catch { /* First display is pending. */ } }
+      else if (this.host.mirrorStatus?.(item.device.serial).ready) item.displayEstablished = true
       if (item.displayEstablished) record.task.displaysEstablished.add(item.device.serial)
     }
     return {
       activity: record.state !== 'active' ? 'ended'
         : record.resultUnknown ? 'result_unknown'
         : record.devices.some(item => item.needsObservation) ? 'paused'
-        : record.devices.some(item => this.host.inspectMirror && !item.displayEstablished) ? 'waiting_for_display' : 'ready',
+        : record.devices.some(item => !item.displayEstablished) ? 'waiting_for_display' : 'ready',
       sessionId: record.id,
       purpose: record.purpose,
       state: record.state,
@@ -678,7 +707,7 @@ export class WorkBuddyOpenGuiService {
       ...(record.task.successCriteria ? { successCriteria: record.task.successCriteria } : {}),
       ...(record.closedAt === undefined ? {} : { closedAt: record.closedAt }),
       ...(record.lastError === undefined ? {} : { lastError: record.lastError }),
-      deviceWallUrl: this.wall.url(record.id),
+      deviceWallUrl: record.viewerId ? this.viewers.url(record.viewerId) : this.wall.url(record.id),
       devices: record.devices.map(({ device, actor, connected, authorized }) => {
         const runtime = this.host.status(actor)
         return {
@@ -728,6 +757,7 @@ export class WorkBuddyOpenGuiService {
   async dispose(): Promise<void> {
     this.disposed = true
     await Promise.allSettled([...this.sessions.keys()].map(id => this.closeSession(id)))
+    await this.viewers.dispose()
     await this.wall.close()
     await this.host.dispose()
   }
@@ -751,14 +781,7 @@ export class WorkBuddyOpenGuiService {
     const connectionEpoch = item.connectionEpoch ?? 0
     try {
       combined.throwIfAborted()
-      if (this.host.inspectMirror && !item.displayEstablished) {
-        const display = await this.host.inspectMirror(item.device.serial)
-        if (!display.ready) {
-          throw new Error(`opengui: waiting_for_display: ${display.message ?? display.phase}; initial display has not been verified; retry opening the window before continuing`)
-        }
-        item.displayEstablished = true
-        record.task.displaysEstablished.add(item.device.serial)
-      }
+      this.viewers.assertReady(record.viewerId!)
       const operations = record.task.operations.get(item.device.serial) ?? 0
       if (operations >= WORKBUDDY_MAX_OPERATIONS) throw new OpenGuiError('budget_exhausted', 'opengui: task exceeded its 100-operation limit')
       record.task.operations.set(item.device.serial, operations + 1)

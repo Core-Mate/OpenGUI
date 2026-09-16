@@ -54,7 +54,7 @@ try {
   for (const path of paths) assert.ok(!/(node_modules|\.mcp\.json|cordis|dsh-compatibility|linux-x64|win32)/.test(path), 'Unexpected upload file: ' + path)
   const help = JSON.parse(execFileSync(process.execPath, [join(destination, 'lib/cli.js'), '--help'], { encoding: 'utf8' }))
   assert.equal(help.version, pkg.version)
-  assert.equal(help.interfaces.length, 8)
+  assert.equal(help.interfaces.length, 11)
   execFileSync('/bin/sh', ['-n', join(destination, 'scripts/opengui')])
   console.log('Standalone manifest, dependencies, runtime, launcher, ADB checksum and staged upload verified.')
 } finally { await rm(temp, { recursive: true, force: true }) }

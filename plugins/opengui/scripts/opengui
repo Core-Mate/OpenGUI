@@ -10,7 +10,7 @@ case "${1:---help}" in
       'First use downloads a pinned Node runtime after a native confirmation.' \
       'Use dedicated test devices. Never share a phone with production automation.'
     exit 0 ;;
-  --version) printf '%s\n' '0.1.0'; exit 0 ;;
+  --version) printf '%s\n' '0.2.0'; exit 0 ;;
 esac
 if [ "$(uname -s)" != Darwin ]; then
   printf '%s\n' 'OpenGUI supports local macOS only.' >&2

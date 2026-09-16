@@ -1,3 +1,5 @@
+import { ViewerServer, type ViewerStreams } from '../viewer.ts'
+import { ScrcpyVideoStreams } from '../scrcpy-stream.ts'
 import { randomBytes, randomUUID } from 'node:crypto'
 import { createServer } from 'node:http'
 import type { IncomingMessage, Server, ServerResponse } from 'node:http'
@@ -38,6 +40,7 @@ export interface ResolvedCodexDevice extends CodexDeviceInfo {
 }
 
 export interface CodexPhoneHost {
+  readonly videoStreams?: ViewerStreams
   listDevices(signal: AbortSignal): Promise<readonly CodexDeviceInfo[]>
   resolveDevices(deviceIds: readonly string[] | undefined, signal: AbortSignal): Promise<readonly ResolvedCodexDevice[]>
   assignTarget(actor: object, serial: string): void
@@ -59,6 +62,7 @@ function codexStateDir(override?: string): string { return override ?? dataDirec
 
 /** Local USB/ADB Host adapter shared by the Codex MCP and CLI transports. */
 export class LocalAdbPhoneHost implements CodexPhoneHost {
+  readonly videoStreams: ScrcpyVideoStreams
   private readonly path: string
   private readonly repairAdbPermissions: boolean
   private readonly timeoutMs: number
@@ -79,6 +83,7 @@ export class LocalAdbPhoneHost implements CodexPhoneHost {
     const stateDir = codexStateDir(options.stateDir)
     this.forwardRegistry = new OwnedForwardRegistry(join(stateDir, 'owned-forwards.json'))
     const installer = new ScrcpyInstaller({ cacheDir: join(stateDir, 'scrcpy') })
+    this.videoStreams = new ScrcpyVideoStreams({ adbPath: () => this.path, runAdb: (args, signal) => run(args, signal), installer, forwardRegistry: this.forwardRegistry })
     const asset = resolveScrcpyAsset()
     this.textInput = new ScrcpyTextInput({
       adbPath: () => this.path,
@@ -208,6 +213,7 @@ interface SessionDevice {
 }
 
 interface SessionRecord {
+  viewerId?: string
   readonly id: string
   readonly createdAt: string
   readonly controller: AbortController
@@ -259,6 +265,7 @@ export interface CodexObservation {
 }
 
 export interface CodexOpenGuiServiceOptions {
+  readonly viewers?: ViewerServer
   readonly host?: CodexPhoneHost
   readonly createSessionId?: () => string
   readonly now?: () => number
@@ -271,12 +278,17 @@ export class CodexOpenGuiService {
   private readonly createSessionId: () => string
   private readonly sessions = new Map<string, SessionRecord>()
   private readonly locks = new Map<string, string>()
+  readonly viewers: ViewerServer
   private readonly wall: DeviceWallServer
   private readonly now: () => number
   private readonly onSessionClosed: (sessionId: string) => Promise<void>
 
   constructor(options: CodexOpenGuiServiceOptions = {}) {
     this.host = options.host ?? new LocalAdbPhoneHost()
+    this.viewers = options.viewers ?? new ViewerServer(this.host.videoStreams ?? {
+      async prepare() { throw new Error('video_unavailable') },
+      async subscribe() { throw new Error('video_unavailable') }, async dispose() {},
+    })
     this.createSessionId = options.createSessionId ?? randomUUID
     this.now = options.now ?? Date.now
     this.onSessionClosed = options.onSessionClosed ?? (async () => {})
@@ -286,11 +298,15 @@ export class CodexOpenGuiService {
     )
   }
 
+  async openViewer(deviceIds: readonly string[] | undefined, signal: AbortSignal, owner = 'local') {
+    return this.viewers.open(owner, await this.host.resolveDevices(deviceIds, signal), signal)
+  }
+
   listDevices(signal: AbortSignal): Promise<readonly CodexDeviceInfo[]> {
     return this.host.listDevices(signal)
   }
 
-  async openSession(deviceIds: readonly string[] | undefined, signal: AbortSignal, mode: SessionMode = 'control'): Promise<CodexSessionStatus> {
+  async openSession(deviceIds: readonly string[] | undefined, signal: AbortSignal, mode: SessionMode = 'control', owner = 'local', viewerId?: string): Promise<CodexSessionStatus> {
     signal.throwIfAborted()
     if (mode !== 'control' && mode !== 'observe') throw new Error('opengui: invalid session mode')
     if (this.activeSessionCount >= 16) throw new Error('opengui: close an active session before opening another')
@@ -307,8 +323,10 @@ export class CodexOpenGuiService {
     if (conflicts.length > 0) {
       throw new Error(`opengui: ${conflicts.map(device => device.name).join(', ')} is already locked by another session`)
     }
+    const selectedViewer = this.viewers.find(owner, devices, viewerId)
     const id = this.createSessionId()
     const record: SessionRecord = {
+      viewerId: selectedViewer,
       id,
       createdAt: new Date(this.now()).toISOString(),
       controller: new AbortController(),
@@ -392,7 +410,7 @@ export class CodexOpenGuiService {
       createdAt: record.createdAt,
       ...(record.closedAt === undefined ? {} : { closedAt: record.closedAt }),
       ...(record.lastError === undefined ? {} : { lastError: record.lastError }),
-      deviceWallUrl: this.wall.url(record.id),
+      deviceWallUrl: record.viewerId ? this.viewers.url(record.viewerId) : this.wall.url(record.id),
       devices: record.devices.map(({ device, actor, connected, authorized }) => {
         const runtime = this.host.status(actor)
         return {
@@ -411,17 +429,24 @@ export class CodexOpenGuiService {
   async cancel(sessionId: string): Promise<CodexSessionStatus> {
     const record = this.requireSession(sessionId)
     await this.finish(record, 'cancelled')
+    this.endViewerIfIdle(record)
     return this.snapshot(record)
   }
 
   async closeSession(sessionId: string): Promise<CodexSessionStatus> {
     const record = this.requireSession(sessionId)
     await this.finish(record, 'closed')
+    this.endViewerIfIdle(record)
     return this.snapshot(record)
+  }
+
+  private endViewerIfIdle(record: SessionRecord): void {
+    if (record.viewerId && ![...this.sessions.values()].some(s => s.viewerId === record.viewerId && s.state === 'active')) this.viewers.endTask(record.viewerId)
   }
 
   async dispose(): Promise<void> {
     await Promise.all([...this.sessions.values()].map(record => this.finish(record, 'closed')))
+    await this.viewers.dispose()
     await this.wall.close()
     await this.host.dispose()
   }
@@ -439,6 +464,7 @@ export class CodexOpenGuiService {
     operation: (item: SessionDevice, combined: AbortSignal) => Promise<RawPhoneObservation>,
   ): Promise<CodexObservation> {
     const record = this.requireActiveSession(sessionId)
+    this.viewers.assertReady(record.viewerId!)
     record.lastRequestAt = this.now()
     const item = this.resolveDevice(record, deviceId)
     const combined = AbortSignal.any([record.controller.signal, signal])

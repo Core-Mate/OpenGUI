@@ -1,3 +1,4 @@
+import { ReadyViewer } from './ready-viewer.ts'
 import { afterEach, describe, expect, it } from 'vitest'
 import { ObservationId } from '../src/adb.ts'
 import { CodexOpenGuiService } from '../src/codex/service.ts'
@@ -67,7 +68,7 @@ afterEach(async () => { await Promise.all(services.splice(0).map(service => serv
 
 function service(host = new FakeHost()): CodexOpenGuiService {
   let nextSession = 1
-  const value = new CodexOpenGuiService({ host, createSessionId: () => `session-${nextSession++}` })
+  const value = new CodexOpenGuiService({ viewers: new ReadyViewer(), host, createSessionId: () => `session-${nextSession++}` })
   services.push(value)
   return value
 }

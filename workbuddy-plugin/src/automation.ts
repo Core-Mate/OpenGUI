@@ -94,7 +94,7 @@ export class AutomationCoordinator {
         task = owner
       }
       task ??= this.create(identity, event.session_id)
-      if (task.outcome !== 'active' && !['opengui_list_devices', 'opengui_status', 'opengui_cancel', 'opengui_close_session', 'opengui_close_mirror'].includes(event.tool_name)) {
+      if (task.outcome !== 'active' && !['opengui_list_devices', 'opengui_status', 'opengui_cancel', 'opengui_close_session', 'opengui_close_mirror', 'opengui_viewer_status', 'opengui_close_viewer'].includes(event.tool_name)) {
         throw new OpenGuiError('task_ended', 'opengui: this task ended; only a new explicit user request may start another task')
       }
       if (event.tool_name === 'opengui_open_session' && event.tool_input.purpose !== 'mirror') {
@@ -161,6 +161,7 @@ export class AutomationCoordinator {
       const state = this.service.findSession(args.sessionId)
       if (state?.purpose === 'control' && !this.states(task).some(state => state.purpose === 'control' && state.state === 'active')) {
         task.outcome = state.result?.outcome ?? 'unknown'
+        this.service.endViewerTask(task.id)
       }
     }
   }
@@ -186,6 +187,7 @@ export class AutomationCoordinator {
 
   private async finish(task: AutomationTask, outcome: AutomationTask['outcome']): Promise<void> {
     task.outcome = outcome
+    this.service.endViewerTask(task.id)
     task.controller.abort(new OpenGuiError('cancelled', 'opengui: host task ended'))
     for (const [token, claim] of this.claims) if (claim.task === task) this.claims.delete(token)
     // Snapshot exact owned ids before awaiting; obsolete cleanup cannot target a later task.

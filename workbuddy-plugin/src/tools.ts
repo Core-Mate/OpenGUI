@@ -87,9 +87,21 @@ const observationSchema = {
 }
 
 export const OPENGUI_WORKBUDDY_TOOLS: readonly WorkBuddyToolDefinition[] = [
+  ...(['open', 'status', 'close'] as const).map(action => ({
+    name: action === 'status' ? 'opengui_viewer_status' : `opengui_${action}_viewer`,
+    title: 'OpenGUI Real-time Viewer',
+    description: action === 'open' ? 'Create or reuse this task’s read-only video wall. Open its URL with the host browser tool, then wait for a visible decoded first frame before observing or acting.' : action === 'status' ? 'Wait at most 30 seconds for verified first video frames. Timeout is terminal for this task; never recreate sessions to bypass it.' : 'Close watching only; established control continues.',
+    inputSchema: { type: 'object', additionalProperties: false, properties: action === 'open'
+      ? { deviceIds: { type: 'array', uniqueItems: true, minItems: 1, maxItems: 4, items: { type: 'string', minLength: 1 } } }
+      : { viewerId: { type: 'string', minLength: 1 }, ...(action === 'status' ? { waitMs: { type: 'integer', minimum: 0, maximum: 30000 } } : {}) },
+      ...(action === 'open' ? {} : { required: ['viewerId'] }) },
+    outputSchema: { type: 'object' },
+    annotations: { readOnlyHint: action === 'status', destructiveHint: false, idempotentHint: true, openWorldHint: false },
+  })),
+
   {
     name: 'opengui_start', title: 'Start OpenGUI',
-    description: 'Begin every OpenGUI task here. Show persistent local read-only windows for all authorized phones, without taking control locks or returning phone images. Windows survive task completion and transport recycling. Verify initial display once per task; later minimization or closure does not stop screenshot-driven control.',
+    description: 'Legacy separate-window display, only on explicit user request. Use opengui_open_viewer for normal tasks. Show persistent local read-only windows for all authorized phones, without taking control locks or returning phone images. Windows survive task completion and transport recycling. Verify initial display once per task; later minimization or closure does not stop screenshot-driven control.',
     inputSchema: { type: 'object', additionalProperties: false, properties: {} }, outputSchema: displaySchema,
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   },
@@ -120,10 +132,10 @@ export const OPENGUI_WORKBUDDY_TOOLS: readonly WorkBuddyToolDefinition[] = [
   {
     name: 'opengui_open_session',
     title: 'Open OpenGUI Session',
-    description: 'Freeze and exclusively lock one to four task phones. Start persistent local read-only mirrors for authorized phones. Initial display must be verified once per task; subsequent minimization, occlusion or closure does not pause control. Finishing a task never closes windows. Omit deviceIds only with one authorized phone. Legacy purpose mirror takes no control lock.',
+    description: 'Freeze and exclusively lock one to four task phones. Requires this task’s matching viewerId; only decoded browser video establishes first-display readiness. Initial display must be verified once per task; subsequent minimization, occlusion or closure does not pause control. Finishing a task never closes windows. Omit deviceIds only with one authorized phone. Legacy purpose mirror takes no control lock.',
     inputSchema: {
       type: 'object', additionalProperties: false,
-      properties: { purpose: { type: 'string', enum: ['control', 'mirror'], default: 'control' }, deviceId, deviceIds: { type: 'array', uniqueItems: true, minItems: 1, maxItems: 4, items: { type: 'string', minLength: 1 } }, objective: { type: 'string', minLength: 1, maxLength: 2000 }, successCriteria: { type: 'string', minLength: 1, maxLength: 2000 } },
+      properties: { viewerId: { type: 'string', minLength: 1 }, purpose: { type: 'string', enum: ['control', 'mirror'], default: 'control' }, deviceId, deviceIds: { type: 'array', uniqueItems: true, minItems: 1, maxItems: 4, items: { type: 'string', minLength: 1 } }, objective: { type: 'string', minLength: 1, maxLength: 2000 }, successCriteria: { type: 'string', minLength: 1, maxLength: 2000 } },
       not: { properties: { deviceId: {}, deviceIds: {} }, required: ['deviceId', 'deviceIds'] },
     },
     outputSchema: sessionSchema,
@@ -237,11 +249,15 @@ export async function callOpenGuiTool(
 ): Promise<unknown> {
   validateToolArguments(name, args)
   switch (name) {
+    case 'opengui_open_viewer': return service.openViewer(deviceIds(args.deviceIds), signal, options)
+    case 'opengui_viewer_status': return service.viewers.status(requiredString(args.viewerId, 'viewerId'), options.owner ?? options.task?.viewerOwner ?? 'local', Number(args.waitMs ?? 0), signal)
+    case 'opengui_close_viewer': return service.viewers.closeViewer(requiredString(args.viewerId, 'viewerId'), options.owner ?? options.task?.viewerOwner ?? 'local')
+
     case 'opengui_start': return service.start(signal)
     case 'opengui_list_devices':
       return { devices: await service.listDevices(signal) }
     case 'opengui_open_session':
-      return service.openSession(args.deviceId ? [requiredString(args.deviceId, 'deviceId')] : deviceIds(args.deviceIds), signal, args.purpose as 'control' | 'mirror' | undefined, { ...options, objective: optionalString(args.objective, 'objective'), successCriteria: optionalString(args.successCriteria, 'successCriteria') })
+      return service.openSession(args.deviceId ? [requiredString(args.deviceId, 'deviceId')] : deviceIds(args.deviceIds), signal, args.purpose as 'control' | 'mirror' | undefined, { ...options, viewerId: optionalString(args.viewerId, 'viewerId'), objective: optionalString(args.objective, 'objective'), successCriteria: optionalString(args.successCriteria, 'successCriteria') })
     case 'opengui_open_mirror':
       if (!args.sessionId) return service.deviceMirror(requiredString(args.deviceId, 'deviceId'), false, signal)
       return service.openMirror(requiredString(args.sessionId, 'sessionId'), optionalString(args.deviceId, 'deviceId'), signal)

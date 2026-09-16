@@ -3,8 +3,8 @@ import { lstat, mkdir, open, readFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 
-export const VERSION = '0.2.1'
-export const BROKER_PROTOCOL = 7
+export const VERSION = '0.3.0'
+export const BROKER_PROTOCOL = 8
 
 export function workbuddyStateDir(override?: string): string {
   const configured = override ?? process.env.OPENGUI_WORKBUDDY_HOME?.trim()

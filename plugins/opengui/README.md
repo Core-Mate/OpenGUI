@@ -1,134 +1,43 @@
-# OpenGUI for Codex
+# OpenGUI for Codex 0.2.0
 
-Standalone screenshot-guided Android control for **local Codex on macOS arm64/x64**.
-This is a testing candidate, not a stable or directory-approved release.
+[中文说明](README.zh-CN.md). macOS candidate, protocol 3. No public release or directory approval is implied by these files.
 
-It includes a control Skill, local CLI/daemon, macOS ADB executable, and a read-only
-device wall. It does not depend on, modify, install, update, or reload DSH.
-See [source provenance](SOURCE.md) and [privacy](docs/privacy.md).
+OpenGUI opens real-time phone video beside the current chat using Codex native `open_in_codex` with placement `right`. A visible decoded H.264 frame must reach the backend before the first phone observation or action. An opening request or screenshot preview is insufficient. Video is read-only and local; model observations still use explicit screenshots.
 
-## Install on macOS
+## Task flow
 
-Once a release is published, download `opengui-codex-<version>-install.command`
-and its `.sha256` from that same [Codex release](https://github.com/Core-Mate/OpenGUI/releases).
-Verify the checksum in the download directory, then run `bash <downloaded-installer>`.
-The installer downloads the matching prebuilt package, checks it, prepares private Node,
-and registers the standalone plugin using the native `codex plugin` commands.
-No Git, pnpm, source build, or Xcode is required; Codex CLI with plugin support is required.
-Start a **new chat**, choose OpenGUI, and ask to list connected phones without operating them.
+1. List devices and freeze the sole authorized phone or the user's selected devices (one to four).
+2. Call `opengui_open_viewer`, open its URL in the host's right browser, and call `opengui_viewer_status` with `waitMs: 30000` once. A timeout is terminal for that logical task, including repeated opens; report the blocker.
+3. For pure viewing, finish. For control, call `opengui_open_session` with the same `viewerId` and devices, then observe and act one screenshot at a time.
+4. Close/cancel control when finished. Watching continues. Hiding pauses video; closing the last page releases its source within the cleanup budget. Reopening watching does not restart the task.
 
-For agent-assisted installation, use the repository's
-[installation Skill](../../skills/opengui-plugin-install/SKILL.md) and say
-“Install OpenGUI for Codex”. The Skill resolves only complete releases for this host.
-Public testing downloads are marked prerelease; stable publication requires the release gates below.
+After first display authorization, video failure or page closure does not cancel healthy screenshot control. Physical disconnection still invalidates observations; never switch phones or replay uncertain actions. Each task owns control exclusively. Viewer credentials never authorize phone actions. Independent host processes cannot coordinate external controllers, so do not control the same phone through another host concurrently.
 
-The installer uses the independent `opengui-standalone` marketplace and leaves the
-repository's legacy marketplace unchanged. Finish OpenGUI tasks before upgrading.
-A same-name plugin from another source is reported instead of silently replaced.
-Packages and recovery inventories are retained under `~/.codex/opengui-codex/packages`
-(or the selected `CODEX_HOME`). On failure, inspect the printed recovery directory;
-source rollback is attempted through Codex commands, without resetting other settings.
+## Installation and migration
 
-Maintainers can test an unpublished archive without installing build tools on the test Mac:
+Use the supplied installer and matching archive with adjacent SHA-256 sidecars:
 
 ```sh
-bash scripts/install-macos.command --archive /absolute/path/opengui-codex-0.1.0.tar.gz
+bash scripts/install-macos.command --archive /absolute/path/opengui-codex-0.2.0.tar.gz
 ```
 
-The adjacent `.sha256` file is required. Build and package once on the maintainer machine.
+The installer prepares private Node, verifies the package and scrcpy resources, and only then changes this host's configuration. Complete old phone tasks and close old displays before upgrading. No migration force-kills an old runtime. Repeated installation reuses verified caches; download failure reports its stage and leaves previous configuration available. Keep the old installer/archive and recovery record to reinstall the old version. The installer reports configuration, host loading and real-viewer acceptance separately.
 
-## Development and verification
+The standalone marketplace remains `opengui-standalone`; legacy plugin sources and other hosts remain untouched. CLI calls keep the host CODEX_THREAD_ID. The installer preserves configuration and marketplace inventories. An incompatible machine-wide ADB server is never automatically restarted.
 
-Run commands from this directory:
+## Runtime and privacy
+
+Each plugin independently packages scrcpy 4.1 transport and browser H.264 decoding: maximum dimension 960, 30 fps, 2 Mbps, no audio and no video control channel. Up to four per-device sources are shared within this host. Clients use bounded queues and recover on configuration/key frames. There is no shared background service or dependency on DSH.
+
+The local HTTP/WebSocket server checks loopback Host, Origin and private viewer credentials. Do not share Viewer URLs. Phone screenshots sent to the model follow host data policies; video is not sent frame by frame. Session locks and observation authority are never restored after restart. See VIDEO-NOTICE.md and LICENSE for provenance.
+
+## Verification
 
 ```sh
-pnpm install --frozen-lockfile --ignore-scripts
+pnpm install --frozen-lockfile
 pnpm check
+pnpm test:viewer
 pnpm package
 ```
 
-All package scripts are independent. No DSH checkout is required. The package
-command writes a tar.gz, upload ZIP, and SHA-256 sidecars under `.artifacts/`.
-Public files are allowlisted; development dependencies and MCP configuration are
-excluded. `pnpm stage /absolute/new/path/opengui` creates an unpacked upload tree.
-The existing repository marketplace intentionally still points at the legacy
-DSH package and must not be rewritten for this implementation.
-
-On macOS, `node scripts/smoke-archive.mjs <plugin.tar.gz> <node-darwin.tar.gz>`
-verifies a packaged launcher using the checksum-pinned Node 22.23.2 archive in a
-temporary private cache. It does not connect to ADB or install into a Codex profile.
-
-For development-only manual staging, use a separate disposable marketplace with Plugin Creator.
-The release installer above creates its own standalone source automatically. Do not install both the legacy and standalone
-`opengui` plugins into the same test task. Installing into your normal Codex
-profile or submitting to the public directory requires a separate user decision.
-
-## First use on a dedicated test machine
-
-```sh
-sh scripts/opengui --setup
-sh scripts/opengui --doctor
-sh scripts/opengui --interfaces
-```
-
-The launcher asks before downloading pinned Node 22.23.2 (~50 MB), verifies its
-archive, and caches it privately. It never changes PATH, runs npm install, or uses
-sudo. Cached runtimes work without a download. First Unicode input downloads
-verified scrcpy 4.1 (~13–14 MB). Internet is needed only when those caches are absent.
-
-Connect an authorized Android test device with USB debugging enabled. If no ADB
-server is running, `--setup-adb-server` starts the bundled server only after a
-native confirmation. An incompatible existing server is rejected, not restarted.
-ADB is still machine-wide: preflight is not a cross-process lock. Do not use this
-plugin on the production DSH host or share a phone with another controller.
-
-```sh
-sh scripts/opengui opengui_list_devices '{}'
-```
-
-Use returned opaque ids in `opengui_open_session`. Up to four devices can be
-frozen in a control session. `mode: "observe"` is read-only and does not reserve
-control locks. View the JPEG path returned by `opengui_observe` before issuing
-one `opengui_act`, then inspect the new frame. `--interfaces` describes exact
-arguments. Consequential actions require conversational confirmation and a native
-one-action dialog; caller-supplied approval booleans are rejected.
-
-Finish with `opengui_close_session` or `opengui_cancel`. Recover ids with
-`opengui_list_sessions`. Sessions expire after 30 idle minutes; wall polling
-does not renew them. An unused daemon exits after five minutes. A CLI interrupted
-during phone work cancels that session. Abrupt daemon death loses in-memory
-sessions: do not retry an uncertain external action automatically.
-
-CLI session operations require the host-provided `CODEX_THREAD_ID`. Sessions are
-owned by that task across short-lived CLI connections; other tasks cannot list,
-inspect, act on, or cancel them. Missing identity fails closed. This protects
-against task mixups, not malicious same-user processes that can forge environment
-variables or read local files. Device-wall tokens are scoped to one session.
-Protocol 2 rejects older daemons; finish their sessions and let them exit before
-using the updated package. A failed action consumes its old observation, requiring
-a new capture before another action. Reconnected devices retain their identity
-within the daemon lifetime.
-
-## Troubleshooting and rollback
-
-- Unsupported platform: no Android process is launched.
-- Runtime checksum/download failure: setup stops without executing the archive.
-- Active older daemon: complete its sessions and wait for idle exit before
-  updating; do not force-kill or replace it.
-- Interrupted startup lock: inspect the named lock and process on the test machine.
-  Locks are not automatically stolen. Retry after the owner finishes; manually
-  remove only a verified orphan lock if a process was killed during startup.
-- Cleanup never issues global ADB kill/reconnect or removes all forwards.
-- Rollback: finish Codex sessions, disable the standalone plugin, then reinstall
-  a verified prior standalone archive. DSH needs no rollback or restart.
-
-## Release gates
-
-See [review tests](docs/review-tests.md). Before public submission, verify clean
-Mac setup, actual Android tasks on one and two devices, both architectures, final
-downloaded archive checksums, public policy URLs, and publisher identity. GitHub
-artifact creation is not OpenAI approval. Do not announce publication until the
-approved version has actually been published.
-
-Public testing releases are explicitly marked prerelease on GitHub. Publishing a testing
-prerelease does not complete desktop/device acceptance or authorize stable/directory publication.
+The browser test additionally needs development-only `agent-browser` and `ffmpeg`. It validates actual H.264 decode and canvas changes, first-frame receipts, continued playback after completion, and subscriber cleanup. End users do not need those tools. See the [candidate acceptance report](../../docs/plans/2026-09-13-viewer-candidate-acceptance.md) for separate host, device, performance, installation and release evidence. Candidate packaging alone does not pass those gates.
