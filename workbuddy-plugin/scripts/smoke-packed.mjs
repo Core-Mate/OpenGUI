@@ -27,7 +27,8 @@ if (process.platform !== 'win32') {
 }
 // The emulator scan starts at adb port 5555. Keep the maximum below that
 // range so a developer's running emulator cannot enter the packaged ADB probe.
-// Runtime discovery uses a deterministic empty adapter and never lists a real phone.
+// POSIX runtime discovery uses a deterministic empty adapter; Windows CI uses the
+// isolated bundled ADB because execFile cannot launch a command script directly.
 const smokeEnv = { ...process.env, ADB_SERVER_SOCKET: adbSocket, ADB_MDNS_AUTO_CONNECT: 'none', ADB_LOCAL_TRANSPORT_MAX_PORT: '5553', ANDROID_USER_HOME: join(temporary, 'android'), ...(process.platform === 'win32' ? {} : { OPENGUI_ADB_PATH: discoveryAdb }) }
 const adb = spawn(managedAdbPath(), ['-L', `tcp:${adbPort}`, '--one-device', `opengui-smoke-${randomUUID()}`, 'server', 'nodaemon'], { env: smokeEnv, stdio: ['ignore', 'ignore', 'pipe'] })
 let adbError, adbLog = ''
@@ -58,10 +59,10 @@ try {
       const { tools } = await client.listTools()
       assert.equal(tools.length, 14)
       await client.ping()
+      const devices = await client.callTool({ name: 'opengui_list_devices', arguments: {} })
+      assert.notEqual(devices.isError, true, JSON.stringify(devices.content))
+      assert(Array.isArray(devices.structuredContent?.devices))
       if (process.platform !== 'win32') {
-        const devices = await client.callTool({ name: 'opengui_list_devices', arguments: {} })
-        assert.notEqual(devices.isError, true, JSON.stringify(devices.content))
-        assert(Array.isArray(devices.structuredContent?.devices))
         assert.equal(devices.structuredContent.devices.length, 0, 'Smoke discovery must not acquire real phones')
       }
       assert(adb.exitCode === null && adb.signalCode === null, 'Test-owned ADB exited during discovery')
@@ -69,7 +70,7 @@ try {
       brokerPid = probe.brokerPid
       probe.close()
       assert(brokerPid && brokerPid !== process.pid)
-      console.log(`${offline ? 'Offline cached' : 'Fresh isolated cache'}: packed stdio, fourteen tools, ping, broker startup${process.platform === 'win32' ? '' : ', and read-only ADB discovery'} passed.`)
+      console.log(`${offline ? 'Offline cached' : 'Fresh isolated cache'}: packed stdio, fourteen tools, ping, broker startup, and read-only ADB discovery passed.`)
     } finally {
       await client.close()
       if (brokerPid) {
