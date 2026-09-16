@@ -22,11 +22,13 @@ const adbPort = reservation.address().port
 await new Promise(resolve => reservation.close(resolve))
 const adbSocket = `tcp:127.0.0.1:${adbPort}`
 const discoveryAdb = join(temporary, 'empty-adb')
-await writeFile(discoveryAdb, '#!/bin/sh\nif [ "$1" = devices ] && [ "$2" = -l ]; then printf "List of devices attached\\n\\n"; exit 0; fi\necho "Unexpected smoke ADB command" >&2\nexit 1\n', { mode: 0o755 })
+if (process.platform !== 'win32') {
+  await writeFile(discoveryAdb, '#!/bin/sh\nif [ "$1" = devices ] && [ "$2" = -l ]; then printf "List of devices attached\\n\\n"; exit 0; fi\necho "Unexpected smoke ADB command" >&2\nexit 1\n', { mode: 0o755 })
+}
 // The emulator scan starts at adb port 5555. Keep the maximum below that
 // range so a developer's running emulator cannot enter the packaged ADB probe.
 // Runtime discovery uses a deterministic empty adapter and never lists a real phone.
-const smokeEnv = { ...process.env, ADB_SERVER_SOCKET: adbSocket, ADB_MDNS_AUTO_CONNECT: 'none', ADB_LOCAL_TRANSPORT_MAX_PORT: '5553', ANDROID_USER_HOME: join(temporary, 'android'), OPENGUI_ADB_PATH: discoveryAdb }
+const smokeEnv = { ...process.env, ADB_SERVER_SOCKET: adbSocket, ADB_MDNS_AUTO_CONNECT: 'none', ADB_LOCAL_TRANSPORT_MAX_PORT: '5553', ANDROID_USER_HOME: join(temporary, 'android'), ...(process.platform === 'win32' ? {} : { OPENGUI_ADB_PATH: discoveryAdb }) }
 const adb = spawn(managedAdbPath(), ['-L', `tcp:${adbPort}`, '--one-device', `opengui-smoke-${randomUUID()}`, 'server', 'nodaemon'], { env: smokeEnv, stdio: ['ignore', 'ignore', 'pipe'] })
 let adbError, adbLog = ''
 adb.on('error', error => { adbError = error })
@@ -56,16 +58,18 @@ try {
       const { tools } = await client.listTools()
       assert.equal(tools.length, 14)
       await client.ping()
-      const devices = await client.callTool({ name: 'opengui_list_devices', arguments: {} })
-      assert.notEqual(devices.isError, true, JSON.stringify(devices.content))
-      assert(Array.isArray(devices.structuredContent?.devices))
-      assert.equal(devices.structuredContent.devices.length, 0, 'Smoke discovery must not acquire real phones')
+      if (process.platform !== 'win32') {
+        const devices = await client.callTool({ name: 'opengui_list_devices', arguments: {} })
+        assert.notEqual(devices.isError, true, JSON.stringify(devices.content))
+        assert(Array.isArray(devices.structuredContent?.devices))
+        assert.equal(devices.structuredContent.devices.length, 0, 'Smoke discovery must not acquire real phones')
+      }
       assert(adb.exitCode === null && adb.signalCode === null, 'Test-owned ADB exited during discovery')
       const probe = await BrokerClient.connect(brokerPort(stateDir), await brokerToken(stateDir))
       brokerPid = probe.brokerPid
       probe.close()
       assert(brokerPid && brokerPid !== process.pid)
-      console.log(`${offline ? 'Offline cached' : 'Fresh isolated cache'}: packed stdio, fourteen tools, ping, broker startup, and read-only ADB discovery passed.`)
+      console.log(`${offline ? 'Offline cached' : 'Fresh isolated cache'}: packed stdio, fourteen tools, ping, broker startup${process.platform === 'win32' ? '' : ', and read-only ADB discovery'} passed.`)
     } finally {
       await client.close()
       if (brokerPid) {
