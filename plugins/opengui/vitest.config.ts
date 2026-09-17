@@ -1,4 +1,2 @@
 import { defineConfig } from 'vitest/config'
-
-// Browser QA compilation may leave generated tests below .artifacts.
-export default defineConfig({ test: { include: ['tests/**/*.spec.ts'] } })
+export default defineConfig({ test: { include: ['tests/**/*.spec.ts', '../../packages/device-runtime/tests/**/*.spec.ts'] } })

@@ -23,3 +23,8 @@
 - `workbuddy-plugin`: `npm run pack:release`、`npm run smoke:packed`、使用官方 Node 发行包执行 `node scripts/test-release-installer.mjs`（该测试需要发行包内的 npm）。
 - 安装 Skill：Skill Creator 的 `quick_validate.py skills/opengui-plugin-install`。
 - macOS 人工安装验收：使用临时 HOME / CODEX_HOME 和真实 Codex CLI 验证首装、重复安装；WorkBuddy 使用空 HOME 和不含 Node 的 PATH 验证私有运行时下载及三个配置入口。宿主桌面和真实手机验收仍沿用原发布清单。
+
+
+2026-09-17 implementation update: Codex and WorkBuddy share build-time source in
+`packages/device-runtime`; runtime instances, configuration, versions, device
+services and rollback remain independent.

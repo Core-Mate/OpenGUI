@@ -3,10 +3,12 @@ name: Standalone OpenGUI Codex CI
 on:
   pull_request:
     paths:
+      - 'packages/device-runtime/**'
       - 'plugins/opengui/**'
       - '.github/workflows/opengui-codex-*.yml'
   push:
     paths:
+      - 'packages/device-runtime/**'
       - 'plugins/opengui/**'
       - '.github/workflows/opengui-codex-*.yml'
 
@@ -33,16 +35,16 @@ jobs:
       - name: Copy only the standalone source into an isolated build root
         shell: bash
         run: |
-          cp -R plugins/opengui "$RUNNER_TEMP/opengui"
+          node packages/device-runtime/build.mjs stage codex "$RUNNER_TEMP/opengui-build"
           test ! -e "$RUNNER_TEMP/deepseek-harness-plugin"
       - name: Install without lifecycle hooks
-        working-directory: ${{ runner.temp }}/opengui
+        working-directory: ${{ runner.temp }}/opengui-build/plugins/opengui
         run: pnpm install --frozen-lockfile --ignore-scripts
       - name: Test and validate the isolated package
-        working-directory: ${{ runner.temp }}/opengui
+        working-directory: ${{ runner.temp }}/opengui-build/plugins/opengui
         run: pnpm check
       - name: Produce the allowlisted upload and archive
-        working-directory: ${{ runner.temp }}/opengui
+        working-directory: ${{ runner.temp }}/opengui-build/plugins/opengui
         run: |
           pnpm package
           bash -n scripts/install-macos.command
@@ -50,7 +52,7 @@ jobs:
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: opengui-codex-${{ matrix.os }}
-          path: ${{ runner.temp }}/opengui/.artifacts/
+          path: ${{ runner.temp }}/opengui-build/plugins/opengui/.artifacts/
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 7
