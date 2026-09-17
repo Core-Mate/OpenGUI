@@ -6,6 +6,7 @@ import { join } from 'node:path'
 import { createConnection } from 'node:net'
 import { CodexOpenGuiService } from '../src/codex/service.ts'
 import { assertVersion, request as makeRequest, sendRequest, startDaemon } from '../src/daemon.ts'
+import { OpenGuiError } from '../src/errors.ts'
 import { FakeHost } from './fixtures.ts'
 
 const cleanup: (() => Promise<void>)[] = []
@@ -27,6 +28,15 @@ async function open(endpoint: string): Promise<string> {
 }
 
 describe('standalone daemon transport', () => {
+  it('preserves an unknown action outcome across the daemon transport', async () => {
+    const server = await daemon(), sessionId = await open(server.endpoint)
+    server.host.act = async () => { throw new OpenGuiError('capture_failed', 'capture failed after dispatch', 'outcome_unknown', 'observe') }
+    const response = await sendRequest(server.endpoint, request('opengui_act', {
+      sessionId, action: 'key', key: 'Home', observationId: 'frame', externalSideEffect: 'none',
+    }))
+    expect(response).toMatchObject({ ok: false, failure: { executionState: 'outcome_unknown', recovery: 'observe' } })
+  })
+
   it('scopes discovery and every session operation to the originating task', async () => {
     const server = await daemon(), sessionId = await open(server.endpoint)
     const other = (name: string, args: Record<string, unknown> = {}) => sendRequest(server.endpoint, makeRequest(name, args, 'task-b'))

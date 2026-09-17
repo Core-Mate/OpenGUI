@@ -1,3 +1,4 @@
+import { errorInfo } from './errors.ts'
 import { randomUUID } from 'node:crypto'
 import { spawn } from 'node:child_process'
 import { chmod, lstat, open, readFile, rm } from 'node:fs/promises'
@@ -19,7 +20,7 @@ export interface Request {
   args: Record<string, unknown>
   owner?: string
 }
-export interface Response { ok: boolean; result?: unknown; error?: string }
+export interface Response { ok: boolean; result?: unknown; error?: string; failure?: ReturnType<typeof errorInfo> }
 export interface Hello { version: string; protocol: number; activeSessions: number; activeViewers?: number }
 export function request(name: string, args: Record<string, unknown> = {}, owner = process.env.CODEX_THREAD_ID): Request {
   return { version: VERSION, protocol: PROTOCOL_VERSION, name, args, ...(owner ? { owner } : {}) }
@@ -173,6 +174,7 @@ export async function startDaemon(options: DaemonOptions): Promise<{ endpoint: s
       if (!input.includes('\n')) return
       received = true
       const operation = (async () => {
+        let actionCompleted = false
         try {
           const value = JSON.parse(input.trim()) as Request
           if (value.name === '__ping__') {
@@ -208,6 +210,7 @@ export async function startDaemon(options: DaemonOptions): Promise<{ endpoint: s
           const result = value.name === 'opengui_list_sessions'
             ? { sessions: service.listSessions().filter(item => owners.get(item.sessionId) === value.owner) }
             : await callOpenGuiTool(service, value.name, value.args, signal, confirmed, value.owner)
+          actionCompleted = value.name === 'opengui_act'
           if (value.name === 'opengui_open_session') {
             ownedSession = (result as { sessionId: string }).sessionId
             owners.set(ownedSession, value.owner)
@@ -226,7 +229,9 @@ export async function startDaemon(options: DaemonOptions): Promise<{ endpoint: s
             await service.cancel(ownedSession).catch(() => {})
             await observations.remove(ownedSession).catch(() => {})
           }
-          respond({ ok: false, error: error instanceof Error ? error.message : String(error) })
+          const failure = errorInfo(error)
+          if (actionCompleted) { failure.executionState = 'outcome_unknown'; failure.recovery = 'observe' }
+          respond({ ok: false, error: failure.message, failure })
         } finally {
           lastRequest = Date.now()
           const retained = new Set(service.listSessions().map(item => item.sessionId))

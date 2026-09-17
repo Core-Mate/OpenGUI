@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { OpenGuiError, errorInfo } from './errors.ts'
 import { execFile } from 'node:child_process'
 import { realpathSync } from 'node:fs'
 import { access } from 'node:fs/promises'
@@ -84,7 +85,10 @@ export async function runCli(argv: readonly string[], signal = new AbortControll
   }
   if (name === '--shutdown-daemon') {
     const result = await sendRequest(daemonEndpoint(), request('__shutdown__'), signal)
-    if (!result.ok) throw new Error(result.error)
+    if (!result.ok) {
+    if (result.failure) throw new OpenGuiError(result.failure.code, result.failure.message, result.failure.executionState, result.failure.recovery)
+    throw new Error(result.error)
+  }
     return result.result
   }
   const source = raw ?? (process.stdin.isTTY ? '{}' : await readStdin())
@@ -93,7 +97,10 @@ export async function runCli(argv: readonly string[], signal = new AbortControll
   if (!process.env.CODEX_THREAD_ID?.trim()) throw new Error('opengui: CODEX_THREAD_ID is required; run from a local Codex task')
   const endpoint = await ensureDaemon(fileURLToPath(import.meta.url), dataDirectory(), AbortSignal.any([signal, AbortSignal.timeout(15_000)]))
   const result = await sendRequest(endpoint, request(name, args as Record<string, unknown>), signal)
-  if (!result.ok) throw new Error(result.error)
+  if (!result.ok) {
+    if (result.failure) throw new OpenGuiError(result.failure.code, result.failure.message, result.failure.executionState, result.failure.recovery)
+    throw new Error(result.error)
+  }
   return result.result
 }
 
@@ -121,7 +128,7 @@ if (isEntry) {
     runCli(process.argv.slice(2), controller.signal)
       .then(result => process.stdout.write(JSON.stringify(result, null, 2) + '\n'))
       .catch(error => {
-        process.stderr.write(JSON.stringify({ error: error instanceof Error ? error.message : String(error) }) + '\n')
+        process.stderr.write(JSON.stringify({ error: error instanceof Error ? error.message : String(error), ...(error instanceof OpenGuiError ? { failure: errorInfo(error) } : {}) }) + '\n')
         process.exitCode = 1
       })
   }
