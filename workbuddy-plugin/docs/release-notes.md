@@ -1,7 +1,10 @@
-# WorkBuddy 0.3.1 candidate
+# OpenGUI for WorkBuddy 0.4.0
 
-Adds live installation for WorkBuddy 5.5.6 and newer. The host may stay open while the verified installer atomically writes the MCP, Skill, and Hook configuration. WorkBuddy watches the MCP file; the user reviews the external Hook change in `/hooks` and confirms the Skill in `/skills`. Older compatible hosts retain the Command-Q fallback.
+Development candidate; not published or accepted as stable.
 
-Upgrades still stop if an old OpenGUI broker owns tasks or persistent displays. Finish those tasks, close their viewers or mirrors, disable the old OpenGUI MCP, and retry after the broker exits. The installer does not kill WorkBuddy or phone processes. Existing observation safety, host isolation, rollback receipts, and protocol 8 remain unchanged.
+- Shares the device execution, viewer, video transport and session resource core with the other standalone host.
+- Keeps host-specific installation, state, permissions, image delivery and rollback independent.
+- Preserves typed uncertain outcomes and prevents replay after screenshot delivery failure.
+- Embeds a runtime provenance manifest and validates isolated builds and packaged entry points.
 
-This is a public-testing candidate. Stable publication still requires the gates in `release-readiness.json`.
+Real desktop-host, two-physical-device, Unicode and sustained-video acceptance remain separate release gates. Cross-host concurrent control of one device is unsupported.

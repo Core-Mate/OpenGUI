@@ -3,7 +3,7 @@
 set -euo pipefail
 umask 077
 HOST=workbuddy
-VERSION=0.3.1
+VERSION=0.4.0
 ARCHIVE_NAME=opengui-mcp-$VERSION.tgz
 usage() {
   echo "OpenGUI for $HOST $VERSION (macOS arm64/x64)"

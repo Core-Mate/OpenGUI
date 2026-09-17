@@ -1,4 +1,4 @@
-# OpenGUI for Codex 0.2.0 候选版
+# OpenGUI for Codex 0.3.0 候选版
 
 本轮支持 macOS，协议版本 3。这是本地候选交付，不代表已公开发布或所有真机验收通过。
 
@@ -15,7 +15,7 @@ Codex 使用原生 open_in_codex，将浏览器放在当前任务右侧。短 CL
 核对安装器及归档旁的 SHA-256 文件，结束旧任务、关闭旧展示后运行：
 
 ```sh
-bash scripts/install-macos.command --archive /绝对路径/opengui-codex-0.2.0.tar.gz
+bash scripts/install-macos.command --archive /绝对路径/opengui-codex-0.3.0.tar.gz
 ```
 
 安装器自动准备独立 Node 与 scrcpy 资源，缓存完整时复用；准备失败保留旧配置，并输出恢复步骤。保留独立 opengui-standalone 插件源，不覆盖同名的其他来源。

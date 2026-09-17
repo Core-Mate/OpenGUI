@@ -130,6 +130,7 @@ export class PhoneController {
         screenshotHeight: stored.value.image.height,
       }
       if (action.action === 'wait') {
+        actionCommand(action, screen)
         this.execution.consumeObservation(actor)
         await waitForPhoneUi(action.waitMs, signal)
         return this.capture(actor, serial, signal)

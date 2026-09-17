@@ -1,6 +1,6 @@
 {
   "name": "opengui-mcp",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "Independent OpenGUI Android MCP runtime for WorkBuddy",
   "type": "module",
   "license": "SEE LICENSE IN LICENSE",
@@ -27,7 +27,7 @@
   "scripts": {
     "test:viewer": "npm run build && node scripts/test-viewer-browser.mjs",
     "build": "tsc -p tsconfig.json && tsdown && node scripts/finalize.mjs && node ../packages/device-runtime/build.mjs manifest workbuddy .",
-    "test": "vitest run",
+    "test": "node --test ../packages/device-runtime/build.test.mjs && vitest run",
     "check": "npm test && npm run build && node scripts/validate.mjs",
     "pack:release": "npm run check && node scripts/package.mjs",
     "smoke:packed": "node scripts/test-preflight.mjs && node scripts/test-install.mjs && node scripts/smoke-packed.mjs && node scripts/test-release-installer.mjs",

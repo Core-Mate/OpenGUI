@@ -51,7 +51,7 @@ describe('standalone launcher installation contract', () => {
   it('prints help and version without approval, download, or state creation', async () => {
     const f = await fixture()
     expect((await f.run(['--help'], { TEST_OS: 'Linux' })).stdout).toContain('OpenGUI for Codex')
-    expect((await f.run(['--version'])).stdout.trim()).toBe('0.2.0')
+    expect((await f.run(['--version'])).stdout.trim()).toBe('0.3.0')
     await expect(readdir(f.data)).rejects.toMatchObject({ code: 'ENOENT' })
   })
   it('installs a verified runtime, translates setup to doctor, and reuses the cache', async () => {

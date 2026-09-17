@@ -1,6 +1,6 @@
 {
   "name": "opengui-codex",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "Standalone local Android control for Codex on macOS",
   "type": "module",
@@ -12,7 +12,7 @@
   "scripts": {
     "test:viewer": "tsdown --config tsdown.viewer.config.ts && node scripts/test-viewer-browser.mjs .artifacts/browser/viewer.js",
     "build": "tsc --noEmit && tsdown && node ../../packages/device-runtime/build.mjs manifest codex .",
-    "test": "vitest run",
+    "test": "node --test ../../packages/device-runtime/build.test.mjs && vitest run",
     "validate": "node scripts/validate.mjs",
     "check": "pnpm test && pnpm build && pnpm validate",
     "stage": "node scripts/stage.mjs",

@@ -43,7 +43,7 @@ else if (args[1] === 'add') {
   await writeFile(join(runtime, '.verified'), archiveSha + '\n' + digest + '\n')
   await writeFile(join(codexHome, 'config.toml'), '# Existing unrelated settings\n')
   const env = { ...process.env, HOME: home, CODEX_HOME: codexHome, PATH: bin + ':' + process.env.PATH }
-  const archive = join(root, '.artifacts/opengui-codex-0.2.0.tar.gz')
+  const archive = join(root, '.artifacts/opengui-codex-0.3.0.tar.gz')
   const script = join(root, 'scripts/install-macos.command')
   const run = (file = archive, extra = {}) => spawnSync('bash', [script, '--archive', file], { env: { ...env, ...extra }, encoding: 'utf8' })
   const timings = [], started = Date.now()

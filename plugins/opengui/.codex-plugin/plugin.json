@@ -1,6 +1,6 @@
 {
   "name": "opengui",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Control authorized local Android devices from Codex on macOS, with screenshot-guided actions and a read-only device wall.",
   "author": { "name": "Core-Mate", "url": "https://github.com/Core-Mate" },
   "homepage": "https://github.com/Core-Mate/OpenGUI/tree/main/plugins/opengui",
