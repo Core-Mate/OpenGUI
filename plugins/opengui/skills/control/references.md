@@ -72,3 +72,9 @@ does not renew them); each device has a 100-operation cap. Closed/cancelled
 session images are removed, crash leftovers older than 24 hours are pruned on
 daemon startup, and an unused daemon exits after five minutes. Report code/test
 results separately from real-device verification and public publication.
+
+
+Execution failures preserve the legacy `error` string and may also return `failure`
+with `code`, `executionState`, and `recovery`. An `outcome_unknown` result includes
+transport loss or screenshot delivery failure after an action: observe the same
+phone before deciding a next action; never resubmit the previous mutation blindly.

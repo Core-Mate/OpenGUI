@@ -9,7 +9,7 @@ try {
   const root = join(temporary, 'workbuddy')
   const pkg = join(root, 'opengui', 'packages', 'test', 'node_modules', 'opengui-mcp')
   await mkdir(join(pkg, 'lib'), { recursive: true })
-  await writeFile(join(pkg, 'package.json'), JSON.stringify({ name: 'opengui-mcp', version: '0.3.1' }))
+  await writeFile(join(pkg, 'package.json'), JSON.stringify({ name: 'opengui-mcp', version: '0.4.0' }))
   await writeFile(join(pkg, 'lib', 'host-hook.js'), '// Synthetic installer target; never executed.\n')
   await writeFile(join(pkg, 'lib', 'opengui-SKILL.md'), 'name: opengui\n')
   await writeFile(join(root, 'mcp.json'), JSON.stringify({ mcpServers: { other: { command: 'untouched' } } }))

@@ -3,7 +3,7 @@
 set -euo pipefail
 umask 077
 HOST=codex
-VERSION=0.2.0
+VERSION=0.3.0
 ARCHIVE_NAME=opengui-codex-$VERSION.tar.gz
 usage() {
   echo "OpenGUI for $HOST $VERSION (macOS arm64/x64)"

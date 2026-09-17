@@ -1,4 +1,4 @@
-# OpenGUI for WorkBuddy 0.3.1 候选版
+# OpenGUI for WorkBuddy 0.4.0 候选版
 
 本轮支持 macOS，协议版本 8。这是本地候选交付，不代表已公开发布或所有真机验收通过。
 
@@ -15,7 +15,7 @@ WorkBuddy 使用内置 present_files，传入 URL 与当前工作目录。国内
 核对安装器及归档旁的 SHA-256 文件，结束旧任务、关闭旧展示后运行：
 
 ```sh
-bash scripts/install-macos.command --archive /绝对路径/opengui-mcp-0.3.1.tgz
+bash scripts/install-macos.command --archive /绝对路径/opengui-mcp-0.4.0.tgz
 ```
 
 安装器自动准备独立 Node 与 scrcpy 资源，缓存完整时复用；准备失败保留旧配置，并输出恢复步骤。WorkBuddy 5.5.6 及以上可以保持运行：MCP 配置由宿主实时监听，外部 Hook 变更在 `/hooks` 中审查应用，并在 `/skills` 中确认 `opengui`。当前任务没有刷新时再新建任务。旧版兼容宿主会由预检明确要求 Command-Q。可用 --check 做只读预检，用 --app 指定国内或海外应用。

@@ -1,3 +1,8 @@
+# 0.4.0 (development candidate)
+
+Shared device-runtime source with independent packaging and host lifecycle policies.
+No stable acceptance or published release is implied.
+
 # OpenGUI for WorkBuddy 0.3.1 candidate
 
 - Allow WorkBuddy 5.5.6+ to stay open during a verified first installation or idle reconfiguration.

@@ -26,17 +26,22 @@ jobs:
       OPENGUI_PRERELEASE: ${{ github.event_name == 'push' || inputs.prerelease }}
     defaults:
       run:
-        working-directory: workbuddy-plugin
+        working-directory: ${{ runner.temp }}/opengui-build/workbuddy-plugin
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Export isolated adapter and shared core
+        shell: bash
+        working-directory: ${{ github.workspace }}
+        run: node packages/device-runtime/build.mjs stage workbuddy "$RUNNER_TEMP/opengui-build"
       - uses: actions/setup-node@v4
         with:
           node-version: '22.19.0'
           cache: npm
           cache-dependency-path: workbuddy-plugin/package-lock.json
       - name: Require main ancestry
+        working-directory: ${{ github.workspace }}
         run: git merge-base --is-ancestor HEAD origin/main
       - run: npm ci
       - run: npm run pack:release
@@ -47,4 +52,5 @@ jobs:
       - name: Publish immutable WorkBuddy assets
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: node scripts/publish.mjs
