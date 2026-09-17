@@ -4,13 +4,29 @@
   "description": "Independent OpenGUI Android MCP runtime for WorkBuddy",
   "type": "module",
   "license": "SEE LICENSE IN LICENSE",
-  "repository": { "type": "git", "url": "https://github.com/Core-Mate/OpenGUI.git", "directory": "workbuddy-plugin" },
-  "bin": { "opengui-mcp": "lib/mcp.js" },
-  "files": ["scripts/install-local.mjs", "lib", "assets", "LICENSE", "NOTICE.md", "VIDEO-NOTICE.md", "README.md"],
-  "engines": { "node": "^22.19.0 || >=24" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Core-Mate/OpenGUI.git",
+    "directory": "workbuddy-plugin"
+  },
+  "bin": {
+    "opengui-mcp": "lib/mcp.js"
+  },
+  "files": [
+    "scripts/install-local.mjs",
+    "lib",
+    "assets",
+    "LICENSE",
+    "NOTICE.md",
+    "VIDEO-NOTICE.md",
+    "README.md"
+  ],
+  "engines": {
+    "node": "^22.19.0 || >=24"
+  },
   "scripts": {
     "test:viewer": "npm run build && node scripts/test-viewer-browser.mjs",
-    "build": "tsc -p tsconfig.json && node scripts/finalize.mjs",
+    "build": "tsc -p tsconfig.json && tsdown && node scripts/finalize.mjs && node ../packages/device-runtime/build.mjs manifest workbuddy .",
     "test": "vitest run",
     "check": "npm test && npm run build && node scripts/validate.mjs",
     "pack:release": "npm run check && node scripts/package.mjs",
@@ -29,6 +45,7 @@
     "@types/node": "22.19.0",
     "@types/yauzl": "2.10.3",
     "fflate": "0.8.3",
+    "tsdown": "0.22.2",
     "typescript": "5.9.3",
     "vitest": "3.2.7",
     "yazl": "3.3.1"

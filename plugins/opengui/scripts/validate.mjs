@@ -1,3 +1,4 @@
+import { validateSourceBoundary, validateManifest } from '../../../packages/device-runtime/build.mjs'
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
 import { lstat, mkdtemp, readFile, readdir, rm, stat } from 'node:fs/promises'
@@ -42,7 +43,7 @@ async function walk(directory) {
 }
 for (const path of await walk(join(root, 'src'))) {
   const text = await readFile(path, 'utf8')
-  assert.ok(!/from ['"][^'"]*(deepseek-harness|@deepseek|\.\.\/\.\.\/\.\.)/.test(text), 'Cross-package runtime import: ' + path)
+  assert.ok(!/from ['"][^'"]*(deepseek-harness|@deepseek)/.test(text), 'Cross-package runtime import: ' + path)
   assert.ok(!/DSH_HOME|coremate-mobile-scrcpy|dev-auto-reload/.test(text), 'Production coupling: ' + path)
   // state.ts may name .dsh only to reject it as an unsafe override.
   if (path !== join(root, 'src/state.ts')) assert.ok(!/\.dsh\b/.test(text), 'Legacy runtime path: ' + path)
@@ -58,3 +59,6 @@ try {
   execFileSync('/bin/sh', ['-n', join(destination, 'scripts/opengui')])
   console.log('Standalone manifest, dependencies, runtime, launcher, ADB checksum and staged upload verified.')
 } finally { await rm(temp, { recursive: true, force: true }) }
+
+await validateSourceBoundary(root)
+await validateManifest(root)
