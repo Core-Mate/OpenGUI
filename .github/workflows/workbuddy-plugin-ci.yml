@@ -22,9 +22,6 @@ jobs:
     strategy:
       matrix:
         node: ['22.19.0', '24']
-    defaults:
-      run:
-        working-directory: ${{ runner.temp }}/opengui-build/workbuddy-plugin
     steps:
       - uses: actions/checkout@v4
       - name: Export isolated adapter and shared core
@@ -37,14 +34,14 @@ jobs:
           cache: npm
           cache-dependency-path: workbuddy-plugin/package-lock.json
       - run: npm ci
+        working-directory: ${{ runner.temp }}/opengui-build/workbuddy-plugin
       - run: npm run pack:release
+        working-directory: ${{ runner.temp }}/opengui-build/workbuddy-plugin
       - run: npm audit --omit=dev --audit-level=moderate
+        working-directory: ${{ runner.temp }}/opengui-build/workbuddy-plugin
   macos-package:
     runs-on: macos-latest
     timeout-minutes: 15
-    defaults:
-      run:
-        working-directory: ${{ runner.temp }}/opengui-build/workbuddy-plugin
     steps:
       - uses: actions/checkout@v4
       - name: Export isolated adapter and shared core
@@ -57,10 +54,15 @@ jobs:
           cache: npm
           cache-dependency-path: workbuddy-plugin/package-lock.json
       - run: npm ci
+        working-directory: ${{ runner.temp }}/opengui-build/workbuddy-plugin
       - run: npm run pack:release
+        working-directory: ${{ runner.temp }}/opengui-build/workbuddy-plugin
       - run: node scripts/test-publish.mjs
+        working-directory: ${{ runner.temp }}/opengui-build/workbuddy-plugin
       - run: node scripts/test-release-installer.mjs
+        working-directory: ${{ runner.temp }}/opengui-build/workbuddy-plugin
       - run: npm run test:native
+        working-directory: ${{ runner.temp }}/opengui-build/workbuddy-plugin
       - uses: actions/upload-artifact@v4
         with:
           name: workbuddy-candidate
@@ -74,9 +76,6 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
-    defaults:
-      run:
-        working-directory: ${{ runner.temp }}/opengui-build/workbuddy-plugin
     steps:
       - uses: actions/checkout@v4
       - name: Export isolated adapter and shared core
@@ -89,9 +88,12 @@ jobs:
           cache: npm
           cache-dependency-path: workbuddy-plugin/package-lock.json
       - run: npm ci
+        working-directory: ${{ runner.temp }}/opengui-build/workbuddy-plugin
       - run: npm run check
+        working-directory: ${{ runner.temp }}/opengui-build/workbuddy-plugin
       - uses: actions/download-artifact@v4
         with:
           name: workbuddy-candidate
           path: ${{ runner.temp }}/opengui-build/workbuddy-plugin/dist
       - run: npm run smoke:packed
+        working-directory: ${{ runner.temp }}/opengui-build/workbuddy-plugin
