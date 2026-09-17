@@ -1,3 +1,4 @@
+import { SessionRuntime } from '../../packages/device-runtime/src/session-runtime.ts'
 import { ViewerServer, type ViewerStreams } from './viewer.ts'
 import { ScrcpyVideoStreams } from './scrcpy-stream.ts'
 import { randomUUID } from 'node:crypto'
@@ -416,8 +417,9 @@ export class WorkBuddyOpenGuiService {
   private readonly now: () => number
   private readonly host: WorkBuddyPhoneHost
   private readonly createSessionId: () => string
-  private readonly sessions = new Map<string, SessionRecord>()
-  private readonly locks = new Map<string, string>()
+  private readonly runtime = new SessionRuntime<SessionRecord>()
+  private readonly sessions = this.runtime.sessions
+  private readonly locks = this.runtime.locks
   readonly viewers: ViewerServer
   private readonly wall: DeviceWallServer
   private disposed = false
@@ -566,9 +568,8 @@ export class WorkBuddyOpenGuiService {
         task.actors.set(item.device.serial, item.actor)
       }
       this.host.assignTarget(item.actor, item.device.serial)
-      if (purpose === 'control') this.locks.set(item.device.serial, id)
     }
-    this.sessions.set(id, record)
+    this.runtime.register(record, purpose === 'control')
     this.renewLease(record)
     try {
       await this.wall.start()
@@ -660,7 +661,7 @@ export class WorkBuddyOpenGuiService {
     delete action.confirmationRequestId
     delete action.hostContext
     try {
-      return await this.runPhoneOperation(sessionId, deviceId, signal, (item, combined) => this.host.act(item.actor, action, combined))
+      return await this.runPhoneOperation(sessionId, deviceId, signal, (item, combined) => this.host.act(item.actor, action, combined), true)
     } catch (error) {
       item.resultUnknown ||= errorInfo(error).executionState === 'outcome_unknown'
       record.resultUnknown = record.devices.some(device => device.resultUnknown)
@@ -773,12 +774,14 @@ export class WorkBuddyOpenGuiService {
     deviceId: string | undefined,
     signal: AbortSignal,
     operation: (item: SessionDevice, combined: AbortSignal) => Promise<RawPhoneObservation>,
+    mutating = false,
   ): Promise<WorkBuddyObservation> {
     const record = this.requireActiveSession(sessionId)
     if (record.purpose === 'mirror') throw new Error('opengui: mirror-only sessions cannot capture model images or control phones')
     const item = this.resolveDevice(record, deviceId)
     const combined = AbortSignal.any([record.controller.signal, item.connectionController.signal, signal])
     const connectionEpoch = item.connectionEpoch ?? 0
+    let completed = false
     try {
       combined.throwIfAborted()
       this.viewers.assertReady(record.viewerId!)
@@ -787,6 +790,7 @@ export class WorkBuddyOpenGuiService {
       record.task.operations.set(item.device.serial, operations + 1)
       this.renewLease(record)
       const value = await this.track(record, () => operation(item, combined))
+      completed = true
       combined.throwIfAborted()
       if ((item.connectionEpoch ?? 0) !== connectionEpoch) {
         this.host.invalidate?.(item.actor)
@@ -803,6 +807,7 @@ export class WorkBuddyOpenGuiService {
       item.needsObservation = true
       this.host.invalidate?.(item.actor)
       record.lastError = error instanceof Error ? error.message : String(error)
+      if (mutating && completed) throw new OpenGuiError('result_delivery_failed', record.lastError, 'outcome_unknown', 'observe')
       throw error
     }
   }
@@ -829,51 +834,24 @@ export class WorkBuddyOpenGuiService {
     }
   }
 
-  private requireSession(sessionId: string): SessionRecord {
-    const record = this.sessions.get(sessionId)
-    if (record === undefined) throw new Error('opengui: unknown sessionId')
-    return record
-  }
+  private requireSession(sessionId: string): SessionRecord { return this.runtime.requireSession(sessionId) }
 
-  private requireActiveSession(sessionId: string): SessionRecord {
-    const record = this.requireSession(sessionId)
-    if (record.state !== 'active') throw new Error(`opengui: session is ${record.state}`)
-    return record
-  }
+  private requireActiveSession(sessionId: string): SessionRecord { return this.runtime.requireActiveSession(sessionId) }
 
   private resolveDevice(record: SessionRecord, deviceId: string | undefined): SessionDevice {
-    if (deviceId === undefined) {
-      if (record.devices.length !== 1) throw new Error('opengui: deviceId is required for a multi-device session')
-      return record.devices[0]!
-    }
-    const item = record.devices.find(candidate => candidate.device.id === deviceId)
-    if (item === undefined) throw new Error('opengui: deviceId is not locked by this session')
-    return item
+    return this.runtime.resolveDevice(record, deviceId)
   }
 
-  private release(record: SessionRecord): void {
-    for (const item of record.devices) {
-      if (this.locks.get(item.device.serial) === record.id) this.locks.delete(item.device.serial)
-    }
-  }
+  private release(record: SessionRecord): void { this.runtime.release(record) }
 
-  private async track<T>(record: SessionRecord, operation: () => Promise<T>): Promise<T> {
-    const pending = Promise.resolve().then(() => {
-      record.controller.signal.throwIfAborted()
-      return operation()
-    })
-    record.pending.add(pending)
-    try { return await pending } finally { record.pending.delete(pending) }
+  private track<T>(record: SessionRecord, operation: () => Promise<T>): Promise<T> {
+    return this.runtime.track(record, operation)
   }
 
   /** Keep leases until in-flight work and owned resource cleanup have both drained. */
   private cleanup(record: SessionRecord): Promise<void> {
     clearTimeout(record.leaseTimer)
-    record.cleanup ??= (async () => {
-      await Promise.allSettled([...record.pending])
-      await this.releaseDeviceResources(record)
-      this.release(record)
-    })()
+    record.cleanup ??= this.runtime.drain(record, () => this.releaseDeviceResources(record))
     return record.cleanup
   }
 

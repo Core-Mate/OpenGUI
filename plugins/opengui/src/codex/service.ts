@@ -1,3 +1,5 @@
+import { OpenGuiError } from '../errors.ts'
+import { SessionRuntime } from '../../../../packages/device-runtime/src/session-runtime.ts'
 import { ViewerServer, type ViewerStreams } from '../viewer.ts'
 import { ScrcpyVideoStreams } from '../scrcpy-stream.ts'
 import { randomBytes, randomUUID } from 'node:crypto'
@@ -276,8 +278,9 @@ export interface CodexOpenGuiServiceOptions {
 export class CodexOpenGuiService {
   private readonly host: CodexPhoneHost
   private readonly createSessionId: () => string
-  private readonly sessions = new Map<string, SessionRecord>()
-  private readonly locks = new Map<string, string>()
+  private readonly runtime = new SessionRuntime<SessionRecord>()
+  private readonly sessions = this.runtime.sessions
+  private readonly locks = this.runtime.locks
   readonly viewers: ViewerServer
   private readonly wall: DeviceWallServer
   private readonly now: () => number
@@ -343,9 +346,8 @@ export class CodexOpenGuiService {
     }
     for (const item of record.devices) {
       this.host.assignTarget(item.actor, item.device.serial)
-      if (mode === 'control') this.locks.set(item.device.serial, id)
     }
-    this.sessions.set(id, record)
+    this.runtime.register(record, mode === 'control')
     try {
       await this.wall.start()
       signal.throwIfAborted()
@@ -381,7 +383,7 @@ export class CodexOpenGuiService {
     delete action.deviceId
     delete action.externalSideEffect
     delete action.confirmedExternalSideEffect
-    return this.runPhoneOperation(sessionId, deviceId, signal, (item, combined) => this.host.act(item.actor, action, combined))
+    return this.runPhoneOperation(sessionId, deviceId, signal, (item, combined) => this.host.act(item.actor, action, combined), true)
   }
 
   async status(sessionId: string, signal: AbortSignal, renew = true): Promise<CodexSessionStatus> {
@@ -462,23 +464,24 @@ export class CodexOpenGuiService {
     deviceId: string | undefined,
     signal: AbortSignal,
     operation: (item: SessionDevice, combined: AbortSignal) => Promise<RawPhoneObservation>,
+    mutating = false,
   ): Promise<CodexObservation> {
     const record = this.requireActiveSession(sessionId)
     this.viewers.assertReady(record.viewerId!)
     record.lastRequestAt = this.now()
     const item = this.resolveDevice(record, deviceId)
     const combined = AbortSignal.any([record.controller.signal, signal])
-    const pending = operation(item, combined)
-    record.pending.add(pending)
+    const pending = this.runtime.track(record, () => operation(item, combined))
+    let completed = false
     try {
       const value = await pending
+      completed = true
       combined.throwIfAborted()
       return this.publicObservation(record.id, item.device.id, value)
     } catch (error) {
       record.lastError = error instanceof Error ? error.message : String(error)
+      if (mutating && completed) throw new OpenGuiError('result_delivery_failed', record.lastError, 'outcome_unknown', 'observe')
       throw error
-    } finally {
-      record.pending.delete(pending)
     }
   }
 
@@ -502,33 +505,15 @@ export class CodexOpenGuiService {
     }
   }
 
-  private requireSession(sessionId: string): SessionRecord {
-    const record = this.sessions.get(sessionId)
-    if (record === undefined) throw new Error('opengui: unknown sessionId')
-    return record
-  }
+  private requireSession(sessionId: string): SessionRecord { return this.runtime.requireSession(sessionId) }
 
-  private requireActiveSession(sessionId: string): SessionRecord {
-    const record = this.requireSession(sessionId)
-    if (record.state !== 'active') throw new Error(`opengui: session is ${record.state}`)
-    return record
-  }
+  private requireActiveSession(sessionId: string): SessionRecord { return this.runtime.requireActiveSession(sessionId) }
 
   private resolveDevice(record: SessionRecord, deviceId: string | undefined): SessionDevice {
-    if (deviceId === undefined) {
-      if (record.devices.length !== 1) throw new Error('opengui: deviceId is required for a multi-device session')
-      return record.devices[0]!
-    }
-    const item = record.devices.find(candidate => candidate.device.id === deviceId)
-    if (item === undefined) throw new Error('opengui: deviceId is not locked by this session')
-    return item
+    return this.runtime.resolveDevice(record, deviceId)
   }
 
-  private release(record: SessionRecord): void {
-    for (const item of record.devices) {
-      if (this.locks.get(item.device.serial) === record.id) this.locks.delete(item.device.serial)
-    }
-  }
+  private release(record: SessionRecord): void { this.runtime.release(record) }
 
   private async releaseDeviceResources(record: SessionRecord): Promise<void> {
     if (record.mode === 'observe') return
@@ -571,14 +556,12 @@ export class CodexOpenGuiService {
     record.state = state
     record.closedAt = new Date(this.now()).toISOString()
     record.controller.abort(new Error('opengui: session ' + state))
-    record.finishing = (async () => {
-      // Keep the exclusive lease until old work and its cleanup have finished.
-      await Promise.allSettled(record.pending)
+    record.finishing = this.runtime.drain(record, async () => {
       await this.releaseDeviceResources(record)
       try { await this.onSessionClosed(record.id) }
       catch (error) { record.lastError = error instanceof Error ? error.message : String(error) }
-      finally { this.release(record); this.pruneClosedSessions() }
-    })()
+      finally { this.pruneClosedSessions() }
+    })
     return record.finishing
   }
 }
