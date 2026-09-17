@@ -7,6 +7,7 @@ import { createConnection } from 'node:net'
 import { CodexOpenGuiService } from '../src/codex/service.ts'
 import { assertVersion, request as makeRequest, sendRequest, startDaemon } from '../src/daemon.ts'
 import { OpenGuiError } from '../src/errors.ts'
+import { ObservationStore } from '../src/state.ts'
 import { FakeHost } from './fixtures.ts'
 
 const cleanup: (() => Promise<void>)[] = []
@@ -28,6 +29,17 @@ async function open(endpoint: string): Promise<string> {
 }
 
 describe('standalone daemon transport', () => {
+  it('does not report an action as unexecuted when saving its image fails', async () => {
+    const server = await daemon(), sessionId = await open(server.endpoint)
+    const save = vi.spyOn(ObservationStore.prototype, 'save').mockRejectedValueOnce(new Error('test disk full'))
+    try {
+      const response = await sendRequest(server.endpoint, request('opengui_act', {
+        sessionId, action: 'key', key: 'Home', observationId: 'frame', externalSideEffect: 'none',
+      }))
+      expect(response).toMatchObject({ ok: false, error: 'test disk full', failure: { executionState: 'outcome_unknown', recovery: 'observe' } })
+    } finally { save.mockRestore() }
+  })
+
   it('preserves an unknown action outcome across the daemon transport', async () => {
     const server = await daemon(), sessionId = await open(server.endpoint)
     server.host.act = async () => { throw new OpenGuiError('capture_failed', 'capture failed after dispatch', 'outcome_unknown', 'observe') }
