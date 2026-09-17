@@ -1,4 +1,4 @@
-import { errorInfo } from './errors.ts'
+import { errorInfo, OpenGuiError } from './errors.ts'
 import { randomUUID } from 'node:crypto'
 import { spawn } from 'node:child_process'
 import { chmod, lstat, open, readFile, rm } from 'node:fs/promises'
@@ -31,22 +31,28 @@ export function sendRequest(endpoint: string, value: Request, signal?: AbortSign
   return new Promise((resolve, reject) => {
     const socket = createConnection(endpoint)
     let body = ''
+    let sent = false
+    const fail = (error: unknown): void => {
+      cleanup()
+      reject(value.name === 'opengui_act' && sent
+        ? new OpenGuiError('connection_lost', error instanceof Error ? error.message : String(error), 'outcome_unknown', 'observe') : error)
+    }
     const cleanup = (): void => { signal?.removeEventListener('abort', abort); socket.destroy() }
-    const abort = (): void => { cleanup(); reject(signal?.reason ?? new Error('opengui: request cancelled')) }
+    const abort = (): void => { fail(signal?.reason ?? new Error('opengui: request cancelled')) }
     if (signal?.aborted) { abort(); return }
     signal?.addEventListener('abort', abort, { once: true })
     socket.setEncoding('utf8')
-    socket.setTimeout(125_000, () => { cleanup(); reject(new Error('opengui: daemon request timed out')) })
-    socket.once('connect', () => socket.write(JSON.stringify(value) + '\n'))
+    socket.setTimeout(125_000, () => fail(new Error('opengui: daemon request timed out')))
+    socket.once('connect', () => { sent = true; socket.write(JSON.stringify(value) + '\n') })
     socket.on('data', chunk => {
       body += chunk
-      if (Buffer.byteLength(body) > 2_000_000) { cleanup(); reject(new Error('opengui: oversized daemon response')); return }
+      if (Buffer.byteLength(body) > 2_000_000) { fail(new Error('opengui: oversized daemon response')); return }
       if (!body.includes('\n')) return
       try { const result = JSON.parse(body.trim()) as Response; cleanup(); resolve(result) }
-      catch (error) { cleanup(); reject(error) }
+      catch (error) { fail(error) }
     })
-    socket.once('error', error => { cleanup(); reject(error) })
-    socket.once('end', () => { if (!body.includes('\n')) { cleanup(); reject(new Error('opengui: incomplete daemon response')) } })
+    socket.once('error', fail)
+    socket.once('end', () => { if (!body.includes('\n')) { fail(new Error('opengui: incomplete daemon response')) } })
   })
 }
 
