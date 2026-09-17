@@ -1,12 +1,7 @@
 import sharp from 'sharp'
 
-export interface EncodedPhoneScreenshot {
-  readonly data: Buffer
-  readonly width: number
-  readonly height: number
-  readonly sourceWidth?: number
-  readonly sourceHeight?: number
-}
+import type { EncodedPhoneScreenshot } from '../../packages/device-runtime/src/image.ts'
+export type { EncodedPhoneScreenshot } from '../../packages/device-runtime/src/image.ts'
 
 /** Bound model-visible images without requiring a host-specific image helper. */
 export async function encodeWorkBuddyPhoneScreenshot(source: Buffer): Promise<EncodedPhoneScreenshot> {
