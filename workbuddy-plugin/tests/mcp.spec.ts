@@ -88,7 +88,7 @@ describe('standard MCP transport', () => {
     const { client: c, connection } = await client()
     const listed = await c.listTools()
     expect(listed.tools.map(tool => tool.name)).toEqual(OPENGUI_WORKBUDDY_TOOLS.map(tool => tool.name))
-    expect(c.getServerVersion()).toMatchObject({ name: 'opengui-workbuddy', version: '0.3.1' })
+    expect(c.getServerVersion()).toMatchObject({ name: 'opengui-workbuddy', version: '0.4.0' })
     expect(connection.call).not.toHaveBeenCalled()
   })
 

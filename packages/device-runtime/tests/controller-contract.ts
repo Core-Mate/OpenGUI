@@ -36,6 +36,17 @@ export function controllerContract(it: Test, create: (options: PhoneControllerOp
     }
   }
 
+  it('rejects out-of-budget waits before waiting or dispatching', async () => {
+    for (const waitMs of [0, 10_001]) {
+      const f = fixture()
+      const before = await f.controller.observe(f.actor, f.signal)
+      await assert.rejects(f.controller.execute(f.actor, {
+        action: 'wait', observationId: before.observationId, waitMs,
+      }, f.signal), /waitMs/)
+      assert.equal(f.dispatched(), 0)
+    }
+  })
+
   it('revokes an observation when a later read fails before any action', async () => {
     const f = fixture()
     const before = await f.controller.observe(f.actor, f.signal)

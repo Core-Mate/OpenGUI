@@ -1,4 +1,4 @@
-# OpenGUI for Codex 0.2.0
+# OpenGUI for Codex 0.3.0
 
 [中文说明](README.zh-CN.md). macOS candidate, protocol 3. No public release or directory approval is implied by these files.
 
@@ -18,7 +18,7 @@ After first display authorization, video failure or page closure does not cancel
 Use the supplied installer and matching archive with adjacent SHA-256 sidecars:
 
 ```sh
-bash scripts/install-macos.command --archive /absolute/path/opengui-codex-0.2.0.tar.gz
+bash scripts/install-macos.command --archive /absolute/path/opengui-codex-0.3.0.tar.gz
 ```
 
 The installer prepares private Node, verifies the package and scrcpy resources, and only then changes this host's configuration. Complete old phone tasks and close old displays before upgrading. No migration force-kills an old runtime. Repeated installation reuses verified caches; download failure reports its stage and leaves previous configuration available. Keep the old installer/archive and recovery record to reinstall the old version. The installer reports configuration, host loading and real-viewer acceptance separately.
@@ -41,3 +41,12 @@ pnpm package
 ```
 
 The browser test additionally needs development-only `agent-browser` and `ffmpeg`. It validates actual H.264 decode and canvas changes, first-frame receipts, continued playback after completion, and subscriber cleanup. End users do not need those tools. See the [candidate acceptance report](../../docs/plans/2026-09-13-viewer-candidate-acceptance.md) for separate host, device, performance, installation and release evidence. Candidate packaging alone does not pass those gates.
+
+
+### Shared source, independent installation
+
+Device execution is built from `packages/device-runtime` in this repository.
+Install only the host package; there is no separately installed shared service.
+Host state, task identity, configuration and rollback remain independent. Device
+locks are per runtime: concurrent control of the same phone from different hosts
+is unsupported. The packaged `lib/runtime-manifest.json` records build provenance.

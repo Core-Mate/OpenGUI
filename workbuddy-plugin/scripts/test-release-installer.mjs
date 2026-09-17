@@ -24,7 +24,7 @@ try {
  await mkdir(config, {recursive:true})
  await writeFile(join(config, 'mcp.json'), JSON.stringify({mcpServers:{other:{command:'keep-me'}}}))
  await writeFile(join(config, 'settings.json'), JSON.stringify({custom:true,hooks:{Stop:[{hooks:[{type:'command',command:'other-hook'}]}]}}))
- const archive = join(root, 'dist/opengui-mcp-0.3.1.tgz')
+ const archive = join(root, 'dist/opengui-mcp-0.4.0.tgz')
  const installer = process.argv[2] ?? join(root, 'scripts/install-macos.command')
  const run = (extra={}) => spawnSync('bash', [installer, '--archive', archive, ...(process.argv[2] ? [] : ['--app', app])], {encoding:'utf8',env:{...process.env,HOME:home,WORKBUDDY_CONFIG_DIR:'',CODEBUDDY_CONFIG_DIR:'',WORKBUDDY_INSTANCE_NUMBER:'',TEST_APP:app,PATH:bin+':'+process.env.PATH,...extra}})
  let result=run({TEST_HOST_RUNNING:'0'}); assert.notEqual(result.status,0); assert.match(result.stderr,/HOST_RESTART_REQUIRED/)
@@ -41,7 +41,7 @@ try {
   if (i === 0) assert.match(result.stdout, /LIVE_CONFIG_WRITTEN/)
   else assert.match(result.stdout, /ALREADY_CONFIGURED/)
   const state=JSON.parse(await readFile(join(stateRoot,`local-install-${createHash('sha256').update(config).digest('hex').slice(0,16)}.json`)))
-  assert.equal(state.version,'0.3.1'); assert.equal(state.configRoot, config); assert(state.backups.every(b=>b.backup===null || b.backup.includes('before-opengui')))
+  assert.equal(state.version,'0.4.0'); assert.equal(state.configRoot, config); assert(state.backups.every(b=>b.backup===null || b.backup.includes('before-opengui')))
   assert((await readFile(join(state.packageDir,'scripts/install-local.mjs'),'utf8')).includes('mergeHostHooks'))
  }
  assert.equal((await readdir(join(stateRoot, 'packages'))).length, 1, 'Repeat installation must reuse the same package directory')

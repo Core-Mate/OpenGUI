@@ -1,4 +1,4 @@
-# OpenGUI for WorkBuddy 0.3.1
+# OpenGUI for WorkBuddy 0.4.0
 
 [中文说明](README.zh-CN.md). macOS public-testing candidate, protocol 8. Marketplace approval and the remaining real-device gates are separate.
 
@@ -18,7 +18,7 @@ After first display authorization, video failure or page closure does not cancel
 Use the supplied installer and matching archive with adjacent SHA-256 sidecars:
 
 ```sh
-bash scripts/install-macos.command --archive /absolute/path/opengui-mcp-0.3.1.tgz
+bash scripts/install-macos.command --archive /absolute/path/opengui-mcp-0.4.0.tgz
 ```
 
 The installer prepares private Node, verifies the package and scrcpy resources, and only then changes this host's configuration. On WorkBuddy 5.5.6+, the application may stay open: MCP configuration is watched live, while external Hook changes are reviewed in `/hooks` and the installed Skill is confirmed in `/skills`. Start a new task only if the current task does not refresh. Older compatible hosts use the Command-Q fallback reported by preflight.
@@ -42,3 +42,12 @@ npm run smoke:packed
 ```
 
 The browser test additionally needs development-only `agent-browser` and `ffmpeg`. It validates actual H.264 decode and canvas changes, first-frame receipts, continued playback after completion, and subscriber cleanup. End users do not need those tools. See the [candidate acceptance report](../docs/plans/2026-09-13-viewer-candidate-acceptance.md) for separate host, device, performance, installation and release evidence. Candidate packaging alone does not pass those gates.
+
+
+### Shared source, independent installation
+
+Device execution is built from `packages/device-runtime` in this repository.
+Install only the host package; there is no separately installed shared service.
+Host state, task identity, configuration and rollback remain independent. Device
+locks are per runtime: concurrent control of the same phone from different hosts
+is unsupported. The packaged `lib/runtime-manifest.json` records build provenance.

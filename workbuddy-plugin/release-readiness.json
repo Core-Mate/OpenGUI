@@ -1,5 +1,5 @@
 {
-  "version": "0.3.1",
+  "version": "0.4.0",
   "checks": {
     "workbuddyImageToolFlow": {
       "verified": false,
@@ -26,16 +26,16 @@
       "evidence": ""
     },
     "domesticVisibleVideoAndHooks": {
-      "verified": true,
-      "evidence": "docs/plans/2026-09-13-viewer-candidate-acceptance.md: intermediate candidate on native 5.5.3; first frame 11377 ms, automation.available=true, task-ended playback. Final decoder configuration-reset patch tested in browser, not reinstalled while Mac locked."
+      "verified": false,
+      "evidence": "Historical evidence only; not acceptance of 0.4.0. docs/plans/2026-09-13-viewer-candidate-acceptance.md: intermediate candidate on native 5.5.3; first frame 11377 ms, automation.available=true, task-ended playback. Final decoder configuration-reset patch tested in browser, not reinstalled while Mac locked."
     },
     "overseasNativeViewer": {
       "verified": false,
-      "evidence": "Client unavailable; config fixture only."
+      "evidence": "Historical evidence only; not acceptance of 0.4.0. Client unavailable; config fixture only."
     },
     "realVideoPerformanceAndSoak": {
       "verified": false,
-      "evidence": "Phone rotation, dynamic FPS, end-to-end latency and 30-minute real-device resource soak are not yet accepted."
+      "evidence": "Historical evidence only; not acceptance of 0.4.0. Phone rotation, dynamic FPS, end-to-end latency and 30-minute real-device resource soak are not yet accepted."
     }
   }
 }

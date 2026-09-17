@@ -86,9 +86,9 @@ export async function runCli(argv: readonly string[], signal = new AbortControll
   if (name === '--shutdown-daemon') {
     const result = await sendRequest(daemonEndpoint(), request('__shutdown__'), signal)
     if (!result.ok) {
-    if (result.failure) throw new OpenGuiError(result.failure.code, result.failure.message, result.failure.executionState, result.failure.recovery)
-    throw new Error(result.error)
-  }
+      if (result.failure) throw new OpenGuiError(result.failure.code, result.failure.message, result.failure.executionState, result.failure.recovery)
+      throw new Error(result.error)
+    }
     return result.result
   }
   const source = raw ?? (process.stdin.isTTY ? '{}' : await readStdin())
