@@ -32,14 +32,18 @@
     "pack:release": "npm run check && node scripts/package.mjs",
     "smoke:packed": "node scripts/test-preflight.mjs && node scripts/test-install.mjs && node scripts/smoke-packed.mjs && node scripts/test-release-installer.mjs",
     "test:browser": "npm run build && node scripts/test-wall-browser.mjs",
-    "test:native": "npm run build && node scripts/test-native.mjs"
+    "test:native": "npm run build && node scripts/test-native.mjs",
+    "test:native-service": "npm run build && node scripts/test-native-service.mjs",
+    "test:native-install": "npm run build && node scripts/test-native-install.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.29.0",
     "ajv": "8.20.0",
     "sharp": "0.35.4",
     "tar": "7.5.22",
-    "yauzl": "3.4.0"
+    "yauzl": "3.4.0",
+    "@earendil-works/pi-agent-core": "0.85.1",
+    "@earendil-works/pi-ai": "0.85.1"
   },
   "devDependencies": {
     "@types/node": "22.19.0",

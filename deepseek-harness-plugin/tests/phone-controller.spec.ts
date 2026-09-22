@@ -36,7 +36,7 @@ describe('shared OpenGUI phone controller', () => {
     const observed = await value.observe(actor, new AbortController().signal)
 
     expect(observed).toMatchObject({
-      observationId: 'phone-observation-1', serial: 'serial-a', width: 100, height: 200,
+      observationId: expect.stringMatching(/^phone-observation-.+-1$/), serial: 'serial-a', width: 100, height: 200,
       foregroundPackage: 'com.example.app', image: { width: 100, height: 200, mediaType: 'image/jpeg' },
     })
     expect(observed.image.data.subarray(0, 2).toString('hex')).toBe('ffd8')

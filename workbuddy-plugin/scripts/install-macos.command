@@ -7,7 +7,7 @@ VERSION=0.4.0
 ARCHIVE_NAME=opengui-mcp-$VERSION.tgz
 usage() {
   echo "OpenGUI for $HOST $VERSION (macOS arm64/x64)"
-  echo "Usage: bash $0 [--check] [--repair-legacy] [--app /path/WorkBuddy.app] [--config-root /verified/path] [--archive /absolute/path/$ARCHIVE_NAME]"
+  echo "Usage: bash $0 [--check] [--repair-legacy] [--transport http|stdio] [--app /path/WorkBuddy.app] [--config-root /verified/path] [--archive /absolute/path/$ARCHIVE_NAME]"
   echo 'Downloads a verified prebuilt package and private Node. No sudo or source build.'
   echo 'Finish existing OpenGUI tasks before upgrading. WorkBuddy 5.5.6+ may stay open for live configuration.'
 }
@@ -16,12 +16,13 @@ app=
 config_root=${WORKBUDDY_CONFIG_DIR:-${CODEBUDDY_CONFIG_DIR:-}}
 check_only=false
 repair_legacy=false
+transport=
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --help|-h) usage; exit 0 ;;
-    --archive|--app|--config-root)
+    --archive|--app|--config-root|--transport)
       [ "$#" -ge 2 ] || { usage; exit 1; }
-      case "$1" in --archive) archive=$2 ;; --app) app=$2 ;; --config-root) config_root=$2 ;; esac
+      case "$1" in --archive) archive=$2 ;; --app) app=$2 ;; --config-root) config_root=$2 ;; --transport) transport=$2 ;; esac
       shift 2 ;;
     --check) check_only=true; shift ;;
     --repair-legacy) repair_legacy=true; shift ;;
@@ -57,6 +58,14 @@ case "$bundle_id" in com.tencent.workbuddy.*) ;; *) fail HOST_IDENTITY 'Selected
 host_version=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Contents/Info.plist")
 [[ "$host_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail HOST_VERSION 'Cannot determine a supported WorkBuddy version.'
 IFS=. read -r major minor patch <<< "$host_version"
+if [ -z "$transport" ]; then
+  transport=http
+  if (( 10#$major == 5 && 10#$minor == 5 && 10#$patch < 6 )); then transport=stdio; fi
+fi
+case "$transport" in http|stdio) ;; *) fail TRANSPORT 'Choose http or stdio.' ;; esac
+if [ "$transport" = http ] && (( 10#$major < 5 || (10#$major == 5 && 10#$minor < 5) || (10#$major == 5 && 10#$minor == 5 && 10#$patch < 6) )); then
+  fail HOST_NATIVE_UNSUPPORTED 'The native workbench requires WorkBuddy 5.5.6 or newer. Upgrade WorkBuddy or explicitly select --transport stdio.'
+fi
 if (( 10#$major < 5 || (10#$major == 5 && 10#$minor < 5) || (10#$major == 5 && 10#$minor == 5 && 10#$patch < 3) )); then
   fail HOST_TOO_OLD "WorkBuddy $host_version is below the 5.5.3 minimum. Upgrade WorkBuddy, then rerun this installer."
 fi
@@ -185,11 +194,11 @@ if ! valid_node; then
 fi
 check_host_state
 stage "Installing configuration and checking runtime dependencies"
-"$node" - "$root" "$temporary/verified.tar.gz" "$VERSION" "$config_root" "$expected" "$0" "$app" "$repair_legacy" "$host_running" <<'INSTALL_JS'
+"$node" - "$root" "$temporary/verified.tar.gz" "$VERSION" "$config_root" "$expected" "$0" "$app" "$repair_legacy" "$host_running" "$transport" <<'INSTALL_JS'
 const fs = require('node:fs');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
-const [root, archive, version, configRoot, archiveSha256, installer, app, repairLegacy, hostRunning] = process.argv.slice(2);
+const [root, archive, version, configRoot, archiveSha256, installer, app, repairLegacy, hostRunning, transport] = process.argv.slice(2);
 const packages = path.join(root, 'packages');
 fs.mkdirSync(packages, { recursive: true });
 if (fs.lstatSync(packages).isSymbolicLink()) throw Error('Redirected packages directory');
@@ -217,8 +226,7 @@ try {
   throw error;
 }
 execFileSync('bash', [installer, '--check', '--app', app, '--config-root', configRoot], {stdio: 'inherit'});
-execFileSync(process.execPath, [path.join(pkg, 'lib/check-upgrade.js')], { stdio: 'inherit', env: { ...process.env, OPENGUI_WORKBUDDY_HOME: root } });
-execFileSync(process.execPath, [path.join(pkg, 'scripts/install-local.mjs'), '--package-dir', pkg, '--node', process.execPath, '--config-root', configRoot, '--state-root', root, ...(repairLegacy === 'true' ? ['--repair-legacy'] : [])], { stdio: 'inherit' });
+execFileSync(process.execPath, [path.join(pkg, 'scripts/install-local.mjs'), '--package-dir', pkg, '--node', process.execPath, '--config-root', configRoot, '--state-root', root, '--transport', transport, '--native-service', ...(repairLegacy === 'true' ? ['--repair-legacy'] : [])], { stdio: 'inherit' });
 if (hostRunning === 'true') {
   console.log('LIVE_CONFIG_WRITTEN: MCP, Skill and lifecycle Hooks configured while WorkBuddy stayed open. In WorkBuddy, trust/enable the OpenGUI MCP, open /hooks to review and apply the external Hook change, then open /skills to confirm opengui. Start a new task only if the current task does not refresh. Verify by listing phones without operating them.');
 } else {

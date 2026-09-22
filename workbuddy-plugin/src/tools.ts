@@ -1,3 +1,4 @@
+import { TASK_TOOLS } from '../../packages/phone-agent/src/host.ts'
 import type { WorkBuddyOpenGuiService, WorkBuddyObservation, OpenSessionOptions, SessionResult } from './service.ts'
 import { Ajv } from 'ajv'
 
@@ -87,6 +88,7 @@ const observationSchema = {
 }
 
 export const OPENGUI_WORKBUDDY_TOOLS: readonly WorkBuddyToolDefinition[] = [
+  ...TASK_TOOLS,
   ...(['open', 'status', 'close'] as const).map(action => ({
     name: action === 'status' ? 'opengui_viewer_status' : `opengui_${action}_viewer`,
     title: 'OpenGUI Real-time Viewer',

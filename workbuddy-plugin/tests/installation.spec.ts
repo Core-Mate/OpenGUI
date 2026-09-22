@@ -1,7 +1,22 @@
 import { describe, expect, it } from 'vitest'
-import { HOST_HOOK_EVENTS, mergeHostHooks, mergeMcpConfig } from '../src/installation.ts'
+import { HOST_HOOK_EVENTS, mergeHostHooks, mergeMcpConfig, mergeNativeMcpConfig } from '../src/installation.ts'
 
 describe('scoped WorkBuddy installation', () => {
+  it('removes stale transport credentials and commands when switching in either direction', () => {
+    const original = { mcpServers: { other: { command: 'keep' }, opengui: {
+      type: 'stdio', command: '/old/node', args: ['/old/mcp.js'], env: { OLD: 'value' }, custom: true,
+    } } }
+    const http = mergeNativeMcpConfig(original, { port: 54001, token: 'test-token' })
+    expect(http.mcpServers).toEqual({ other: original.mcpServers.other, opengui: {
+      type: 'http', url: 'http://127.0.0.1:54001/mcp', headers: { Authorization: 'Bearer test-token' },
+      custom: true, timeout: 120000, disabled: false,
+    } })
+    const stdio = mergeMcpConfig(http, '/new/node', '/new/mcp.js')
+    expect(stdio.mcpServers).toEqual({ other: original.mcpServers.other, opengui: {
+      type: 'stdio', command: '/new/node', args: ['/new/mcp.js'], custom: true, timeout: 120000, disabled: false,
+    } })
+    expect(original.mcpServers.opengui.env).toEqual({ OLD: 'value' })
+  })
   it('preserves unrelated configuration and replaces only the exact owned hook command', () => {
     const original = { unrelated: { keep: true }, hooks: { Stop: [{ hooks: [{ type: 'command', command: 'other-tool' }, { type: 'command', command: 'old-opengui-hook' }] }] } }
     const updated = mergeHostHooks(original, 'new-opengui-hook', ['old-opengui-hook'])

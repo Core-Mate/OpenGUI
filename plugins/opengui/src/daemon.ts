@@ -1,3 +1,7 @@
+import { TaskHost, isTaskTool } from '../../../packages/phone-agent/src/host.ts'
+import { PhoneRuntime } from '../../../packages/phone-agent/src/runtime.ts'
+import { keychain } from '../../../packages/phone-agent/src/credentials.ts'
+import { HostExecutor } from '../../../packages/phone-agent/src/host-executor.ts'
 import { errorInfo, OpenGuiError } from './errors.ts'
 import { randomUUID } from 'node:crypto'
 import { spawn } from 'node:child_process'
@@ -126,6 +130,7 @@ export async function ensureDaemon(entry: string, root = dataDirectory(), signal
 export interface DaemonOptions {
   root: string
   service?: CodexOpenGuiService
+  taskHost?: TaskHost
   confirm?: ConfirmAction
   idleMs?: number
   sweepMs?: number
@@ -138,6 +143,7 @@ export async function startDaemon(options: DaemonOptions): Promise<{ endpoint: s
   const observations = new ObservationStore(join(options.root, 'observations'))
   await observations.prune()
   const service = options.service ?? new CodexOpenGuiService({ onSessionClosed: id => observations.remove(id) })
+  const tasks = options.taskHost ?? new TaskHost(() => new PhoneRuntime({ root: join(options.root, 'phone-agent'), host: 'codex', hardware: service.phoneHardware, credentials: keychain('codex'), executor: new HostExecutor() }))
   const confirm = options.confirm ?? confirmAction
   const sockets = new Set<Socket>()
   const operations = new Set<Promise<void>>()
@@ -184,12 +190,12 @@ export async function startDaemon(options: DaemonOptions): Promise<{ endpoint: s
         try {
           const value = JSON.parse(input.trim()) as Request
           if (value.name === '__ping__') {
-            respond({ ok: true, result: { version: VERSION, protocol: PROTOCOL_VERSION, activeSessions: service.activeSessionCount, activeViewers: Number(service.viewers.active) } satisfies Hello })
+            respond({ ok: true, result: { version: VERSION, protocol: PROTOCOL_VERSION, activeSessions: service.activeSessionCount + tasks.activeCount, activeViewers: Number(service.viewers.active) } satisfies Hello })
             return
           }
           if (value.version !== VERSION || value.protocol !== PROTOCOL_VERSION) throw new Error('opengui: incompatible CLI protocol or version')
           if (value.name === '__shutdown__') {
-            if (service.activeSessionCount > 0 || service.viewers.active) throw new Error('opengui: close active sessions before stopping this daemon')
+            if (service.activeSessionCount > 0 || tasks.activeCount > 0 || tasks.watching || service.viewers.active) throw new Error('opengui: close active sessions before stopping this daemon')
             respond({ ok: true, result: { state: 'stopping' } })
             setImmediate(() => { void close() })
             return
@@ -198,6 +204,7 @@ export async function startDaemon(options: DaemonOptions): Promise<{ endpoint: s
           if (typeof value.owner !== 'string' || !value.owner.trim() || value.owner.length > 200) {
             throw new Error('opengui: CODEX_THREAD_ID is required; run this command from a local Codex task')
           }
+          if (isTaskTool(value.name)) { respond({ ok: true, result: await tasks.call(value.name, value.args, value.owner) }); return }
           const sessionId = value.args.sessionId
           if (typeof sessionId === 'string' && owners.get(sessionId) !== value.owner) {
             throw new Error('opengui: session belongs to another Codex task or is unknown')
@@ -255,6 +262,7 @@ export async function startDaemon(options: DaemonOptions): Promise<{ endpoint: s
       const stopped = new Promise<void>(resolve => server.close(() => resolve()))
       for (const socket of sockets) socket.destroy()
       await Promise.allSettled(operations)
+      await tasks.close()
       await service.dispose()
       await stopped
       // Node removes its own bound Unix socket on close; never unlink another listener.
@@ -274,7 +282,7 @@ export async function startDaemon(options: DaemonOptions): Promise<{ endpoint: s
     sweeping = true
     void (async () => {
       await service.expireIdleSessions()
-      if (service.activeSessionCount === 0 && !service.viewers.active && operations.size === 0 && Date.now() - lastRequest >= (options.idleMs ?? DAEMON_IDLE_MS)) await close()
+      if (service.activeSessionCount === 0 && tasks.activeCount === 0 && !tasks.watching && !service.viewers.active && operations.size === 0 && Date.now() - lastRequest >= (options.idleMs ?? DAEMON_IDLE_MS)) await close()
     })().catch(() => {}).finally(() => { sweeping = false })
   }, options.sweepMs ?? 10_000)
   sweep.unref()

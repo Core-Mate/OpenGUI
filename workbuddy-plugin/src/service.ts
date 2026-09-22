@@ -1,3 +1,4 @@
+import { acquireDeviceLease } from '../../packages/device-runtime/src/device-lease.ts'
 import { SessionRuntime } from '../../packages/device-runtime/src/session-runtime.ts'
 import { ViewerServer, type ViewerStreams } from './viewer.ts'
 import { ScrcpyVideoStreams } from './scrcpy-stream.ts'
@@ -413,6 +414,8 @@ export interface WorkBuddyOpenGuiServiceOptions {
 
 /** Stateful session adapter consumed by both WorkBuddy transports. */
 export class WorkBuddyOpenGuiService {
+  get phoneHardware(): WorkBuddyPhoneHost { return this.host }
+  private readonly deviceLeases = new Map<string, Awaited<ReturnType<typeof acquireDeviceLease>>[]>()
   private readonly leaseMs: number
   private readonly now: () => number
   private readonly host: WorkBuddyPhoneHost
@@ -475,6 +478,7 @@ export class WorkBuddyOpenGuiService {
   endViewerTask(owner: string): void { this.viewers.endOwner(owner) }
 
   hasPersistentMirrors(): boolean { return this.viewers.active || (this.host.hasMirrors?.() ?? false) }
+  hasActiveSessions(): boolean { return [...this.sessions.values()].some(record => record.state === 'active') }
 
   async start(signal: AbortSignal): Promise<{ devices: readonly (WorkBuddyDeviceInfo & { mirror?: MirrorStatus })[] }> {
     await this.host.activateMirrors?.(signal)
@@ -572,6 +576,11 @@ export class WorkBuddyOpenGuiService {
     this.runtime.register(record, purpose === 'control')
     this.renewLease(record)
     try {
+      if (purpose === 'control' && this.host instanceof LocalAdbPhoneHost) {
+        const leases: Awaited<ReturnType<typeof acquireDeviceLease>>[] = []
+        this.deviceLeases.set(record.id, leases)
+        for (const item of record.devices) leases.push(await acquireDeviceLease(item.device.serial, 'workbuddy:' + record.id))
+      }
       await this.wall.start()
       signal.throwIfAborted()
       if (this.disposed) throw new Error('opengui: runtime is shutting down')
@@ -883,10 +892,15 @@ export class WorkBuddyOpenGuiService {
 
   private async releaseDeviceResources(record: SessionRecord): Promise<void> {
     if (record.purpose === 'mirror') return
-    const results = await Promise.allSettled(record.devices.map(item => this.host.releaseDevice(item.device.serial)))
+    const leases = this.deviceLeases.get(record.id)
+    const resources = this.host instanceof LocalAdbPhoneHost ? record.devices.slice(0, leases?.length ?? 0) : record.devices
+    const results = await Promise.allSettled(resources.map(item => this.host.releaseDevice(item.device.serial)))
     const failure = results.find((result): result is PromiseRejectedResult => result.status === 'rejected')
     if (failure !== undefined) {
       record.lastError = failure.reason instanceof Error ? failure.reason.message : String(failure.reason)
+    } else {
+      for (const lease of leases ?? []) await lease.release()
+      this.deviceLeases.delete(record.id)
     }
   }
 

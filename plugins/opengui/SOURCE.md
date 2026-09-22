@@ -22,3 +22,7 @@ The Codex package owns its own version, lockfile, artifacts, state and release
 workflows. ADB and the physical phone are still machine-wide resources: production
 co-host/device concurrency is not a supported isolation guarantee. Real-device QA
 must use a dedicated non-production environment.
+
+## Autonomous phone task refactor (2026-09-19)
+
+The approved three-host refactor supersedes the Codex-only scope above. Build-time imports may target `packages/device-runtime/src`, `packages/phone-agent/src`, and `packages/workbench/src`; none may import another host adapter. All three host packages pin Pi 0.85.1 and own independent background processes, model settings, Keychain services, task journals and rollback. The public plugin owns the phone model loop. DSH phone tasks migrate to the same contract; its browser path remains separate. Do not reload or overwrite an installed production host as part of development.

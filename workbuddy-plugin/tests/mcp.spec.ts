@@ -25,6 +25,31 @@ async function client(capabilities: ClientCapabilities = {}, action: 'accept' | 
 }
 
 describe('standard MCP transport', () => {
+  it('exposes the native workbench resource only when enabled without opening the broker', async () => {
+    const [a, b] = InMemoryTransport.createLinkedPair()
+    const connect = vi.fn()
+    const server = await startMcp(b, connect, { nativeWorkbench: true })
+    const c = new Client({ name: 'native-workbench', version: '1' })
+    cleanup.push(() => server.close(), () => c.close())
+    await c.connect(a)
+    const tools = (await c.listTools()).tools
+    const meta = tools.find(t => t.name === 'opengui_open_workbench')!._meta as { ui: { resourceUri: string }; workbuddy: unknown }
+    expect(meta.workbuddy).toEqual({ ui: { launchSurface: 'panel' } })
+    expect(tools.filter(t => t._meta)).toHaveLength(1)
+    expect((await c.listResources()).resources.map(r => r.uri)).toEqual([meta.ui.resourceUri])
+    const resource = await c.readResource({ uri: meta.ui.resourceUri })
+    expect(resource.contents[0]?.mimeType).toBe('text/html;profile=mcp-app')
+    expect(resource.contents[0]?._meta).toEqual({ ui: { csp: { frameDomains: ['http://127.0.0.1:*'] } } })
+    expect(resource.contents[0]?.text).toContain('ui/initialize')
+    await expect(c.readResource({ uri: 'file:///etc/passwd' })).rejects.toThrow('Unknown OpenGUI resource')
+    expect(connect).not.toHaveBeenCalled()
+  })
+
+  it('keeps native resource discovery disabled for the ordinary workbench', async () => {
+    const { client: c } = await client()
+    expect(c.getServerCapabilities()?.resources).toBeUndefined()
+    expect((await c.listTools()).tools.find(t => t.name === 'opengui_open_workbench')?._meta).toBeUndefined()
+  })
   it('reconnects the next independent call after an established connection closes', async () => {
     const [a, b] = InMemoryTransport.createLinkedPair()
     let disconnect: (() => void) | undefined
@@ -90,6 +115,13 @@ describe('standard MCP transport', () => {
     expect(listed.tools.map(tool => tool.name)).toEqual(OPENGUI_WORKBUDDY_TOOLS.map(tool => tool.name))
     expect(c.getServerVersion()).toMatchObject({ name: 'opengui-workbuddy', version: '0.4.0' })
     expect(connection.call).not.toHaveBeenCalled()
+    const instructions = c.getInstructions()!
+    expect(instructions).toContain('Use host-driven phone tasks by default')
+    expect(instructions).toContain('opengui_run_task')
+    expect(instructions).toContain('opengui_manage_task next/decide')
+    expect(instructions).toContain('do not submit a duplicate')
+    expect(instructions).toContain('Never mix legacy actions')
+    expect(instructions).not.toContain('Start with opengui_open_viewer')
   })
 
   it('returns image content separately without duplicating base64 in structured metadata', async () => {
@@ -134,4 +166,12 @@ describe('standard MCP transport', () => {
   it('preserves structured non-image results', () => {
     expect(toolResult({ devices: [] })).toEqual({ content: [{ type: 'text', text: '{"devices":[]}' }], structuredContent: { devices: [] } })
   })
+})
+
+
+it('delivers host-decision screenshots as image content, without base64 in text metadata', () => {
+  const value = { decision: { id: 'decision', context: { observationId: 'frame', image: { type: 'image' as const, mimeType: 'image/jpeg', data: 'fixture-base64' } } } }
+  const result = toolResult(value)
+  expect(result.content).toEqual([{ type: 'text', text: JSON.stringify({ decision: { id: 'decision', context: { observationId: 'frame' } } }) }, value.decision.context.image])
+  expect(value.decision.context.image.data).toBe('fixture-base64')
 })

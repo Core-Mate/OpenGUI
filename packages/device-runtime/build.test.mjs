@@ -4,7 +4,23 @@ import { mkdtemp, mkdir, rm, writeFile, symlink, realpath } from 'node:fs/promis
 import { tmpdir } from 'node:os'
 import { dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { validateSourceBoundary } from './build.mjs'
+import { createRequire } from 'node:module'
+import { bundleImports, validateSourceBoundary } from './build.mjs'
+
+test('checks executable bundle imports without interpreting comments or strings as code', () => {
+  const ts = createRequire(join(process.cwd(), 'package.json'))('typescript')
+  const text = `
+    /** @type {import('../types/index').Options} */
+    const documentation = "import('../not-code.js')";
+    import './real.js';
+    export { value } from '../escape.js';
+    const load = () => import('../dynamic.js');
+    const legacy = require('../required.js');
+    const template = () => import(\`../template.js\`);
+  `
+  assert.deepEqual(bundleImports(text, ts), ['./real.js', '../escape.js', '../dynamic.js', '../required.js', '../template.js'])
+  assert.throws(() => bundleImports('import {', ts), /Invalid JavaScript/)
+})
 
 test('permits only the adapter and the designated shared source tree', async () => {
   const root = await realpath(await mkdtemp(join(tmpdir(), 'opengui-boundary-')))

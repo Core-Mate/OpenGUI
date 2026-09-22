@@ -43,10 +43,12 @@
     "lib/invariant.js",
     "lib/client.js",
     "lib/client.js.map",
-    "lib/types/**/*.d.ts"
+    "lib/types/**/*.d.ts",
+    "lib/phone-worker.js",
+    "lib/runtime-manifest.json"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json && tsdown && node scripts/finalize-codex-bundle.mjs",
+    "build": "tsc -p tsconfig.json && tsdown && node scripts/finalize-codex-bundle.mjs && node ../packages/device-runtime/build.mjs manifest dsh .",
     "codex:cli": "node lib/codex-cli.js",
     "codex:validate": "node scripts/validate-codex-plugin.mjs",
     "codex:stage-public": "node scripts/stage-public-codex-plugin.mjs",
@@ -82,7 +84,8 @@
     "puppeteer-core": "25.8.0",
     "sharp": "0.35.3",
     "tar": "7.5.22",
-    "yauzl": "3.4.0"
+    "yauzl": "3.4.0",
+    "@earendil-works/pi-agent-core": "0.85.1"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": ">=4.0.1 <5",

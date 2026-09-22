@@ -3,19 +3,8 @@ import { access, chmod, stat } from 'node:fs/promises'
 import { constants } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
-import type { Branded } from '@deepseek-ai/dsh-brand'
-
-/** Opaque identity of one completed phone observation. */
-export type ObservationId = Branded<'CoremateMobileObservationId'>
-
-/**
- * Brand a validated or generated observation identifier.
- * @param value Raw observation identifier.
- * @returns The same string with its observation-id brand.
- */
-export function ObservationId(value: string): ObservationId {
-  return value as ObservationId
-}
+import { ObservationId } from '../../packages/device-runtime/src/actions.ts'
+export { ObservationId }
 
 /** One row returned by `adb devices -l`. */
 export interface AdbDevice {

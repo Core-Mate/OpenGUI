@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { access, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { spawn } from 'node:child_process'
@@ -12,6 +12,7 @@ import { BrokerClient } from '../lib/broker-client.js'
 import { brokerPort, brokerToken, VERSION } from '../lib/state.js'
 
 const archive = resolve(process.argv[2] ?? `dist/opengui-mcp-${VERSION}.tgz`)
+await access(archive).catch(() => { throw new Error('Build the candidate archive with npm run pack:release before smoke:packed') })
 const npmCli = process.env.npm_execpath
 assert(npmCli, 'Run through npm run smoke:packed')
 const temporary = await mkdtemp(join(tmpdir(), 'opengui-workbuddy-pack-'))
@@ -56,8 +57,10 @@ try {
     const client = new Client({ name: 'packed-smoke', version: '1' }, { capabilities: {} })
     try {
       await client.connect(transport, { timeout: 120_000 })
+      assert(client.getInstructions()?.includes('Use host-driven phone tasks by default'), 'Packed MCP must advertise the host-driven task contract')
+      assert(client.getInstructions()?.includes('opengui_manage_task next/decide'), 'Packed MCP must explain how the host advances accepted tasks')
       const { tools } = await client.listTools()
-      assert.equal(tools.length, 14)
+      assert.equal(tools.length, 18)
       await client.ping()
       const devices = await client.callTool({ name: 'opengui_list_devices', arguments: {} })
       assert.notEqual(devices.isError, true, JSON.stringify(devices.content))
@@ -70,7 +73,7 @@ try {
       brokerPid = probe.brokerPid
       probe.close()
       assert(brokerPid && brokerPid !== process.pid)
-      console.log(`${offline ? 'Offline cached' : 'Fresh isolated cache'}: packed stdio, fourteen tools, ping, broker startup, and read-only ADB discovery passed.`)
+      console.log(`${offline ? 'Offline cached' : 'Fresh isolated cache'}: packed stdio, eighteen tools, ping, broker startup, and read-only ADB discovery passed.`)
     } finally {
       await client.close()
       if (brokerPid) {

@@ -30,8 +30,8 @@ assert.deepEqual(Object.keys(config.mcpServers), ['opengui'])
 assert(config.mcpServers.opengui.args.includes(`--package=https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-v${VERSION}/opengui-mcp-${VERSION}.tgz`))
 assert.equal(config.mcpServers.opengui.command, 'npx')
 assert.equal(config.mcpServers.opengui.runtime.type, 'node')
-assert.equal(OPENGUI_WORKBUDDY_TOOLS.length, 14)
-assert.equal(new Set(OPENGUI_WORKBUDDY_TOOLS.map(tool => tool.name)).size, 14)
+assert.equal(OPENGUI_WORKBUDDY_TOOLS.length, 18)
+assert.equal(new Set(OPENGUI_WORKBUDDY_TOOLS.map(tool => tool.name)).size, 18)
 for (const path of ['lib/host-hook.js', 'lib/automation.js', 'lib/opengui-SKILL.md']) assert((await stat(join(root, path))).size > 0)
 if (process.platform === 'darwin') for (const arch of ['arm64', 'x64']) for (const helper of ['window-helper', 'mirror-launcher']) assert((await stat(join(root, `lib/native/${helper}-${arch}`))).mode & 0o111)
 assert((await readFile(join(root, 'lib/mcp.js'), 'utf8')).startsWith('#!/usr/bin/env node'))
@@ -74,7 +74,7 @@ if (process.argv.includes('--release')) {
     assert(check?.verified === true && typeof check.evidence === 'string' && check.evidence.trim().length > 0, `Unverified release gate: ${name}`)
   }
 }
-console.log('WorkBuddy manifest, fourteen-tool contract, production isolation, native helpers, and bundled ADB hashes verified.')
+console.log('WorkBuddy manifest, eighteen-tool contract, production isolation, native helpers, and bundled ADB hashes verified.')
 
 await validateSourceBoundary(root)
 await validateManifest(root)

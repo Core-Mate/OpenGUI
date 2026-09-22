@@ -1,3 +1,4 @@
+import { ScrcpyVideoStreams } from '../scrcpy-stream.ts'
 import { randomBytes, randomUUID } from 'node:crypto'
 import { createServer } from 'node:http'
 import type { IncomingMessage, Server, ServerResponse } from 'node:http'
@@ -61,6 +62,7 @@ function codexStateDir(override?: string): string {
 
 /** Local USB/ADB Host adapter shared by the Codex MCP and CLI transports. */
 export class LocalAdbPhoneHost implements CodexPhoneHost {
+  readonly videoStreams: ScrcpyVideoStreams
   private readonly path: string
   private readonly repairAdbPermissions: boolean
   private readonly timeoutMs: number
@@ -81,6 +83,7 @@ export class LocalAdbPhoneHost implements CodexPhoneHost {
     const stateDir = codexStateDir(options.stateDir)
     this.forwardRegistry = new OwnedForwardRegistry(join(stateDir, 'owned-forwards.json'))
     const installer = new ScrcpyInstaller({ cacheDir: join(stateDir, 'scrcpy') })
+    this.videoStreams = new ScrcpyVideoStreams({ adbPath: () => this.path, runAdb: (args, signal) => run(args, signal), installer, forwardRegistry: this.forwardRegistry })
     const asset = resolveScrcpyAsset()
     this.textInput = new ScrcpyTextInput({
       adbPath: () => this.path,

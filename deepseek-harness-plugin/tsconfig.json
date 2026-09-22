@@ -3,10 +3,17 @@
     "target": "ES2024",
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "lib": ["ES2024", "DOM", "DOM.Iterable"],
-    "types": ["node", "react"],
+    "lib": [
+      "ES2024",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "types": [
+      "node",
+      "react"
+    ],
     "jsx": "react-jsx",
-    "rootDir": "src",
+    "rootDir": "..",
     "outDir": "lib/types",
     "declaration": true,
     "declarationMap": false,
@@ -23,5 +30,8 @@
     "noUnusedParameters": true,
     "skipLibCheck": true
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ]
 }

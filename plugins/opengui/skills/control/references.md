@@ -78,3 +78,13 @@ Execution failures preserve the legacy `error` string and may also return `failu
 with `code`, `executionState`, and `recovery`. An `outcome_unknown` result includes
 transport loss or screenshot delivery failure after an action: observe the same
 phone before deciding a next action; never resubmit the previous mutation blindly.
+
+## Host-driven phone tasks (macOS candidate)
+
+The host model owns planning and screenshot decisions. No model endpoint or credential is configured in this mode. Submit `opengui_run_task` with a stable requestId and goal; omit deviceId unless it was freshly resolved in the current runtime and an explicit device constraint requires it. Never reuse cached device IDs across plugin upgrades.
+
+Open the returned workbenchUrl. Repeatedly call `opengui_manage_task` with action `next`, then answer its decision ID with action `decide` and a decision object. Planning returns independent branches with current eligibleDeviceIds. Execution returns `observe`, `act`, `help` or `finish`; the mailbox includes action and completion contracts. Screenshots arrive as image content (or a Codex imagePath); inspect them before deciding. A rejected/unknown action requires a fresh observation and reassessment, never automatic replay. User help waits resume through `resume` or `steer`.
+
+The homepage can submit work for the active host to claim. It does not independently wake an ended host turn. Keep the host working until all branches finish or require the user. Closing a page is not a stop, but host termination can interrupt work. Explicit stop waits for cleanup. Do not mix legacy actions with a host-driven task. Missing host model usage/cost remains unknown.
+
+Use `opengui_list_tasks` to inspect durable task history and actual terminal status; an empty decision mailbox is not completion.

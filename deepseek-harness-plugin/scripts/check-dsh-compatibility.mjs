@@ -169,6 +169,7 @@ allowBuilds:
   ensureListValue(profileWorkspace, 'onlyBuiltDependencies', 'protobufjs')
   ensureMapValue(profileWorkspace, 'allowBuilds', '@google/genai', false)
   ensureMapValue(profileWorkspace, 'allowBuilds', 'protobufjs', false)
+  ensureMapValue(profileWorkspace, 'allowBuilds', 'esbuild', true)
   await writeFile(profileWorkspacePath, `${profileWorkspace.join('\n').replace(/\n+$/u, '')}\n`)
   await execFile(dsh, ['plugin', '--profile', 'web', 'add', '--save-exact', archive], {
     env,
@@ -245,6 +246,7 @@ allowBuilds:
   const loaded = runtime.dshVersion === dshVersion ? '' : ` (Host components ${runtime.dshVersion})`
   process.stdout.write(`DSH ${dshVersion}${loaded}: package install, Host boot, runtime API, task API, and client registration passed\n`)
 } catch (error) {
+  if (error?.stdout) process.stderr.write(String(error.stdout).slice(-12000).replace(/([?&]token=)[^\s&]+/gu, '$1[redacted]'))
   if (output) process.stderr.write(`\nDSH output:\n${output.slice(-12_000).replace(/([?&]token=)[^\s&]+/gu, '$1[redacted]')}\n`)
   throw new Error(String(error instanceof Error ? error.stack ?? error.message : error)
     .replace(/([?&]token=)[^\s&]+/gu, '$1[redacted]'))

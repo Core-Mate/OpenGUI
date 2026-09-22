@@ -20,6 +20,7 @@ interface Viewer {
   phase: Phase; deadline: number; established: boolean; ended: boolean
   firstFrameMs?: number; error?: string; connections: Map<string, Connection>; pages: Set<ScrcpyStreamSink>; lastPage: number
   preparation?: Promise<void>; readyDevices: Set<string>
+  nativeOrigins?: Set<string>
 }
 
 /** Watching grants never contain a control credential or renew a control lease. */
@@ -27,6 +28,21 @@ export class ViewerServer {
   private server: Server | undefined
   private starting: Promise<void> | undefined
   private origin = ''
+  private readonly embedOrigins = new Set<string>()
+  /** Only the host's own authenticated local workbench may embed this viewer. */
+  allowEmbedding(origin: string): void {
+    const url = new URL(origin)
+    if (url.protocol !== 'http:' || !['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname) || url.origin !== origin) throw new Error('Invalid workbench origin')
+    this.embedOrigins.add(origin)
+  }
+  /** A verified native workbench may embed only the specified viewer. */
+  allowNativeEmbedding(id: string, owner: string, origin: string): void {
+    const url = new URL(origin)
+    if (url.protocol !== 'http:' || url.hostname !== '127.0.0.1' || !url.port || url.origin !== origin) throw new Error('Invalid native workbench origin')
+    const viewer = this.require(id, owner)
+    viewer.nativeOrigins ??= new Set()
+    viewer.nativeOrigins.add(origin)
+  }
   private readonly viewers = new Map<string, Viewer>()
   private readonly sweep: ReturnType<typeof setInterval>
   constructor(private readonly streams: ViewerStreams, private readonly now = Date.now) {
@@ -148,18 +164,27 @@ export class ViewerServer {
     this.starting ??= new Promise((resolve, reject) => {
       const server = createServer((req, res) => {
         const handle = async (): Promise<void> => {
-          if (!this.local(req)) { res.writeHead(403).end(); return }
           const url = new URL(req.url ?? '/', this.origin)
           const [token, route = ''] = url.pathname.slice(1).split('/')
           const v = [...this.viewers.values()].find(v => v.token === token)
+          const nativePage = v?.nativeOrigins?.size && req.method === 'GET' && route === '' && req.headers['sec-fetch-dest'] === 'iframe' && !req.headers.origin && req.headers.host === new URL(this.origin).host
+          // WorkBuddy strips Origin from local HTTP requests. Only a registered
+          // native viewer's same-origin JSON receipt may use this exception;
+          // the live socket challenge below still authorizes the painted frame.
+          const nativeReceipt = Boolean(v?.nativeOrigins?.size) && req.method === 'POST' && route === 'frame' &&
+            req.headers.host === new URL(this.origin).host && req.headers.origin === undefined &&
+            req.headers['sec-fetch-site'] === 'same-origin' && req.headers['sec-fetch-dest'] === 'empty' &&
+            req.headers['content-type'] === 'application/json'
+          if (!this.local(req) && !nativePage && !nativeReceipt) { res.writeHead(403).end(); return }
           if (!v) { res.writeHead(404).end(); return }
           res.setHeader('Cache-Control', 'no-store')
           res.setHeader('Referrer-Policy', 'no-referrer')
           res.setHeader('X-Content-Type-Options', 'nosniff')
-          res.setHeader('Content-Security-Policy', "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'")
+          const ancestors = [...this.embedOrigins, ...(v.nativeOrigins?.size ? ['file:', ...v.nativeOrigins] : [])]
+          res.setHeader('Content-Security-Policy', `default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; frame-ancestors ${ancestors.join(' ') || "'none'"}; base-uri 'none'`)
           if (req.method === 'GET' && route === '') { v.lastPage = this.now(); res.setHeader('Content-Type', 'text/html; charset=utf-8'); res.end(viewerPage()); return }
           if (req.method === 'GET' && route === 'status') { v.lastPage = this.now(); res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(this.snapshot(v))); return }
-          if (req.method === 'POST' && route === 'frame' && req.headers.origin === this.origin) {
+          if (req.method === 'POST' && route === 'frame' && (req.headers.origin === this.origin || nativeReceipt)) {
             let body = ''
             for await (const chunk of req) { body += String(chunk); if (body.length > 2048) { res.writeHead(413).end(); return } }
             const input = JSON.parse(body) as Record<string, unknown>

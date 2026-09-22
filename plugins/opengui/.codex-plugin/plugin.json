@@ -8,6 +8,7 @@
   "license": "MIT",
   "keywords": ["android", "mobile", "local", "automation"],
   "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "OpenGUI",
     "shortDescription": "Local Android control for Codex on macOS",

@@ -1,3 +1,4 @@
+import { acquireDeviceLease } from '../../../../packages/device-runtime/src/device-lease.ts'
 import { OpenGuiError } from '../errors.ts'
 import { SessionRuntime } from '../../../../packages/device-runtime/src/session-runtime.ts'
 import { ViewerServer, type ViewerStreams } from '../viewer.ts'
@@ -276,6 +277,8 @@ export interface CodexOpenGuiServiceOptions {
 
 /** Stateful session adapter consumed by both Codex transports. */
 export class CodexOpenGuiService {
+  get phoneHardware(): CodexPhoneHost { return this.host }
+  private readonly deviceLeases = new Map<string, Awaited<ReturnType<typeof acquireDeviceLease>>[]>()
   private readonly host: CodexPhoneHost
   private readonly createSessionId: () => string
   private readonly runtime = new SessionRuntime<SessionRecord>()
@@ -349,6 +352,11 @@ export class CodexOpenGuiService {
     }
     this.runtime.register(record, mode === 'control')
     try {
+      if (mode === 'control' && this.host instanceof LocalAdbPhoneHost) {
+        const leases: Awaited<ReturnType<typeof acquireDeviceLease>>[] = []
+        this.deviceLeases.set(record.id, leases)
+        for (const item of record.devices) leases.push(await acquireDeviceLease(item.device.serial, 'codex:' + record.id))
+      }
       await this.wall.start()
       signal.throwIfAborted()
       return this.snapshot(record)
@@ -517,10 +525,15 @@ export class CodexOpenGuiService {
 
   private async releaseDeviceResources(record: SessionRecord): Promise<void> {
     if (record.mode === 'observe') return
-    const results = await Promise.allSettled(record.devices.map(item => this.host.releaseDevice(item.device.serial)))
+    const leases = this.deviceLeases.get(record.id)
+    const resources = this.host instanceof LocalAdbPhoneHost ? record.devices.slice(0, leases?.length ?? 0) : record.devices
+    const results = await Promise.allSettled(resources.map(item => this.host.releaseDevice(item.device.serial)))
     const failure = results.find((result): result is PromiseRejectedResult => result.status === 'rejected')
     if (failure !== undefined) {
       record.lastError = failure.reason instanceof Error ? failure.reason.message : String(failure.reason)
+    } else {
+      for (const lease of leases ?? []) await lease.release()
+      this.deviceLeases.delete(record.id)
     }
   }
 

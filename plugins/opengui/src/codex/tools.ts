@@ -1,3 +1,4 @@
+import { TASK_TOOLS } from '../../../../packages/phone-agent/src/host.ts'
 import type { CodexOpenGuiService, CodexObservation, ExternalSideEffect } from './service.ts'
 
 export interface CodexToolDefinition {
@@ -72,6 +73,7 @@ const observationSchema = {
 }
 
 export const OPENGUI_CODEX_TOOLS: readonly CodexToolDefinition[] = [
+  ...TASK_TOOLS,
   ...(['open', 'status', 'close'] as const).map(action => ({
     name: action === 'status' ? 'opengui_viewer_status' : `opengui_${action}_viewer`,
     title: 'OpenGUI Real-time Viewer',
@@ -250,10 +252,14 @@ function validateValue(value: unknown, schema: Record<string, unknown>, path: st
   if (schema.type === 'object') {
     if (typeof value !== 'object' || value === null || Array.isArray(value)) return fail()
     const input = value as Record<string, unknown>
-    const properties = schema.properties as Record<string, Record<string, unknown>>
+    const properties = (schema.properties ?? {}) as Record<string, Record<string, unknown>>
     for (const required of (schema.required as string[] | undefined) ?? []) if (!(required in input)) fail()
     for (const [key, item] of Object.entries(input)) {
-      if (!Object.hasOwn(properties, key)) fail()
+      if (!Object.hasOwn(properties, key)) {
+        // Only explicitly open schemas (host decisions) admit dynamic fields.
+        if (schema.additionalProperties === true) continue
+        fail()
+      }
       validateValue(item, properties[key]!, path + '.' + key)
     }
   } else if (schema.type === 'array') {

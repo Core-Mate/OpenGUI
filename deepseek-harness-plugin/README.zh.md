@@ -2,7 +2,7 @@
 
 [English](README.md) | 中文
 
-`dsh-coremate-mobile` 是 OpenGUI 的 DeepSeek Harness 插件，让 Harness 通过受限子任务控制一台或多台已授权的 Android 手机，以及插件自行管理的本地浏览器。它提供直接命令 `/opengui`，也允许父 agent 通过 `phone_agent` 和 `browser_agent` 委派任务。OpenGUI 默认复用接收任务的 DSH 会话模型，专用视觉模型只作为兼容性回退。旧 `/coremate` 命令暂时保留用于兼容。
+`dsh-coremate-mobile` 是 OpenGUI 的 DeepSeek Harness 插件，让 Harness 通过受限子任务控制一台或多台已授权的 Android 手机，以及插件自行管理的本地浏览器。它提供直接命令 `/opengui`，也允许父 agent 通过 `phone_agent` 和 `browser_agent` 委派任务。当前候选的新手机任务由 DSH 当前会话模型规划和逐步看图决策，OpenGUI 执行受限动作并保存证据，不提供独立模型配置入口。原有浏览器和显式 legacy 入口继续保留。旧 `/coremate` 命令暂时保留用于兼容。
 
 当前能力闭环的任务所有权、设备快照、会话归属、视频降级与资源回收设计见[实现方案](docs/implementation-plan.zh.md)。
 
@@ -40,9 +40,9 @@ codex plugin add opengui@opengui-local
 - 已安装并能启动官方 DeepSeek Harness；受支持版本为 `0.1.0-rc.7`、`0.1.0-rc.8`、`0.1.1-rc.1`、`0.1.1-rc.2` 和 `0.1.5-rc.1`，首选版本为 `0.1.1-rc.2`。
 - Node.js 版本为 `^22.19.0` 或 `>=24`。
 - 安装机器能访问本仓库公开的 GitHub Releases。
-- DSH 当前会话模型应支持图片输入和工具调用；若不兼容，OpenGUI 可引导用户配置独立的 OpenAI 兼容视觉模型作为回退。
-- 每个非空 `/opengui` 或 `@OpenGUI` 任务都需要至少一台已授权且选中的 Android 手机，包括之后被路由为纯浏览器操作的任务。
-- 主机是 macOS arm64/x64、Linux x64 或 Windows x64。Linux arm64 和 Windows arm64 暂未随包提供 ADB。
+- DSH 当前会话模型需要支持图片输入和工具调用；不兼容时明确报告阻塞，请在宿主中选择兼容模型。当前手机任务不切换到独立模型。
+- 当前手机任务需要至少一台已授权 Android 手机；宿主根据目标和设备候选规划分支，用户无需在首页逐项选择执行模型或手机。
+- 新手机任务候选首轮仅支持 macOS。原有逐步控制的随包 ADB 另覆盖 Linux x64 和 Windows x64，不代表这些系统已通过新任务验收。
 
 如果你不熟悉终端、Git 或 YAML，请直接使用[普通用户安装指南](docs/install-for-beginners.zh.md)。
 
@@ -121,56 +121,23 @@ dsh web
 /opengui
 ```
 
-空命令始终只返回用法，不会进入任何模型配置：
-
-```text
-Usage: /opengui <task>
-```
-
-打开 DSH、查看手机、选择操作设备和手动打开一个或多个投屏窗口，也都不要求先配置 OpenGUI 专用模型。
-
-执行任务时需要在命令后带上文本：
+空命令或 `/opengui workbench` 返回工作台地址。原生 OpenGUI 面板嵌入同一工作台。
 
 ```text
 /opengui 打开设置并报告 Android 版本
 ```
 
-也可以从原生 `@` 菜单选择 `@OpenGUI`，再输入相同任务。裸 `@OpenGUI` 与空 `/opengui` 一样，只展示用法；两种入口共用同一条命令生命周期。
+`/opengui <目标>` 和 `/opengui phone <目标>` 提交一次任务，再通过 DSH 的 `Agent.followup` 把稳定任务 ID 交回当前宿主模型。宿主持续调用 `opengui_manage_task` 的 `next` / `decide`，直到完成或等待用户处理。工具返回 submitted 仅代表接收，不代表目标达成。
 
-OpenGUI 会继承当前 DSH 的 provider、model 和输出 token 上限。当前模型明确声明支持图片时直接执行；自定义模型只是遗漏能力声明时，会询问它是否支持图片和工具调用，确认后仅补全当前 provider/model 并继续原任务；明确不支持图片时才进入专用视觉模型配置。切换模型后会重新判断。
+原生面板的首页提交会将已接收的任务 ID 交给所属会话的 `/opengui continue <ID>`，只领取指定任务，不重复提交。2026-09-20 本地候选已在 DSH 0.1.1-rc.2、宿主 Grok 4.6 和 PKV110 真机完成首页提交→自动接手→读取截图→保存独立终态截图及检查结果的只读验收；手机动作、中文输入、停止和多机实测仍待完成。详细证据见 [候选验收记录](../docs/plans/2026-09-19-phone-agent-workbench.md)。
 
-跳过能力确认或配置中的任意步骤，都会正常取消本次任务：不调用 OpenGUI 模型、不操作设备、不保存半套配置。手机画面和手动投屏仍可使用，下次任务会重新询问。
+模型统一使用当前宿主模型；OpenGUI 不读取宿主模型凭据，也不提供手机执行模型设置。宿主不支持图片时，报告阻塞，不猜测画面或另配模型。停止、补充指令、结果和历史都在工作台中管理。完成要求新终态截图及成功标准核验，工具成功不等于业务完成。
 
-若继承模型实际返回图片或工具能力错误，OpenGUI 不会自动重跑原任务，以免重复手机或浏览器副作用。界面会允许切换到专用视觉模型，并要求配置完成后重新提交。
+关闭工作台不会自动停止任务；宿主模型必须持续参与决策，退出宿主后不承诺继续执行。后台保留事件与截图，进程重启后未完成任务标记未知，不自动重放动作。
 
-## 可选的专用视觉模型回退
+## 旧兼容路径
 
-只有当前 DSH 模型不兼容，或把 `modelStrategy` 显式设为 `dedicated` 时，才需要配置下面的独立模型。
-
-推荐把用户配置写入 `$DSH_HOME/settings.yaml`：
-
-```yaml
-coremate-mobile:
-  baseURL: https://gateway.example/v1
-  api: openai-responses
-  model: vision-model
-```
-
-仅当服务商明确要求 Chat Completions 协议时，才把 `api` 改为 `openai-completions`。
-
-把 API Key 写入 `$DSH_HOME/.credentials.yaml`，不要放进 `settings.yaml` 或提交到 Git：
-
-```yaml
-COREMATE_MOBILE_API_KEY: sk-...
-```
-
-macOS 和 Linux 上，手工创建凭据文件后执行：
-
-```sh
-chmod 600 "${DSH_HOME:-$HOME/.dsh}/.credentials.yaml"
-```
-
-未设置 `DSH_HOME` 时，上面的命令会使用 `~/.dsh/.credentials.yaml`。
+`/opengui legacy-phone <目标>` 和原有浏览器路径仍保留。它们的路由、专用模型配置与子 Agent 生命周期属于旧实现，不是当前首页手机任务的执行方式。新手机任务不消费 `modelStrategy`、`baseURL`、`api` 或 `model` 等旧模型配置。未来独立模型执行的产品入口尚未开放。
 
 ## 验证安装和装载
 
@@ -210,6 +177,8 @@ Usage: /opengui <task>
 /opengui 打开设置并报告 Android 版本
 ```
 
+以下设备墙、模型回退和子任务说明仅适用于显式 legacy 手机路径；新手机任务以原生面板中的工作台为准。
+
 每个 DSH 会话的手机选择和状态统一放在其原生 **OpenGUI** Tab。只有一台已授权手机时会自动选中；有多台时，可在工作台中勾选任意一台或多台后再发送 `/opengui` 或 `@OpenGUI`。非空任务会先确定当前模型或完成专用回退配置，再等待手机；在选定设备快照就绪前不会向 provider 发起模型请求。真正开始执行时会原子获取全部已选手机；若其中任意一台已被其他会话占用，本次任务会明确报忙且不保留部分租约。等待期间仍可连接、选择和投屏，检测成功后只锁定所属会话的设备选择，直到整批结束。
 
 原生 **OpenGUI** Tab 是全宽设备照片墙。界面按 Host 顺序展示全部可见手机，并在末尾追加唯一的连接说明卡，不会为凑列数预留空卡。新检测到的手机先立即展示完整截图，后台自动准备低延迟实时画面，完成后无缝切换；普通用户不需要理解或批准底层组件。浏览器不支持或视频流失败时会继续显示截图，并提供重试。每台手机还可按需打开独立投屏窗口。
@@ -218,7 +187,7 @@ Usage: /opengui <task>
 
 选中 `@OpenGUI` 后，原生输入菜单会显示自由描述、QA、运营和手游四个选项；场景只填入草稿，不会自动发送。提交非空 OpenGUI 任务后，输入框会立即恢复，任务继续写入所属会话。切换、隐藏或卸载会话视图不会停止任务；每个 Tab 只显示自己的 OpenGUI 状态和错误。只有真正删除所属 Session 才会取消其任务并清理设备偏好。
 
-`/opengui` 会启动一个受限的任务路由子任务，只能选择 `phone_agent`、`browser_agent`，或在确有必要时顺序调用两者。手机任务仍为每台已选手机创建一个绑定固定设备的子任务；普通对话也可以直接使用两个委派工具。同一 DSH Session 同时只允许一个根 OpenGUI 任务，包括通过旧 `/coremate` 别名启动的任务；设备租约不冲突时，不同 Session 可以并行。停止和清理会精确校验 Session、任务与 attempt 身份，旧任务的延迟请求不会影响替代它的新任务。
+旧 `/opengui legacy <目标>` 路径会启动一个受限的任务路由子任务，只能选择 `phone_agent`、`browser_agent`，或在确有必要时顺序调用两者。手机任务仍为每台已选手机创建一个绑定固定设备的子任务；普通对话也可以直接使用两个委派工具。同一 DSH Session 同时只允许一个根 OpenGUI 任务，包括通过旧 `/coremate` 别名启动的任务；设备租约不冲突时，不同 Session 可以并行。停止和清理会精确校验 Session、任务与 attempt 身份，旧任务的延迟请求不会影响替代它的新任务。
 
 执行期间，外层 `phone_agent` / `browser_agent` 卡片会实时展示内部 `phone_control` / `browser_control` 调用及其可见结果。内部推理、系统提示词和模型配置不会投影到父对话。
 
@@ -232,7 +201,7 @@ Usage: /opengui <task>
 
 浏览器工具只允许 HTTP/HTTPS 导航，以及观察、点击、Unicode 文本输入、有限按键、滚动、后退、刷新和等待。中文通过 CDP 直接写入当前焦点字段。浏览器二进制、生命周期和控制代码均由插件负责，不会查找或调用 CoreMateDesktop2 或系统 Chrome。
 
-## 配置参考
+## 旧兼容路径配置参考
 
 | 键 | 含义 |
 |---|---|
@@ -348,3 +317,11 @@ npm pack
 发布由仓库级 [GitHub Release workflow](../.github/workflows/deepseek-harness-plugin-release.yml) 完成：tag 必须是 `dsh-coremate-mobile-v` 加 `package.json` 中的准确版本。不要重复使用已经存在的版本 tag。兼容范围以 `package.json` 的 `peerDependencies` 为准。
 
 完整的官方 Harness 源码准备、隔离 profile 安装、配置优先级、运行时验证和移除记录见[开发者接入与实测记录](docs/research/deepseek-harness-plugin-integration.md)。
+
+## 三宿主宿主驱动手机任务候选版
+
+`/opengui` 无参数打开工作台；`/opengui <目标>` 或 `/opengui phone <目标>` 提交后台手机任务。工具 `opengui_run_task` 可以独立填写成功标准。通过 `opengui_manage_task` 查询、停止或补充指令，`opengui_list_tasks` 查看历史，`opengui_open_workbench` 打开同一工作台。原 `phone_agent` 现在返回 submitted 和稳定任务 ID，不再等同于完成。
+
+工作台嵌入原生面板，不展示模型配置入口。独立 `phone-worker.js` 保存任务状态和执行设备操作；每个决策由 DSH 当前会话模型提供，退出宿主后不承诺继续执行。默认状态在 `~/.local/share/opengui-dsh`，可用 `OPENGUI_DSH_HOME` 指定独立实例。原有浏览器执行保持宿主内运行。`/opengui legacy-phone <目标>` 保留旧子 Agent 手机入口，并经过同一机器设备占用检查。
+
+升级管理器先检查并退出空闲后台；活动任务或仍打开的工作台会阻止升级。外部包管理器手工替换包前，也必须先停止该宿主任务。新版记录在 tasks-v1/evidence-v1，回滚保留记录，旧版本不读取它们。此候选未发布；Windows 新手机任务不受支持。

@@ -1,10 +1,15 @@
 import { createHash, randomBytes } from 'node:crypto'
+import { existsSync } from 'node:fs'
 import { lstat, mkdir, open, readFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 
 export const VERSION = '0.4.0'
-export const BROKER_PROTOCOL = 8
+export const BROKER_PROTOCOL = 9
+
+export function assertNoUpgrade(stateDir = workbuddyStateDir()): void {
+  if (existsSync(join(stateDir, 'upgrade.lock'))) throw new Error('upgrade_in_progress: installation lock is present; retry after installation completes')
+}
 
 export function workbuddyStateDir(override?: string): string {
   const configured = override ?? process.env.OPENGUI_WORKBUDDY_HOME?.trim()

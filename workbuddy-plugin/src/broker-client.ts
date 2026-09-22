@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { spawn } from 'node:child_process'
 import { createConnection, type Socket } from 'node:net'
 import { fileURLToPath } from 'node:url'
-import { brokerPort, brokerToken, BROKER_PROTOCOL, VERSION, workbuddyStateDir } from './state.ts'
+import { assertNoUpgrade, brokerPort, brokerToken, BROKER_PROTOCOL, VERSION, workbuddyStateDir } from './state.ts'
 import { readFrames, sendFrame, type Message } from './wire.ts'
 import { OpenGuiError, type ExecutionState, type Recovery } from './errors.ts'
 
@@ -27,7 +27,7 @@ export class BrokerClient {
     })
   }
 
-  static async connect(port: number, token: string, version = VERSION, role: 'mcp' | 'hook' = 'mcp'): Promise<BrokerClient> {
+  static async connect(port: number, token: string, version = VERSION, role: 'mcp' | 'hook' | 'installer' = 'mcp'): Promise<BrokerClient> {
     const socket = createConnection({ host: '127.0.0.1', port })
     socket.on('error', () => undefined)
     await new Promise<void>((resolve, reject) => {
@@ -49,6 +49,10 @@ export class BrokerClient {
 
   hostEvent(event: Record<string, unknown>, signal: AbortSignal): Promise<unknown> {
     return this.request({ method: 'host_event', event }, signal)
+  }
+
+  prepareUpgrade(signal: AbortSignal): Promise<unknown> {
+    return this.request({ method: 'prepare_upgrade' }, signal)
   }
 
   onDisconnect(listener: () => void): () => void {
@@ -85,11 +89,13 @@ export class BrokerClient {
 /** Never replay a tool call after transport loss. Only the initial connection may start a broker. */
 export async function connectWorkBuddyBroker(role: 'mcp' | 'hook' = 'mcp'): Promise<BrokerClient> {
   const stateDir = workbuddyStateDir()
+  assertNoUpgrade(stateDir)
   const token = await brokerToken(stateDir)
   const port = brokerPort(stateDir)
   try { return await BrokerClient.connect(port, token, VERSION, role) } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== 'ECONNREFUSED') throw error
   }
+  assertNoUpgrade(stateDir)
   const child = spawn(process.execPath, [fileURLToPath(new URL('./broker-main.js', import.meta.url))], {
     detached: true,
     stdio: 'ignore',

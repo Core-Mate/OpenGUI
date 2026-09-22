@@ -1,8 +1,14 @@
 # OpenGUI for Codex 0.3.0 候选版
 
-本轮支持 macOS，协议版本 3。这是本地候选交付，不代表已公开发布或所有真机验收通过。
+本轮支持 macOS，协议版本 4。这是本地候选交付，不代表已公开发布或所有真机验收通过。
 
-使用流程：选择手机 → `opengui_open_viewer` → 宿主在聊天右侧打开 URL → `opengui_viewer_status` 最多等待 30 秒 → 真实视频首帧验证成功 → 打开关联 viewerId 的控制会话 → 截图与动作。
+默认使用当前 Codex 宿主模型理解目标、查看截图和下发决策，模型配置入口关闭。通过 `opengui_open_workbench` 打开工作台，`opengui_run_task` 提交 requestId 和 goal；宿主规划独立分支，OpenGUI 自动分配已授权手机。保持工作台可见，每个分支须通过真实首帧检查后才能操作。
+
+宿主持续调用 `opengui_manage_task` 的 next/decide，读取返回的 imagePath 截图，按最新 observationId 决策。父任务 ID 推进全部分支，分支 ID 只查询对应分支。status、stop、steer、resume 用于查询、停止、补充和用户处理后恢复；`opengui_list_tasks` 查看本会话记录。完成必须有独立终态截图和成功标准检查。
+
+首页提交保留。插件已通过 `.mcp.json` 注册 `--mcp` 原生工作台资源和会话消息桥，归档工具发现已通过；真实 Codex 宿主加载与首页自动接手仍未验收。关闭工作台不等于停止；宿主必须持续决策，不承诺退出宿主后继续执行。历史与证据保留，中断任务标记未知且不重放动作。
+
+纯观看或显式逐步控制仍可使用旧流程：选择手机 → `opengui_open_viewer` → 宿主在聊天右侧打开 URL → `opengui_viewer_status` 最多等待 30 秒 → 真实视频首帧验证成功 → 打开关联 viewerId 的控制会话 → 截图与动作。不得与新任务同时控制同一手机。
 
 Codex 使用原生 open_in_codex，将浏览器放在当前任务右侧。短 CLI 连接按宿主 CODEX_THREAD_ID 归属任务。
 

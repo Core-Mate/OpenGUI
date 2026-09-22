@@ -13,6 +13,8 @@ import { confirmLocalSetup } from './confirmation.ts'
 import { OPENGUI_CODEX_TOOLS, validateToolArguments } from './codex/tools.ts'
 import { ensureDaemon, ping, request, sendRequest, startDaemon } from './daemon.ts'
 import { VERSION, daemonEndpoint, dataDirectory } from './state.ts'
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
+import { daemonMcpCall, startCodexMcp } from './mcp-server.ts'
 
 export async function runCli(argv: readonly string[], signal = new AbortController().signal): Promise<unknown> {
   const [name, raw] = argv
@@ -121,6 +123,11 @@ if (isEntry) {
       process.once('SIGINT', () => { void daemon.close() })
       await daemon.closed
     }).catch(error => { process.stderr.write(String(error) + '\n'); process.exitCode = 1 })
+  } else if (process.argv[2] === '--mcp' && process.argv.length === 3) {
+    startCodexMcp(new StdioServerTransport(), daemonMcpCall(fileURLToPath(import.meta.url))).then(server => {
+      process.once('SIGTERM', () => { void server.close() })
+      process.once('SIGINT', () => { void server.close() })
+    }).catch(() => { process.stderr.write('OpenGUI MCP startup failed\n'); process.exitCode = 1 })
   } else {
     const controller = new AbortController()
     process.once('SIGINT', () => controller.abort(new Error('opengui: interrupted')))
