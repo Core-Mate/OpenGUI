@@ -88,6 +88,20 @@ describe('standalone launcher installation contract', () => {
     expect(results.every(result => result.stdout.includes('--doctor'))).toBe(true)
     expect(await f.events()).toBe('approval\ndownload\n')
   })
+  it('shares one verified runtime across isolated CODEX_HOME directories', async () => {
+    const f = await fixture()
+    const home = join(f.root, 'home')
+    const isolated = (name: string) => f.run(['--interfaces'], {
+      OPENGUI_CODEX_DATA_DIR: '',
+      HOME: home,
+      CODEX_HOME: join(home, name),
+    })
+    expect((await isolated('task-a')).stdout).toContain('--interfaces')
+    expect((await isolated('task-b')).stdout).toContain('--interfaces')
+    expect(await f.events()).toBe('approval\ndownload\n')
+    expect(await readdir(join(home, '.codex', 'opengui-codex', 'runtime'))).toEqual(['node-v22.23.2-darwin-arm64'])
+    await expect(readdir(join(home, 'task-a', 'opengui-codex', 'runtime'))).rejects.toMatchObject({ code: 'ENOENT' })
+  })
   it('rejects unsafe state roots and unsupported platforms before setup', async () => {
     const f = await fixture()
     await expect(f.run(['--setup'], { OPENGUI_CODEX_DATA_DIR: '/' })).rejects.toMatchObject({ code: 1, stderr: expect.stringContaining('unsafe') })

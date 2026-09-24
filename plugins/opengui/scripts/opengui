@@ -38,6 +38,13 @@ esac
 runtime_parent="$data_root/runtime"
 runtime_dir="$runtime_parent/node-v$runtime_version-darwin-$runtime_arch"
 runtime_lock="$runtime_parent/install.lock"
+# Session files stay with data_root. Node is a per-user cache: a per-task
+# CODEX_HOME must reuse it instead of raising another download dialog.
+shared_root="$HOME/.codex/opengui-codex"
+share_runtime=false
+if [ -z "${OPENGUI_CODEX_DATA_DIR:-}" ] && [ "$data_root" != "$shared_root" ]; then
+  share_runtime=true
+fi
 install_stage=
 lock_owned=false
 cleanup() {
@@ -52,7 +59,8 @@ cleanup() {
 trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
-for private_dir in "$data_root" "$runtime_parent"; do
+prepare_private() {
+  private_dir=$1
   if [ -L "$private_dir" ]; then
     printf '%s\n' 'Runtime directories may not be symbolic links.' >&2; exit 1
   fi
@@ -61,60 +69,74 @@ for private_dir in "$data_root" "$runtime_parent"; do
     printf '%s\n' 'Runtime directory has a different owner.' >&2; exit 1
   fi
   chmod 700 "$private_dir"
-done
+}
+prepare_private "$data_root"
 valid_runtime() {
-  [ ! -L "$runtime_dir" ] && [ ! -L "$runtime_dir/bin/node" ] &&
-  [ -x "$runtime_dir/bin/node" ] && [ -f "$runtime_dir/.verified" ] || return 1
-  recorded_archive=$(sed -n '1p' "$runtime_dir/.verified")
-  recorded_binary=$(sed -n '2p' "$runtime_dir/.verified")
+  target=${1:-$runtime_dir}
+  [ ! -L "$target" ] && [ ! -L "$target/bin/node" ] &&
+  [ -x "$target/bin/node" ] && [ -f "$target/.verified" ] || return 1
+  recorded_archive=$(sed -n '1p' "$target/.verified")
+  recorded_binary=$(sed -n '2p' "$target/.verified")
   [ "$recorded_archive" = "$archive_sha" ] || return 1
-  current_binary=$(shasum -a 256 "$runtime_dir/bin/node" | awk '{print $1}')
+  current_binary=$(shasum -a 256 "$target/bin/node" | awk '{print $1}')
   [ "$recorded_binary" = "$current_binary" ]
 }
-if ! valid_runtime; then
-  wait_count=0
-  while ! valid_runtime; do
-    if mkdir "$runtime_lock" 2>/dev/null; then
-      lock_owned=true
-      printf '%s\n' "$$" > "$runtime_lock/pid"
-      break
-    fi
-    wait_count=$((wait_count + 1))
-    if [ "$wait_count" -gt 240 ]; then
-      printf '%s\n' "Runtime installation is busy or interrupted. Inspect $runtime_lock before retrying; no lock was removed." >&2
-      exit 1
-    fi
-    sleep 1
-  done
+shared_dir="$shared_root/runtime/node-v$runtime_version-darwin-$runtime_arch"
+if [ "$share_runtime" = true ] && valid_runtime "$shared_dir"; then
+  runtime_dir=$shared_dir
+elif ! valid_runtime; then
+  if [ "$share_runtime" = true ]; then
+    prepare_private "$shared_root"
+    runtime_parent="$shared_root/runtime"
+    runtime_dir="$shared_dir"
+  fi
+  prepare_private "$runtime_parent"
+  runtime_lock="$runtime_parent/install.lock"
   if ! valid_runtime; then
-    approval=$(/usr/bin/osascript -e 'try' \
-      -e 'display dialog "OpenGUI needs to download Node.js 22.23.2 (about 50 MB) from nodejs.org into its private local cache. No system installation, sudo, or DSH changes. Allow this download?" with title "OpenGUI runtime setup" buttons {"Cancel", "Download"} default button "Cancel" cancel button "Cancel" giving up after 60' \
-      -e 'if gave up of result then return "cancel"' -e 'return button returned of result' \
-      -e 'on error' -e 'return "cancel"' -e 'end try')
-    if [ "$approval" != Download ]; then printf '%s\n' 'Runtime setup cancelled.' >&2; exit 1; fi
-    install_stage=$(mktemp -d "$runtime_parent/.install.XXXXXXXX")
-    archive_name="node-v$runtime_version-darwin-$runtime_arch"
-    /usr/bin/curl --proto '=https' --proto-redir '=https' --tlsv1.2 --fail --location \
-      --connect-timeout 10 --max-time 180 --retry 2 \
-      "https://nodejs.org/dist/v$runtime_version/$archive_name.tar.gz" \
-      --output "$install_stage/node.tar.gz" >&2
-    downloaded_sha=$(shasum -a 256 "$install_stage/node.tar.gz" | awk '{print $1}')
-    if [ "$downloaded_sha" != "$archive_sha" ]; then
-      printf '%s\n' 'Node archive checksum mismatch. Nothing was installed.' >&2; exit 1
-    fi
-    tar -xzf "$install_stage/node.tar.gz" -C "$install_stage"
-    extracted="$install_stage/$archive_name"
-    if [ -L "$extracted/bin/node" ] || [ ! -x "$extracted/bin/node" ]; then
-      printf '%s\n' 'The verified archive has no usable Node binary.' >&2; exit 1
-    fi
-    binary_sha=$(shasum -a 256 "$extracted/bin/node" | awk '{print $1}')
-    printf '%s\n%s\n' "$archive_sha" "$binary_sha" > "$extracted/.verified"
-    if [ -e "$runtime_dir" ] || [ -L "$runtime_dir" ]; then
-      mv -- "$runtime_dir" "$install_stage/previous"
-    fi
-    if ! mv -- "$extracted" "$runtime_dir"; then
-      if [ -e "$install_stage/previous" ]; then mv -- "$install_stage/previous" "$runtime_dir"; fi
-      exit 1
+    wait_count=0
+    while ! valid_runtime; do
+      if mkdir "$runtime_lock" 2>/dev/null; then
+        lock_owned=true
+        printf '%s\n' "$$" > "$runtime_lock/pid"
+        break
+      fi
+      wait_count=$((wait_count + 1))
+      if [ "$wait_count" -gt 240 ]; then
+        printf '%s\n' "Runtime installation is busy or interrupted. Inspect $runtime_lock before retrying; no lock was removed." >&2
+        exit 1
+      fi
+      sleep 1
+    done
+    if ! valid_runtime; then
+      approval=$(/usr/bin/osascript -e 'try' \
+        -e 'display dialog "OpenGUI needs to download Node.js 22.23.2 (about 50 MB) from nodejs.org into its private local cache. No system installation, sudo, or DSH changes. Allow this download?" with title "OpenGUI runtime setup" buttons {"Cancel", "Download"} default button "Cancel" cancel button "Cancel" giving up after 60' \
+        -e 'if gave up of result then return "cancel"' -e 'return button returned of result' \
+        -e 'on error' -e 'return "cancel"' -e 'end try')
+      if [ "$approval" != Download ]; then printf '%s\n' 'Runtime setup cancelled.' >&2; exit 1; fi
+      install_stage=$(mktemp -d "$runtime_parent/.install.XXXXXXXX")
+      archive_name="node-v$runtime_version-darwin-$runtime_arch"
+      /usr/bin/curl --proto '=https' --proto-redir '=https' --tlsv1.2 --fail --location \
+        --connect-timeout 10 --max-time 180 --retry 2 \
+        "https://nodejs.org/dist/v$runtime_version/$archive_name.tar.gz" \
+        --output "$install_stage/node.tar.gz" >&2
+      downloaded_sha=$(shasum -a 256 "$install_stage/node.tar.gz" | awk '{print $1}')
+      if [ "$downloaded_sha" != "$archive_sha" ]; then
+        printf '%s\n' 'Node archive checksum mismatch. Nothing was installed.' >&2; exit 1
+      fi
+      tar -xzf "$install_stage/node.tar.gz" -C "$install_stage"
+      extracted="$install_stage/$archive_name"
+      if [ -L "$extracted/bin/node" ] || [ ! -x "$extracted/bin/node" ]; then
+        printf '%s\n' 'The verified archive has no usable Node binary.' >&2; exit 1
+      fi
+      binary_sha=$(shasum -a 256 "$extracted/bin/node" | awk '{print $1}')
+      printf '%s\n%s\n' "$archive_sha" "$binary_sha" > "$extracted/.verified"
+      if [ -e "$runtime_dir" ] || [ -L "$runtime_dir" ]; then
+        mv -- "$runtime_dir" "$install_stage/previous"
+      fi
+      if ! mv -- "$extracted" "$runtime_dir"; then
+        if [ -e "$install_stage/previous" ]; then mv -- "$install_stage/previous" "$runtime_dir"; fi
+        exit 1
+      fi
     fi
   fi
 fi
