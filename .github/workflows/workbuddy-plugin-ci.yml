@@ -3,10 +3,12 @@ name: WorkBuddy Plugin CI
 on:
   push:
     paths:
+      - 'packages/device-runtime/**'
       - 'workbuddy-plugin/**'
       - '.github/workflows/workbuddy-plugin-*.yml'
   pull_request:
     paths:
+      - 'packages/device-runtime/**'
       - 'workbuddy-plugin/**'
       - '.github/workflows/workbuddy-plugin-*.yml'
 
