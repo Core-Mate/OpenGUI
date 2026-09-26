@@ -210,7 +210,7 @@ describe('OpenGUI assembled snapshot', () => {
               },
             },
             {
-              "description": "Submit a host-driven Android task. Open the returned workbench URL, then YOU must call opengui_manage_task next/decide to plan and inspect screenshots until completion. No extra model is configured. Host termination can interrupt execution.",
+              "description": "Submit an Android task to the shared OpenGUI service. The configured OpenGUI model executes it. Open the workbench for progress and evidence. Do not call next or decide. Closing this chat does not stop an accepted task.",
               "name": "phone_agent",
               "parameters": {
                 "properties": {

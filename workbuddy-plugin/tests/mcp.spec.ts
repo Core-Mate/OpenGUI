@@ -116,10 +116,11 @@ describe('standard MCP transport', () => {
     expect(c.getServerVersion()).toMatchObject({ name: 'opengui-workbuddy', version: '0.4.0' })
     expect(connection.call).not.toHaveBeenCalled()
     const instructions = c.getInstructions()!
-    expect(instructions).toContain('Use host-driven phone tasks by default')
+    expect(instructions).toContain('shared OpenGUI service')
     expect(instructions).toContain('opengui_run_task')
-    expect(instructions).toContain('opengui_manage_task next/decide')
+    expect(instructions).toContain('opengui_manage_task')
     expect(instructions).toContain('do not submit a duplicate')
+    expect(instructions).not.toContain('next/decide')
     expect(instructions).toContain('Never mix legacy actions')
     expect(instructions).not.toContain('Start with opengui_open_viewer')
   })

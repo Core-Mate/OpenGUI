@@ -1,7 +1,5 @@
 import { TaskHost, isTaskTool } from '../../../packages/phone-agent/src/host.ts'
-import { PhoneRuntime } from '../../../packages/phone-agent/src/runtime.ts'
-import { keychain } from '../../../packages/phone-agent/src/credentials.ts'
-import { HostExecutor } from '../../../packages/phone-agent/src/host-executor.ts'
+import { sharedPhoneTasks, type PhoneTasks } from '../../../packages/task-service/src/client.ts'
 import { errorInfo, OpenGuiError } from './errors.ts'
 import { randomUUID } from 'node:crypto'
 import { spawn } from 'node:child_process'
@@ -130,7 +128,7 @@ export async function ensureDaemon(entry: string, root = dataDirectory(), signal
 export interface DaemonOptions {
   root: string
   service?: CodexOpenGuiService
-  taskHost?: TaskHost
+  taskHost?: TaskHost | PhoneTasks
   confirm?: ConfirmAction
   idleMs?: number
   sweepMs?: number
@@ -143,7 +141,7 @@ export async function startDaemon(options: DaemonOptions): Promise<{ endpoint: s
   const observations = new ObservationStore(join(options.root, 'observations'))
   await observations.prune()
   const service = options.service ?? new CodexOpenGuiService({ onSessionClosed: id => observations.remove(id) })
-  const tasks = options.taskHost ?? new TaskHost(() => new PhoneRuntime({ root: join(options.root, 'phone-agent'), host: 'codex', hardware: service.phoneHardware, credentials: keychain('codex'), executor: new HostExecutor() }))
+  const tasks = options.taskHost ?? sharedPhoneTasks('codex')
   const confirm = options.confirm ?? confirmAction
   const sockets = new Set<Socket>()
   const operations = new Set<Promise<void>>()

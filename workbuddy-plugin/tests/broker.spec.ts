@@ -1,8 +1,11 @@
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { TaskHost } from '../../packages/phone-agent/src/host.ts'
 import { createConnection } from 'node:net'
+import type { PhoneTasks } from '../../packages/task-service/src/client.ts'
+import { TaskHost } from '../../packages/phone-agent/src/host.ts'
+import { PhoneRuntime } from '../../packages/phone-agent/src/runtime.ts'
+import { HostExecutor } from '../../packages/phone-agent/src/host-executor.ts'
 import { ReadyViewer } from './ready-viewer.ts'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { startBroker } from '../src/broker.ts'
@@ -15,9 +18,9 @@ const disposers: Array<() => unknown> = []
 afterEach(async () => { for (const dispose of disposers.splice(0).reverse()) await dispose() })
 const signal = () => AbortSignal.timeout(5000)
 
-async function setup(host = new FakeHost()) {
+async function setup(host = new FakeHost(), tasks?: PhoneTasks) {
   const service = new WorkBuddyOpenGuiService({ viewers: new ReadyViewer(), host })
-  const broker = await startBroker({ port: 0, token: 'test-secret', service })
+  const broker = await startBroker({ port: 0, token: 'test-secret', service, ...(tasks ? { tasks } : {}) })
   disposers.push(broker.close)
   const a = await BrokerClient.connect(broker.port, 'test-secret')
   const b = await BrokerClient.connect(broker.port, 'test-secret')
@@ -225,30 +228,31 @@ describe('WorkBuddy broker isolation', () => {
 })
 
 
-it('binds phone ownership to the authenticated conversation across host turns', async () => {
-  const call = vi.spyOn(TaskHost.prototype, 'call').mockResolvedValue({ tasks: [] })
-  const interrupt = vi.spyOn(TaskHost.prototype, 'interruptOwner').mockResolvedValue(undefined)
-  try {
-    const { a, broker } = await setup()
-    const hook = await BrokerClient.connect(broker.port, 'test-secret', VERSION, 'hook')
-    disposers.push(() => hook.close())
-    const invoke = async (session: string) => {
-      const bound = await hook.hostEvent({ hook_event_name: 'PreToolUse', session_id: session, tool_name: 'opengui_list_tasks', tool_input: {} }, signal()) as { hostContext: string }
-      await a.call('opengui_list_tasks', { hostContext: bound.hostContext }, signal())
-      return call.mock.calls.at(-1)![2]
-    }
-    const first = await invoke('same-chat')
-    await hook.hostEvent({ hook_event_name: 'FinalStop', session_id: 'same-chat' }, signal())
-    expect(interrupt).toHaveBeenLastCalledWith(first, true)
-    await hook.hostEvent({ hook_event_name: 'UserPromptSubmit', session_id: 'same-chat' }, signal())
-    expect(await invoke('same-chat')).toBe(first)
-    expect(await invoke('other-chat')).not.toBe(first)
-    await hook.hostEvent({ hook_event_name: 'FinalStop', session_id: 'same-chat', final_stop_reason: 'interrupted' }, signal())
-    expect(interrupt).toHaveBeenLastCalledWith(first, false)
-  } finally {
-    call.mockRestore()
-    interrupt.mockRestore()
+it('keeps conversation ownership and does not cancel tasks when the host turn ends', async () => {
+  const owners: string[] = []
+  let interrupts = 0
+  const tasks: PhoneTasks = {
+    get activeCount() { return 0 }, get watching() { return false }, snapshot: async () => {}, prepareMaintenance: () => true,
+    call: async (_name, _args, owner) => { owners.push(owner); return { tasks: [] } },
+    interruptOwner: async () => { interrupts += 1 },
+    close: async () => {},
   }
+  const { a, broker } = await setup(new FakeHost(), tasks)
+  const hook = await BrokerClient.connect(broker.port, 'test-secret', VERSION, 'hook')
+  disposers.push(() => hook.close())
+  const invoke = async (session: string) => {
+    const bound = await hook.hostEvent({ hook_event_name: 'PreToolUse', session_id: session, tool_name: 'opengui_list_tasks', tool_input: {} }, signal()) as { hostContext: string }
+    await a.call('opengui_list_tasks', { hostContext: bound.hostContext }, signal())
+    return owners.at(-1)
+  }
+  const first = await invoke('same-chat')
+  await hook.hostEvent({ hook_event_name: 'FinalStop', session_id: 'same-chat' }, signal())
+  expect(interrupts).toBe(0)
+  await hook.hostEvent({ hook_event_name: 'UserPromptSubmit', session_id: 'same-chat' }, signal())
+  expect(await invoke('same-chat')).toBe(first)
+  expect(await invoke('other-chat')).not.toBe(first)
+  await hook.hostEvent({ hook_event_name: 'FinalStop', session_id: 'same-chat', final_stop_reason: 'interrupted' }, signal())
+  expect(interrupts).toBe(0)
 })
 
 
@@ -261,11 +265,19 @@ it('keeps a web task bound to its hook conversation over a shared MCP connection
     else process.env.OPENGUI_WORKBUDDY_HOME = previous
     await rm(root, { recursive: true, force: true })
   })
-  const { a, broker } = await setup(Object.assign(new FakeHost(), { videoStreams: {
+  const host = Object.assign(new FakeHost(), { videoStreams: {
     async prepare() { throw new Error('This ownership test must not start video') },
     async subscribe() { throw new Error('This ownership test must not start video') },
     async dispose() {},
-  } }))
+  } })
+  const service = new WorkBuddyOpenGuiService({ viewers: new ReadyViewer(), host })
+  const runtime = new PhoneRuntime({ root: join(root, 'phone-agent'), host: 'workbuddy', hardware: service.phoneHardware, credentials: { get: async () => '', set: async () => {} }, executor: new HostExecutor(), leaseRoot: join(root, 'leases') })
+  const tasks = new TaskHost(() => runtime)
+  disposers.push(() => tasks.close())
+  const broker = await startBroker({ port: 0, token: 'test-secret', service, tasks })
+  disposers.push(broker.close)
+  const a = await BrokerClient.connect(broker.port, 'test-secret')
+  disposers.push(() => a.close())
   const hook = await BrokerClient.connect(broker.port, 'test-secret', VERSION, 'hook')
   disposers.push(() => hook.close())
   const invoke = async (session: string, name: string, args: Record<string, unknown> = {}) => {

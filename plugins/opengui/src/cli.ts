@@ -22,12 +22,17 @@ export async function runCli(argv: readonly string[], signal = new AbortControll
     return {
       name: 'OpenGUI for Codex', version: VERSION,
       usage: 'opengui <interface> [json] (JSON can also be read from stdin)',
-      commands: ['--help', '--version', '--interfaces', '--doctor', '--prepare-video', '--setup-adb-server', '--shutdown-daemon'],
+      commands: ['--help', '--version', '--interfaces', '--doctor', '--prepare-video', '--setup-adb-server', '--shutdown-daemon', '--install-task-service'],
       interfaces: OPENGUI_CODEX_TOOLS.map(tool => tool.name),
       platform: 'Local macOS arm64/x64 only. Use a dedicated non-production device environment.',
     }
   }
   if (name === '--version') return { version: VERSION }
+  if (name === '--install-task-service') {
+    const { installTaskServiceLaunchAgent } = await import('../../../packages/task-service/src/launchd.ts')
+    const plist = await installTaskServiceLaunchAgent({ node: process.execPath, entry: fileURLToPath(new URL('./task-service-main.ts', import.meta.url)), ...(process.env.OPENGUI_LAUNCH_AGENTS_DIR ? { agentsDir: process.env.OPENGUI_LAUNCH_AGENTS_DIR } : {}) })
+    return { launchAgent: plist, bootstrapped: false }
+  }
   if (name === '--interfaces') return { interfaces: OPENGUI_CODEX_TOOLS }
   if (process.platform !== 'darwin' || !['arm64', 'x64'].includes(process.arch)) {
     throw new Error('opengui: local Android control is supported only on macOS arm64/x64')

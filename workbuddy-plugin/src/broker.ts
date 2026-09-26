@@ -1,9 +1,6 @@
-import { join } from 'node:path'
-import { TaskHost, isTaskTool } from '../../packages/phone-agent/src/host.ts'
-import { PhoneRuntime } from '../../packages/phone-agent/src/runtime.ts'
-import { keychain } from '../../packages/phone-agent/src/credentials.ts'
-import { HostExecutor } from '../../packages/phone-agent/src/host-executor.ts'
-import { assertNoUpgrade, workbuddyStateDir } from './state.ts'
+import { isTaskTool } from '../../packages/phone-agent/src/host.ts'
+import { sharedPhoneTasks, type PhoneTasks } from '../../packages/task-service/src/client.ts'
+import { assertNoUpgrade } from './state.ts'
 import { randomBytes, randomUUID, timingSafeEqual } from 'node:crypto'
 import { createServer, type Socket } from 'node:net'
 import { WorkBuddyOpenGuiService } from './service.ts'
@@ -19,12 +16,13 @@ export interface BrokerOptions {
   service?: WorkBuddyOpenGuiService
   idleMs?: number
   onIdle?: () => void
+  tasks?: PhoneTasks
 }
 
 /** One local owner of device leases across all WorkBuddy MCP child processes. */
 export async function startBroker(options: BrokerOptions): Promise<{ port: number; close: () => Promise<void> }> {
   const service = options.service ?? new WorkBuddyOpenGuiService()
-  const tasks = new TaskHost(() => new PhoneRuntime({ root: join(workbuddyStateDir(), 'phone-agent'), host: 'workbuddy', hardware: service.phoneHardware, credentials: keychain('workbuddy'), executor: new HostExecutor() }))
+  const tasks = options.tasks ?? sharedPhoneTasks('workbuddy')
   const automation = new AutomationCoordinator(service)
   const sockets = new Set<Socket>()
   const clients = new Set<Socket>()
@@ -52,7 +50,6 @@ export async function startBroker(options: BrokerOptions): Promise<{ port: numbe
     let installerConnection = false
     const lifetime = new AbortController()
     const connectionOwner = randomUUID()
-    const phoneOwners = new Set<string>()
     const phoneLifetimes = new Set<string>()
     const owned = new Set<string>()
     const closedSessions: string[] = []
@@ -65,7 +62,6 @@ export async function startBroker(options: BrokerOptions): Promise<{ port: numbe
     socket.once('close', () => {
       clearTimeout(handshake)
       lifetime.abort(new Error('opengui: WorkBuddy connection closed'))
-      for (const owner of phoneOwners) finish(tasks.interruptOwner(owner))
       sockets.delete(socket)
       clients.delete(socket)
       finish(Promise.allSettled([...owned].map(id => {
@@ -133,13 +129,11 @@ export async function startBroker(options: BrokerOptions): Promise<{ port: numbe
         const { hostContext, ...args } = message.args
         if (isTaskTool(message.name)) {
           const bound = automation.consume(hostContext, message.name, args)
-          const owner = bound ? 'workbuddy:' + bound.hostSession : connectionOwner
-          phoneOwners.add(owner)
+          const owner = bound ? bound.hostSession : connectionOwner
           if (bound && !phoneLifetimes.has(bound.id)) {
             phoneLifetimes.add(bound.id)
             bound.controller.signal.addEventListener('abort', () => {
               phoneLifetimes.delete(bound.id)
-              finish(tasks.interruptOwner(owner, bound.outcome === 'unknown'))
             }, { once: true })
           }
           sendFrame(socket, { id, result: await tasks.call(message.name, args, owner) }); return

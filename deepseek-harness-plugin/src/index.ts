@@ -1027,8 +1027,8 @@ export function apply(ctx: Context, baseConfig: Config): void {
         if (!/^[a-f0-9]{8}-[a-f0-9-]{27}$/u.test(taskId)) return { kind: 'error', text: '无效的手机任务 ID。' }
         const owner = String(invocation.agent.session.id)
         const result = await dispatchHostPhoneTask(invocation.agent, async () => {
-          const next = await callPhoneTask('opengui_manage_task', { action: 'next', taskId }, owner) as { decision?: { taskId?: string } }
-          if (next.decision?.taskId !== taskId) throw new Error('任务暂不可接手，请检查是否已结束或由其他会话执行。')
+          const status = await callPhoneTask('opengui_manage_task', { action: 'status', taskId }, owner) as { id?: string }
+          if (status.id !== taskId) throw new Error('任务暂不可查看，请检查是否属于其他会话。')
           return { id: taskId }
         }, id => callPhoneTask('opengui_manage_task', { action: 'stop', taskId: id }, owner))
         return { kind: 'success', text: JSON.stringify(result) }
@@ -1338,7 +1338,7 @@ export function apply(ctx: Context, baseConfig: Config): void {
 
   ctx.tools.register(defineTool({
     name: 'phone_agent',
-    description: 'Submit a host-driven Android task. Open the returned workbench URL, then YOU must call opengui_manage_task next/decide to plan and inspect screenshots until completion. No extra model is configured. Host termination can interrupt execution.',
+    description: 'Submit an Android task to the shared OpenGUI service. The configured OpenGUI model executes it. Open the workbench for progress and evidence. Do not call next or decide. Closing this chat does not stop an accepted task.',
     parameters: { task: { type: 'string', required: true } },
     output: {
       schema: {

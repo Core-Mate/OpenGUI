@@ -1,31 +1,10 @@
 import { expect, it, vi } from 'vitest'
-import { createServer } from 'node:net'
-import { randomUUID } from 'node:crypto'
-import { interruptPhoneOwner, phoneEndpoint, PHONE_PROTOCOL } from '../src/phone-background.ts'
+import { interruptPhoneOwner } from '../src/phone-background.ts'
 import { dispatchHostPhoneTask, bindHostPhoneLifecycle } from '../src/phone-host-dispatch.ts'
 
-it('delivers owner interruption over the worker socket and tolerates an absent worker', async () => {
-  vi.stubEnv('OPENGUI_DSH_HOME', '/tmp/opengui-lifecycle-' + randomUUID())
-  const requests: unknown[] = []
-  const server = createServer(socket => {
-    let body = ''
-    socket.setEncoding('utf8')
-    socket.on('data', chunk => {
-      body += chunk
-      if (!body.includes('\n')) return
-      requests.push(JSON.parse(body))
-      socket.end(JSON.stringify({ result: { stopProcessed: true } }) + '\n')
-    })
-  })
-  try {
-    await interruptPhoneOwner('absent-session')
-    await new Promise<void>((resolve, reject) => { server.once('error', reject); server.listen(phoneEndpoint(), resolve) })
-    await interruptPhoneOwner('session-a')
-    expect(requests).toEqual([{ protocol: PHONE_PROTOCOL, name: '__interrupt_owner__', args: {}, owner: 'session-a' }])
-  } finally {
-    if (server.listening) await new Promise<void>(resolve => server.close(() => resolve()))
-    vi.unstubAllEnvs()
-  }
+it('does not contact a worker when a host conversation aborts', async () => {
+  await expect(interruptPhoneOwner('absent-session')).resolves.toBeUndefined()
+  await expect(interruptPhoneOwner('session-a')).resolves.toBeUndefined()
 })
 
 it('forwards explicit host cancellation and disposal but preserves normal turn completion', async () => {

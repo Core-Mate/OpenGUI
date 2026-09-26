@@ -1,7 +1,7 @@
 import type { RawPhoneObservation } from '../../device-runtime/src/phone-controller.ts'
 import type { ViewerStreams } from '../../device-runtime/src/viewer.ts'
 
-export type Host = 'codex' | 'workbuddy' | 'dsh'
+export type Host = 'codex' | 'workbuddy' | 'dsh' | 'shared'
 export type Phase = 'queued' | 'preparing' | 'running' | 'waiting' | 'stopping' | 'completed' | 'blocked' | 'failed' | 'cancelled' | 'unknown'
 export const terminal = (phase: Phase): boolean => ['completed', 'blocked', 'failed', 'cancelled', 'unknown'].includes(phase)
 export interface ModelProfile {

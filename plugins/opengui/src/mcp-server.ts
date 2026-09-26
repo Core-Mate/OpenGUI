@@ -42,7 +42,7 @@ export async function startCodexMcp(transport: Transport, call: CodexMcpCall): P
     capabilities: { tools: {}, resources: {} },
     instructions: [
       'Use the current Codex model to plan and decide phone tasks. OpenGUI executes validated actions and stores evidence; do not configure another model.',
-      'Call opengui_open_workbench for the native panel in this conversation. Keep it open for progress and evidence. If the host cannot render its resource, use open_in_codex for its URL and report that automatic homepage handoff is unavailable. Submit a chat goal with opengui_run_task and a stable requestId. Claim an existing homepage task with opengui_manage_task next; never submit it twice.',
+      'Call opengui_open_workbench for the native panel in this conversation. Keep it open for progress and evidence. If the host cannot render its resource, use open_in_codex for its URL. Submit a chat goal with opengui_run_task and a stable requestId. The shared service executes it with the configured model. Never submit the same goal twice and never call next/decide.',
       'Continue next/decide until terminal or waiting for user help. Read each returned imagePath with the host image viewer before deciding. Preserve observation IDs, coordinate contracts, device leases, and action serialization.',
       'Keep the workbench visible for the first decoded frame. A first-frame timeout is terminal; do not recreate sessions to bypass it. Do not mix legacy controls or shell/ADB with task execution.',
       'Completion requires a fresh independent terminal observation and success checks citing it. Stop the parent and await cleanup when asked. An unknown action must not be replayed.',
