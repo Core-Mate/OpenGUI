@@ -1100,7 +1100,7 @@ export function apply(ctx: Context, baseConfig: Config): void {
     validateTarget: async (serial, signal) => {
       const devices = parseDevices(String(await run(['devices', '-l'], signal)))
       if (!devices.some(device => device.serial === serial && device.state === 'device')) {
-        throw new Error('coremate-mobile: a phone locked to this task disconnected or lost USB authorization')
+        throw new Error('coremate-mobile: a device locked to this task disconnected or lost debugging authorization')
       }
     },
     pasteUnicode: (serial, text, signal) => textInput.paste(serial, text, signal),

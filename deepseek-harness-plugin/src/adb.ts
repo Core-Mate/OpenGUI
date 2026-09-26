@@ -3,8 +3,9 @@ import { access, chmod, stat } from 'node:fs/promises'
 import { constants } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
-import { ObservationId } from '../../packages/device-runtime/src/actions.ts'
-export { ObservationId }
+import { deviceConnection, deviceDisplayBase, ObservationId, type DeviceConnection } from '../../packages/device-runtime/src/actions.ts'
+export { ObservationId, deviceConnection, deviceDisplayBase }
+export type { DeviceConnection }
 
 /** One row returned by `adb devices -l`. */
 export interface AdbDevice {
@@ -13,6 +14,7 @@ export interface AdbDevice {
   model?: string
   product?: string
   device?: string
+  connection?: DeviceConnection
 }
 
 /** The logical Android display coordinate space. */
@@ -156,13 +158,14 @@ export function parseDevices(output: string): AdbDevice[] {
     const model = attributes.get('model')
     const product = attributes.get('product')
     const device = attributes.get('device')
-    return {
+    const row = {
       serial,
       state,
       ...(model === undefined ? {} : { model }),
       ...(product === undefined ? {} : { product }),
       ...(device === undefined ? {} : { device }),
     }
+    return { ...row, connection: deviceConnection(row) }
   }).filter(device => device.serial.length > 0)
 }
 
@@ -175,7 +178,7 @@ export function selectAuthorizedSerial(devices: readonly AdbDevice[]): string {
   const serial = devices.filter(device => device.state === 'device')
     .map(device => device.serial).sort((a, b) => a.localeCompare(b))[0]
   if (serial === undefined) {
-    throw new Error('coremate-mobile: no authorized Android device is connected; connect at least one phone and accept its USB debugging prompt')
+    throw new Error('coremate-mobile: no authorized Android device is connected; connect a USB phone or start an Android emulator and accept its debugging prompt')
   }
   return serial
 }

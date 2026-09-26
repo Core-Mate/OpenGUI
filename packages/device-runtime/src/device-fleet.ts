@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import type { AdbDevice } from './actions.ts'
+import { deviceConnection, deviceDisplayBase, type AdbDevice, type DeviceConnection } from './actions.ts'
 
 /** Host-private device identity paired with its browser-safe presentation. */
 export interface FleetDevice {
@@ -22,6 +22,7 @@ export interface FleetDeviceStatusView {
   readonly id: string
   readonly label: string
   readonly model?: string
+  readonly connection: DeviceConnection
   readonly state: string
   readonly connected: boolean
   readonly authorized: boolean
@@ -42,6 +43,10 @@ interface DeviceRecord {
 function displayModel(device: AdbDevice): string | undefined {
   const raw = device.model?.trim()
   return raw ? raw.replaceAll('_', ' ') : undefined
+}
+
+function connectionOf(device: AdbDevice): DeviceConnection {
+  return device.connection ?? deviceConnection(device)
 }
 
 /**
@@ -72,14 +77,14 @@ export class DeviceFleet {
 
     const modelCounts = new Map<string, number>()
     for (const device of authorized) {
-      const model = displayModel(device) ?? 'Android 手机'
+      const model = deviceDisplayBase(device, 'zh')
       modelCounts.set(model, (modelCounts.get(model) ?? 0) + 1)
     }
     const modelIndexes = new Map<string, number>()
     const views = authorized.map((device): FleetDeviceView => {
       const record = this.records.get(device.serial)!
       const model = displayModel(device)
-      const base = model ?? 'Android 手机'
+      const base = deviceDisplayBase(device, 'zh')
       const index = (modelIndexes.get(base) ?? 0) + 1
       modelIndexes.set(base, index)
       const label = (modelCounts.get(base) ?? 0) > 1 ? `${base} ${index}` : base
@@ -102,20 +107,21 @@ export class DeviceFleet {
     this.syncRecords(devices, true)
     const modelCounts = new Map<string, number>()
     for (const device of devices) {
-      const model = displayModel(device) ?? 'Android phone'
+      const model = deviceDisplayBase(device, 'en')
       modelCounts.set(model, (modelCounts.get(model) ?? 0) + 1)
     }
     const modelIndexes = new Map<string, number>()
     return devices.map((device): FleetDeviceStatusView => {
       const record = this.records.get(device.serial)!
       const model = displayModel(device)
-      const base = model ?? 'Android phone'
+      const base = deviceDisplayBase(device, 'en')
       const index = (modelIndexes.get(base) ?? 0) + 1
       modelIndexes.set(base, index)
       return {
         id: record.id,
         label: (modelCounts.get(base) ?? 0) > 1 ? `${base} ${index}` : base,
         ...(model === undefined ? {} : { model }),
+        connection: connectionOf(device),
         state: device.state,
         connected: true,
         authorized: device.state === 'device',
@@ -149,10 +155,10 @@ export class DeviceFleet {
   async selectedDevices(signal: AbortSignal): Promise<readonly FleetDevice[]> {
     const snapshot = await this.snapshot(signal)
     if (snapshot.devices.length === 0) {
-      throw new Error('opengui: no authorized Android device is connected; connect a phone and accept its USB debugging prompt')
+      throw new Error('opengui: no authorized Android device is connected; connect a USB phone or start an Android emulator and accept its debugging prompt')
     }
     if (snapshot.selectedDeviceIds.length === 0) {
-      throw new Error('opengui: multiple phones are connected; select at least one device with opengui_open_session')
+      throw new Error('opengui: multiple Android devices are connected; select at least one device with opengui_open_session')
     }
     return this.materialize(snapshot, snapshot.selectedDeviceIds)
   }

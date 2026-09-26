@@ -15,7 +15,7 @@ export async function acquireDeviceLease(serial: string, owner: string, root = d
   catch (error) {
     if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error
     // Never steal on a timer or PID heuristic: a native command may outlive its parent.
-    throw new Error('device_busy: another OpenGUI task owns this phone; stop its task first. After a crash, verify all phone processes have stopped before removing the stale lease.')
+    throw new Error('device_busy: another OpenGUI task owns this Android device; stop its task first. After a crash, verify all phone and emulator processes have stopped before removing the stale lease.')
   }
   try { await writeFile(join(path, 'owner.json'), JSON.stringify({ token, owner, pid: process.pid }), { mode: 0o600, flag: 'wx' }) }
   catch (error) { await rm(path, { recursive: true, force: true }); throw error }

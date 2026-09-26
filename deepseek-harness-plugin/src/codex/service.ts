@@ -11,6 +11,7 @@ import {
   parseDevices,
   runAdb,
 } from '../adb.ts'
+import type { DeviceConnection } from '../adb.ts'
 import type { FleetDeviceStatusView } from '../device-fleet.ts'
 import { DeviceFleet } from '../device-fleet.ts'
 import { AsyncSemaphore } from '../concurrency.ts'
@@ -28,6 +29,7 @@ export interface CodexDeviceInfo {
   readonly id: string
   readonly name: string
   readonly model?: string
+  readonly connection?: DeviceConnection
   readonly state: string
   readonly connected: boolean
   readonly authorized: boolean
@@ -103,7 +105,7 @@ export class LocalAdbPhoneHost implements CodexPhoneHost {
       validateTarget: async (serial, signal) => {
         const devices = parseDevices(String(await run(['devices', '-l'], signal)))
         if (!devices.some(device => device.serial === serial && device.state === 'device')) {
-          throw new Error('opengui: a phone frozen to this session disconnected or lost USB authorization')
+          throw new Error('opengui: a device frozen to this session disconnected or lost debugging authorization')
         }
       },
       pasteUnicode: (serial, text, signal) => this.textInput.paste(serial, text, signal),
@@ -121,10 +123,10 @@ export class LocalAdbPhoneHost implements CodexPhoneHost {
     let ids = [...new Set(deviceIds ?? [])]
     if (ids.length === 0) {
       if (snapshot.devices.length === 0) {
-        throw new Error('opengui: no authorized Android device is connected; accept the USB debugging prompt first')
+        throw new Error('opengui: no authorized Android device is connected; connect a USB phone or start an Android emulator and accept its debugging prompt')
       }
       if (snapshot.devices.length > 1) {
-        throw new Error('opengui: multiple authorized phones are connected; pass one to four deviceIds from opengui_list_devices')
+        throw new Error('opengui: multiple authorized Android devices are connected; pass one to four deviceIds from opengui_list_devices')
       }
       ids = [snapshot.devices[0]!.id]
     }
@@ -183,6 +185,7 @@ export class LocalAdbPhoneHost implements CodexPhoneHost {
       id: device.id,
       name: device.label,
       ...(device.model === undefined ? {} : { model: device.model }),
+      connection: device.connection,
       state: device.state,
       connected: device.connected,
       authorized: device.authorized,

@@ -10,6 +10,9 @@ export function ObservationId(value: string): ObservationId {
   return value as ObservationId
 }
 
+/** How an authorized adb target is attached. Emulators are first-class devices. */
+export type DeviceConnection = 'emulator' | 'usb' | 'tcp'
+
 /** One row returned by `adb devices -l`. */
 export interface AdbDevice {
   serial: string
@@ -17,6 +20,32 @@ export interface AdbDevice {
   model?: string
   product?: string
   device?: string
+  connection?: DeviceConnection
+}
+
+/**
+ * Classify an adb row. `emulator-*` and emulator product names are emulators;
+ * a host:port serial is wireless or forwarded TCP; everything else is USB.
+ * @param device Parsed or partial adb identity.
+ * @returns The attachment kind used for labels, leases, and execution.
+ */
+export function deviceConnection(device: Pick<AdbDevice, 'serial' | 'model' | 'product' | 'device'>): DeviceConnection {
+  if (device.serial.startsWith('emulator-')) return 'emulator'
+  const hint = `${device.model ?? ''} ${device.product ?? ''} ${device.device ?? ''}`.toLowerCase()
+  if (hint.includes('emulator') || hint.includes('gphone')) return 'emulator'
+  if (device.serial.includes(':')) return 'tcp'
+  return 'usb'
+}
+
+/** User-facing name for one row, including Android emulators that have no retail model. */
+export function deviceDisplayBase(device: AdbDevice, language: 'zh' | 'en'): string {
+  const raw = device.model?.trim()
+  const model = raw ? raw.replaceAll('_', ' ') : undefined
+  if ((device.connection ?? deviceConnection(device)) === 'emulator') {
+    if (model === undefined) return language === 'zh' ? 'Android 模拟器' : 'Android emulator'
+    return language === 'zh' ? `模拟器 ${model}` : `Emulator ${model}`
+  }
+  return model ?? (language === 'zh' ? 'Android 手机' : 'Android phone')
 }
 
 /** The logical Android display coordinate space. */
@@ -160,13 +189,14 @@ export function parseDevices(output: string): AdbDevice[] {
     const model = attributes.get('model')
     const product = attributes.get('product')
     const device = attributes.get('device')
-    return {
+    const row = {
       serial,
       state,
       ...(model === undefined ? {} : { model }),
       ...(product === undefined ? {} : { product }),
       ...(device === undefined ? {} : { device }),
     }
+    return { ...row, connection: deviceConnection(row) }
   }).filter(device => device.serial.length > 0)
 }
 
@@ -179,7 +209,7 @@ export function selectAuthorizedSerial(devices: readonly AdbDevice[]): string {
   const serial = devices.filter(device => device.state === 'device')
     .map(device => device.serial).sort((a, b) => a.localeCompare(b))[0]
   if (serial === undefined) {
-    throw new Error('opengui: no authorized Android device is connected; connect at least one phone and accept its USB debugging prompt')
+    throw new Error('opengui: no authorized Android device is connected; connect a USB phone or start an Android emulator and accept its debugging prompt')
   }
   return serial
 }

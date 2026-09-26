@@ -101,7 +101,7 @@ export class PhoneRuntime {
       const profile = frozenModel ?? (this.hostDriven ? this.defaultProfile : input.modelProfileId ? this.profiles.get(input.modelProfileId) : this.defaultProfile)
       if (!profile) throw new Error('Configure and test a visual model in the workbench first')
       const devices = await this.options.hardware.resolveDevices(input.deviceId ? [input.deviceId] : undefined, AbortSignal.timeout(15_000))
-      if (devices.length !== 1) throw new Error('Choose exactly one authorized phone')
+      if (devices.length !== 1) throw new Error('Choose exactly one authorized phone or Android emulator')
       const device = devices[0]!
       const now = new Date().toISOString()
       const task: Task = { id: randomUUID(), owner, ...(input.parentId ? { parentId: input.parentId } : {}), requestId: input.requestId, goal: input.goal, successCriteria: input.successCriteria, deviceId: device.id, deviceName: device.name, modelProfile: structuredClone(profile), phase: 'queued', createdAt: now, updatedAt: now, sequence: 0, steps: 0, summary: '等待手机可用', evidence: [], checks: [] }

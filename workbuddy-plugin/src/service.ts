@@ -12,6 +12,7 @@ import {
   parseDevices,
   runAdb,
 } from './adb.ts'
+import type { DeviceConnection } from './adb.ts'
 import type { FleetDeviceStatusView } from './device-fleet.ts'
 import { DeviceFleet } from './device-fleet.ts'
 import { AsyncSemaphore } from './concurrency.ts'
@@ -31,6 +32,7 @@ export interface WorkBuddyDeviceInfo {
   readonly id: string
   readonly name: string
   readonly model?: string
+  readonly connection?: DeviceConnection
   readonly state: string
   readonly connected: boolean
   readonly authorized: boolean
@@ -122,7 +124,7 @@ export class LocalAdbPhoneHost implements WorkBuddyPhoneHost {
         const devices = parseDevices(String(await run(['devices', '-l'], signal)))
         if (!devices.some(device => device.serial === serial && device.state === 'device')) {
           this.onDeviceUnavailable?.(serial)
-          throw new Error('opengui: a phone frozen to this session disconnected or lost USB authorization')
+          throw new Error('opengui: a device frozen to this session disconnected or lost debugging authorization')
         }
       },
       pasteUnicode: (serial, text, signal) => this.textInput.paste(serial, text, signal),
@@ -150,11 +152,11 @@ export class LocalAdbPhoneHost implements WorkBuddyPhoneHost {
     let ids = [...new Set(deviceIds ?? [])]
     if (ids.length === 0) {
       if (snapshot.length === 0) {
-        if (discovered.some(device => device.connected && !device.authorized)) throw new OpenGuiError('device_unauthorized', 'opengui: accept the USB debugging prompt on the phone')
+        if (discovered.some(device => device.connected && !device.authorized)) throw new OpenGuiError('device_unauthorized', 'opengui: accept the debugging prompt on the phone or Android emulator')
         throw new OpenGuiError('device_offline', 'opengui: no Android device is connected', 'not_executed', 'wait')
       }
       if (snapshot.length > 1) {
-        throw new Error('opengui: multiple authorized phones are connected; pass one to four deviceIds from opengui_list_devices')
+        throw new Error('opengui: multiple authorized Android devices are connected; pass one to four deviceIds from opengui_list_devices')
       }
       ids = [snapshot[0]!.id]
     }
@@ -162,7 +164,7 @@ export class LocalAdbPhoneHost implements WorkBuddyPhoneHost {
     return ids.map((id) => {
       const device = snapshot.find(item => item.id === id)
       if (!device) {
-        if (discovered.some(item => item.id === id && item.connected && !item.authorized)) throw new OpenGuiError('device_unauthorized', 'opengui: selected phone requires USB authorization')
+        if (discovered.some(item => item.id === id && item.connected && !item.authorized)) throw new OpenGuiError('device_unauthorized', 'opengui: selected device requires debugging authorization')
         throw new OpenGuiError('device_offline', 'opengui: selected phone is offline', 'not_executed', 'wait')
       }
       return device
@@ -280,6 +282,7 @@ export class LocalAdbPhoneHost implements WorkBuddyPhoneHost {
       id: device.id,
       name: device.label,
       ...(device.model === undefined ? {} : { model: device.model }),
+      connection: device.connection,
       state: device.state,
       connected: device.connected,
       authorized: device.authorized,

@@ -1,3 +1,4 @@
+import type { DeviceConnection } from '../../device-runtime/src/actions.ts'
 import type { RawPhoneObservation } from '../../device-runtime/src/phone-controller.ts'
 import type { ViewerStreams } from '../../device-runtime/src/viewer.ts'
 
@@ -11,7 +12,7 @@ export interface ModelProfile {
   model: string
   credentialRef: string
 }
-export interface Device { id: string; name: string; authorized: boolean; connected: boolean; state: string }
+export interface Device { id: string; name: string; authorized: boolean; connected: boolean; state: string; connection?: DeviceConnection }
 export interface Hardware {
   readonly videoStreams?: ViewerStreams
   listDevices(signal: AbortSignal): Promise<readonly Device[]>

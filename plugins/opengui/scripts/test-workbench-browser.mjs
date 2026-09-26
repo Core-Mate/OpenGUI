@@ -297,7 +297,7 @@ try {
   await browser('wait','--text','还没有连接手机')
   await browser('screenshot',new URL('../.artifacts/workbench/empty-narrow.png',import.meta.url).pathname,'--full')
   fixturePhones=[{...device,authorized:false,state:'unauthorized'}]
-  await browser('click','#refresh');await browser('snapshot','-i');await browser('wait','--text','请在实体手机上允许 USB 调试')
+  await browser('click','#refresh');await browser('snapshot','-i');await browser('wait','--text','请允许 USB 调试，或在 Android 模拟器里允许调试。')
   await browser('screenshot',new URL('../.artifacts/workbench/unauthorized-narrow.png',import.meta.url).pathname,'--full')
   for(const name of ['devices','tasks','settings','guide']){
     await browser('open',url+'#'+name);await browser('snapshot','-i')

@@ -52,6 +52,16 @@ describe('coremate-mobile ADB policy', () => {
     expect(() => selectAuthorizedSerial(devices)).toThrow('no authorized Android device')
   })
 
+  it('treats an adb emulator serial as an authorized Android device', () => {
+    const devices = parseDevices('List of devices attached\nemulator-5554 device product:sdk_gphone64_arm64 model:sdk_gphone64_arm64 device:emulator64_arm64\n127.0.0.1:5555 device\n')
+    expect(devices.map(device => [device.serial, device.connection])).toEqual([
+      ['emulator-5554', 'emulator'],
+      ['127.0.0.1:5555', 'tcp'],
+    ])
+    expect(selectAuthorizedSerial(devices)).toBe('127.0.0.1:5555')
+    expect(selectAuthorizedSerial(devices.filter(device => device.connection === 'emulator'))).toBe('emulator-5554')
+  })
+
   it('uses the logical override display size when Android reports one', () => {
     expect(parseScreenSize('Physical size: 1440x3120\nOverride size: 1080x2340\n'))
       .toEqual({ width: 1080, height: 2340 })
