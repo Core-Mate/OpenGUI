@@ -17,7 +17,8 @@
     "check": "pnpm test && pnpm build && pnpm validate",
     "stage": "node scripts/stage.mjs",
     "package": "node scripts/package.mjs",
-    "test:workbench": "tsdown --config tsdown.workbench.config.ts && node scripts/test-workbench-browser.mjs"
+    "test:workbench": "tsdown --config tsdown.workbench.config.ts && node scripts/test-workbench-browser.mjs",
+    "dev:task-service": "node scripts/dev-task-service.mjs"
   },
   "dependencies": {
     "@earendil-works/pi-agent-core": "0.85.1",

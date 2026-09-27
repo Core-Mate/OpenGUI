@@ -15,6 +15,8 @@ After first display authorization, video failure or page closure does not cancel
 
 ## Installation and migration
 
+For source development, run `npm run dev:task-service` from `plugins/opengui`. It builds and runs an isolated foreground service, prints the full workbench URL, and rebuilds/restarts after plugin or shared package source changes. Press Ctrl-C to stop. Restarts interrupt development tasks and invalidate old URLs. Use the full printed URL; the bare port returns `Forbidden`. This loop does not use the installed launchd service.
+
 Use the supplied installer and matching archive with adjacent SHA-256 sidecars:
 
 ```sh
