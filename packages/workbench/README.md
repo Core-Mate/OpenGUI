@@ -15,8 +15,8 @@ phone or installed-host acceptance.
 
 - Home: one task draft, automatic branch planning and phone assignment, device summary,
   task examples that only populate the draft, and recent tasks.
-- Devices: authorization and connection states, opt-in real live previews, enlarged
-  viewing, and a shortcut to create a task on the selected phone.
+- Devices: authorization and connection states, automatic real live previews, and
+  device detail links.
 - Tasks: all/active/ended filters, current state and origin, durable detail links.
 - Task detail: visible video, sticky stop control, instructions, action journal,
   success criteria, real screenshot evidence, export, and reuse as a new draft.
