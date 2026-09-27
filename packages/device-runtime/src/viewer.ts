@@ -17,7 +17,7 @@ interface Connection {
 }
 interface Viewer {
   id: string; token: string; owner: string; devices: readonly ViewerDevice[]
-  phase: Phase; deadline: number; established: boolean; ended: boolean
+  phase: Phase; openedAt: number; deadline: number; established: boolean; ended: boolean
   firstFrameMs?: number; error?: string; connections: Map<string, Connection>; pages: Set<ScrcpyStreamSink>; lastPage: number
   preparation?: Promise<void>; readyDevices: Set<string>
   nativeOrigins?: Set<string>
@@ -29,7 +29,7 @@ export class ViewerServer {
   private starting: Promise<void> | undefined
   private origin = ''
   private readonly embedOrigins = new Set<string>()
-  /** Only the host's own authenticated local workbench may embed this viewer. */
+  /** The local workbench may embed this viewer. */
   allowEmbedding(origin: string): void {
     const url = new URL(origin)
     if (url.protocol !== 'http:' || !['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname) || url.origin !== origin) throw new Error('Invalid workbench origin')
@@ -69,13 +69,13 @@ export class ViewerServer {
     if (viewer && !this.same(viewer, devices)) throw new Error('device_frozen')
     if (!viewer) {
       if (this.viewers.size >= 100) throw new Error('viewer_capacity')
-      viewer = { id: randomUUID(), token: randomBytes(32).toString('base64url'), owner, devices: [...devices], phase: 'preparing', deadline: 0, established: false, ended: false, connections: new Map(), pages: new Set(), readyDevices: new Set(), lastPage: this.now() }
+      viewer = { id: randomUUID(), token: randomBytes(32).toString('base64url'), owner, devices: [...devices], phase: 'preparing', openedAt: this.now(), deadline: 0, established: false, ended: false, connections: new Map(), pages: new Set(), readyDevices: new Set(), lastPage: this.now() }
       this.viewers.set(viewer.id, viewer)
       const current = viewer
       viewer.preparation = (async () => { try {
         await this.streams.prepare(signal)
         await this.start()
-        current.deadline = this.now() + 30_000
+        current.deadline = owner.startsWith('workbench-preview:') ? 0 : this.now() + 30_000
         current.phase = 'waiting_for_frame'
       } catch (error) {
         current.phase = 'error'
@@ -195,7 +195,7 @@ export class ViewerServer {
             if (!v.error) {
               v.readyDevices.add(c.deviceId)
               if (v.devices.every(d => [...v.connections.values()].some(x => x.deviceId === d.id && x.media && this.now() - x.painted < 2000))) {
-                v.firstFrameMs ??= this.now() - (v.deadline - 30_000)
+                v.firstFrameMs ??= this.now() - v.openedAt
                 v.established = true; v.phase = 'ready'
               }
             }

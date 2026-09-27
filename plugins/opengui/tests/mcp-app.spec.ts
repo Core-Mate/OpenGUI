@@ -18,16 +18,16 @@ function bootstrap() {
 describe('native resource bootstrap', () => {
   it('waits for initialization and an owning tool result before navigating once', () => {
     const p = bootstrap()
-    const result = { jsonrpc: '2.0', method: 'ui/notifications/tool-result', params: { structuredContent: { url: 'http://127.0.0.1:1234/root/session/owner/' } } }
+    const result = { jsonrpc: '2.0', method: 'ui/notifications/tool-result', params: { structuredContent: { url: 'http://127.0.0.1:1234/?owner=conversation' } } }
     p.send(result, {})
     p.send({ jsonrpc: '2.0', id: 'opengui-init-test', result: {} })
     expect(p.replace).not.toHaveBeenCalled()
     p.send(result)
     p.send(result)
-    expect(p.replace).toHaveBeenCalledExactlyOnceWith('http://127.0.0.1:1234/root/session/owner/?mcpApp=codex&hostOrigin=http%3A%2F%2F127.0.0.1%3A5678')
+    expect(p.replace).toHaveBeenCalledExactlyOnceWith('http://127.0.0.1:1234/?owner=conversation&mcpApp=codex&hostOrigin=http%3A%2F%2F127.0.0.1%3A5678')
   })
   it('rejects external, credential-bearing and unbound destinations', () => {
-    for (const url of ['https://example.com/', 'http://user:password@127.0.0.1:1234/root/session/owner/', 'http://127.0.0.1:1234/root/']) {
+    for (const url of ['https://example.com/', 'http://user:password@127.0.0.1:1234/?owner=conversation', 'http://127.0.0.1:1234/']) {
       const p = bootstrap()
       p.send({ jsonrpc: '2.0', id: 'opengui-init-test', result: {} })
       p.send({ jsonrpc: '2.0', method: 'ui/notifications/tool-result', params: { structuredContent: { url } } })

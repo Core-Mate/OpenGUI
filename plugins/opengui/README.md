@@ -15,7 +15,7 @@ After first display authorization, video failure or page closure does not cancel
 
 ## Installation and migration
 
-For source development, run `npm run dev:task-service` from `plugins/opengui`. It builds and runs an isolated foreground service, prints the full workbench URL, and rebuilds/restarts after plugin or shared package source changes. Press Ctrl-C to stop. Restarts interrupt development tasks and invalidate old URLs. Use the full printed URL; the bare port returns `Forbidden`. This loop does not use the installed launchd service.
+For source development, run `npm run dev:task-service` from `plugins/opengui`. It builds and runs an isolated foreground service, prints the workbench address, and rebuilds/restarts after plugin or shared package source changes. Open the printed address directly in a browser. Press Ctrl-C to stop. Restarts interrupt development tasks and may change the port. This loop does not use the installed launchd service.
 
 Use the supplied installer and matching archive with adjacent SHA-256 sidecars:
 
@@ -29,9 +29,9 @@ The standalone marketplace remains `opengui-standalone`; legacy plugin sources a
 
 ## Runtime and privacy
 
-Each plugin independently packages scrcpy 4.1 transport and browser H.264 decoding: maximum dimension 960, 30 fps, 2 Mbps, no audio and no video control channel. Up to four per-device sources are shared within this host. Clients use bounded queues and recover on configuration/key frames. There is no shared background service or dependency on DSH.
+Each plugin independently packages scrcpy 4.1 transport and browser H.264 decoding: maximum dimension 960, 30 fps, 2 Mbps, no audio and no video control channel. Up to four per-device sources are shared within this host. Clients use bounded queues and recover on configuration/key frames. The task workbench uses a shared local service; it does not depend on DSH.
 
-The local HTTP/WebSocket server checks loopback Host, Origin and private viewer credentials. Do not share Viewer URLs. Phone screenshots sent to the model follow host data policies; video is not sent frame by frame. Session locks and observation authority are never restored after restart. See VIDEO-NOTICE.md and LICENSE for provenance.
+Open the local workbench address directly in a browser. The video transport is read-only. Phone screenshots sent to the model follow host data policies; video is not sent frame by frame. Session locks and observation authority are never restored after restart. See VIDEO-NOTICE.md and LICENSE for provenance.
 
 ## Verification
 
@@ -48,7 +48,7 @@ The browser test additionally needs development-only `agent-browser` and `ffmpeg
 ### Shared source, independent installation
 
 Device execution is built from `packages/device-runtime` in this repository.
-Install only the host package; there is no separately installed shared service.
+Install only the host package; the current installers do not yet install the shared task service.
 Host state, task identity, configuration and rollback remain independent. Device
 control uses a minimal machine-wide device lease: another host's occupied phone
 is rejected without preemption. The packaged `lib/runtime-manifest.json` records build provenance.

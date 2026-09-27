@@ -25,12 +25,12 @@ export const nativeBridgeScript = String.raw`
   if(typeof value!=='string'||! /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(value))return false;
   const result=await request('tools/call',{name:'opengui_open_workbench',arguments:{}});
   if(result?.isError)return false;
-  try{const url=new URL(result?.structuredContent?.url);return url.origin===location.origin&&url.pathname===location.pathname&&!url.search&&!url.hash}catch{return false}
+  try{const url=new URL(result?.structuredContent?.url);return url.origin===location.origin&&url.pathname===location.pathname&&url.searchParams.get('owner')===new URLSearchParams(location.search).get('owner')&&!url.hash}catch{return false}
  }
  async function connect(){
   const initialized=await request('ui/initialize',{protocolVersion:'2026-01-26',appInfo:{name:'OpenGUI',version:'1'},appCapabilities:{}});
   window.parent.postMessage({jsonrpc:'2.0',method:'ui/notifications/initialized'},'*');
-  const response=await fetch(location.pathname+'state');if(!response.ok)throw Error('工作台状态不可用');const state=await response.json();
+  const response=await fetch(location.pathname+'state'+location.search);if(!response.ok)throw Error('工作台状态不可用');const state=await response.json();
   if(!await identityMatches(state.workbenchOwner))throw Error('工作台与宿主聊天不匹配，请从原聊天重新打开。');
   if(!initialized?.hostCapabilities?.message)throw Error('当前宿主没有开放工作台消息入口。');
   owner=state.workbenchOwner;

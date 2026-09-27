@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process'
 import { watch } from 'node:fs'
-import { lstat, mkdir, readFile } from 'node:fs/promises'
+import { lstat, mkdir } from 'node:fs/promises'
 import { createConnection } from 'node:net'
 import { dirname, isAbsolute, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -10,7 +10,6 @@ const repository = resolve(host, '../..')
 const root = process.env.OPENGUI_TASK_SERVICE_DEV_ROOT || join('/tmp', `opengui-task-dev-${process.getuid()}`)
 const entry = join(host, 'lib/task-service.js')
 const socketPath = join(root, 'service.sock')
-const tokenPath = join(root, 'service.token')
 const sources = [
   join(host, 'src'),
   join(repository, 'packages/device-runtime/src'),
@@ -37,7 +36,6 @@ let currentBuild
 const watchers = []
 
 async function request(name) {
-  const token = (await readFile(tokenPath, 'utf8')).trim()
   return new Promise((resolve, reject) => {
     const socket = createConnection(socketPath)
     let body = ''
@@ -45,7 +43,7 @@ async function request(name) {
     socket.setTimeout(2000, () => socket.destroy(new Error('service request timed out')))
     socket.once('error', reject)
     socket.once('connect', () => socket.write(JSON.stringify({
-      protocol: 1, token, host: 'codex', name, args: {}, owner: 'dev-workbench',
+      protocol: 2, host: 'codex', name, args: {}, owner: 'dev-workbench',
     }) + '\n'))
     socket.on('data', chunk => {
       body += chunk
@@ -91,7 +89,7 @@ async function startService() {
   while (!stopped && Date.now() < deadline) {
     try {
       const opened = await request('opengui_open_workbench')
-      url = opened.url
+      url = new URL(opened.url).origin + '/'
       break
     } catch {
       if (service.exitCode !== null) break

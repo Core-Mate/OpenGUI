@@ -14,7 +14,10 @@ const exec = promisify(execFile), root = await mkdtemp(join(tmpdir(), 'opengui-w
 const session = 'workbench-' + randomUUID(), timers = new Set()
 let embeddedBrowser, testPage, testFrame
 const browser = async (...args) => {
-  if (!testPage) return (await exec('agent-browser', ['--session', session, ...args], { timeout: 30000 })).stdout
+  if (!testPage) {
+    if (args[0] === 'click') await exec('agent-browser', ['--session', session, 'eval', `document.querySelector(${JSON.stringify(args[1])})?.scrollIntoView({block:"center"})`], { timeout: 30000 })
+    return (await exec('agent-browser', ['--session', session, ...args], { timeout: 30000 })).stdout
+  }
   // This fixture owns its headless browser. Use a real Frame for iframe waits;
   // agent-browser's wait/eval commands address the top-level page in this version.
   const [command, value, extra] = args
@@ -68,12 +71,14 @@ try {
     runtime.profiles.clear()
     await browser('open',url);await browser('snapshot','-i')
     await browser('wait','--fn','document.querySelector("#deviceSummary").textContent.includes("1 台就绪")')
+    await browser('wait','--fn','!!document.querySelector("#homeDevices iframe")')
+    assert.match(await browser('eval','document.querySelector("#homeDevices").textContent.includes("查看画面")'),/false/)
     assert.match(await browser('eval','document.querySelector("#submit").textContent'),/开始任务/)
     await browser('open',url+'#settings');await browser('snapshot','-i')
     await browser('wait','--fn','document.querySelector("#byokSettings").hidden&&!document.querySelector("#hostModeNotice").hidden')
     await browser('set','viewport','375','844')
     await browser('screenshot',new URL('../.artifacts/workbench/host-settings-narrow.png',import.meta.url).pathname,'--full')
-    const denied=await fetch(url+'model',{method:'POST',headers:{Origin:new URL(url).origin,'Content-Type':'application/json'},body:JSON.stringify({})});assert.equal(denied.status,400)
+    const denied=await fetch(new URL('model'+new URL(url).search,url),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});assert.equal(denied.status,400)
     if(embedded) {
       embedServer=createServer((_req,res)=>{res.setHeader('Content-Type','text/html');res.end(`<iframe id="workbench" src="${url}#home" style="width:100%;height:800px;border:0"></iframe><script>window.accepted=[];window.continued=[];window.routes=[];window.addEventListener('message',e=>{if(e.origin===${JSON.stringify(new URL(url).origin)}&&e.source===document.querySelector('iframe').contentWindow&&e.data.type==='opengui-task-accepted')accepted.push(e.data.taskId);if(e.origin===${JSON.stringify(new URL(url).origin)}&&e.source===document.querySelector('iframe').contentWindow&&e.data.type==='opengui-task-continued')continued.push(e.data);if(e.origin===${JSON.stringify(new URL(url).origin)}&&e.source===document.querySelector('iframe').contentWindow&&e.data.type==='opengui-workbench-route')routes.push(e.data.route)})</script>`)})
       await new Promise(resolve=>embedServer.listen(0,'127.0.0.1',resolve))
@@ -192,6 +197,8 @@ try {
   } else {
   await browser('open',url);await browser('snapshot','-i')
   await browser('wait','--fn','document.querySelector("#deviceSummary").textContent.includes("1 台就绪")')
+  await browser('wait','--fn','!!document.querySelector("#homeDevices iframe")')
+  assert.match(await browser('eval','document.querySelector("#homeDevices").textContent.includes("查看画面")'),/false/)
   await browser('screenshot',new URL('../.artifacts/workbench/home-desktop.png',import.meta.url).pathname,'--full')
   assert.match(await browser('eval','document.querySelectorAll("#taskForm textarea").length===1&&!document.querySelector("#profile")&&!document.querySelector("#device")'),/true/)
   await browser('fill','#goal','切换页面后保留的草稿')
@@ -229,14 +236,14 @@ try {
   await browser('click','#reuse');await browser('snapshot','-i')
   assert.match(await browser('eval','document.querySelector("#goal").value==="显示测试页面"'),/true/)
   assert.equal(runtime.list().length,1)
-  await browser('click','#historyToggle');await browser('snapshot','-i');await browser('click','#new');await browser('snapshot','-i');await browser('fill','#goal','等待停止');await browser('scrollintoview','#submit');await browser('click','#submit');await browser('snapshot','-i');await browser('wait','--text','正在执行')
+  await browser('click','#historyToggle');await browser('snapshot','-i');await browser('eval','document.querySelector("#new").scrollIntoView({block:"center"})');await browser('click','#new');await browser('wait','--fn','!document.querySelector("#homePage").hidden');await browser('snapshot','-i');await browser('fill','#goal','等待停止');await browser('wait','--fn','document.querySelector("#goal").value==="等待停止"');await browser('scrollintoview','#submit');await browser('click','#submit');await browser('snapshot','-i');await browser('wait','--text','正在执行')
   await browser('scrollintoview','#stop');await browser('wait','--fn','!document.querySelector("#stop").disabled');await browser('click','#stop');await browser('snapshot','-i');await browser('wait','--text','已停止')
   assert.equal(runtime.list()[0].phase,'cancelled')
   await browser('click','#historyToggle');await browser('snapshot','-i')
   assert.match(await browser('eval','document.querySelectorAll("#history .task-row").length'),/2/)
-  await browser('click','[data-filter="active"]');await browser('snapshot','-i')
+  await browser('scrollintoview','[data-filter="active"]');await browser('click','[data-filter="active"]');await browser('snapshot','-i')
   assert.match(await browser('eval','document.querySelectorAll("#history .task-row").length'),/0/)
-  await browser('click','[data-filter="done"]');await browser('snapshot','-i')
+  await browser('scrollintoview','[data-filter="done"]');await browser('click','[data-filter="done"]');await browser('snapshot','-i')
   assert.match(await browser('eval','document.querySelectorAll("#history .task-row").length'),/2/)
   await browser('click','#settingsToggle');await browser('snapshot','-i')
   await browser('fill','#endpoint','http://127.0.0.1:1234/v1');await browser('fill','#model','fixture-visual');await browser('fill','#secret','fixture-secret-not-a-real-key')
@@ -294,10 +301,12 @@ try {
   assert.equal(runtime.goals.get(loginGoal.id).phase,'completed')
   runtime.profiles.clear();fixturePhones=[]
   await browser('open',url+'#home');await browser('snapshot','-i');await browser('click','#refresh')
-  await browser('wait','--text','还没有连接手机')
+  await browser('wait','--text','暂无设备')
+  assert.match(await browser('eval','document.querySelectorAll("#homeDevices iframe").length'),/0/)
   await browser('screenshot',new URL('../.artifacts/workbench/empty-narrow.png',import.meta.url).pathname,'--full')
   fixturePhones=[{...device,authorized:false,state:'unauthorized'}]
-  await browser('click','#refresh');await browser('snapshot','-i');await browser('wait','--text','请允许 USB 调试，或在 Android 模拟器里允许调试。')
+  await browser('click','#refresh');await browser('snapshot','-i');await browser('wait','--text','待授权')
+  assert.match(await browser('eval','document.querySelectorAll("#homeDevices iframe").length'),/0/)
   await browser('screenshot',new URL('../.artifacts/workbench/unauthorized-narrow.png',import.meta.url).pathname,'--full')
   for(const name of ['devices','tasks','settings','guide']){
     await browser('open',url+'#'+name);await browser('snapshot','-i')

@@ -109,7 +109,7 @@ describe('durable autonomous phone tasks', () => {
     const task = await runtime.submit(requestData('confirm'), 'owner'); await settled(runtime, task.id)
     expect(confirm).toHaveBeenCalledTimes(1); expect(hardware.act).not.toHaveBeenCalled()
   })
-  it('binds web submissions to the opening conversation across later workbench opens', async () => {
+  it('opens the workbench at the root and carries host context for host submissions', async () => {
     const executor = new HostExecutor()
     const { runtime, hardware } = await setup(executor)
     const host = new TaskHost(() => runtime)
@@ -117,9 +117,11 @@ describe('durable autonomous phone tasks', () => {
     const first = await host.call('opengui_open_workbench', {}, 'host-a') as { url: string }
     const second = await host.call('opengui_open_workbench', {}, 'host-b') as { url: string }
     expect(first.url).not.toBe(second.url)
+    expect(new URL(first.url).pathname).toBe('/')
+    expect((await fetch(new URL(first.url).origin + '/')).status).toBe(200)
     expect(await host.call('opengui_open_workbench', {}, 'host-a')).toEqual(first)
-    const post = async (url: string, requestId: string) => fetch(url + 'run', {
-      method: 'POST', headers: { origin: new URL(url).origin, 'content-type': 'application/json' },
+    const post = async (url: string, requestId: string) => fetch(new URL('run' + new URL(url).search, url), {
+      method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ requestId, goal: 'Inspect settings', owner: 'host-b' }),
     })
     const response = await post(first.url, 'bound-web-a')
@@ -131,67 +133,47 @@ describe('durable autonomous phone tasks', () => {
     expect(executor.next('host-b')).toBeUndefined()
     const repeated = await post(first.url, 'bound-web-a')
     expect((await repeated.json() as { id: string }).id).toBe(task.id)
-    const invalid = first.url.replace(/session\/[^/]+\//, 'session/invalid/')
-    expect((await post(invalid, 'invalid-session')).status).toBe(403)
+    expect((await post(new URL(first.url).origin + '/', 'web-root')).status).toBe(200)
     expect(hardware.act).not.toHaveBeenCalled()
     await runtime.goals.manage(task.id, 'stop')
   })
-  it.each([['workbuddy', '1'], ['codex', 'codex']] as const)('allows only owner-bound %s native document navigation across origins', async (hostName, flag) => {
+  it.each([['workbuddy', '1'], ['codex', 'codex']] as const)('serves %s native and browser entrypoints at the root', async (hostName, flag) => {
     const { runtime, hardware } = await setup(new HostExecutor())
     runtime.options.host = hostName
     const host = new TaskHost(() => runtime)
     cleanups.push(() => host.close())
     const { url } = await host.call('opengui_open_workbench', {}, 'host-a') as { url: string }
     const headers = { 'sec-fetch-site': 'cross-site', 'sec-fetch-dest': 'document' }
-    expect((await fetch(url + ('?mcpApp=' + flag), { headers })).status).toBe(200)
-    expect((await fetch(url, { headers })).status).toBe(403)
-    expect((await fetch(url + 'state', { headers })).status).toBe(403)
-    expect((await fetch(url + ('?mcpApp=' + flag), { headers: { ...headers, 'sec-fetch-dest': 'iframe' } })).status).toBe(403)
-    const nativeFrame = await fetch(url + ('?mcpApp=' + flag + '&hostOrigin=') + encodeURIComponent('http://127.0.0.1:5678'), { headers: { ...headers, 'sec-fetch-dest': 'iframe' } })
+    const entry = new URL(url); entry.searchParams.set('mcpApp', flag)
+    expect((await fetch(entry, { headers })).status).toBe(200)
+    expect((await fetch(url, { headers })).status).toBe(200)
+    expect((await fetch(new URL('state' + entry.search, entry), { headers })).status).toBe(200)
+    const frameEntry = new URL(entry); frameEntry.searchParams.set('hostOrigin', 'http://127.0.0.1:5678')
+    const nativeFrame = await fetch(frameEntry, { headers: { ...headers, 'sec-fetch-dest': 'iframe' } })
     expect(nativeFrame.status).toBe(200)
     expect(nativeFrame.headers.get('content-security-policy')).toContain('frame-ancestors file: http://127.0.0.1:5678;')
     expect((await fetch(url)).headers.get('content-security-policy')).toContain("frame-ancestors 'none'")
     for (const parent of ['https://example.com', 'http://127.0.0.1:5678/path', 'http://user@127.0.0.1:5678']) {
-      expect((await fetch(url + ('?mcpApp=' + flag + '&hostOrigin=') + encodeURIComponent(parent), { headers: { ...headers, 'sec-fetch-dest': 'iframe' } })).status).toBe(403)
+      const invalid = new URL(frameEntry); invalid.searchParams.set('hostOrigin', parent)
+      expect((await fetch(invalid, { headers: { ...headers, 'sec-fetch-dest': 'iframe' } })).headers.get('content-security-policy')).toContain("frame-ancestors 'none'")
     }
-    expect((await fetch(url.replace(/session\/[^/]+\//, 'session/invalid/') + ('?mcpApp=' + flag), { headers })).status).toBe(403)
-    expect((await fetch(url + 'run', { method: 'POST', headers: { ...headers, origin: 'http://other.example', 'content-type': 'application/json' }, body: '{}' })).status).toBe(403)
     runtime.options.host = hostName === 'codex' ? 'workbuddy' : 'codex'
-    expect((await fetch(url + ('?mcpApp=' + flag), { headers })).status).toBe(403)
+    expect((await fetch(entry, { headers })).status).toBe(200)
     expect(hardware.act).not.toHaveBeenCalled()
   })
-  it('requires an owner-bound token for native POST requests without Origin', async () => {
+  it('accepts JSON POSTs without a browser credential', async () => {
     const { runtime, hardware } = await setup(new HostExecutor())
     runtime.options.host = 'workbuddy'
     const host = new TaskHost(() => runtime)
     cleanups.push(() => host.close())
     const { url } = await host.call('opengui_open_workbench', {}, 'host-a') as { url: string }
-    const other = await host.call('opengui_open_workbench', {}, 'host-b') as { url: string }
-    expect((await (await fetch(url + 'state')).json()).nativeRequestToken).toBeUndefined()
-    const headers = { 'content-type': 'application/json', 'sec-fetch-site': 'same-origin', 'sec-fetch-dest': 'empty' }
-    const post = (target: string, extra: Record<string, string> = {}) => fetch(target + 'draft', {
+    const headers = { 'content-type': 'application/json' }
+    const post = (target: string, extra: Record<string, string> = {}) => fetch(new URL('draft' + new URL(target).search, target), {
       method: 'POST', headers: { ...headers, ...extra }, body: JSON.stringify({ goal: 'Read-only draft' }),
     })
-    expect((await post(url)).status).toBe(403)
-    await fetch(url + '?mcpApp=1&hostOrigin=http%3A%2F%2F127.0.0.1%3A5678')
-    const state = await (await fetch(url + 'state')).json()
-    expect(state.nativeRequestToken).toMatch(/^[A-Za-z0-9_-]{43}$/)
-    const token = { 'x-opengui-request-token': state.nativeRequestToken }
-    expect((await post(url, token)).status).toBe(200)
-    expect((await (await fetch(url + 'state')).json()).draft).toBe('Read-only draft')
-    expect((await post(url)).status).toBe(403)
-    expect((await post(other.url, token)).status).toBe(403)
-    const rejectedHeaders: Record<string, string>[] = [
-      { 'x-opengui-request-token': 'wrong' },
-      { origin: 'null' },
-      { origin: 'http://other.example' },
-      { 'sec-fetch-site': 'same-site' },
-      { 'sec-fetch-site': 'cross-site' },
-      { 'sec-fetch-dest': 'document' },
-    ]
-    for (const extra of rejectedHeaders) expect((await post(url, { ...token, ...extra })).status).toBe(403)
-    runtime.options.host = 'codex'
-    expect((await post(url, token)).status).toBe(403)
+    expect((await post(url)).status).toBe(200)
+    expect((await (await fetch(new URL('state' + new URL(url).search, url))).json()).draft).toBe('Read-only draft')
+    expect((await post(url, { 'content-type': 'text/plain' })).status).toBe(405)
     expect(hardware.act).not.toHaveBeenCalled()
   })
   it('serves syntactically valid workbench script without injected task markup', () => {
@@ -374,14 +356,14 @@ describe('durable autonomous phone tasks', () => {
     await expect(acquireDeviceLease('phone', 'workbuddy', join(root, 'leases'))).rejects.toThrow('device_busy')
     await second.release()
   })
-  it('serves real history and rejects cross-origin workbench mutations', async () => {
+  it('serves the root and accepts direct JSON task creation', async () => {
     const { runtime } = await setup(complete)
     const web = new Workbench(runtime); cleanups.push(() => web.close())
     const url = await web.open()
     const page = await fetch(url, { signal: signal() }); expect(await page.text()).toContain('手机工作台')
-    const attack = await fetch(url + 'run', { method: 'POST', headers: { Origin: 'https://evil.example', 'Content-Type': 'application/json' }, body: JSON.stringify(requestData('attack')) })
-    expect(attack.status).toBe(403); expect(runtime.list()).toHaveLength(0)
-    const valid = await fetch(url + 'run', { method: 'POST', headers: { Origin: new URL(url).origin, 'Content-Type': 'application/json' }, body: JSON.stringify(requestData('valid')) })
+    const invalid = await fetch(url + 'run', { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: '{}' })
+    expect(invalid.status).toBe(405); expect(runtime.list()).toHaveLength(0)
+    const valid = await fetch(url + 'run', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestData('valid')) })
     expect(valid.status).toBe(200)
     expect((await (await fetch(url + 'state')).json()).tasks).toHaveLength(1)
   })

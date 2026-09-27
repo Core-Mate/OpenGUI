@@ -1,4 +1,4 @@
-/** Native entrypoint; capability URLs arrive only in the owning tool result. */
+/** Native entrypoint for the shared workbench. */
 export const WORKBENCH_RESOURCE_URI = 'ui://opengui/workbench.html'
 export const WORKBENCH_RESOURCE_MIME = 'text/html;profile=mcp-app'
 export const workbenchResource = `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>OpenGUI</title><p id="status">正在打开手机工作台…</p><script>
@@ -10,7 +10,7 @@ window.addEventListener('message',event=>{
  const m=event.data;if(!m||m.jsonrpc!=='2.0')return;
  if(m.id===initId){if(m.error){document.getElementById('status').textContent='宿主工作台连接失败，请重新打开。';return}initialized=true;window.parent.postMessage({jsonrpc:'2.0',method:'ui/notifications/initialized'},'*');open()}
  if(m.method==='ui/notifications/tool-result'){
-  try{const u=new URL(m.params?.structuredContent?.url),host=new URL(location.origin);if(u.protocol!=='http:'||u.hostname!=='127.0.0.1'||!u.port||u.username||u.password||!/^\\/[A-Za-z0-9_-]+\\/session\\/[A-Za-z0-9_-]+\\/$/.test(u.pathname)||host.protocol!=='http:'||host.hostname!=='127.0.0.1'||!host.port)throw Error();u.search='?mcpApp=1';u.searchParams.set('hostOrigin',host.origin);u.hash='';pendingUrl=u.href;open()}
+  try{const u=new URL(m.params?.structuredContent?.url),host=new URL(location.origin);if(u.protocol!=='http:'||u.hostname!=='127.0.0.1'||!u.port||u.username||u.password||u.pathname!=='/'||!u.searchParams.get('owner')||host.protocol!=='http:'||host.hostname!=='127.0.0.1'||!host.port)throw Error();u.searchParams.set('mcpApp','1');u.searchParams.set('hostOrigin',host.origin);u.hash='';pendingUrl=u.href;open()}
   catch{document.getElementById('status').textContent='工作台地址不可用，请从当前聊天重新打开。'}
  }
 });

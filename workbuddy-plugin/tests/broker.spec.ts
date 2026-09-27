@@ -287,7 +287,7 @@ it('keeps a web task bound to its hook conversation over a shared MCP connection
   const first = await invoke('chat-a', 'opengui_open_workbench')
   const second = await invoke('chat-b', 'opengui_open_workbench')
   expect(first.url).not.toBe(second.url)
-  const response = await fetch(first.url + 'run', { method: 'POST',
+  const response = await fetch(new URL('run' + new URL(first.url).search, first.url), { method: 'POST',
     headers: { origin: new URL(first.url).origin, 'content-type': 'application/json' },
     body: JSON.stringify({ requestId: 'originating-chat', goal: 'Inspect settings' }),
   })

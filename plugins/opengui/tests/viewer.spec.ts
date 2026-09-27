@@ -85,6 +85,19 @@ describe('independent first-frame viewer contract', () => {
     expect(() => viewer.assertReady(old.viewerId)).toThrow('display_timeout')
   })
 
+  it('lets an idle workbench preview receive its first visible frame after scrolling into view', async () => {
+    const { viewer, sinks, advance } = setup()
+    const owner = 'workbench-preview:a'
+    const opened = await viewer.open(owner, [a], AbortSignal.timeout(1000))
+    advance(30_001)
+    expect(await viewer.status(opened.viewerId, owner)).toMatchObject({ state: 'waiting_for_frame' })
+    const page = await connect(opened.url)
+    sinks.get('a')!.sendBinary(Buffer.from([2]))
+    expect((await page.receipt()).status).toBe(200)
+    expect(await viewer.status(opened.viewerId, owner)).toMatchObject({ state: 'ready', firstDisplayEstablished: true })
+    page.socket.destroy()
+  })
+
   it('rejects cross-origin viewing, foreign devices and action routes', async () => {
     const { viewer } = setup()
     const opened = await viewer.open('task', [a], AbortSignal.timeout(1000))

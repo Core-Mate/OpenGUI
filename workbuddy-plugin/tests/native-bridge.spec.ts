@@ -12,7 +12,7 @@ function page(search = '?mcpApp=1', owner = 'workbuddy:["chat-a",null]') {
   const storage = new Map<string, string>()
   const window = { parent, addEventListener: (name: string, fn: (event?: unknown) => void) => listeners.set(name, fn), removeEventListener: (name: string) => listeners.delete(name), openguiHostBridge: undefined as undefined | { continueTask: (task: unknown) => Promise<boolean> } }
   runInNewContext(nativeBridgeScript, {
-    URL, URLSearchParams, location: { search, origin: 'http://127.0.0.1:1234', pathname: '/root/session/owner/' },
+    URL, URLSearchParams, location: { search: search ? search + '&owner=' + encodeURIComponent(owner) : '', origin: 'http://127.0.0.1:1234', pathname: '/' },
     crypto: { randomUUID: () => String(++sequence) }, fetch,
     setTimeout: (callback: () => void) => { const id = ++sequence; timers.set(id, callback); return id },
     clearTimeout: (id: number) => timers.delete(id),
@@ -47,18 +47,18 @@ describe('native workbench connection', () => {
     p.reply({ hostCapabilities: { message: {} } })
     await vi.waitFor(() => expect(p.parent.postMessage.mock.calls.at(-1)?.[0].method).toBe('tools/call'))
     expect(p.parent.postMessage.mock.calls.at(-1)?.[0].params).toEqual({ name: 'opengui_open_workbench', arguments: {} })
-    p.reply({ structuredContent: { url: 'http://127.0.0.1:1234/root/session/owner/' } })
+    p.reply({ structuredContent: { url: 'http://127.0.0.1:1234/?owner=' + owner } })
     await vi.waitFor(() => expect(p.notice.dataset.hostBridge).toBe('connected'))
     const result = p.window.openguiHostBridge!.continueTask({ ...task, owner })
     await vi.waitFor(() => expect(p.timers.size).toBe(1))
-    p.reply({ structuredContent: { url: 'http://127.0.0.1:1234/root/session/other/' } })
+    p.reply({ structuredContent: { url: 'http://127.0.0.1:1234/?owner=other' } })
     expect(await result).toBe(false)
     expect(p.parent.postMessage.mock.calls.some(call => call[0].method === 'ui/message')).toBe(false)
   })
   it('sends a Codex continuation once and preserves uncertainty after timeout', async () => {
     const owner = '22222222-2222-4222-8222-222222222222'
     const p = page('?mcpApp=codex', owner)
-    const identity = { structuredContent: { url: 'http://127.0.0.1:1234/root/session/owner/' } }
+    const identity = { structuredContent: { url: 'http://127.0.0.1:1234/?owner=' + owner } }
     p.reply({ hostCapabilities: { message: {} } })
     await vi.waitFor(() => expect(p.parent.postMessage.mock.calls.at(-1)?.[0].method).toBe('tools/call'))
     p.reply(identity)

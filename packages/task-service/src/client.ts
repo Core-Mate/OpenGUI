@@ -1,11 +1,10 @@
 import { lstat } from 'node:fs/promises'
 import { createConnection } from 'node:net'
-import { readFile } from 'node:fs/promises'
 import { spawn } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { setTimeout as delay } from 'node:timers/promises'
 import { isTaskTool } from '../../phone-agent/src/host.ts'
-import { TASK_SERVICE_PROTOCOL, serviceRoot, socketPath, tokenPath } from './paths.ts'
+import { TASK_SERVICE_PROTOCOL, serviceRoot, socketPath } from './paths.ts'
 
 export type TaskHostName = 'codex' | 'workbuddy' | 'dsh'
 export interface PhoneTasks {
@@ -23,8 +22,6 @@ interface Reply { result?: unknown; error?: string }
 const entry = fileURLToPath(new URL('./task-service.js', import.meta.url))
 
 async function request(root: string, name: string, args: Record<string, unknown>, owner: string, host: TaskHostName): Promise<unknown> {
-  const token = (await readFile(tokenPath(root), 'utf8').catch(() => '')).trim()
-  if (!token) throw Object.assign(new Error('task service is not installed'), { code: 'ENOENT' })
   return new Promise((resolve, reject) => {
     const socket = createConnection(socketPath(root))
     let body = ''
@@ -32,7 +29,7 @@ async function request(root: string, name: string, args: Record<string, unknown>
     socket.setEncoding('utf8')
     socket.setTimeout(125_000, () => fail(new Error('task service timeout')))
     socket.once('error', fail)
-    socket.once('connect', () => socket.write(JSON.stringify({ protocol: TASK_SERVICE_PROTOCOL, token, host, name, args, owner }) + '\n'))
+    socket.once('connect', () => socket.write(JSON.stringify({ protocol: TASK_SERVICE_PROTOCOL, host, name, args, owner }) + '\n'))
     socket.on('data', chunk => {
       body += chunk
       if (!body.includes('\n')) return

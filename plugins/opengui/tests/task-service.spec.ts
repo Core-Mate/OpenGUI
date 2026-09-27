@@ -9,7 +9,7 @@ import { startTaskService } from '../../../packages/task-service/src/server.ts'
 import { sharedPhoneTasks } from '../../../packages/task-service/src/client.ts'
 import { taskServicePlist } from '../../../packages/task-service/src/launchd.ts'
 import { archiveLegacyTasks } from '../../../packages/task-service/src/migrate.ts'
-import { TASK_SERVICE_LABEL, dataPath } from '../../../packages/task-service/src/paths.ts'
+import { TASK_SERVICE_LABEL, TASK_SERVICE_PROTOCOL, dataPath } from '../../../packages/task-service/src/paths.ts'
 
 const cleanups: Array<() => Promise<unknown>> = []
 afterEach(async () => { for (const cleanup of cleanups.splice(0).reverse()) await cleanup(); delete process.env.OPENGUI_TASK_SERVICE_AUTOSTART })
@@ -46,14 +46,14 @@ describe('shared task service', () => {
       run: async execution => { await gate.promise; const observed = await execution.observe(); await execution.finish('done', [{ criterion: execution.task.successCriteria, status: 'passed', evidenceId: observed.observationId }], 'completed') },
     }
     const service = await boot(root, executor, [profile])
-    const denied = await new Promise<string>((resolve, reject) => {
+    const ping = await new Promise<string>((resolve, reject) => {
       const socket = createConnection(service.endpoint)
       socket.setEncoding('utf8')
       socket.once('error', reject)
       socket.once('data', resolve)
-      socket.end(JSON.stringify({ protocol: 1, token: 'nope', host: 'codex', name: 'opengui_list_tasks', args: {}, owner: 'a' }) + '\n')
+      socket.end(JSON.stringify({ protocol: TASK_SERVICE_PROTOCOL, host: 'codex', name: '__ping__', args: {}, owner: 'a' }) + '\n')
     })
-    expect(denied).toContain('authentication failed')
+    expect(JSON.parse(ping).result.protocol).toBe(TASK_SERVICE_PROTOCOL)
     const codex = sharedPhoneTasks('codex', root)
     const workbuddy = sharedPhoneTasks('workbuddy', root)
     const task = await codex.call('opengui_run_task', { requestId: 'order-1', goal: 'Open settings', successCriteria: 'Settings visible' }, 'chat-a') as { id: string; phase: string }
@@ -84,6 +84,7 @@ describe('shared task service', () => {
     const plist = taskServicePlist({ node: '/usr/local/bin/node', entry: '/opt/opengui/lib/task-service.js', root: serviceRoot })
     expect(plist).toContain(TASK_SERVICE_LABEL)
     expect(plist).toContain('/opt/opengui/lib/task-service.js')
+    expect(plist).toContain('<key>OPENGUI_WORKBENCH_PORT</key><string>58894</string>')
     expect(plist).not.toContain('--experimental-strip-types')
     expect(plist).not.toContain('secret')
   })

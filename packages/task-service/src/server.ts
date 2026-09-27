@@ -1,14 +1,13 @@
-import { randomBytes, timingSafeEqual } from 'node:crypto'
-import { chmod, lstat, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { chmod, lstat, mkdir, rm } from 'node:fs/promises'
 import { createServer, type Socket } from 'node:net'
 import { TaskHost } from '../../phone-agent/src/host.ts'
 import { PhoneRuntime } from '../../phone-agent/src/runtime.ts'
 import { keychain } from '../../phone-agent/src/credentials.ts'
 import type { Credentials, Executor, Hardware } from '../../phone-agent/src/contracts.ts'
 import type { ViewerServer } from '../../device-runtime/src/viewer.ts'
-import { TASK_SERVICE_PROTOCOL, dataPath, socketPath, tokenPath } from './paths.ts'
+import { TASK_SERVICE_PROTOCOL, dataPath, socketPath } from './paths.ts'
 
-export interface TaskService { endpoint: string; token: string; close: () => Promise<void> }
+export interface TaskService { endpoint: string; close: () => Promise<void> }
 export interface TaskServiceOptions {
   root: string
   hardware: Hardware
@@ -20,7 +19,6 @@ export interface TaskServiceOptions {
 
 interface Request {
   protocol?: number
-  token?: string
   host?: string
   name?: string
   args?: Record<string, unknown>
@@ -29,24 +27,12 @@ interface Request {
 
 const hosts = new Set(['codex', 'workbuddy', 'dsh'])
 
-function same(left: string, right: string): boolean {
-  const a = Buffer.from(left)
-  const b = Buffer.from(right)
-  return a.length === b.length && timingSafeEqual(a, b)
-}
-
 /** One macOS process owns phone tasks for every host. Closing a client does not cancel accepted work. */
 export async function startTaskService(options: TaskServiceOptions): Promise<TaskService> {
   await mkdir(options.root, { recursive: true, mode: 0o700 })
   const info = await lstat(options.root)
   if (!info.isDirectory() || info.isSymbolicLink()) throw new Error('task service root must be a private directory')
   await chmod(options.root, 0o700)
-  const tokenFile = tokenPath(options.root)
-  let token = await readFile(tokenFile, 'utf8').catch(() => '')
-  if (!/^[a-f0-9]{64}$/.test(token)) {
-    token = randomBytes(32).toString('hex')
-    await writeFile(tokenFile, token, { mode: 0o600 })
-  }
   const runtime = new PhoneRuntime({
     root: dataPath(options.root), host: 'shared', hardware: options.hardware,
     credentials: options.credentials ?? keychain('shared'), executor: options.executor,
@@ -78,7 +64,6 @@ export async function startTaskService(options: TaskServiceOptions): Promise<Tas
         try {
           const request = JSON.parse(body) as Request
           if (request.protocol !== TASK_SERVICE_PROTOCOL) throw new Error('task service protocol mismatch')
-          if (typeof request.token !== 'string' || !same(request.token, token)) throw new Error('task service authentication failed')
           if (request.name === '__ping__') { send({ result: { protocol: TASK_SERVICE_PROTOCOL, activeTasks: tasks.activeCount, watching: tasks.watching } }); return }
           if (request.name === '__prepare_upgrade__') { send({ result: { ready: tasks.prepareMaintenance() } }); return }
           if (request.name === '__shutdown__') {
@@ -109,5 +94,5 @@ export async function startTaskService(options: TaskServiceOptions): Promise<Tas
   })
   await chmod(endpoint, 0o600)
   const close = (): Promise<void> => closing ??= (async () => { server.close(); await tasks.close(); await options.hardware.dispose() })()
-  return { endpoint, token, close }
+  return { endpoint, close }
 }
