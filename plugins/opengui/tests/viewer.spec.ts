@@ -92,6 +92,7 @@ describe('independent first-frame viewer contract', () => {
     advance(30_001)
     expect(await viewer.status(opened.viewerId, owner)).toMatchObject({ state: 'waiting_for_frame' })
     const page = await connect(opened.url)
+    advance(10_001)
     sinks.get('a')!.sendBinary(Buffer.from([2]))
     expect((await page.receipt()).status).toBe(200)
     expect(await viewer.status(opened.viewerId, owner)).toMatchObject({ state: 'ready', firstDisplayEstablished: true })

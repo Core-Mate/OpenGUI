@@ -270,7 +270,7 @@ export class ScrcpyVideoStreams {
     entry.subscribers.add(sink)
     if (entry.lastCodec !== undefined) sink.sendText(entry.lastCodec)
     if (entry.lastSession !== undefined) sink.sendText(entry.lastSession)
-    if (entry.replayBytes <= 1_000_000) {
+    if (entry.replay.some(packet => (packet[0]! & 2) !== 0)) {
       for (const frame of entry.replay) sink.sendBinary(frame)
     } else entry.waiting.add(sink)
     return () => this.unsubscribe(entry!, sink)

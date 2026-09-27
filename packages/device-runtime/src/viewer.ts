@@ -230,7 +230,7 @@ export class ViewerServer {
           closed = true; c.release?.(); v.connections.delete(c.id)
           if (v.connections.size === 0 && v.phase !== 'closed' && !v.error) v.phase = 'disconnected'
         })
-        const wrapped: ScrcpyStreamSink = { ...sink, sendBinary: data => { c.media = true; sink.sendBinary(data) }, sendText: text => {
+        const wrapped: ScrcpyStreamSink = { ...sink, sendBinary: data => { if (!c.media) c.issued = this.now(); c.media = true; sink.sendBinary(data) }, sendText: text => {
           const event = JSON.parse(text) as { type: string; message?: string }
           if (event.type === 'error') { v.phase = 'disconnected'; sink.sendText(text); return }
           if (event.type === 'session' || event.type === 'reset') {
