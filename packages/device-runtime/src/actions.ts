@@ -287,7 +287,7 @@ export function actionCommand(action: PhoneAction, screen: PhoneCoordinateSpace)
       if (!/^[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]+)+$/u.test(action.packageName)) {
         throw new Error('opengui: packageName must be a valid Android application id')
       }
-      return ['shell', 'monkey', '-p', action.packageName, '-c', 'android.intent.category.LAUNCHER', '1']
+      return ['shell', 'am', 'start', '-a', 'android.intent.action.MAIN', '-c', 'android.intent.category.LAUNCHER', '-p', action.packageName]
     case 'wait': {
       if (!Number.isInteger(action.waitMs) || action.waitMs < 100 || action.waitMs > 10_000) {
         throw new Error('opengui: waitMs must be an integer from 100 through 10000')
@@ -315,4 +315,3 @@ export function textInputCommands(text: string): string[][] {
   }
   throw new Error('opengui: Unicode text requires acknowledged scrcpy clipboard input')
 }
-

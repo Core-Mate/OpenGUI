@@ -11,6 +11,14 @@ submission, actual decoding, steering, stopping, history, page closure and narro
 layout. Run `pnpm test:workbench` in `plugins/opengui`; this does not replace physical
 phone or installed-host acceptance.
 
+For the Web-first real-device path, start a dedicated authorized emulator on port
+5586 and run `OPENGUI_WEB_MODEL_EMULATOR_E2E=1 ./node_modules/.bin/vitest run
+tests/web-model-emulator.e2e.spec.ts` from `plugins/opengui`. The test configures
+a controlled model endpoint in the browser, opens Android Settings through the
+real action path, checks the foreground app, timeline and screenshot evidence,
+and stops a second task from the browser. It verifies model transport and task
+lifecycle, not the judgment of a production vision model.
+
 ## V6 page contract
 
 - Home: one task draft, automatic branch planning and phone assignment, device summary,
