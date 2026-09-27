@@ -17,6 +17,8 @@ After first display authorization, video failure or page closure does not cancel
 
 For source development, run `npm run dev:task-service` from `plugins/opengui`. It builds and runs an isolated foreground service, prints the workbench address, and rebuilds/restarts after plugin or shared package source changes. Open the printed address directly in a browser. Press Ctrl-C to stop. Restarts interrupt development tasks and may change the port. This loop does not use the installed launchd service.
 
+For a persistent review preview at `http://127.0.0.1:58894/`, run `npm run preview:install -- <branch>` from that branch while no tasks or video sessions are active. This builds first, then points the local LaunchAgent at the repository source watcher. Plugin and shared package changes rebuild and restart the same port. The watcher stops the old page if the checkout leaves the pinned branch or a build fails. It uses the existing service state directory; restarts interrupt development tasks. A regular installation restores the packaged service entry, so rerun this command when source preview is needed again.
+
 Use the supplied installer and matching archive with adjacent SHA-256 sidecars:
 
 ```sh
