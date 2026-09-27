@@ -20,7 +20,7 @@ export interface PhoneTasks {
 
 interface Reply { result?: unknown; error?: string }
 
-const entry = fileURLToPath(new URL('../../../plugins/opengui/src/task-service-main.ts', import.meta.url))
+const entry = fileURLToPath(new URL('./task-service.js', import.meta.url))
 
 async function request(root: string, name: string, args: Record<string, unknown>, owner: string, host: TaskHostName): Promise<unknown> {
   const token = (await readFile(tokenPath(root), 'utf8').catch(() => '')).trim()
@@ -55,7 +55,7 @@ async function alive(root: string): Promise<{ activeTasks: number; watching: boo
 export async function ensureTaskService(root = serviceRoot()): Promise<void> {
   if (await alive(root)) return
   if (process.env.OPENGUI_TASK_SERVICE_AUTOSTART === '0') throw new Error('task service is not running')
-  const child = spawn(process.execPath, ['--experimental-strip-types', entry], { detached: true, stdio: 'ignore', env: { ...process.env, OPENGUI_TASK_SERVICE_ROOT: root } })
+  const child = spawn(process.execPath, [entry], { detached: true, stdio: 'ignore', env: { ...process.env, OPENGUI_TASK_SERVICE_ROOT: root } })
   child.unref()
   const deadline = Date.now() + 15_000
   while (!await alive(root)) {

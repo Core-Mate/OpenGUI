@@ -72,9 +72,9 @@ const executor: Executor = {
   },
 }
 
-async function until<T>(label: string, read: () => Promise<{ done?: boolean; fail?: string; value?: T }>): Promise<T> {
+async function until<T>(label: string, read: () => Promise<{ done?: boolean; fail?: string; value?: unknown }>): Promise<T> {
   const deadline = Date.now() + 90_000
-  let last: { value?: T } = {}
+  let last: { value?: unknown } = {}
   while (Date.now() < deadline) {
     const current = await read()
     last = current
@@ -113,14 +113,14 @@ describe.skipIf(!enabled)('android emulator four-entry path', () => {
       let viewerOpened = false
       try {
         const goal = await submit()
-        const childId = await until(name + ' child', async () => {
+        const childId = await until<string>(name + ' child', async () => {
           const current = await status(goal.id)
           const id = current.group?.children?.[0]
           if (id) return { done: true, value: id }
           if (['blocked', 'failed', 'cancelled', 'unknown'].includes(current.phase)) return { fail: current.summary || current.phase }
           return { value: current.phase }
         })
-        const ready = await until(name + ' evidence', async () => {
+        const ready = await until<Task>(name + ' evidence', async () => {
           const child = await status(childId)
           if (!viewerOpened && child.viewerUrl) { viewerOpened = true; await openViewer(child.viewerUrl) }
           if (child.evidence?.length) return { done: true, value: child }
@@ -131,7 +131,7 @@ describe.skipIf(!enabled)('android emulator four-entry path', () => {
         const bytes = await readFile(join(data, 'evidence-v1', file))
         if (bytes.subarray(0, 2).toString('hex') !== 'ffd8') throw new Error('evidence is not a jpeg')
         const stopped = await stop(goal.id)
-        const child = await until(name + ' stop', async () => {
+        const child = await until<Task>(name + ' stop', async () => {
           const current = await status(childId)
           if (current.phase === 'cancelled') return { done: true, value: current }
           if (current.phase === 'unknown') return { fail: current.summary || 'stop left the branch unknown' }

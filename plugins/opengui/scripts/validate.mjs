@@ -48,9 +48,10 @@ async function walk(directory) {
 for (const path of await walk(join(root, 'src'))) {
   const text = await readFile(path, 'utf8')
   assert.ok(!/from ['"][^'"]*(deepseek-harness|@deepseek)/.test(text), 'Cross-package runtime import: ' + path)
-  assert.ok(!/DSH_HOME|coremate-mobile-scrcpy|dev-auto-reload/.test(text), 'Production coupling: ' + path)
+  // The shared service names legacy DSH storage only to archive old journals.
+  if (path !== join(root, 'src/task-service-main.ts')) assert.ok(!/DSH_HOME|coremate-mobile-scrcpy|dev-auto-reload/.test(text), 'Production coupling: ' + path)
   // state.ts may name .dsh only to reject it as an unsafe override.
-  if (path !== join(root, 'src/state.ts')) assert.ok(!/\.dsh\b/.test(text), 'Legacy runtime path: ' + path)
+  if (path !== join(root, 'src/state.ts') && path !== join(root, 'src/task-service-main.ts')) assert.ok(!/\.dsh\b/.test(text), 'Legacy runtime path: ' + path)
 }
 const temp = await mkdtemp(join(tmpdir(), 'opengui-stage-check-'))
 try {

@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { createConnection } from 'node:net'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Executor, Hardware, ModelProfile } from '../../../packages/phone-agent/src/contracts.ts'
+import type { RawPhoneObservation } from '../../../packages/device-runtime/src/phone-controller.ts'
 import { startTaskService } from '../../../packages/task-service/src/server.ts'
 import { sharedPhoneTasks } from '../../../packages/task-service/src/client.ts'
 import { taskServicePlist } from '../../../packages/task-service/src/launchd.ts'
@@ -18,7 +19,7 @@ function hardware(): Hardware {
   const device = { id: 'phone-a', serial: 'phone-a', name: 'phone-a', authorized: true, connected: true, state: 'device' }
   return {
     listDevices: async () => [device], resolveDevices: async () => [device], assignTarget() {},
-    observe: async () => ({ observationId: 'frame-1', serial: 'phone-a', width: 10, height: 10, foregroundPackage: 'settings', image: { data: Buffer.from('jpeg'), mediaType: 'image/jpeg' as const, bytes: 4, width: 10, height: 10, name: 'phone.jpg' } }),
+    observe: async () => ({ observationId: 'frame-1' as RawPhoneObservation['observationId'], serial: 'phone-a', width: 10, height: 10, foregroundPackage: 'settings', image: { data: Buffer.from('jpeg'), mediaType: 'image/jpeg' as const, bytes: 4, width: 10, height: 10, name: 'phone.jpg' } }),
     act: async () => { throw new Error('unused') }, releaseDevice: async () => {}, dispose: async () => {},
   }
 }
@@ -80,8 +81,10 @@ describe('shared task service', () => {
     await boot(serviceRoot, { probe: async () => {}, run: async () => {} })
     const tasks = sharedPhoneTasks('codex', serviceRoot)
     await expect(tasks.call('opengui_run_task', { requestId: 'missing-model', goal: 'Look', successCriteria: 'Seen' }, 'chat')).rejects.toThrow('Configure a planning-capable model')
-    const plist = taskServicePlist({ node: '/usr/local/bin/node', entry: '/opt/opengui/task-service-main.ts', root: serviceRoot })
+    const plist = taskServicePlist({ node: '/usr/local/bin/node', entry: '/opt/opengui/lib/task-service.js', root: serviceRoot })
     expect(plist).toContain(TASK_SERVICE_LABEL)
+    expect(plist).toContain('/opt/opengui/lib/task-service.js')
+    expect(plist).not.toContain('--experimental-strip-types')
     expect(plist).not.toContain('secret')
   })
 })

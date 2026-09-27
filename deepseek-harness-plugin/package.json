@@ -45,6 +45,7 @@
     "lib/client.js.map",
     "lib/types/**/*.d.ts",
     "lib/phone-worker.js",
+    "lib/task-service.js",
     "lib/runtime-manifest.json"
   ],
   "scripts": {

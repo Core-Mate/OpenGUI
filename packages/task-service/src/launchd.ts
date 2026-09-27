@@ -16,7 +16,7 @@ export function taskServicePlist(options: { node: string; entry: string; root?: 
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
 <key>Label</key>${str(TASK_SERVICE_LABEL)}
-<key>ProgramArguments</key><array>${[options.node, '--experimental-strip-types', options.entry].map(str).join('')}</array>
+<key>ProgramArguments</key><array>${[options.node, options.entry].map(str).join('')}</array>
 <key>EnvironmentVariables</key><dict><key>OPENGUI_TASK_SERVICE_ROOT</key>${str(root)}</dict>
 <key>RunAtLoad</key><true/>
 <key>KeepAlive</key><true/>

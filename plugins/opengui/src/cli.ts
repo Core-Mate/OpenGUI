@@ -30,7 +30,7 @@ export async function runCli(argv: readonly string[], signal = new AbortControll
   if (name === '--version') return { version: VERSION }
   if (name === '--install-task-service') {
     const { installTaskServiceLaunchAgent } = await import('../../../packages/task-service/src/launchd.ts')
-    const plist = await installTaskServiceLaunchAgent({ node: process.execPath, entry: fileURLToPath(new URL('./task-service-main.ts', import.meta.url)), ...(process.env.OPENGUI_LAUNCH_AGENTS_DIR ? { agentsDir: process.env.OPENGUI_LAUNCH_AGENTS_DIR } : {}) })
+    const plist = await installTaskServiceLaunchAgent({ node: process.execPath, entry: fileURLToPath(new URL('./task-service.js', import.meta.url)), ...(process.env.OPENGUI_LAUNCH_AGENTS_DIR ? { agentsDir: process.env.OPENGUI_LAUNCH_AGENTS_DIR } : {}) })
     return { launchAgent: plist, bootstrapped: false }
   }
   if (name === '--interfaces') return { interfaces: OPENGUI_CODEX_TOOLS }

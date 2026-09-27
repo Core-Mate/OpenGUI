@@ -2,6 +2,19 @@ import { defineConfig } from 'tsdown'
 
 /** Bundle the plugin and invariant companion while keeping Harness peers external. */
 export default defineConfig([
+  {
+    name: 'opengui/task-service',
+    entry: { 'task-service': '../plugins/opengui/src/task-service-main.ts' },
+    outDir: 'lib',
+    format: ['esm'],
+    platform: 'node',
+    target: 'es2024',
+    fixedExtension: false,
+    deps: { alwaysBundle: id => !id.startsWith('node:') },
+    outputOptions: { codeSplitting: false },
+    dts: false,
+    clean: false,
+  },
   { entry: ['lib/types/deepseek-harness-plugin/src/phone-worker.js'], outDir: 'lib', format: ['esm'], platform: 'node', target: 'es2024', fixedExtension: false, dts: false, clean: false, outputOptions: { codeSplitting: false } },
   {
     entry: ['lib/types/deepseek-harness-plugin/src/index.js'],
