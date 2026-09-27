@@ -16,7 +16,7 @@ interface Connection {
   issued: number; painted: number; connectedAt: number; media: boolean; release?: () => void
 }
 interface Viewer {
-  id: string; token: string; owner: string; devices: readonly ViewerDevice[]
+  id: string; owner: string; devices: readonly ViewerDevice[]
   phase: Phase; openedAt: number; deadline: number; established: boolean; ended: boolean
   firstFrameMs?: number; error?: string; connections: Map<string, Connection>; pages: Set<ScrcpyStreamSink>; lastPage: number
   preparation?: Promise<void>; readyDevices: Set<string>
@@ -69,7 +69,7 @@ export class ViewerServer {
     if (viewer && !this.same(viewer, devices)) throw new Error('device_frozen')
     if (!viewer) {
       if (this.viewers.size >= 100) throw new Error('viewer_capacity')
-      viewer = { id: randomUUID(), token: randomBytes(32).toString('base64url'), owner, devices: [...devices], phase: 'preparing', openedAt: this.now(), deadline: 0, established: false, ended: false, connections: new Map(), pages: new Set(), readyDevices: new Set(), lastPage: this.now() }
+      viewer = { id: randomUUID(), owner, devices: [...devices], phase: 'preparing', openedAt: this.now(), deadline: 0, established: false, ended: false, connections: new Map(), pages: new Set(), readyDevices: new Set(), lastPage: this.now() }
       this.viewers.set(viewer.id, viewer)
       const current = viewer
       viewer.preparation = (async () => { try {
@@ -123,7 +123,7 @@ export class ViewerServer {
   }
   endOwner(owner: string): void { for (const v of this.viewers.values()) if (v.owner === owner) v.ended = true }
   endTask(id: string): void { this.require(id).ended = true }
-  url(id: string): string { const v = this.require(id); return `${this.origin}/${v.token}/` }
+  url(id: string): string { this.require(id); return `${this.origin}/viewer/${id}/` }
   async dispose(): Promise<void> {
     clearInterval(this.sweep)
     for (const v of this.viewers.values()) this.closeViewer(v.id, v.owner)
@@ -165,8 +165,8 @@ export class ViewerServer {
       const server = createServer((req, res) => {
         const handle = async (): Promise<void> => {
           const url = new URL(req.url ?? '/', this.origin)
-          const [token, route = ''] = url.pathname.slice(1).split('/')
-          const v = [...this.viewers.values()].find(v => v.token === token)
+          const [kind, id, route = ''] = url.pathname.slice(1).split('/')
+          const v = kind === 'viewer' ? this.viewers.get(id ?? '') : undefined
           const nativePage = v?.nativeOrigins?.size && req.method === 'GET' && route === '' && req.headers['sec-fetch-dest'] === 'iframe' && !req.headers.origin && req.headers.host === new URL(this.origin).host
           // WorkBuddy strips Origin from local HTTP requests. Only a registered
           // native viewer's same-origin JSON receipt may use this exception;
@@ -210,8 +210,8 @@ export class ViewerServer {
       server.on('upgrade', (req, socket, head) => {
         if (!this.local(req, true)) { socket.end('HTTP/1.1 403 Forbidden\r\n\r\n'); return }
         const url = new URL(req.url ?? '/', this.origin)
-        const [token, route] = url.pathname.slice(1).split('/')
-        const v = [...this.viewers.values()].find(v => v.token === token)
+        const [kind, id, route] = url.pathname.slice(1).split('/')
+        const v = kind === 'viewer' ? this.viewers.get(id ?? '') : undefined
         if (v && route === 'presence' && v.phase !== 'closed' && v.pages.size < 16) {
           const page = acceptStreamWebSocket(req, socket, head)
           v.pages.add(page)
