@@ -201,6 +201,7 @@ try {
   await browser('wait','--fn','document.querySelector("#homeDevices").textContent.includes("测试手机")')
   await browser('wait','--fn','!!document.querySelector("#homeDevices iframe")')
   assert.match(await browser('eval','document.querySelectorAll("header nav").length===1 && document.querySelectorAll("header nav a[aria-current=page]").length===1 && document.querySelector("#new").getAttribute("aria-current")==="page" && !document.querySelector("main").innerText.includes("工作台 / 首页")'),/true/)
+  assert.match(await browser('eval','!document.querySelector("#homeDevices").textContent.includes("正在连接画面") && !document.querySelector("#workspaceEmpty>.head a") && [...document.querySelectorAll("#examples button")].every(b=>!b.textContent.includes("↗"))'),/true/)
   assert.match(await browser('eval','/查看画面|放大查看|刷新手机/.test(document.querySelector("#homePage").textContent)'),/false/)
   assert.match(await browser('eval','/刷新手机|放大查看/.test(document.querySelector("#devicesPage").textContent)'),/false/)
   runtime.profiles.clear()
@@ -224,6 +225,7 @@ try {
     await browser('wait','--fn',`!document.querySelector('#${name}Page').hidden`)
     const activeId={devices:'devicesToggle',tasks:'historyToggle',settings:'settingsToggle',guide:'devicesToggle'}[name]
     assert.match(await browser('eval',`document.querySelectorAll('header nav a[aria-current="page"]').length===1 && document.querySelector('#${activeId}').getAttribute('aria-current')==='page'`),/true/)
+    if(name==='guide')assert.match(await browser('eval','document.querySelectorAll("#guideSteps .guide-step").length===2 && document.querySelector("#guidePage .back").hash==="#devices"'),/true/)
     await browser('screenshot',new URL('../.artifacts/workbench/'+name+'-desktop.png',import.meta.url).pathname,'--full')
   }
   await browser('open',url+'#home');await browser('snapshot','-i')
@@ -257,6 +259,7 @@ try {
   assert.equal(runtime.list()[0].phase,'cancelled')
   await browser('click','#historyToggle');await browser('snapshot','-i')
   assert.match(await browser('eval','document.querySelectorAll("#history .task-row").length'),/2/)
+  assert.match(await browser('eval','[...document.querySelectorAll("#history .task-row")].every(row=>row.querySelectorAll("a").length===1)'),/true/)
   await browser('scrollintoview','[data-filter="active"]');await browser('click','[data-filter="active"]');await browser('snapshot','-i')
   assert.match(await browser('eval','document.querySelectorAll("#history .task-row").length'),/0/)
   await browser('scrollintoview','[data-filter="done"]');await browser('click','[data-filter="done"]');await browser('snapshot','-i')
