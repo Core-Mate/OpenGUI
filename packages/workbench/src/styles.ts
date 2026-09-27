@@ -18,4 +18,7 @@ button,input,textarea,select{font-size:14px}button{min-height:38px;padding:8px 1
 #homePage:has(#workspaceEmpty:not([hidden])) .composer{order:-1}#homePage:has(#workspaceEmpty:not([hidden])) #workspaceEmpty>h1{display:none}#homePage:has(#workspaceEmpty:not([hidden])) #workspaceEmpty>.head{margin-bottom:12px}
 #settingsPage .setting{max-width:700px;margin-top:20px;padding:24px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface)}#settingsPage .setting label{margin:18px 0 7px;font-weight:550}#settingsPage #modelForm{max-width:none}#settingsPage #modelForm .row{margin-top:18px}#settingsPage #modelForm small{line-height:1.4}#modelStatus:empty{display:none}
 @media(max-width:700px){header{padding:13px 20px}main{padding-top:24px}.workspace{gap:16px}.workspace-rail{position:static}.workspace .composer{padding:12px}.workspace .composer textarea{min-height:76px}}@media(max-width:460px){header{padding:12px 16px}.workspace .composer .submit-row{align-items:stretch;flex-direction:row}.workspace .submit-row button{min-width:116px}.workspace .composer textarea{min-height:86px}#settingsPage .setting{padding:18px}}
+
+header nav{flex:1;align-items:center;min-width:0}header nav .settings{margin-left:auto}header nav a{white-space:nowrap}header nav a[aria-current=page]{color:var(--green);box-shadow:inset 0 -2px var(--green)}
+@media(max-width:460px){header nav{gap:14px}header nav a{font-size:13px}}
 `

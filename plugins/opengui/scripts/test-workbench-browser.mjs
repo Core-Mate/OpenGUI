@@ -200,6 +200,7 @@ try {
   await browser('open',url);await browser('snapshot','-i')
   await browser('wait','--fn','document.querySelector("#homeDevices").textContent.includes("测试手机")')
   await browser('wait','--fn','!!document.querySelector("#homeDevices iframe")')
+  assert.match(await browser('eval','document.querySelectorAll("header nav").length===1 && document.querySelectorAll("header nav a[aria-current=page]").length===1 && document.querySelector("#new").getAttribute("aria-current")==="page" && !document.querySelector("main").innerText.includes("工作台 / 首页")'),/true/)
   assert.match(await browser('eval','/查看画面|放大查看|刷新手机/.test(document.querySelector("#homePage").textContent)'),/false/)
   assert.match(await browser('eval','/刷新手机|放大查看/.test(document.querySelector("#devicesPage").textContent)'),/false/)
   runtime.profiles.clear()
@@ -221,6 +222,8 @@ try {
   for(const name of ['devices','tasks','settings','guide']){
     await browser('open',url+'#'+name);await browser('snapshot','-i')
     await browser('wait','--fn',`!document.querySelector('#${name}Page').hidden`)
+    const activeId={devices:'devicesToggle',tasks:'historyToggle',settings:'settingsToggle',guide:'devicesToggle'}[name]
+    assert.match(await browser('eval',`document.querySelectorAll('header nav a[aria-current="page"]').length===1 && document.querySelector('#${activeId}').getAttribute('aria-current')==='page'`),/true/)
     await browser('screenshot',new URL('../.artifacts/workbench/'+name+'-desktop.png',import.meta.url).pathname,'--full')
   }
   await browser('open',url+'#home');await browser('snapshot','-i')
