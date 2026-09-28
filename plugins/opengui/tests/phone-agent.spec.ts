@@ -45,6 +45,47 @@ const settled = async (runtime: PhoneRuntime, id: string) => { await vi.waitFor(
 const complete: Executor = { plan: async p => ({ kind: 'branches', branches: [{ goal: p.goal, successCriteria: p.goal, eligibleDeviceIds: p.devices.filter(d=>d.authorized&&d.connected).map(d=>d.id) }] }), probe: async () => {}, run: async e => { const obs = await e.observe(); await e.finish('Settings visible', [{ criterion: e.task.successCriteria, status: 'passed', evidenceId: obs.observationId }], 'completed') } }
 
 describe('durable autonomous phone tasks', () => {
+  it('requires per-model consent before probing a remote HTTP endpoint', async () => {
+    const probe = vi.fn(async () => {})
+    const { runtime, root } = await setup({ ...complete, probe })
+    const set = vi.spyOn(runtime.options.credentials, 'set')
+    const input = { protocol: 'openai-completions', baseUrl: 'http://model.example/v1', model: 'vision', secret: 'fixture-secret' }
+    await expect(runtime.saveModel(input)).rejects.toThrow('Confirm unencrypted transfer')
+    expect(probe).not.toHaveBeenCalled()
+    expect(set).not.toHaveBeenCalled()
+    expect(runtime.profiles.size).toBe(1)
+
+    const saved = await runtime.saveModel({ ...input, allowRemoteHttp: true })
+    expect(saved).toMatchObject({ baseUrl: input.baseUrl, allowRemoteHttp: true })
+    expect(probe).toHaveBeenCalledWith(expect.objectContaining({ allowRemoteHttp: true }), input.secret, expect.any(AbortSignal))
+    expect(set).toHaveBeenCalledWith(saved.credentialRef, input.secret)
+    const savedProfiles = JSON.parse(await readFile(join(root, 'models-v1.json'), 'utf8')) as ModelProfile[]
+    expect(savedProfiles).toContainEqual(saved)
+    expect(JSON.stringify(savedProfiles)).not.toContain(input.secret)
+    const reloaded = new PhoneRuntime(runtime.options)
+    await reloaded.initialize()
+    expect(reloaded.profiles.get(saved.id)).toEqual(saved)
+    await reloaded.close()
+  })
+
+  it('preserves URL restrictions and leaves rejected model probes unsaved', async () => {
+    const probe = vi.fn(async () => { throw new Error('probe failed') })
+    const { runtime, root } = await setup({ ...complete, probe })
+    const set = vi.spyOn(runtime.options.credentials, 'set')
+    const input = { protocol: 'openai-completions', model: 'vision', secret: 'fixture-secret' }
+    for (const baseUrl of ['http://user:pass@model.example/v1', 'http://model.example/v1?key=value', 'ftp://model.example/v1']) {
+      await expect(runtime.saveModel({ ...input, baseUrl, allowRemoteHttp: true })).rejects.toThrow()
+    }
+    expect(probe).not.toHaveBeenCalled()
+    await expect(runtime.saveModel({ ...input, baseUrl: 'http://model.example/v1', allowRemoteHttp: true })).rejects.toThrow('probe failed')
+    expect(set).not.toHaveBeenCalled()
+    expect(runtime.profiles.size).toBe(1)
+    await expect(readFile(join(root, 'models-v1.json'))).rejects.toMatchObject({ code: 'ENOENT' })
+    await expect(runtime.saveModel({ ...input, baseUrl: 'https://model.example/v1' })).rejects.toThrow('probe failed')
+    await expect(runtime.saveModel({ ...input, baseUrl: 'http://localhost/v1' })).rejects.toThrow('probe failed')
+    expect(probe).toHaveBeenCalledTimes(3)
+  })
+
   it('blocks late workbench submissions after entering maintenance', async () => {
     const { runtime } = await setup(complete)
     const web = new Workbench(runtime); cleanups.push(() => web.close())

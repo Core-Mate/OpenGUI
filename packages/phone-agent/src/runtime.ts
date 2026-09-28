@@ -10,7 +10,7 @@ import { newestTaskFirst, terminal, type Check, type Credentials, type Executor,
 import { TaskStore } from './store.ts'
 import { confirmPhoneAction, type ConfirmPhoneAction } from './confirmation.ts'
 
-interface ModelInput { protocol: string; baseUrl: string; model: string; secret: string }
+interface ModelInput { protocol: string; baseUrl: string; model: string; secret: string; allowRemoteHttp?: boolean }
 interface Running { controller: AbortController; done: Promise<void>; steer?: (text: string) => void; pending: string[]; resume?: (text: string) => void; stopRequested?: boolean }
 export class PhoneRuntime {
   readonly goals: GoalRuntime
@@ -78,9 +78,11 @@ export class PhoneRuntime {
     if (typeof input.secret !== 'string' || !input.secret.trim() || input.secret.length > 8192 || /[\r\n\0]/.test(input.secret)) throw new Error('A valid model credential is required')
     if (!['openai-completions', 'openai-responses'].includes(input.protocol)) throw new Error('Unsupported model protocol')
     const url = new URL(input.baseUrl)
-    if (url.username || url.password || url.search || url.hash || (url.protocol !== 'https:' && !(url.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)))) throw new Error('Use HTTPS or a local HTTP model endpoint without credentials in its URL')
+    const remoteHttp = url.protocol === 'http:' && !['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)
+    if (url.username || url.password || url.search || url.hash || (url.protocol !== 'https:' && url.protocol !== 'http:')) throw new Error('Use an HTTP or HTTPS model endpoint without credentials in its URL')
+    if (remoteHttp && input.allowRemoteHttp !== true) throw new Error('Confirm unencrypted transfer for this remote HTTP model endpoint')
     if (!input.model?.trim() || input.model.length > 200) throw new Error('Model name required')
-    const profile: ModelProfile = { id: randomUUID(), protocol: input.protocol as ModelProfile['protocol'], baseUrl: url.href.replace(/\/$/, ''), model: input.model, credentialRef: randomUUID() }
+    const profile: ModelProfile = { id: randomUUID(), protocol: input.protocol as ModelProfile['protocol'], baseUrl: url.href.replace(/\/$/, ''), model: input.model, credentialRef: randomUUID(), ...(remoteHttp ? { allowRemoteHttp: true } : {}) }
     await this.options.executor.probe(profile, input.secret, AbortSignal.timeout(60_000))
     await this.options.credentials.set(profile.credentialRef, input.secret)
     const path = join(this.options.root, 'models-v1.json')

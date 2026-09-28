@@ -11,6 +11,7 @@ export interface ModelProfile {
   baseUrl: string
   model: string
   credentialRef: string
+  allowRemoteHttp?: boolean
 }
 export interface Device { id: string; name: string; authorized: boolean; connected: boolean; state: string; connection?: DeviceConnection }
 export interface Hardware {
