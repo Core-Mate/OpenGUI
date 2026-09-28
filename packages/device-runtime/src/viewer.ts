@@ -66,6 +66,11 @@ export class ViewerServer {
     if (!owner) throw new Error('host_task_required')
     if (devices.length < 1 || devices.length > 4 || new Set(devices.map(d => d.id)).size !== devices.length) throw new Error('invalid_viewer_devices')
     let viewer = [...this.viewers.values()].find(v => v.owner === owner && (!v.ended || Boolean(v.error)))
+    if (viewer?.phase === 'error' && owner.startsWith('workbench-preview:')) {
+      // Idle previews may retry after a transient video dependency failure.
+      this.viewers.delete(viewer.id)
+      viewer = undefined
+    }
     if (viewer && !this.same(viewer, devices)) throw new Error('device_frozen')
     if (!viewer) {
       if (this.viewers.size >= 100) throw new Error('viewer_capacity')

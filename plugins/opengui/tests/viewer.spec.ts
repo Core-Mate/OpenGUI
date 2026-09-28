@@ -99,6 +99,21 @@ describe('independent first-frame viewer contract', () => {
     page.socket.destroy()
   })
 
+  it('recreates an idle preview after video preparation recovers', async () => {
+    const { viewer, prepare, sinks } = setup()
+    prepare.mockRejectedValueOnce(new Error('temporary video failure'))
+    const owner = 'workbench-preview:a'
+    const failed = await viewer.open(owner, [a], AbortSignal.timeout(1000))
+    expect(failed.state).toBe('error')
+    const recovered = await viewer.open(owner, [a], AbortSignal.timeout(1000))
+    expect(recovered.viewerId).not.toBe(failed.viewerId)
+    expect(recovered.state).toBe('waiting_for_frame')
+    const page = await connect(recovered.url)
+    sinks.get('a')!.sendBinary(Buffer.from([2]))
+    expect((await page.receipt()).status).toBe(200)
+    expect(await viewer.status(recovered.viewerId, owner)).toMatchObject({ state: 'ready', firstDisplayEstablished: true })
+  })
+
   it('rejects cross-origin viewing, foreign devices and action routes', async () => {
     const { viewer } = setup()
     const opened = await viewer.open('task', [a], AbortSignal.timeout(1000))
