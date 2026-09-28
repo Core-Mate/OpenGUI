@@ -10,7 +10,7 @@ import { newestTaskFirst, terminal, type Check, type Credentials, type Executor,
 import { TaskStore } from './store.ts'
 import { confirmPhoneAction, type ConfirmPhoneAction } from './confirmation.ts'
 
-interface ModelInput { protocol: string; baseUrl: string; model: string; secret: string; allowRemoteHttp?: boolean }
+interface ModelInput { protocol: string; baseUrl: string; model: string; secret: string }
 interface Running { controller: AbortController; done: Promise<void>; steer?: (text: string) => void; pending: string[]; resume?: (text: string) => void; stopRequested?: boolean }
 export class PhoneRuntime {
   readonly goals: GoalRuntime
@@ -44,10 +44,16 @@ export class PhoneRuntime {
         task.phase = 'unknown'; task.summary = '后台中断；未自动恢复手机操作。'; await this.record(task, 'interrupted')
       }
     }
-    let profiles: ModelProfile[] = []
-    try { profiles = JSON.parse(await readFile(join(this.options.root, 'models-v1.json'), 'utf8')) as ModelProfile[] }
+    let profiles: (ModelProfile & { allowRemoteHttp?: boolean })[] = []
+    const modelsPath = join(this.options.root, 'models-v1.json')
+    try { profiles = JSON.parse(await readFile(modelsPath, 'utf8')) as typeof profiles }
     catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error }
-    for (const profile of profiles) this.profiles.set(profile.id, profile)
+    const legacyConsent = profiles.some(profile => Object.hasOwn(profile, 'allowRemoteHttp'))
+    for (const { allowRemoteHttp: _legacyConsent, ...profile } of profiles) this.profiles.set(profile.id, profile)
+    if (legacyConsent) {
+      await writeFile(modelsPath + '.tmp', JSON.stringify([...this.profiles.values()]), { mode: 0o600 })
+      await rename(modelsPath + '.tmp', modelsPath)
+    }
     await this.goals.initialize()
   }
   get hostDriven(): boolean { return this.options.executor.mode === 'host' }
@@ -78,11 +84,9 @@ export class PhoneRuntime {
     if (typeof input.secret !== 'string' || !input.secret.trim() || input.secret.length > 8192 || /[\r\n\0]/.test(input.secret)) throw new Error('A valid model credential is required')
     if (!['openai-completions', 'openai-responses'].includes(input.protocol)) throw new Error('Unsupported model protocol')
     const url = new URL(input.baseUrl)
-    const remoteHttp = url.protocol === 'http:' && !['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)
     if (url.username || url.password || url.search || url.hash || (url.protocol !== 'https:' && url.protocol !== 'http:')) throw new Error('Use an HTTP or HTTPS model endpoint without credentials in its URL')
-    if (remoteHttp && input.allowRemoteHttp !== true) throw new Error('Confirm unencrypted transfer for this remote HTTP model endpoint')
     if (!input.model?.trim() || input.model.length > 200) throw new Error('Model name required')
-    const profile: ModelProfile = { id: randomUUID(), protocol: input.protocol as ModelProfile['protocol'], baseUrl: url.href.replace(/\/$/, ''), model: input.model, credentialRef: randomUUID(), ...(remoteHttp ? { allowRemoteHttp: true } : {}) }
+    const profile: ModelProfile = { id: randomUUID(), protocol: input.protocol as ModelProfile['protocol'], baseUrl: url.href.replace(/\/$/, ''), model: input.model, credentialRef: randomUUID() }
     await this.options.executor.probe(profile, input.secret, AbortSignal.timeout(60_000))
     await this.options.credentials.set(profile.credentialRef, input.secret)
     const path = join(this.options.root, 'models-v1.json')

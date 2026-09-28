@@ -2,7 +2,7 @@ import { OpenGuiError } from '../../../packages/device-runtime/src/errors.ts'
 import { HostExecutor } from '../../../packages/phone-agent/src/host-executor.ts'
 import { GoalRuntime } from '../../../packages/phone-agent/src/goals.ts'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { mkdtemp, readFile, rm, appendFile } from 'node:fs/promises'
+import { mkdtemp, readFile, rm, appendFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { PhoneRuntime } from '../../../packages/phone-agent/src/runtime.ts'
@@ -45,26 +45,25 @@ const settled = async (runtime: PhoneRuntime, id: string) => { await vi.waitFor(
 const complete: Executor = { plan: async p => ({ kind: 'branches', branches: [{ goal: p.goal, successCriteria: p.goal, eligibleDeviceIds: p.devices.filter(d=>d.authorized&&d.connected).map(d=>d.id) }] }), probe: async () => {}, run: async e => { const obs = await e.observe(); await e.finish('Settings visible', [{ criterion: e.task.successCriteria, status: 'passed', evidenceId: obs.observationId }], 'completed') } }
 
 describe('durable autonomous phone tasks', () => {
-  it('requires per-model consent before probing a remote HTTP endpoint', async () => {
+  it('probes a remote HTTP endpoint without extra consent and loads older profiles', async () => {
     const probe = vi.fn(async () => {})
     const { runtime, root } = await setup({ ...complete, probe })
     const set = vi.spyOn(runtime.options.credentials, 'set')
     const input = { protocol: 'openai-completions', baseUrl: 'http://model.example/v1', model: 'vision', secret: 'fixture-secret' }
-    await expect(runtime.saveModel(input)).rejects.toThrow('Confirm unencrypted transfer')
-    expect(probe).not.toHaveBeenCalled()
-    expect(set).not.toHaveBeenCalled()
-    expect(runtime.profiles.size).toBe(1)
-
-    const saved = await runtime.saveModel({ ...input, allowRemoteHttp: true })
-    expect(saved).toMatchObject({ baseUrl: input.baseUrl, allowRemoteHttp: true })
-    expect(probe).toHaveBeenCalledWith(expect.objectContaining({ allowRemoteHttp: true }), input.secret, expect.any(AbortSignal))
+    const saved = await runtime.saveModel(input)
+    expect(saved).toMatchObject({ baseUrl: input.baseUrl })
+    expect(saved).not.toHaveProperty('allowRemoteHttp')
+    expect(probe).toHaveBeenCalledWith(expect.objectContaining({ baseUrl: input.baseUrl }), input.secret, expect.any(AbortSignal))
     expect(set).toHaveBeenCalledWith(saved.credentialRef, input.secret)
     const savedProfiles = JSON.parse(await readFile(join(root, 'models-v1.json'), 'utf8')) as ModelProfile[]
     expect(savedProfiles).toContainEqual(saved)
     expect(JSON.stringify(savedProfiles)).not.toContain(input.secret)
+    await writeFile(join(root, 'models-v1.json'), JSON.stringify(savedProfiles.map(profile => profile.id === saved.id ? { ...profile, allowRemoteHttp: true } : profile)))
     const reloaded = new PhoneRuntime(runtime.options)
     await reloaded.initialize()
     expect(reloaded.profiles.get(saved.id)).toEqual(saved)
+    expect(JSON.parse(await readFile(join(root, 'models-v1.json'), 'utf8'))).toContainEqual(saved)
+    expect(await readFile(join(root, 'models-v1.json'), 'utf8')).not.toContain('allowRemoteHttp')
     await reloaded.close()
   })
 
@@ -74,10 +73,10 @@ describe('durable autonomous phone tasks', () => {
     const set = vi.spyOn(runtime.options.credentials, 'set')
     const input = { protocol: 'openai-completions', model: 'vision', secret: 'fixture-secret' }
     for (const baseUrl of ['http://user:pass@model.example/v1', 'http://model.example/v1?key=value', 'ftp://model.example/v1']) {
-      await expect(runtime.saveModel({ ...input, baseUrl, allowRemoteHttp: true })).rejects.toThrow()
+      await expect(runtime.saveModel({ ...input, baseUrl })).rejects.toThrow()
     }
     expect(probe).not.toHaveBeenCalled()
-    await expect(runtime.saveModel({ ...input, baseUrl: 'http://model.example/v1', allowRemoteHttp: true })).rejects.toThrow('probe failed')
+    await expect(runtime.saveModel({ ...input, baseUrl: 'http://model.example/v1' })).rejects.toThrow('probe failed')
     expect(set).not.toHaveBeenCalled()
     expect(runtime.profiles.size).toBe(1)
     await expect(readFile(join(root, 'models-v1.json'))).rejects.toMatchObject({ code: 'ENOENT' })

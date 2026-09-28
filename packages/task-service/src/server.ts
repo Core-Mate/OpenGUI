@@ -74,7 +74,7 @@ export async function startTaskService(options: TaskServiceOptions): Promise<Tas
           }
           if (request.name === '__configure_model__') {
             const args = request.args ?? {}
-            const profile = await runtime.saveModel({ protocol: String(args.protocol), baseUrl: String(args.baseUrl), model: String(args.model), secret: String(args.secret ?? ''), allowRemoteHttp: args.allowRemoteHttp === true })
+            const profile = await runtime.saveModel({ protocol: String(args.protocol), baseUrl: String(args.baseUrl), model: String(args.model), secret: String(args.secret ?? '') })
             send({ result: { id: profile.id, protocol: profile.protocol, baseUrl: profile.baseUrl, model: profile.model } })
             return
           }
