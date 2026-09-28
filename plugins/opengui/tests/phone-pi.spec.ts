@@ -6,15 +6,15 @@ import { ObservationId } from '../../../packages/device-runtime/src/actions.ts'
 
 const cleanup: (() => Promise<void>)[] = []
 afterEach(async () => { for (const fn of cleanup.splice(0)) await fn() })
-async function gateway(protocol: ModelProfile['protocol'], planning = false) {
+async function gateway(protocol: ModelProfile['protocol'], planning = false, probing = false) {
   let turns = 0
   const requests: Record<string, unknown>[] = []
   const server = createServer((req, res) => {
     void (async () => {
       let body = ''; for await (const part of req) body += String(part)
       requests.push(JSON.parse(body) as Record<string, unknown>)
-      const name = planning ? 'propose_plan' : turns++ === 0 ? 'observe' : 'finish'
-      const args = planning ? JSON.stringify({ kind: 'branches', branches: [{ goal: 'Read system version', successCriteria: 'System version visible', eligibleDeviceIds: ['a', 'b'] }] }) : name === 'observe' ? '{}' : JSON.stringify({ summary: 'Settings visible', evidenceId: 'frame', status: 'passed' })
+      const name = probing ? 'image_check' : planning ? 'propose_plan' : turns++ === 0 ? 'observe' : 'finish'
+      const args = probing ? JSON.stringify({ color: 'red' }) : planning ? JSON.stringify({ kind: 'branches', branches: [{ goal: 'Read system version', successCriteria: 'System version visible', eligibleDeviceIds: ['a', 'b'] }] }) : name === 'observe' ? '{}' : JSON.stringify({ summary: 'Settings visible', evidenceId: 'frame', status: 'passed' })
       res.writeHead(200, { 'Content-Type': 'text/event-stream' })
       const emit = (data: unknown) => res.write('data: ' + JSON.stringify(data) + '\n\n')
       if (protocol === 'openai-completions') {
@@ -38,6 +38,17 @@ async function gateway(protocol: ModelProfile['protocol'], planning = false) {
   return { requests, profile: { id: 'profile', protocol, baseUrl: `http://127.0.0.1:${address.port}/v1`, model: 'vision', credentialRef: 'ref' } satisfies ModelProfile }
 }
 describe('pinned Pi provider integration', () => {
+  it('verifies a 64 by 64 image through the Chat Completions tool path', async () => {
+    const { profile, requests } = await gateway('openai-completions', false, true)
+    await expect(executor.probe(profile, 'fixture-key', AbortSignal.timeout(5000))).resolves.toBeUndefined()
+    expect(requests).toHaveLength(1)
+    const image = JSON.stringify(requests[0]).match(/data:image\/png;base64,([A-Za-z0-9+/=]+)/)
+    expect(image).not.toBeNull()
+    const png = Buffer.from(image![1]!, 'base64')
+    expect(png.readUInt32BE(16)).toBe(64)
+    expect(png.readUInt32BE(20)).toBe(64)
+  })
+
   for (const protocol of ['openai-completions', 'openai-responses'] as const) it(`plans automatic assignment through ${protocol}`, async () => {
     const { profile, requests } = await gateway(protocol, true)
     const plan = await executor.plan!({ goal: 'Read system version on any phone', profile, key: 'fixture-key', signal: AbortSignal.timeout(5000), usage: vi.fn(),

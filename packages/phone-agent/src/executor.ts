@@ -31,7 +31,7 @@ export function phoneExecutor(create: AgentFactory): Executor {
         stopped: () => accepted, usage: () => {}, tools: [{ name: 'image_check', description: 'Report the image color.', parameters: object({ color: string }, ['color']),
           execute: async args => { if (args.color !== 'red') throw new Error('Image check failed'); accepted = true; return result('ok') } }] })
       try {
-        await agent.prompt('Inspect this image and call image_check. Use an English lowercase color.', [{ type: 'image', mimeType: 'image/png', data: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC' }])
+        await agent.prompt('Inspect this image and call image_check. Use an English lowercase color.', [{ type: 'image', mimeType: 'image/png', data: 'iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAATElEQVR42u3PQQ0AAAgEoNP+nTWCbzdoQE1+6wgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHBZShQF/CY4YrwAAAABJRU5ErkJggg==' }])
         signal.throwIfAborted()
         if (!accepted) throw new Error('Model must support image input and tool calls')
       } finally { agent.abort() }
