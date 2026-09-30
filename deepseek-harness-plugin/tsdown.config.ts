@@ -4,7 +4,7 @@ import { defineConfig } from 'tsdown'
 export default defineConfig([
   {
     name: 'opengui/task-service',
-    entry: { 'task-service': '../plugins/opengui/src/task-service-main.ts' },
+    entry: { 'task-service': 'lib/types/deepseek-harness-plugin/src/task-service.js' },
     outDir: 'lib',
     format: ['esm'],
     platform: 'node',

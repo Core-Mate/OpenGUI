@@ -120,6 +120,7 @@ async function stage(host, destination) {
   await mkdir(target) // Refuse to merge into an existing tree.
   const filter = source => !/(^|[/\\])(node_modules|lib|dist|\.artifacts|coverage|artifacts)([/\\]|$)/.test(source)
   await cp(resolve(repository, hostPath), resolve(target, hostPath), { recursive: true, filter })
+  if (host === 'dsh') await cp(resolve(repository, '.agents/plugins/marketplace.json'), resolve(target, '.agents/plugins/marketplace.json'))
   for (const name of sharedPackages) await cp(resolve(core, '..', name), resolve(target, 'packages', name), { recursive: true, filter })
   await writeFile(resolve(target, 'packages/device-runtime/build-source.json'), JSON.stringify({ sourceCommit: await sourceCommit() }) + '\n')
 }

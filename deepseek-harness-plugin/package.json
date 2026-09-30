@@ -80,6 +80,8 @@
     }
   },
   "dependencies": {
+    "@deepseek-ai/cordis-plugin-hmr": "1.0.16",
+    "@deepseek-ai/cordis-plugin-timer": "1.1.3",
     "@deepseek-ai/schemastery": "3.18.1",
     "@earendil-works/pi-ai": "0.85.1",
     "puppeteer-core": "25.8.0",

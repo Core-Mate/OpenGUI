@@ -24,6 +24,10 @@ for (const [host, adapter] of [['codex', 'plugins/opengui'], ['workbuddy', 'work
       assert.ok((await readdir(join(destination, adapter, 'src'))).length > 0)
       assert.match(JSON.parse(await readFile(join(destination, 'packages/device-runtime/build-source.json'), 'utf8')).sourceCommit, /^[a-f0-9]{40}$/)
       assert.ok(!(await readdir(join(destination, adapter))).includes('node_modules'))
+      if (host === 'dsh') {
+        const marketplace = JSON.parse(await readFile(join(destination, '.agents/plugins/marketplace.json'), 'utf8'))
+        assert.equal(marketplace.plugins.find(plugin => plugin.name === 'opengui').source.path, './deepseek-harness-plugin')
+      }
     } finally { await rm(temporary, { recursive: true, force: true }) }
   })
 }
