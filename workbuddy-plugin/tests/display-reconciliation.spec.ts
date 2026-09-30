@@ -14,7 +14,7 @@ const device = (id: string, authorized = true): ResolvedWorkBuddyDevice => ({ id
 async function fixture() {
   const stateDir = await mkdtemp(join(tmpdir(), 'opengui-reconcile-test-'))
   cleanup.push(() => rm(stateDir, { recursive: true, force: true }))
-  const host = new LocalAdbPhoneHost({ stateDir })
+  const host = new LocalAdbPhoneHost({ stateDir, adbPath: '/fixture/adb' })
   cleanup.push(() => host.dispose())
   let devices = [device('a')]
   mirror.inspect.mockResolvedValue({ phase: 'running', ready: true })

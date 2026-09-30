@@ -24,7 +24,7 @@ export class TaskHost {
   private ready: Promise<PhoneRuntime> | undefined
   private runtime: PhoneRuntime | undefined
   private workbench: Workbench | undefined
-  constructor(private readonly factory: () => PhoneRuntime) {}
+  constructor(private readonly factory: () => PhoneRuntime, private readonly platform: NodeJS.Platform = process.platform) {}
   get watching(): boolean { return this.workbench?.active ?? false }
   get activeCount(): number { return (this.runtime?.activeCount ?? 0) + (this.runtime?.goals.activeCount ?? 0) }
   prepareMaintenance(): boolean {
@@ -36,7 +36,7 @@ export class TaskHost {
     return this.ready
   }
   async call(name: string, args: Record<string, unknown>, owner: string): Promise<unknown> {
-    if (process.platform !== 'darwin') throw new Error('Autonomous phone tasks currently support macOS only')
+    if (this.platform !== 'darwin') throw new Error('Autonomous phone tasks currently support macOS only')
     const runtime = await this.load()
     const url = await this.workbench!.open(owner)
     const claimed = (id: string): boolean => runtime.options.executor instanceof HostExecutor && runtime.options.executor.owns(owner, id)

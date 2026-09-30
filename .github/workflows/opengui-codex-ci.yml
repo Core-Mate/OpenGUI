@@ -4,11 +4,17 @@ on:
   pull_request:
     paths:
       - 'packages/device-runtime/**'
+      - 'packages/phone-agent/**'
+      - 'packages/workbench/**'
+      - 'packages/task-service/**'
       - 'plugins/opengui/**'
       - '.github/workflows/opengui-codex-*.yml'
   push:
     paths:
       - 'packages/device-runtime/**'
+      - 'packages/phone-agent/**'
+      - 'packages/workbench/**'
+      - 'packages/task-service/**'
       - 'plugins/opengui/**'
       - '.github/workflows/opengui-codex-*.yml'
 

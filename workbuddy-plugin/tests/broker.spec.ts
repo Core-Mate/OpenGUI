@@ -272,7 +272,8 @@ it('keeps a web task bound to its hook conversation over a shared MCP connection
   } })
   const service = new WorkBuddyOpenGuiService({ viewers: new ReadyViewer(), host })
   const runtime = new PhoneRuntime({ root: join(root, 'phone-agent'), host: 'workbuddy', hardware: service.phoneHardware, credentials: { get: async () => '', set: async () => {} }, executor: new HostExecutor(), leaseRoot: join(root, 'leases') })
-  const tasks = new TaskHost(() => runtime)
+  // Exercise conversation ownership on every CI OS with fake phone resources.
+  const tasks = new TaskHost(() => runtime, 'darwin')
   disposers.push(() => tasks.close())
   const broker = await startBroker({ port: 0, token: 'test-secret', service, tasks })
   disposers.push(broker.close)

@@ -28,13 +28,25 @@ const viewers = { open: async () => ({ viewerId: 'v', url: 'http://127.0.0.1/v/'
 async function boot(root: string, executor: Executor, profiles: ModelProfile[] = []) {
   await mkdir(dataPath(root), { recursive: true })
   if (profiles.length) await writeFile(join(dataPath(root), 'models-v1.json'), JSON.stringify(profiles), { mode: 0o600 })
-  const service = await startTaskService({ root, hardware: hardware(), executor, credentials: { get: async () => 'secret', set: async () => {} }, viewers: viewers as never, leaseRoot: join(root, 'leases') })
+  const service = await startTaskService({ root, platform: 'darwin', hardware: hardware(), executor, credentials: { get: async () => 'secret', set: async () => {} }, viewers: viewers as never, leaseRoot: join(root, 'leases') })
   cleanups.push(() => service.close())
   process.env.OPENGUI_TASK_SERVICE_AUTOSTART = '0'
   return service
 }
 
 describe('shared task service', () => {
+  it.each(['linux', 'win32'] as const)('preserves the %s startup restriction without accessing devices or credentials', async platform => {
+    const root = await mkdtemp(join(tmpdir(), 'opengui-task-platform-'))
+    cleanups.push(() => rm(root, { recursive: true, force: true }))
+    const devices = hardware()
+    const list = vi.spyOn(devices, 'listDevices')
+    const credentials = { get: vi.fn(), set: vi.fn() }
+    await expect(startTaskService({ root, platform, hardware: devices, executor: { probe: async () => {}, run: async () => {} }, credentials, viewers: viewers as never })).rejects.toThrow('Autonomous phone tasks currently support macOS only')
+    expect(list).not.toHaveBeenCalled()
+    expect(credentials.get).not.toHaveBeenCalled()
+    expect(credentials.set).not.toHaveBeenCalled()
+  })
+
   it('runs a submitted task after the client leaves and hides it from another host', async () => {
     const root = await mkdtemp(join(tmpdir(), 'opengui-task-service-'))
     cleanups.push(() => rm(root, { recursive: true, force: true }))

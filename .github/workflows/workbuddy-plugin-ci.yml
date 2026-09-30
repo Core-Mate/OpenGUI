@@ -4,11 +4,17 @@ on:
   push:
     paths:
       - 'packages/device-runtime/**'
+      - 'packages/phone-agent/**'
+      - 'packages/workbench/**'
+      - 'packages/task-service/**'
       - 'workbuddy-plugin/**'
       - '.github/workflows/workbuddy-plugin-*.yml'
   pull_request:
     paths:
       - 'packages/device-runtime/**'
+      - 'packages/phone-agent/**'
+      - 'packages/workbench/**'
+      - 'packages/task-service/**'
       - 'workbuddy-plugin/**'
       - '.github/workflows/workbuddy-plugin-*.yml'
 

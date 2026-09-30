@@ -15,6 +15,8 @@ export interface TaskServiceOptions {
   credentials?: Credentials
   viewers?: ViewerServer
   leaseRoot?: string
+  /** Injectable alongside fake hardware/credentials; production uses the current OS. */
+  platform?: NodeJS.Platform
 }
 
 interface Request {
@@ -39,7 +41,7 @@ export async function startTaskService(options: TaskServiceOptions): Promise<Tas
     ...(options.viewers ? { viewers: options.viewers } : {}),
     ...(options.leaseRoot ? { leaseRoot: options.leaseRoot } : {}),
   })
-  const tasks = new TaskHost(() => runtime)
+  const tasks = new TaskHost(() => runtime, options.platform)
   await tasks.call('opengui_list_tasks', {}, 'codex:bootstrap')
   const endpoint = socketPath(options.root)
   const existing = await lstat(endpoint).catch(() => undefined)

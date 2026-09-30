@@ -24,6 +24,8 @@ afterEach(async () => { for (const cleanup of cleanups.splice(0).reverse()) awai
 const deferred = () => { let resolve!: () => void; const promise = new Promise<void>(r => { resolve = r }); return { promise, resolve } }
 const signal = () => AbortSignal.timeout(3000)
 const profile: ModelProfile = { id: 'model', protocol: 'openai-completions', baseUrl: 'http://127.0.0.1:1234/v1', model: 'vision', credentialRef: 'ref' }
+// These integration tests use fake devices, viewers and credentials, including on Linux CI.
+// TaskHost's real-platform policy is checked separately below.
 async function setup(executor: Executor, gate?: Promise<unknown>, root?: string) {
   root ??= await mkdtemp(join(tmpdir(), 'opengui-agent-test-'))
   cleanups.push(() => rm(root!, { recursive: true, force: true }))
@@ -45,6 +47,30 @@ const settled = async (runtime: PhoneRuntime, id: string) => { await vi.waitFor(
 const complete: Executor = { plan: async p => ({ kind: 'branches', branches: [{ goal: p.goal, successCriteria: p.goal, eligibleDeviceIds: p.devices.filter(d=>d.authorized&&d.connected).map(d=>d.id) }] }), probe: async () => {}, run: async e => { const obs = await e.observe(); await e.finish('Settings visible', [{ criterion: e.task.successCriteria, status: 'passed', evidenceId: obs.observationId }], 'completed') } }
 
 describe('durable autonomous phone tasks', () => {
+  it.each(['linux', 'win32'] as const)('rejects unsupported %s hosts before initializing device or model resources', async platform => {
+    const factory = vi.fn<() => PhoneRuntime>()
+    const host = new TaskHost(factory, platform)
+    for (const name of ['opengui_open_workbench', 'opengui_list_tasks', 'opengui_run_task']) {
+      await expect(host.call(name, requestData('unsupported'), 'owner')).rejects.toThrow('Autonomous phone tasks currently support macOS only')
+    }
+    expect(factory).not.toHaveBeenCalled()
+    await host.close()
+  })
+
+  it('uses the actual host platform by default', async () => {
+    const { runtime } = await setup(complete)
+    const factory = vi.fn(() => runtime)
+    const host = new TaskHost(factory)
+    cleanups.push(() => host.close())
+    if (process.platform === 'darwin') {
+      expect(await host.call('opengui_list_tasks', {}, 'owner')).toEqual({ tasks: [] })
+      expect(factory).toHaveBeenCalledOnce()
+    } else {
+      await expect(host.call('opengui_list_tasks', {}, 'owner')).rejects.toThrow('Autonomous phone tasks currently support macOS only')
+      expect(factory).not.toHaveBeenCalled()
+    }
+  })
+
   it('probes a remote HTTP endpoint without extra consent and loads older profiles', async () => {
     const probe = vi.fn(async () => {})
     const { runtime, root } = await setup({ ...complete, probe })
@@ -106,7 +132,7 @@ describe('durable autonomous phone tasks', () => {
   it('keeps accepted tasks alive after transport loss and rejects replacement while running', async () => {
     const gate = deferred()
     const { runtime, root } = await setup(complete, gate.promise)
-    const tasks = new TaskHost(() => runtime)
+    const tasks = new TaskHost(() => runtime, 'darwin')
     const server = await startDaemon({ root: join(root, 'daemon'), taskHost: tasks, service: new CodexOpenGuiService({ host: new FakeHost(), viewers: new ReadyViewer() }), idleMs: 1, sweepMs: 100 })
     cleanups.push(server.close)
     const socket = createConnection(server.endpoint)
@@ -152,7 +178,7 @@ describe('durable autonomous phone tasks', () => {
   it('opens the workbench at the root and carries host context for host submissions', async () => {
     const executor = new HostExecutor()
     const { runtime, hardware } = await setup(executor)
-    const host = new TaskHost(() => runtime)
+    const host = new TaskHost(() => runtime, 'darwin')
     cleanups.push(() => host.close())
     const first = await host.call('opengui_open_workbench', {}, 'host-a') as { url: string }
     const second = await host.call('opengui_open_workbench', {}, 'host-b') as { url: string }
@@ -180,7 +206,7 @@ describe('durable autonomous phone tasks', () => {
   it.each([['workbuddy', '1'], ['codex', 'codex']] as const)('serves %s native and browser entrypoints at the root', async (hostName, flag) => {
     const { runtime, hardware } = await setup(new HostExecutor())
     runtime.options.host = hostName
-    const host = new TaskHost(() => runtime)
+    const host = new TaskHost(() => runtime, 'darwin')
     cleanups.push(() => host.close())
     const { url } = await host.call('opengui_open_workbench', {}, 'host-a') as { url: string }
     const headers = { 'sec-fetch-site': 'cross-site', 'sec-fetch-dest': 'document' }
@@ -204,7 +230,7 @@ describe('durable autonomous phone tasks', () => {
   it('accepts JSON POSTs without a browser credential', async () => {
     const { runtime, hardware } = await setup(new HostExecutor())
     runtime.options.host = 'workbuddy'
-    const host = new TaskHost(() => runtime)
+    const host = new TaskHost(() => runtime, 'darwin')
     cleanups.push(() => host.close())
     const { url } = await host.call('opengui_open_workbench', {}, 'host-a') as { url: string }
     const headers = { 'content-type': 'application/json' }
@@ -240,7 +266,7 @@ describe('durable autonomous phone tasks', () => {
     const ids = (tasks: { id: string }[]) => tasks.map(t => t.id)
     expect(ids(restored.list('owner'))).toEqual([entries[2]![1], entries[0]![1]])
     expect(ids(restored.goals.list('owner'))).toEqual([entries[3]![1], entries[1]![1]])
-    const host = new TaskHost(() => restored)
+    const host = new TaskHost(() => restored, 'darwin')
     const result = await host.call('opengui_list_tasks', {}, 'owner') as { tasks: { id: string }[] }
     expect(ids(result.tasks)).toEqual([entries[2]![1], entries[3]![1], entries[1]![1], entries[0]![1]])
     expect((await host.call('opengui_list_tasks', {}, 'other') as { tasks: unknown[] }).tasks).toEqual([])
@@ -592,7 +618,7 @@ it('returns rejected host actions for fresh observation without replaying them',
 it('lets only the claiming host manage and list a homepage task', async () => {
   const executor = new HostExecutor()
   const { runtime } = await setup(executor)
-  const host = new TaskHost(() => runtime)
+  const host = new TaskHost(() => runtime, 'darwin')
   cleanups.push(() => host.close())
   await host.call('opengui_open_workbench', {}, 'host-a')
   const parent = await runtime.goals.submit({ requestId: 'homepage-owner', goal: 'Inspect settings' }, 'workbench')
@@ -634,7 +660,7 @@ it('claims a requested homepage task without taking another pending task', async
 it('polls an exact branch without selecting its sibling or bypassing the parent claim', async () => {
   const executor = new HostExecutor()
   const { runtime } = await setup(executor)
-  const host = new TaskHost(() => runtime)
+  const host = new TaskHost(() => runtime, 'darwin')
   cleanups.push(() => host.close())
   await host.call('opengui_open_workbench', {}, 'host-a')
   const parent = await runtime.goals.submit({ requestId: 'branch-poll', goal: 'Inspect two phones' }, 'workbench')
@@ -659,7 +685,7 @@ it('polls an exact branch without selecting its sibling or bypassing the parent 
 it('retains a user-help wait across a host turn but cancels it on explicit interruption', async () => {
   const executor = new HostExecutor()
   const { runtime, hardware } = await setup(executor)
-  const host = new TaskHost(() => runtime)
+  const host = new TaskHost(() => runtime, 'darwin')
   cleanups.push(() => host.close())
   await host.call('opengui_open_workbench', {}, 'conversation')
   const parent = await runtime.goals.submit({ requestId: 'host-help', goal: 'Read settings' }, 'conversation')
