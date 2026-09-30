@@ -1,11 +1,32 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { mkdtemp, mkdir, rm, writeFile, symlink, realpath } from 'node:fs/promises'
+import { execFileSync } from 'node:child_process'
+import { existsSync } from 'node:fs'
+import { mkdtemp, mkdir, rm, writeFile, symlink, realpath, readFile, readdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createRequire } from 'node:module'
 import { bundleImports, validateSourceBoundary } from './build.mjs'
+
+for (const [host, adapter] of [['codex', 'plugins/opengui'], ['workbuddy', 'workbuddy-plugin'], ['dsh', 'deepseek-harness-plugin']]) {
+  test(`stages the complete shared source tree for ${host} in an isolated directory`, {
+    skip: !existsSync(fileURLToPath(new URL(`../../${adapter}/src`, import.meta.url))),
+  }, async () => {
+    const temporary = await mkdtemp(join(tmpdir(), 'opengui-stage-test-'))
+    const destination = join(temporary, 'export')
+    const build = fileURLToPath(new URL('./build.mjs', import.meta.url))
+    try {
+      execFileSync(process.execPath, [build, 'stage', host, destination])
+      assert.deepEqual((await readdir(join(destination, 'packages'))).sort(), ['device-runtime', 'phone-agent', 'task-service', 'workbench'])
+      const source = fileURLToPath(new URL('../task-service/src/server.ts', import.meta.url))
+      assert.equal(await readFile(join(destination, 'packages/task-service/src/server.ts'), 'utf8'), await readFile(source, 'utf8'))
+      assert.ok((await readdir(join(destination, adapter, 'src'))).length > 0)
+      assert.match(JSON.parse(await readFile(join(destination, 'packages/device-runtime/build-source.json'), 'utf8')).sourceCommit, /^[a-f0-9]{40}$/)
+      assert.ok(!(await readdir(join(destination, adapter))).includes('node_modules'))
+    } finally { await rm(temporary, { recursive: true, force: true }) }
+  })
+}
 
 test('checks executable bundle imports without interpreting comments or strings as code', () => {
   const ts = createRequire(join(process.cwd(), 'package.json'))('typescript')

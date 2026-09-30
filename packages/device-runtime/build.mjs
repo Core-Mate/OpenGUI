@@ -8,6 +8,7 @@ import { createRequire } from 'node:module'
 
 const core = dirname(fileURLToPath(import.meta.url))
 const repository = resolve(core, '../..')
+const sharedPackages = ['device-runtime', 'phone-agent', 'workbench', 'task-service']
 const inside = (root, path) => path === root || path.startsWith(root + sep)
 
 async function files(root) {
@@ -23,7 +24,7 @@ async function files(root) {
 
 async function digest() {
   const hash = createHash('sha256')
-  for (const name of ['device-runtime', 'phone-agent', 'workbench', 'task-service']) for (const path of await files(resolve(core, '..', name, 'src'))) {
+  for (const name of sharedPackages) for (const path of await files(resolve(core, '..', name, 'src'))) {
     const data = await readFile(path)
     hash.update(relative(core, path).split(sep).join('/')).update('\0')
     hash.update(String(data.length)).update('\0').update(data)
@@ -44,7 +45,7 @@ async function sourceCommit() {
 
 export async function validateSourceBoundary(hostRoot) {
   const host = await realpath(resolve(hostRoot, 'src'))
-  const shared = await Promise.all(['device-runtime', 'phone-agent', 'workbench', 'task-service'].map(name => realpath(resolve(core, '..', name, 'src'))))
+  const shared = await Promise.all(sharedPackages.map(name => realpath(resolve(core, '..', name, 'src'))))
   for (const root of [host, ...shared]) for (const path of await files(root)) {
     if (!path.endsWith('.ts')) continue
     const source = await readFile(path, 'utf8')
@@ -119,7 +120,7 @@ async function stage(host, destination) {
   await mkdir(target) // Refuse to merge into an existing tree.
   const filter = source => !/(^|[/\\])(node_modules|lib|dist|\.artifacts|coverage|artifacts)([/\\]|$)/.test(source)
   await cp(resolve(repository, hostPath), resolve(target, hostPath), { recursive: true, filter })
-  for (const name of ['device-runtime', 'phone-agent', 'workbench']) await cp(resolve(core, '..', name), resolve(target, 'packages', name), { recursive: true, filter })
+  for (const name of sharedPackages) await cp(resolve(core, '..', name), resolve(target, 'packages', name), { recursive: true, filter })
   await writeFile(resolve(target, 'packages/device-runtime/build-source.json'), JSON.stringify({ sourceCommit: await sourceCommit() }) + '\n')
 }
 
