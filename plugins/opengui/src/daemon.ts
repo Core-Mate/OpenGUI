@@ -1,3 +1,6 @@
+import { TaskHost, isTaskTool } from '../../../packages/phone-agent/src/host.ts'
+import { sharedPhoneTasks, type PhoneTasks } from '../../../packages/task-service/src/client.ts'
+import { errorInfo, OpenGuiError } from './errors.ts'
 import { randomUUID } from 'node:crypto'
 import { spawn } from 'node:child_process'
 import { chmod, lstat, open, readFile, rm } from 'node:fs/promises'
@@ -19,7 +22,7 @@ export interface Request {
   args: Record<string, unknown>
   owner?: string
 }
-export interface Response { ok: boolean; result?: unknown; error?: string }
+export interface Response { ok: boolean; result?: unknown; error?: string; failure?: ReturnType<typeof errorInfo> }
 export interface Hello { version: string; protocol: number; activeSessions: number; activeViewers?: number }
 export function request(name: string, args: Record<string, unknown> = {}, owner = process.env.CODEX_THREAD_ID): Request {
   return { version: VERSION, protocol: PROTOCOL_VERSION, name, args, ...(owner ? { owner } : {}) }
@@ -30,22 +33,28 @@ export function sendRequest(endpoint: string, value: Request, signal?: AbortSign
   return new Promise((resolve, reject) => {
     const socket = createConnection(endpoint)
     let body = ''
+    let sent = false
+    const fail = (error: unknown): void => {
+      cleanup()
+      reject(value.name === 'opengui_act' && sent
+        ? new OpenGuiError('connection_lost', error instanceof Error ? error.message : String(error), 'outcome_unknown', 'observe') : error)
+    }
     const cleanup = (): void => { signal?.removeEventListener('abort', abort); socket.destroy() }
-    const abort = (): void => { cleanup(); reject(signal?.reason ?? new Error('opengui: request cancelled')) }
+    const abort = (): void => { fail(signal?.reason ?? new Error('opengui: request cancelled')) }
     if (signal?.aborted) { abort(); return }
     signal?.addEventListener('abort', abort, { once: true })
     socket.setEncoding('utf8')
-    socket.setTimeout(125_000, () => { cleanup(); reject(new Error('opengui: daemon request timed out')) })
-    socket.once('connect', () => socket.write(JSON.stringify(value) + '\n'))
+    socket.setTimeout(125_000, () => fail(new Error('opengui: daemon request timed out')))
+    socket.once('connect', () => { sent = true; socket.write(JSON.stringify(value) + '\n') })
     socket.on('data', chunk => {
       body += chunk
-      if (Buffer.byteLength(body) > 2_000_000) { cleanup(); reject(new Error('opengui: oversized daemon response')); return }
+      if (Buffer.byteLength(body) > 2_000_000) { fail(new Error('opengui: oversized daemon response')); return }
       if (!body.includes('\n')) return
       try { const result = JSON.parse(body.trim()) as Response; cleanup(); resolve(result) }
-      catch (error) { cleanup(); reject(error) }
+      catch (error) { fail(error) }
     })
-    socket.once('error', error => { cleanup(); reject(error) })
-    socket.once('end', () => { if (!body.includes('\n')) { cleanup(); reject(new Error('opengui: incomplete daemon response')) } })
+    socket.once('error', fail)
+    socket.once('end', () => { if (!body.includes('\n')) { fail(new Error('opengui: incomplete daemon response')) } })
   })
 }
 
@@ -119,6 +128,7 @@ export async function ensureDaemon(entry: string, root = dataDirectory(), signal
 export interface DaemonOptions {
   root: string
   service?: CodexOpenGuiService
+  taskHost?: TaskHost | PhoneTasks
   confirm?: ConfirmAction
   idleMs?: number
   sweepMs?: number
@@ -131,6 +141,7 @@ export async function startDaemon(options: DaemonOptions): Promise<{ endpoint: s
   const observations = new ObservationStore(join(options.root, 'observations'))
   await observations.prune()
   const service = options.service ?? new CodexOpenGuiService({ onSessionClosed: id => observations.remove(id) })
+  const tasks = options.taskHost ?? sharedPhoneTasks('codex')
   const confirm = options.confirm ?? confirmAction
   const sockets = new Set<Socket>()
   const operations = new Set<Promise<void>>()
@@ -173,15 +184,16 @@ export async function startDaemon(options: DaemonOptions): Promise<{ endpoint: s
       if (!input.includes('\n')) return
       received = true
       const operation = (async () => {
+        let actionCompleted = false
         try {
           const value = JSON.parse(input.trim()) as Request
           if (value.name === '__ping__') {
-            respond({ ok: true, result: { version: VERSION, protocol: PROTOCOL_VERSION, activeSessions: service.activeSessionCount, activeViewers: Number(service.viewers.active) } satisfies Hello })
+            respond({ ok: true, result: { version: VERSION, protocol: PROTOCOL_VERSION, activeSessions: service.activeSessionCount + tasks.activeCount, activeViewers: Number(service.viewers.active) } satisfies Hello })
             return
           }
           if (value.version !== VERSION || value.protocol !== PROTOCOL_VERSION) throw new Error('opengui: incompatible CLI protocol or version')
           if (value.name === '__shutdown__') {
-            if (service.activeSessionCount > 0 || service.viewers.active) throw new Error('opengui: close active sessions before stopping this daemon')
+            if (service.activeSessionCount > 0 || tasks.activeCount > 0 || tasks.watching || service.viewers.active) throw new Error('opengui: close active sessions before stopping this daemon')
             respond({ ok: true, result: { state: 'stopping' } })
             setImmediate(() => { void close() })
             return
@@ -190,6 +202,7 @@ export async function startDaemon(options: DaemonOptions): Promise<{ endpoint: s
           if (typeof value.owner !== 'string' || !value.owner.trim() || value.owner.length > 200) {
             throw new Error('opengui: CODEX_THREAD_ID is required; run this command from a local Codex task')
           }
+          if (isTaskTool(value.name)) { respond({ ok: true, result: await tasks.call(value.name, value.args, value.owner) }); return }
           const sessionId = value.args.sessionId
           if (typeof sessionId === 'string' && owners.get(sessionId) !== value.owner) {
             throw new Error('opengui: session belongs to another Codex task or is unknown')
@@ -208,6 +221,7 @@ export async function startDaemon(options: DaemonOptions): Promise<{ endpoint: s
           const result = value.name === 'opengui_list_sessions'
             ? { sessions: service.listSessions().filter(item => owners.get(item.sessionId) === value.owner) }
             : await callOpenGuiTool(service, value.name, value.args, signal, confirmed, value.owner)
+          actionCompleted = value.name === 'opengui_act'
           if (value.name === 'opengui_open_session') {
             ownedSession = (result as { sessionId: string }).sessionId
             owners.set(ownedSession, value.owner)
@@ -226,7 +240,9 @@ export async function startDaemon(options: DaemonOptions): Promise<{ endpoint: s
             await service.cancel(ownedSession).catch(() => {})
             await observations.remove(ownedSession).catch(() => {})
           }
-          respond({ ok: false, error: error instanceof Error ? error.message : String(error) })
+          const failure = errorInfo(error)
+          if (actionCompleted) { failure.executionState = 'outcome_unknown'; failure.recovery = 'observe' }
+          respond({ ok: false, error: failure.message, failure })
         } finally {
           lastRequest = Date.now()
           const retained = new Set(service.listSessions().map(item => item.sessionId))
@@ -244,6 +260,7 @@ export async function startDaemon(options: DaemonOptions): Promise<{ endpoint: s
       const stopped = new Promise<void>(resolve => server.close(() => resolve()))
       for (const socket of sockets) socket.destroy()
       await Promise.allSettled(operations)
+      await tasks.close()
       await service.dispose()
       await stopped
       // Node removes its own bound Unix socket on close; never unlink another listener.
@@ -263,7 +280,7 @@ export async function startDaemon(options: DaemonOptions): Promise<{ endpoint: s
     sweeping = true
     void (async () => {
       await service.expireIdleSessions()
-      if (service.activeSessionCount === 0 && !service.viewers.active && operations.size === 0 && Date.now() - lastRequest >= (options.idleMs ?? DAEMON_IDLE_MS)) await close()
+      if (service.activeSessionCount === 0 && tasks.activeCount === 0 && !tasks.watching && !service.viewers.active && operations.size === 0 && Date.now() - lastRequest >= (options.idleMs ?? DAEMON_IDLE_MS)) await close()
     })().catch(() => {}).finally(() => { sweeping = false })
   }, options.sweepMs ?? 10_000)
   sweep.unref()

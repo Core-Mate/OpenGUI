@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
-import { mkdtemp, mkdir, readFile, realpath, rm, symlink, writeFile, copyFile } from 'node:fs/promises'
+import { chmod, mkdtemp, mkdir, readFile, realpath, rm, symlink, writeFile, copyFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -9,7 +9,7 @@ try {
   const root = join(temporary, 'workbuddy')
   const pkg = join(root, 'opengui', 'packages', 'test', 'node_modules', 'opengui-mcp')
   await mkdir(join(pkg, 'lib'), { recursive: true })
-  await writeFile(join(pkg, 'package.json'), JSON.stringify({ name: 'opengui-mcp', version: '0.3.1' }))
+  await writeFile(join(pkg, 'package.json'), JSON.stringify({ name: 'opengui-mcp', version: '0.4.0' }))
   await writeFile(join(pkg, 'lib', 'host-hook.js'), '// Synthetic installer target; never executed.\n')
   await writeFile(join(pkg, 'lib', 'opengui-SKILL.md'), 'name: opengui\n')
   await writeFile(join(root, 'mcp.json'), JSON.stringify({ mcpServers: { other: { command: 'untouched' } } }))
@@ -47,6 +47,27 @@ try {
   assert.notEqual(repeated.installState, first.installState)
   // Restore the original root for the independent redirection regression below.
   run()
+  if (process.platform === 'darwin') {
+    await chmod(join(root, 'opengui'), 0o700)
+    const nativeArgs = [script, '--config-root', root, '--package-dir', pkg, '--transport', 'http']
+    execFileSync(process.execPath, nativeArgs, { stdio: 'pipe' })
+    const native = JSON.parse(await readFile(join(root, 'mcp.json'), 'utf8'))
+    assert.equal(native.mcpServers.opengui.type, 'http')
+    assert.equal(native.mcpServers.opengui.command, undefined)
+    assert.equal(native.mcpServers.other.command, 'untouched')
+    assert.equal(run().status, 'ALREADY_CONFIGURED', 'Repeat install retains the chosen transport')
+    const edited = structuredClone(native)
+    edited.mcpServers.opengui.headers.Authorization = 'Bearer user-edited'
+    await writeFile(join(root, 'mcp.json'), JSON.stringify(edited))
+    assert.throws(run, /MCP_CONFLICT/)
+    assert.equal(JSON.parse(await readFile(join(root, 'mcp.json'))).mcpServers.opengui.headers.Authorization, 'Bearer user-edited')
+    await writeFile(join(root, 'mcp.json'), JSON.stringify(native))
+    execFileSync(process.execPath, [script, '--config-root', root, '--package-dir', pkg, '--transport', 'stdio'], { stdio: 'pipe' })
+    const reverted = JSON.parse(await readFile(join(root, 'mcp.json'))).mcpServers.opengui
+    assert.equal(reverted.type, 'stdio')
+    assert.equal(reverted.headers, undefined)
+    assert.equal(reverted.url, undefined)
+  }
   const conflictRoot = join(temporary, 'conflicting-host')
   await mkdir(conflictRoot)
   const conflict = JSON.stringify({mcpServers:{opengui:{command:'another-provider',args:[]}}})

@@ -7,6 +7,13 @@ import { ScrcpyInstaller } from '../src/scrcpy.ts'
 import { WorkBuddyOpenGuiService } from '../src/service.ts'
 import { FakeHost } from './fake-host.ts'
 
+// The installer and child process are fake; select a fixture asset rather than
+// requiring a bundled executable for the operating system running this test.
+vi.mock('../src/scrcpy.ts', async importOriginal => {
+  const original = await importOriginal<typeof import('../src/scrcpy.ts')>()
+  return { ...original, resolveScrcpyAsset: () => original.resolveScrcpyAsset('linux', 'x64') }
+})
+
 function setup() {
   const installer = new ScrcpyInstaller()
   vi.spyOn(installer, 'ensure').mockResolvedValue({ root: '/cache', executable: '/cache/scrcpy', server: '/cache/server' })

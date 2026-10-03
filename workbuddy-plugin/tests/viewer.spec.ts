@@ -2,6 +2,24 @@ import { describe, expect, it, vi } from 'vitest'
 import { a, b, setup, connect } from './viewer-fixture.ts'
 
 describe('independent first-frame viewer contract', () => {
+  it('scopes native frame ancestry to one viewer without relaxing API or frame receipts', async () => {
+    const { viewer } = setup()
+    const opened = await viewer.open('task', [a], AbortSignal.timeout(1000))
+    const other = await viewer.open('other', [b], AbortSignal.timeout(1000))
+    const native = 'http://127.0.0.1:34567'
+    expect(() => viewer.allowNativeEmbedding(opened.viewerId, 'other', native)).toThrow('foreign_viewer')
+    expect(() => viewer.allowNativeEmbedding(opened.viewerId, 'task', 'https://example.com')).toThrow('Invalid native')
+    viewer.allowNativeEmbedding(opened.viewerId, 'task', native)
+    const headers = { 'sec-fetch-site': 'cross-site', 'sec-fetch-dest': 'iframe' }
+    const page = await fetch(opened.url, { headers })
+    expect(page.status).toBe(200)
+    expect(page.headers.get('content-security-policy')).toContain('frame-ancestors file: ' + native)
+    expect((await fetch(other.url, { headers })).status).toBe(403)
+    expect((await fetch(other.url)).headers.get('content-security-policy')).toContain("frame-ancestors 'none'")
+    expect((await fetch(opened.url + 'status', { headers })).status).toBe(403)
+    expect((await fetch(opened.url + 'frame', { method: 'POST', headers: { ...headers, origin: native }, body: '{}' })).status).toBe(403)
+    expect(() => viewer.assertReady(opened.viewerId)).toThrow('waiting_for_frame')
+  })
   it('retains a hidden page without video and releases presence on closure', async () => {
     const { viewer, sinks, advance } = setup()
     const opened = await viewer.open('task', [a], AbortSignal.timeout(1000))
@@ -14,6 +32,36 @@ describe('independent first-frame viewer contract', () => {
     expect(await viewer.status(opened.viewerId, 'task')).toMatchObject({ viewerId: opened.viewerId })
     page.socket.destroy()
     await vi.waitFor(() => expect(viewer.active).toBe(false))
+  })
+
+  it('accepts native Origin-less receipts only with a live visible-frame challenge', async () => {
+    const { viewer, sinks, advance } = setup()
+    const opened = await viewer.open('task', [a], AbortSignal.timeout(1000))
+    const page = await connect(opened.url)
+    const challenge = page.messages.filter(m => m.type === 'connection').at(-1)!
+    const body = { connectionId: challenge.connectionId, challenge: challenge.challenge, deviceId: 'a', visible: true }
+    const post = (extra: Record<string, unknown> = {}, headers: Record<string, string> = {}) => fetch(opened.url + 'frame', {
+      method: 'POST', headers: { 'content-type': 'application/json', 'sec-fetch-site': 'same-origin', 'sec-fetch-dest': 'empty', ...headers },
+      body: JSON.stringify({ ...body, ...extra }),
+    })
+    expect((await post()).status).toBe(403)
+    viewer.allowNativeEmbedding(opened.viewerId, 'task', 'http://127.0.0.1:34567')
+    expect((await post()).status).toBe(409)
+    sinks.get('a')!.sendBinary(Buffer.from([2, 0]))
+    for (const headers of [
+      { origin: 'null' }, { origin: 'https://example.com' },
+      { 'sec-fetch-site': 'cross-site' }, { 'sec-fetch-site': 'same-site' },
+      { 'sec-fetch-dest': 'iframe' }, { 'content-type': 'text/plain' },
+    ] as Record<string, string>[]) expect((await post({}, headers)).status).toBe(403)
+    expect((await post({ visible: false })).status).toBe(409)
+    expect((await post({ challenge: 'forged' })).status).toBe(409)
+    expect((await post({ deviceId: 'b' })).status).toBe(409)
+    expect(() => viewer.assertReady(opened.viewerId)).toThrow('waiting_for_frame')
+    expect((await post()).status).toBe(200)
+    expect((await post()).status).toBe(409)
+    expect(() => viewer.assertReady(opened.viewerId)).not.toThrow()
+    advance(30_001)
+    expect((await post()).status).toBe(409)
   })
 
   it('requires a viewer, does not grant readiness by opening, and freezes task devices', async () => {

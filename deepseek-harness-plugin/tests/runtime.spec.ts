@@ -55,9 +55,10 @@ describe('coremate-mobile bounded phone runtime', () => {
     const state = new PhoneExecutionState()
     const agent = {}
     state.beginOperation(agent, 2)
-    state.recordObservation(agent, { observationId: state.nextObservationId(agent), screenshotFingerprint: 'frame-a' })
+    const observationId = state.nextObservationId(agent)
+    state.recordObservation(agent, { observationId, screenshotFingerprint: 'frame-a' })
 
-    expect(state.current(agent, ObservationId('phone-observation-1')).screenshotFingerprint).toBe('frame-a')
+    expect(state.current(agent, observationId).screenshotFingerprint).toBe('frame-a')
     expect(() => state.current(agent, ObservationId('old'))).toThrow('stale observationId')
     state.beginOperation(agent, 2)
     expect(() => { state.beginOperation(agent, 2) }).toThrow('2-operation limit')
@@ -92,13 +93,13 @@ describe('coremate-mobile bounded phone runtime', () => {
     state.recordObservation(agent, { observationId: ObservationId('frame-1'), screenshotFingerprint: 'same' })
 
     for (let attempt = 0; attempt < 3; attempt += 1) {
-      state.assertActionAllowed(agent, 'tap:100,200')
-      state.recordActionResult(agent, 'tap:100,200', 'same', 'same')
+      state.assertActionAllowed(agent, 'tap:100,200', state.latest(agent)!)
+      state.recordActionResult(agent, 'tap:100,200', state.latest(agent)!, state.latest(agent)!)
     }
-    expect(() => { state.assertActionAllowed(agent, 'tap:100,200') }).toThrow('no screen progress three times')
-    expect(() => { state.assertActionAllowed(agent, 'tap:300,400') }).not.toThrow()
-    state.recordActionResult(agent, 'tap:300,400', 'same', 'changed')
-    expect(() => { state.assertActionAllowed(agent, 'tap:100,200') }).not.toThrow()
+    expect(() => { state.assertActionAllowed(agent, 'tap:100,200', state.latest(agent)!) }).toThrow('no screen progress three times')
+    expect(() => { state.assertActionAllowed(agent, 'tap:300,400', state.latest(agent)!) }).not.toThrow()
+    state.recordActionResult(agent, 'tap:300,400', state.latest(agent)!, { observationId: ObservationId('changed'), screenshotFingerprint: 'changed' })
+    expect(() => { state.assertActionAllowed(agent, 'tap:100,200', state.latest(agent)!) }).not.toThrow()
   })
 
   it('clears repeated-action history whenever a later observation changes frame', () => {
@@ -106,13 +107,13 @@ describe('coremate-mobile bounded phone runtime', () => {
     const agent = {}
     state.recordObservation(agent, { observationId: ObservationId('frame-1'), screenshotFingerprint: 'same' })
     for (let attempt = 0; attempt < 3; attempt += 1) {
-      state.recordActionResult(agent, 'tap:100,200', 'same', 'same')
+      state.recordActionResult(agent, 'tap:100,200', state.latest(agent)!, state.latest(agent)!)
     }
 
     state.recordObservation(agent, { observationId: ObservationId('frame-2'), screenshotFingerprint: 'changed' })
     state.recordObservation(agent, { observationId: ObservationId('frame-3'), screenshotFingerprint: 'same' })
 
-    expect(() => { state.assertActionAllowed(agent, 'tap:100,200') }).not.toThrow()
+    expect(() => { state.assertActionAllowed(agent, 'tap:100,200', state.latest(agent)!) }).not.toThrow()
   })
 
   it('waits only on an explicit wait operation and aborts promptly', async () => {

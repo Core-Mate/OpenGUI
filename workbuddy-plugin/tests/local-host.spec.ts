@@ -28,7 +28,7 @@ describe('local host visual control independent of window visibility', () => {
     })
     io.mirror.status.mockImplementation(() => ({ phase: 'running', rendererReady: true, visible: ready, ready }))
     io.mirror.inspect.mockImplementation(async () => io.mirror.status())
-    const host = new LocalAdbPhoneHost({ stateDir })
+    const host = new LocalAdbPhoneHost({ stateDir, adbPath: '/fixture/adb' })
     const service = new WorkBuddyOpenGuiService({ viewers: new ReadyViewer(), host })
     const signal = AbortSignal.timeout(10000)
     try {

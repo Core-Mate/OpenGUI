@@ -1,8 +1,14 @@
-# OpenGUI for Codex 0.2.0 候选版
+# OpenGUI for Codex 0.3.0 候选版
 
-本轮支持 macOS，协议版本 3。这是本地候选交付，不代表已公开发布或所有真机验收通过。
+本轮支持 macOS，协议版本 4。这是本地候选交付，不代表已公开发布或所有真机验收通过。
 
-使用流程：选择手机 → `opengui_open_viewer` → 宿主在聊天右侧打开 URL → `opengui_viewer_status` 最多等待 30 秒 → 真实视频首帧验证成功 → 打开关联 viewerId 的控制会话 → 截图与动作。
+默认使用当前 Codex 宿主模型理解目标、查看截图和下发决策，模型配置入口关闭。通过 `opengui_open_workbench` 打开工作台，`opengui_run_task` 提交 requestId 和 goal；宿主规划独立分支，OpenGUI 自动分配已授权手机。保持工作台可见，每个分支须通过真实首帧检查后才能操作。
+
+宿主持续调用 `opengui_manage_task` 的 next/decide，读取返回的 imagePath 截图，按最新 observationId 决策。父任务 ID 推进全部分支，分支 ID 只查询对应分支。status、stop、steer、resume 用于查询、停止、补充和用户处理后恢复；`opengui_list_tasks` 查看本会话记录。完成必须有独立终态截图和成功标准检查。
+
+首页提交保留。插件已通过 `.mcp.json` 注册 `--mcp` 原生工作台资源和会话消息桥，归档工具发现已通过；真实 Codex 宿主加载与首页自动接手仍未验收。关闭工作台不等于停止；宿主必须持续决策，不承诺退出宿主后继续执行。历史与证据保留，中断任务标记未知且不重放动作。
+
+纯观看或显式逐步控制仍可使用旧流程：选择手机 → `opengui_open_viewer` → 宿主在聊天右侧打开 URL → `opengui_viewer_status` 最多等待 30 秒 → 真实视频首帧验证成功 → 打开关联 viewerId 的控制会话 → 截图与动作。不得与新任务同时控制同一手机。
 
 Codex 使用原生 open_in_codex，将浏览器放在当前任务右侧。短 CLI 连接按宿主 CODEX_THREAD_ID 归属任务。
 
@@ -12,10 +18,14 @@ Codex 使用原生 open_in_codex，将浏览器放在当前任务右侧。短 CL
 
 ## 安装
 
+源码开发时，在 `plugins/opengui` 目录运行 `npm run dev:task-service`。命令先构建、以前台进程启动独立的开发服务，并打印工作台地址；修改插件或共享包源码后会自动重新构建、重启并打印新地址。浏览器直接打开该地址，按 Ctrl-C 停止。开发服务使用独立状态目录，不依赖正式安装的 launchd 服务；重启会中断开发服务中的任务，端口可能变化。
+
+需要把固定的 `http://127.0.0.1:58894/` 交给本机验收时，在目标分支且没有运行中任务或视频会话的情况下执行 `npm run preview:install -- <分支名>`。命令先构建，再把该地址的 LaunchAgent 指向本仓库的源码监听器；改动插件或共享包源码后自动构建并重启同一端口。监听器固定在安装时指定的分支，若切到其他分支或构建失败，会停止旧页面，避免把旧版误报为最新。它使用现有服务状态目录，重启会中断开发任务；日志在 `~/Library/Application Support/OpenGUI/task-service/service.stdout.log` 和 `service.stderr.log`。正式安装器仍使用普通服务入口，重新安装后如需源码预览，应再次运行本命令。
+
 核对安装器及归档旁的 SHA-256 文件，结束旧任务、关闭旧展示后运行：
 
 ```sh
-bash scripts/install-macos.command --archive /绝对路径/opengui-codex-0.2.0.tar.gz
+bash scripts/install-macos.command --archive /绝对路径/opengui-codex-0.3.0.tar.gz
 ```
 
 安装器自动准备独立 Node 与 scrcpy 资源，缓存完整时复用；准备失败保留旧配置，并输出恢复步骤。保留独立 opengui-standalone 插件源，不覆盖同名的其他来源。

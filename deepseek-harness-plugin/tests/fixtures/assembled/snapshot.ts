@@ -24,6 +24,22 @@ const ctx = await boot('coremate-mobile-snapshot', rootConfigPath, [
 
 const snapshot = async (): Promise<unknown> => {
   const assembly = await ctx.systemPrompt.assemble()
+  if (assembly.tools.some(tool => tool.name === 'phone_agent')) {
+    for (const name of ['opengui_run_task', 'opengui_manage_task', 'opengui_list_tasks', 'opengui_open_workbench']) {
+      if (!assembly.tools.some(tool => tool.name === name)) throw new Error('Missing autonomous task tool: ' + name)
+    }
+    const manage = assembly.tools.find(tool => tool.name === 'opengui_manage_task')
+    const submit = assembly.tools.find(tool => tool.name === 'opengui_run_task')
+    const required = (submit?.parameters as { required?: string[] } | undefined)?.required
+    if (!required?.includes('requestId') || !required.includes('goal')) {
+      throw new Error('The assembled submission tool must require goal and requestId')
+    }
+    const parameters = manage?.parameters as { required?: string[]; properties?: { action?: { enum?: string[] } } } | undefined
+    if (!parameters?.required?.includes('action')) throw new Error('The assembled management tool must require action')
+    if (!parameters?.properties?.action?.enum?.includes('resume')) {
+      throw new Error('The assembled task tool must allow resuming user-help waits')
+    }
+  }
   return {
     commands: ctx.commands.list({} as Parameters<typeof ctx.commands.list>[0])
       .filter(command => ['opengui', 'coremate'].includes(command.name)),

@@ -2,11 +2,18 @@ import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { parse } from 'yaml'
+import HMR from '@deepseek-ai/cordis-plugin-hmr'
 
 const root = new URL('../', import.meta.url)
 
 describe('standalone DeepSeek Harness bundle', () => {
-  it('publishes a patch that inserts only this external plugin', async () => {
+  it('pins the HMR provider that implements the host patch-watching API', async () => {
+    const pkg = JSON.parse(await readFile(new URL('package.json', root), 'utf8'))
+    expect(pkg.dependencies['@deepseek-ai/cordis-plugin-hmr']).toBe('1.0.16')
+    expect(pkg.dependencies['@deepseek-ai/cordis-plugin-timer']).toBe('1.1.3')
+    expect(typeof HMR.prototype.registerConfig).toBe('function')
+  })
+  it('inserts the external plugin and restores HMR for the live web patch layer', async () => {
     const packageJson = JSON.parse(await readFile(new URL('package.json', root), 'utf8')) as {
       name: string
       repository: { type: string; url: string; directory: string }
@@ -37,6 +44,8 @@ describe('standalone DeepSeek Harness bundle', () => {
       platform: 'web',
     })
     expect(patch).toEqual([{
+      id: 'hmr', disabled: false, config: { root: [] },
+    }, {
       insert: [{ id: 'coremate-mobile', name: 'dsh-coremate-mobile' }],
     }])
   })

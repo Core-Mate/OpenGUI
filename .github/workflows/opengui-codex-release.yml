@@ -33,9 +33,9 @@ jobs:
         with:
           node-version: 22.23.2
       - name: Copy the independent package
-        run: cp -R plugins/opengui "$RUNNER_TEMP/opengui"
+        run: node packages/device-runtime/build.mjs stage codex "$RUNNER_TEMP/opengui-build"
       - name: Build and validate without DSH
-        working-directory: ${{ runner.temp }}/opengui
+        working-directory: ${{ runner.temp }}/opengui-build/plugins/opengui
         run: |
           pnpm install --frozen-lockfile --ignore-scripts
           pnpm check
@@ -43,7 +43,7 @@ jobs:
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: opengui-codex-release
-          path: ${{ runner.temp }}/opengui/.artifacts/
+          path: ${{ runner.temp }}/opengui-build/plugins/opengui/.artifacts/
           include-hidden-files: true
           if-no-files-found: error
   release-draft:

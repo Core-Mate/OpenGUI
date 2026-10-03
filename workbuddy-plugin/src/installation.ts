@@ -18,8 +18,19 @@ export function mergeHostHooks(settings: Record<string, unknown>, command: strin
 
 export function mergeMcpConfig(config: Record<string, unknown>, node: string, entrypoint: string): Record<string, unknown> {
   const servers = (config.mcpServers ?? {}) as Record<string, unknown>
+  const { url: _url, headers: _headers, ...retained } = (servers.opengui ?? {}) as Record<string, unknown>
   return { ...config, mcpServers: { ...servers, opengui: {
-    ...((servers.opengui ?? {}) as Record<string, unknown>), type: 'stdio', command: node,
+    ...retained, type: 'stdio', command: node,
     args: [entrypoint], timeout: 120000, disabled: false,
+  } } }
+}
+
+/** The installer must verify ownership before changing transport. */
+export function mergeNativeMcpConfig(config: Record<string, unknown>, endpoint: { port: number; token: string }): Record<string, unknown> {
+  const servers = (config.mcpServers ?? {}) as Record<string, unknown>
+  const { command: _command, args: _args, env: _env, headers: _headers, ...retained } = (servers.opengui ?? {}) as Record<string, unknown>
+  return { ...config, mcpServers: { ...servers, opengui: {
+    ...retained, type: 'http', url: `http://127.0.0.1:${endpoint.port}/mcp`,
+    headers: { Authorization: 'Bearer ' + endpoint.token }, timeout: 120000, disabled: false,
   } } }
 }

@@ -1,3 +1,6 @@
+import { isTaskTool } from '../../packages/phone-agent/src/host.ts'
+import { sharedPhoneTasks, type PhoneTasks } from '../../packages/task-service/src/client.ts'
+import { assertNoUpgrade } from './state.ts'
 import { randomBytes, randomUUID, timingSafeEqual } from 'node:crypto'
 import { createServer, type Socket } from 'node:net'
 import { WorkBuddyOpenGuiService } from './service.ts'
@@ -13,11 +16,13 @@ export interface BrokerOptions {
   service?: WorkBuddyOpenGuiService
   idleMs?: number
   onIdle?: () => void
+  tasks?: PhoneTasks
 }
 
 /** One local owner of device leases across all WorkBuddy MCP child processes. */
 export async function startBroker(options: BrokerOptions): Promise<{ port: number; close: () => Promise<void> }> {
   const service = options.service ?? new WorkBuddyOpenGuiService()
+  const tasks = options.tasks ?? sharedPhoneTasks('workbuddy')
   const automation = new AutomationCoordinator(service)
   const sockets = new Set<Socket>()
   const clients = new Set<Socket>()
@@ -25,11 +30,12 @@ export async function startBroker(options: BrokerOptions): Promise<{ port: numbe
   const mirrorGrants = new Map<string, { token: string; owner: Socket | undefined }>()
   let idle: ReturnType<typeof setTimeout> | undefined
   let closing: Promise<void> | undefined
+  let maintenance = false
   const resetIdle = (): void => {
     clearTimeout(idle)
     if (clients.size === 0 && !closing) {
       idle = setTimeout(() => {
-        if (service.hasPersistentMirrors()) { resetIdle(); return }
+        if (tasks.activeCount > 0 || tasks.watching || service.hasPersistentMirrors()) { resetIdle(); return }
         for (const [id, grant] of mirrorGrants) if (!grant.owner && !service.retainsMirror(id)) mirrorGrants.delete(id)
         if ([...mirrorGrants.keys()].some(id => service.retainsMirror(id))) { resetIdle(); return }
         void close().then(() => options.onIdle?.())
@@ -41,8 +47,10 @@ export async function startBroker(options: BrokerOptions): Promise<{ port: numbe
     socket.on('error', () => undefined)
     let authenticated = false
     let hookConnection = false
+    let installerConnection = false
     const lifetime = new AbortController()
     const connectionOwner = randomUUID()
+    const phoneLifetimes = new Set<string>()
     const owned = new Set<string>()
     const closedSessions: string[] = []
     const requests = new Map<string, { controller: AbortController; sessionId?: string }>()
@@ -62,7 +70,8 @@ export async function startBroker(options: BrokerOptions): Promise<{ port: numbe
         mirrorGrants.delete(id)
         return service.closeSession(id)
       })))
-      resetIdle()
+      // Port probes and rejected handshakes must not extend the idle deadline.
+      if (authenticated) resetIdle()
     })
     const cancel = (requestId: string): void => {
       const request = requests.get(requestId)
@@ -86,12 +95,27 @@ export async function startBroker(options: BrokerOptions): Promise<{ port: numbe
           }
           authenticated = true
           hookConnection = message.role === 'hook'
+          installerConnection = message.role === 'installer'
           clearTimeout(handshake)
           clients.add(socket)
           resetIdle()
           sendFrame(socket, { id, result: { protocol: BROKER_PROTOCOL, version: VERSION, pid: process.pid } })
           return
         }
+        if (maintenance) throw new Error('upgrade_in_progress: runtime is draining; no new work accepted')
+        if (message.method === 'prepare_upgrade') {
+          if (!installerConnection) throw new Error('Upgrade requires an installer connection')
+          if (cleanups.size > 0 || service.hasActiveSessions() || service.hasPersistentMirrors() || !tasks.prepareMaintenance()) {
+            throw new Error('upgrade_blocked: finish phone tasks and close workbenches, sessions and viewers before upgrading')
+          }
+          maintenance = true
+          sendFrame(socket, { id, result: { ready: true } })
+          // Let the reply and this handler settle before joining outstanding cleanup.
+          socket.end(() => { void close().then(() => options.onIdle?.()) })
+          return
+        }
+        if (installerConnection) throw new Error('Installer connections cannot execute tools or lifecycle events')
+        assertNoUpgrade()
         if (message.method === 'host_event') {
           if (!hookConnection || !message.event || typeof message.event !== 'object') throw new Error('opengui: host lifecycle events require a hook connection')
           sendFrame(socket, { id, result: await automation.event(message.event as HostEvent) })
@@ -103,6 +127,17 @@ export async function startBroker(options: BrokerOptions): Promise<{ port: numbe
         if (requests.has(id) || requests.size >= 16) throw new Error('opengui: duplicate or excessive concurrent request')
         validateToolArguments(message.name, message.args)
         const { hostContext, ...args } = message.args
+        if (isTaskTool(message.name)) {
+          const bound = automation.consume(hostContext, message.name, args)
+          const owner = bound ? bound.hostSession : connectionOwner
+          if (bound && !phoneLifetimes.has(bound.id)) {
+            phoneLifetimes.add(bound.id)
+            bound.controller.signal.addEventListener('abort', () => {
+              phoneLifetimes.delete(bound.id)
+            }, { once: true })
+          }
+          sendFrame(socket, { id, result: await tasks.call(message.name, args, owner) }); return
+        }
         const task: AutomationTask | undefined = automation.consume(hostContext, message.name, args)
         const sessionId = typeof args.sessionId === 'string' ? args.sessionId : undefined
         if (message.name === 'opengui_resume_mirror' && sessionId) {
@@ -180,6 +215,7 @@ export async function startBroker(options: BrokerOptions): Promise<{ port: numbe
       clearTimeout(idle)
       for (const socket of sockets) socket.destroy()
       await new Promise<void>(resolve => server.close(() => resolve()))
+      await tasks.close()
       await service.dispose()
       await Promise.allSettled([...cleanups])
     })()

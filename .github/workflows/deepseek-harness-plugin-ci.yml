@@ -3,11 +3,19 @@ name: DeepSeek Harness Plugin CI
 on:
   push:
     paths:
+      - 'packages/device-runtime/**'
+      - 'packages/phone-agent/**'
+      - 'packages/task-service/**'
+      - 'packages/workbench/**'
       - 'deepseek-harness-plugin/**'
       - '.agents/plugins/marketplace.json'
       - '.github/workflows/deepseek-harness-plugin-ci.yml'
   pull_request:
     paths:
+      - 'packages/device-runtime/**'
+      - 'packages/phone-agent/**'
+      - 'packages/task-service/**'
+      - 'packages/workbench/**'
       - 'deepseek-harness-plugin/**'
       - '.agents/plugins/marketplace.json'
       - '.github/workflows/deepseek-harness-plugin-ci.yml'
@@ -23,9 +31,12 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: deepseek-harness-plugin
+        working-directory: ${{ runner.temp }}/opengui-build/deepseek-harness-plugin
     steps:
       - uses: actions/checkout@v4
+      - name: Export isolated adapter and shared core
+        working-directory: ${{ github.workspace }}
+        run: node packages/device-runtime/build.mjs stage dsh "$RUNNER_TEMP/opengui-build"
       - uses: pnpm/action-setup@v4
         with:
           version: 11.19.0
@@ -94,9 +105,12 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: deepseek-harness-plugin
+        working-directory: ${{ runner.temp }}/opengui-build/deepseek-harness-plugin
     steps:
       - uses: actions/checkout@v4
+      - name: Export isolated adapter and shared core
+        working-directory: ${{ github.workspace }}
+        run: node packages/device-runtime/build.mjs stage dsh "$RUNNER_TEMP/opengui-build"
       - uses: pnpm/action-setup@v4
         with:
           version: 11.19.0

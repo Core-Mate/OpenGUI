@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "opengui": {
+      "command": "./scripts/opengui",
+      "args": ["--mcp"],
+      "cwd": ".",
+      "env_vars": ["CODEX_HOME"]
+    }
+  }
+}

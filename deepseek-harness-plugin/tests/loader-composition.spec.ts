@@ -102,7 +102,7 @@ describe('OpenGUI assembled snapshot', () => {
           "routingSections": [
             {
               "name": "tool:opengui-root-routing",
-              "text": "When phone_agent is available, every request to inspect, operate, test, or coordinate an Android phone, mobile app, or mobile game must use phone_agent. This routing is based on the user's intent; the user does not need to mention OpenGUI, @OpenGUI, or /opengui. Never substitute Bash, shell commands, raw adb, or another UI-control path. If phone_agent cannot start, report the OpenGUI connection or configuration problem instead of bypassing it.",
+              "text": "When phone_agent is available, every request to inspect, operate, test, or coordinate an Android phone, mobile app, or mobile game must use phone_agent. This routing is based on the user's intent; the user does not need to mention OpenGUI, @OpenGUI, or /opengui. Never substitute Bash, shell commands, raw adb, or another UI-control path. If phone_agent cannot start, report the OpenGUI connection or configuration problem instead of bypassing it. For an already accepted OpenGUI task, do not submit it again: continue with opengui_manage_task next/decide using the current host model until terminal or waiting for user help.",
             },
           ],
           "tools": [
@@ -210,7 +210,7 @@ describe('OpenGUI assembled snapshot', () => {
               },
             },
             {
-              "description": "Delegate one complete Android phone task to the receiving DSH model or the dedicated fallback and wait for its verified result.",
+              "description": "Submit an Android task to the shared OpenGUI service. The configured OpenGUI model executes it. Open the workbench for progress and evidence. Do not call next or decide. Closing this chat does not stop an accepted task.",
               "name": "phone_agent",
               "parameters": {
                 "properties": {

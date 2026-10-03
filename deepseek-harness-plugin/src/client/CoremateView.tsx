@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { PhoneWorkbench } from './PhoneWorkbench.tsx'
+import type { ISessions } from '@deepseek-ai/dsh-client-runtime/client'
 import type { CSSProperties } from 'react'
 import {
   DEVICE_SELECTION_PATH,
@@ -187,12 +189,13 @@ function mirrorActive(device: MirrorDeviceStatus): boolean {
   return ['downloading', 'extracting', 'launching', 'running'].includes(device.phase)
 }
 
-export function CoremateView({ coremateSessionId }: { readonly coremateSessionId?: string }): JSX.Element {
+export function CoremateView({ coremateSessionId, coremateSessions }: { readonly coremateSessionId?: string; readonly coremateSessions?: ISessions }): JSX.Element {
   const currentSessionId = useRef(coremateSessionId)
   currentSessionId.current = coremateSessionId
   const sessionGeneration = useRef(0)
   const mutationGeneration = useRef(0)
   const [snapshot, setStatus] = useState<MirrorStatus>()
+  const [legacyToolsOpen, setLegacyToolsOpen] = useState(false)
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set())
   const seenDevices = useRef(new Set<string>())
   const [pendingSessionId, setPendingSessionId] = useState<string>()
@@ -221,6 +224,7 @@ export function CoremateView({ coremateSessionId }: { readonly coremateSessionId
     const generation = ++sessionGeneration.current
     mutationGeneration.current += 1
     setStatus(undefined)
+    setLegacyToolsOpen(false)
     setExpanded(new Set())
     seenDevices.current.clear()
     setPendingSessionId(undefined)
@@ -276,6 +280,12 @@ export function CoremateView({ coremateSessionId }: { readonly coremateSessionId
   }, [coremateSessionId])
 
   useEffect(() => {
+    // Legacy phone runs still need their own visible first-frame surface.
+    if (status?.taskPhase && status.taskPhase !== 'idle') setLegacyToolsOpen(true)
+  }, [status?.taskPhase])
+
+  useEffect(() => {
+    if (!legacyToolsOpen) return
     const controller = new AbortController()
     let timer: ReturnType<typeof setTimeout> | undefined
     const poll = async (): Promise<void> => {
@@ -299,7 +309,7 @@ export function CoremateView({ coremateSessionId }: { readonly coremateSessionId
       controller.abort()
       if (timer !== undefined) clearTimeout(timer)
     }
-  }, [])
+  }, [legacyToolsOpen])
 
   const mutate = useCallback(async (path: string, ids: readonly string[]): Promise<void> => {
     const sessionId = coremateSessionId
@@ -372,7 +382,11 @@ export function CoremateView({ coremateSessionId }: { readonly coremateSessionId
         </div>
       )}
 
-      <section aria-label="设备照片墙" style={gridStyle} data-coremate-device-wall>
+      <PhoneWorkbench key={coremateSessionId ?? "unbound"} sessionId={coremateSessionId} sessions={coremateSessions} />
+      <details open={legacyToolsOpen} onToggle={event => setLegacyToolsOpen(event.currentTarget.open)} style={{ marginTop: 20, borderTop: '1px solid var(--dsw-alias-border-l2, rgba(128,128,128,.28))', paddingTop: 12 }}>
+        <summary data-coremate-header-link style={{ cursor: 'pointer', minHeight: 40, padding: '8px 0', fontSize: 13 }}>独立投屏与设备选择</summary>
+        <p style={{ ...bodyStyle, marginBottom: 16 }}>用于独立投屏和旧版手机工具。上方任务工作台会自动安排手机，无需在这里选择。</p>
+      {legacyToolsOpen && <section aria-label="设备照片墙" style={gridStyle} data-coremate-device-wall>
         {wallItems.map(item => {
           if (item.kind === 'connect-more') {
             return (
@@ -442,7 +456,8 @@ export function CoremateView({ coremateSessionId }: { readonly coremateSessionId
             </article>
           )
         })}
-      </section>
+      </section>}
+      </details>
 
     </main>
   )

@@ -49,15 +49,22 @@ try {
     await browser('wait', '--fn', 'document.querySelector("canvas")?.width === 160 && !document.querySelector("canvas").classList.contains("stale")')
     assert((await viewer.status(opened.viewerId, 'synthetic-task', 3000)).firstDisplayEstablished)
     const firstFrameMs = Date.now() - started
+    assert.match(await browser('eval', 'document.querySelector(".phone button") === null && document.querySelector(".phone p").hidden'), /true/)
+    for (let attempt = 0; attempt < 4; attempt++) {
+      await browser('eval', 'cards.get("synthetic").ws.close(4000, "test_disconnect")')
+      await browser('wait', '--fn', `cards.get("synthetic").ws?.readyState === WebSocket.OPEN && cards.get("synthetic").frames > ${attempt}`)
+    }
+    assert.match(await browser('eval', 'cards.get("synthetic").ws?.readyState === WebSocket.OPEN'), /true/)
     const red = await browser('eval', '(()=>{const c=document.querySelector("canvas");return c.getContext("2d").getImageData(80,160,1,1).data[0]>200})()')
     assert.match(red, /true/)
     revision = 1
     await browser('wait', '--fn', 'document.querySelector("canvas").getContext("2d").getImageData(80,160,1,1).data[2]>200')
     revision = 2
     await browser('wait', '--fn', 'document.querySelector("canvas").width === 320 && document.querySelector("canvas").height === 160 && !document.querySelector("canvas").classList.contains("stale")')
+    const releasesBeforeEnd = released
     viewer.endTask(opened.viewerId)
     await browser('wait', '--text', '任务已结束')
-    assert.equal(released, 0)
+    assert.equal(released, releasesBeforeEnd)
     assert.match(await browser('eval', 'cards.get("synthetic").frames'), /\d+/)
     const samples = [], soakStarted = Date.now()
     while (Date.now() - soakStarted < soakMs) {
@@ -71,8 +78,8 @@ try {
     }
     await browser('close')
     const deadline = Date.now() + 5000
-    while (released === 0 && Date.now() < deadline) await new Promise(resolve => setTimeout(resolve, 50))
-    assert.equal(released, deviceCount)
+    while (released < releasesBeforeEnd + deviceCount && Date.now() < deadline) await new Promise(resolve => setTimeout(resolve, 50))
+    assert.equal(released, releasesBeforeEnd + deviceCount)
     viewer.assertReady(opened.viewerId)
     console.log(JSON.stringify({ result: 'PASS', deviceCount, soakMs, samples, firstFrameMs, actualH264Decode: true, updatedCanvas: true, resolutionChange: true, playbackAfterTaskEnd: true, releaseOnPageClose: true }))
   } finally { await viewer.dispose() }
