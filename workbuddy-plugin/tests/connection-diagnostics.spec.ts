@@ -41,7 +41,8 @@ describe('read-only computer connection diagnosis', () => {
     expect(args.at(-1)).toContain('DEVPKEY_Device_CompatibleIds')
     expect(args.at(-1)).not.toMatch(/Enable-PnpDevice|Disable-PnpDevice|pnputil|Set-/iu)
   })
-  it('reads Linux interface class attributes without reading product names, serials or USB device roots', async () => {
+  // The sysfs fixture uses Linux interface names such as 1-2:1.0, which are not valid Windows paths.
+  it.skipIf(process.platform === 'win32')('reads Linux interface class attributes without reading product names, serials or USB device roots', async () => {
     const directory = await mkdtemp(join(tmpdir(), 'opengui-usb-sysfs-'))
     try {
       for (const [name, values] of [['1-2:1.0', ['ff', '42', '01']], ['1-2:1.1', ['06', '01', '01']], ['1-4:1.0', ['03', '01', '01']]] as const) {

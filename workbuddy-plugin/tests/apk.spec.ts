@@ -65,7 +65,8 @@ describe('bounded user-requested APK preparation', () => {
     const root = await directory(), path = await apkFile(root), prepared = await prepareApk(path, 'phone-a', true, signal())
     resources.push(prepared.dispose)
     expect(prepared.record.sha256).toMatch(/^[0-9a-f]{64}$/u)
-    expect((await stat(prepared.path)).mode & 0o077).toBe(0)
+    // Windows has no POSIX permission bits; the private directory ACL protects the copy there.
+    if (process.platform !== 'win32') expect((await stat(prepared.path)).mode & 0o077).toBe(0)
     const original = await readFile(prepared.path)
     await writeFile(path, 'changed original'); expect(await readFile(prepared.path)).toEqual(original)
     await expect(validatePreparedApk(prepared, signal())).resolves.toBeUndefined()

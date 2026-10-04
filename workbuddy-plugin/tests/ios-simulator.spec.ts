@@ -50,6 +50,9 @@ async function fixture() {
     setProcess: (path: string, id = bundleId, name = executableName, installed = container) => { processPath = path; bundleId = id; executableName = name; container = installed } }
 }
 
+// iOS simulators run only on macOS; native container-path identity uses POSIX paths and is not exercised on Windows.
+const posixOnly = process.platform === 'win32'
+
 describe('iOS simulator discovery and bounded GUI execution', () => {
   it('projects only available iOS simulators and preserves booted versus shutdown state', () => {
     const devices = JSON.parse(raw())
@@ -80,7 +83,7 @@ describe('iOS simulator discovery and bounded GUI execution', () => {
     expect((await f.host.resolveArchivedDevices([{ id: 'old-random', serial }], f.signal))[0]?.id).toBe(devices[0]?.id)
     await expect(f.host.resolveArchivedDevices([{ id: 'old', serial: 'ios-simulator:AAAAAAAA-1234-1234-1234-123456789ABC' }], f.signal)).rejects.toMatchObject({ code: 'device_offline' })
   })
-  it('requires the latest image, freezes the original simulator and preserves logical input dimensions', async () => {
+  it.skipIf(posixOnly)('requires the latest image, freezes the original simulator and preserves logical input dimensions', async () => {
     const f = await fixture(), first = await f.host.observe(f.actor, f.signal)
     expect(first).toMatchObject({ width: 100, height: 200, foregroundPackage: 'org.opengui.fixture' })
     await expect(f.host.act(f.actor, { action: 'tap', observationId: 'old', targetBBox: { left: 0, top: 0, right: 20, bottom: 20 } }, f.signal)).rejects.toThrow('stale')
@@ -148,7 +151,7 @@ describe('iOS simulator discovery and bounded GUI execution', () => {
     expect(iosApplicationPid('not JSON')).toBeUndefined()
     expect(iosApplicationPid(JSON.stringify({ ...application, AXLabel: 'x'.repeat(2 * 1024 * 1024) }))).toBeUndefined()
   })
-  it('binds native process identity to the original simulator container and exposes no raw metadata', async () => {
+  it.skipIf(posixOnly)('binds native process identity to the original simulator container and exposes no raw metadata', async () => {
     const f = await fixture(), observed = await f.host.observe(f.actor, f.signal)
     expect(observed.foregroundPackage).toBe('org.opengui.fixture')
     expect(f.run.mock.calls.some(call => call[1].join(' ') === `simctl get_app_container ${UDID} org.opengui.fixture app`)).toBe(true)
@@ -194,7 +197,7 @@ describe('iOS simulator discovery and bounded GUI execution', () => {
     expect((await f.host.preview(device!, f.signal)).length).toBeGreaterThan(0)
     expect(f.run.mock.calls.some(call => call[1][0] === 'describe-ui' || call[0] === '/bin/ps')).toBe(false)
   })
-  it('rejects a changed application before input even if screenshot pixels are unchanged', async () => {
+  it.skipIf(posixOnly)('rejects a changed application before input even if screenshot pixels are unchanged', async () => {
     const f = await fixture(), observation = await f.host.observe(f.actor, f.signal)
     f.setProcess('/fixture/Other.app/Other', 'org.opengui.other', 'Other', '/fixture/Other.app')
     await expect(f.host.act(f.actor, { action: 'tap', observationId: observation.observationId, targetBBox: { left: 0, top: 0, right: 20, bottom: 20 } }, f.signal)).rejects.toMatchObject({ code: 'screen_changed', executionState: 'not_executed' })

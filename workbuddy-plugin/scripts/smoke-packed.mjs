@@ -32,11 +32,13 @@ if (process.platform !== 'win32') {
 const smokeEnv = { ...process.env, ADB_SERVER_SOCKET: adbSocket, ADB_MDNS_AUTO_CONNECT: 'none', ADB_LOCAL_TRANSPORT_MAX_PORT: '5553', ANDROID_USER_HOME: join(temporary, 'android'), ...(process.platform === 'win32' ? {} : { OPENGUI_ADB_PATH: discoveryAdb }) }
 // Simulator discovery is read-only. Compare packed results with native simctl;
 // do not shut down the user's simulators merely to make an empty-list assertion pass.
+// The reference is read after packed discovery has started CoreSimulator: a cold start on CI
+// can exceed a short timeout, and a failed reference read must not look like an empty list.
 function nativeSimulatorMetadata() {
   if (process.platform !== 'darwin') return []
   let raw
-  try { raw = execFileSync('/usr/bin/xcrun', ['simctl', 'list', 'devices', '-j'], { encoding: 'utf8', timeout: 15_000, stdio: ['ignore', 'pipe', 'pipe'] }) }
-  catch { return [] }
+  try { raw = execFileSync('/usr/bin/xcrun', ['simctl', 'list', 'devices', '-j'], { encoding: 'utf8', timeout: 60_000, stdio: ['ignore', 'pipe', 'pipe'] }) }
+  catch (error) { throw new Error(`Native simctl reference read failed: ${error instanceof Error ? error.message : error}`) }
   const { devices } = JSON.parse(raw), seen = new Set(), rows = []
   for (const [runtime, entries] of Object.entries(devices)) {
     const osVersion = runtime.match(/^com\.apple\.CoreSimulator\.SimRuntime\.iOS-(\d+(?:-\d+){0,2})$/u)?.[1]?.replaceAll('-', '.')
@@ -79,7 +81,6 @@ try {
       const { tools } = await client.listTools()
       assert(tools.some(tool => tool.name === 'opengui_history'))
       await client.ping()
-      const nativeSimulators = nativeSimulatorMetadata()
       const devices = await client.callTool({ name: 'opengui_list_devices', arguments: {} })
       // The first tool call starts the lazy broker. Record it before checking
       // results so a discovery assertion failure still cleans up this owned process.
@@ -89,6 +90,7 @@ try {
       assert(brokerPid && brokerPid !== process.pid)
       assert.notEqual(devices.isError, true, JSON.stringify(devices.content))
       assert(Array.isArray(devices.structuredContent?.devices))
+      const nativeSimulators = nativeSimulatorMetadata()
       if (process.platform !== 'win32') {
         const found = devices.structuredContent.devices
         assert(found.every(device => device.os === 'ios' && device.connection === 'local_simulator'), 'Isolated ADB discovery must not expose real Android phones')
