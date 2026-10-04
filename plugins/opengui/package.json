@@ -5,18 +5,22 @@
   "description": "Standalone local Android control for Codex on macOS",
   "type": "module",
   "license": "MIT",
-  "engines": { "node": ">=22.19.0" },
+  "engines": {
+    "node": ">=22.19.0"
+  },
   "packageManager": "pnpm@11.19.0",
   "scripts": {
-    "test:viewer": "tsc -p tsconfig.browser.json && node scripts/test-viewer-browser.mjs .artifacts/browser/src/viewer.js",
-    "build": "tsc --noEmit && tsdown",
+    "test:viewer": "tsdown --config tsdown.viewer.config.ts && node scripts/test-viewer-browser.mjs .artifacts/browser/viewer.js",
+    "build": "tsc --noEmit && tsdown && node ../../packages/device-runtime/build.mjs manifest codex .",
     "test": "vitest run",
     "validate": "node scripts/validate.mjs",
     "check": "pnpm test && pnpm build && pnpm validate",
     "stage": "node scripts/stage.mjs",
     "package": "node scripts/package.mjs"
   },
-  "dependencies": { "tar": "7.5.22" },
+  "dependencies": {
+    "tar": "7.5.22"
+  },
   "devDependencies": {
     "@types/node": "24.10.1",
     "tsdown": "0.22.2",

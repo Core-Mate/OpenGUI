@@ -1,3 +1,4 @@
+import { validateSourceBoundary, validateManifest } from '../../packages/device-runtime/build.mjs'
 import { execFileSync } from 'node:child_process'
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
@@ -61,7 +62,6 @@ async function sources(path) {
     else if (entry.name.endsWith('.ts')) {
       const text = await readFile(absolute, 'utf8')
       assert(!/@deepseek|deepseek-harness-plugin|\.codex|DSH_HOME|OPENGUI_CODEX_HOME/.test(text), `Production dependency in ${entry.name}`)
-      assert(!/from ['"]\.\.\//.test(text), `Import escapes independent source tree: ${entry.name}`)
     }
   }
 }
@@ -75,3 +75,6 @@ if (process.argv.includes('--release')) {
   }
 }
 console.log('WorkBuddy manifest, fourteen-tool contract, production isolation, native helpers, and bundled ADB hashes verified.')
+
+await validateSourceBoundary(root)
+await validateManifest(root)
