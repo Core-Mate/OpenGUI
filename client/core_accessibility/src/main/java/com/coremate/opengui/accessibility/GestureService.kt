@@ -36,6 +36,7 @@ class GestureService : AccessibilityService() {
 
     companion object {
         // A static reference to the service instance for easy access
+        @Volatile
         var instance: GestureService? = null
     }
 
@@ -58,6 +59,7 @@ class GestureService : AccessibilityService() {
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
+        if (instance === this) instance = null
         LogManager.saveLog(applicationContext, "GestureService", "Accessibility service onUnbind", TaskCenter.executionId?:-1)
         Toast.makeText(this@GestureService,"Accessibility service unbound", Toast.LENGTH_SHORT).show()
         return super.onUnbind(intent)
@@ -115,8 +117,8 @@ class GestureService : AccessibilityService() {
     }
 
     override fun onDestroy() {
+        if (instance === this) instance = null
         HapticFeedbackHelper.vibrate(this, 3000)
-//        instance = null
         scope.launch { AutomationEventBus.publish(AutomationEvent.StatusUpdate("Exit app")) }
         LogManager.saveLog(applicationContext, "GestureService", "Accessibility service onDestroy ${Thread.currentThread().name}", TaskCenter.executionId?:-1)
         Toast.makeText(this@GestureService,"Accessibility service destroyed", Toast.LENGTH_SHORT).show()

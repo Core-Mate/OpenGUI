@@ -43,6 +43,7 @@ dependencies {
     implementation(project(":core_network"))
     implementation("com.tencent:mmkv:2.2.4")
     testImplementation(libs.junit)
+    testImplementation("org.robolectric:robolectric:4.14.1")
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
