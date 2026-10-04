@@ -24,6 +24,8 @@ export class CombinedPhoneHost implements WorkBuddyPhoneHost {
         for (const host of hosts) { if (!host.videoStreams) throw new Error('video_unavailable'); await host.videoStreams.prepare(signal, devices.filter(device => this.hostFor(device.serial) === host)) }
       },
       subscribe: (device, sink) => { const streams = this.hostFor(device.serial).videoStreams; if (!streams) throw new Error('video_unavailable'); return streams.subscribe(device, sink) },
+      inject: (device, message) => this.hostFor(device.serial).videoStreams?.inject?.(device, message) ?? false,
+      frameSize: device => this.hostFor(device.serial).videoStreams?.frameSize?.(device),
       dispose: async () => { await Promise.allSettled([android.videoStreams?.dispose(), ios.videoStreams?.dispose()]) },
     }
   }

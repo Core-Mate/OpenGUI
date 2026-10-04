@@ -167,6 +167,32 @@ svg.ui-icon { width: 14px; height: 14px; flex: none; }
 .watermark.placeholder { background: transparent; color: #8a8a83; }
 .watermark.placeholder::before { content: ""; width: 14px; height: 24px; border: 1.2px solid currentColor; border-radius: 3px; opacity: 0.8; }
 .manual .screen { outline: 2px solid #c49a59; outline-offset: 3px; }
+/* Device action cursor (ported from CoreMate's canvas): pointer, tap ripple, swipe trail, key label. */
+.device-action-layer { position: absolute; z-index: 3; overflow: hidden; pointer-events: none; border-radius: 27px; }
+.device-pointer { position: absolute; z-index: 2; width: 0; height: 0; pointer-events: none; transition-property: left, top; transition-timing-function: ease-out; }
+.device-pointer-arrow { position: absolute; left: -2px; top: -2px; overflow: visible; filter: drop-shadow(0 1px 2px rgb(16 24 32 / 45%)); transform-origin: 2px 2px; transition: transform 90ms ease-out; }
+.device-pointer-arrow path { fill: #101820; stroke: #fff; stroke-width: 1.6px; stroke-linejoin: round; }
+.device-pointer.is-pressing .device-pointer-arrow { transform: scale(0.82); }
+.device-action { position: absolute; z-index: 1; pointer-events: none; animation: device-action-fade var(--visible-ms, 1600ms) ease-in forwards; }
+.device-action.is-tap { width: 0; height: 0; }
+.device-action.is-swipe { inset: 0; }
+.device-action-dot { position: absolute; width: 10px; height: 10px; margin: -5px 0 0 -5px; border: 2px solid #fff; border-radius: 50%; background: #2f6fd6; box-shadow: 0 0 0 1px rgb(16 24 32 / 55%), 0 2px 6px rgb(16 24 32 / 45%); box-sizing: border-box; opacity: 0.85; }
+.device-action-ring { position: absolute; left: 0; top: 0; width: 36px; height: 36px; margin: -18px 0 0 -18px; border: 3px solid #fff; border-radius: 50%; box-shadow: 0 0 0 2px #2f6fd6, 0 0 8px rgb(16 24 32 / 45%); box-sizing: border-box; animation: device-action-ring 700ms ease-out forwards; }
+.device-action-trail { position: absolute; inset: 0; overflow: visible; }
+.device-action-trail line { stroke: #2f6fd6; stroke-width: 4px; stroke-linecap: round; filter: drop-shadow(0 0 1px #fff) drop-shadow(0 1px 3px rgb(16 24 32 / 50%)); }
+.device-action-trail marker path { fill: #2f6fd6; }
+.device-action.is-key { left: 50%; bottom: 7%; padding: 3px 10px; border-radius: 999px; background: rgb(16 24 32 / 82%); box-shadow: 0 0 0 1px rgb(255 255 255 / 50%); color: #fff; font: 700 11px/1.4 system-ui, sans-serif; letter-spacing: 0.04em; white-space: nowrap; transform: translateX(-50%); }
+@keyframes device-action-fade { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes device-action-ring { from { opacity: 1; transform: scale(0.3); } to { opacity: 0; transform: scale(1.5); } }
+@media (prefers-reduced-motion: reduce) { .device-pointer, .device-pointer-arrow { transition: none !important; } .device-action-ring { animation: none; opacity: 0.9; } }
+/* 接管设备: the live picture takes mouse, wheel and keyboard input. */
+.phone.takeover canvas { cursor: pointer; touch-action: none; user-select: none; }
+.phone.takeover .screen:focus-within { outline-color: var(--accent); }
+.takeover-keys { position: absolute; left: 50%; top: 50%; width: 1px; height: 1px; padding: 0; border: 0; opacity: 0; resize: none; pointer-events: none; }
+.takeover-bar { display: none; align-items: center; justify-content: center; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.phone.takeover .takeover-bar { display: flex; }
+.takeover-bar p { flex-basis: 100%; font-size: 10px; color: var(--amber); }
+.takeover-bar button { font-size: 10px; padding: 3px 10px; }
 .phone .message { font-size: 10px; color: var(--muted); margin-top: 10px; min-height: 0; }
 .phone .message:empty { display: none; }
 .phone .retry { font-size: 10px; margin-top: 6px; padding: 3px 9px; }
@@ -217,6 +243,24 @@ svg.ui-icon { width: 14px; height: 14px; flex: none; }
 .start-group-title small { font-size: 10px; font-weight: 400; color: var(--faint); }
 .start-placeholder { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 11px; border: 1px dashed var(--line-strong); border-radius: 8px; background: #fbfbf9; font-size: 11px; color: var(--muted); }
 .start-placeholder .soon { flex: none; font-size: 10px; color: var(--soft-ink); background: var(--soft); border-radius: 10px; padding: 1px 8px; }
+/* One-click Android emulator in the device pickers. */
+.emulator-box { margin-top: 6px; padding: 10px 11px; border: 1px solid var(--line); border-radius: 8px; background: #fff; font-size: 11px; text-align: left; }
+.emulator-box[hidden] { display: none; }
+.emulator-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.emulator-row b { display: block; font-weight: 500; }
+.emulator-row p { margin-top: 2px; font-size: 10px; color: var(--muted); overflow-wrap: anywhere; }
+.emulator-row .actions { display: flex; flex: none; gap: 6px; }
+.emulator-row button { font-size: 11px; padding: 5px 12px; }
+.emulator-row select { font-size: 11px; max-width: 160px; }
+.emulator-error p { color: var(--danger); }
+.emulator-progress { margin-top: 8px; height: 4px; border-radius: 2px; background: var(--soft); overflow: hidden; }
+.emulator-progress span { display: block; height: 100%; width: 0; background: var(--accent); transition: width 0.4s ease; }
+.emulator-progress.indeterminate span { width: 35%; animation: emulator-sweep 1.4s ease-in-out infinite; }
+@keyframes emulator-sweep { from { transform: translateX(-100%); } to { transform: translateX(300%); } }
+@media (prefers-reduced-motion: reduce) { .emulator-progress.indeterminate span { animation: none; width: 100%; opacity: 0.5; } }
+#emulator-dialog ul { margin: 12px 0 0 18px; font-size: 11px; line-height: 1.9; color: #6a6a60; }
+#emulator-dialog .emulator-license { display: flex; align-items: center; gap: 8px; margin-top: 16px; font-size: 12px; }
+#emulator-dialog .emulator-license a { color: #2f6fd6; }
 .start-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
 .start-blocker { font-size: 11px; color: var(--amber); }
 .start-actions .primary { padding: 9px 22px; flex: none; }
@@ -500,7 +544,7 @@ dialog.wide { width: min(640px, calc(100vw - 32px)); }
 <details><summary>连接突然断开，任务会丢吗？${icon('chevron')}</summary><p>不会。任务会自动暂停并保留进度、草稿和截图。重新连接同一台手机后点击「重新检测连接」，系统会先核对当前画面，再从原步骤继续，不会重复上一步。</p></details>
 <details><summary>可以用模拟器或 iPhone 吗？${icon('chevron')}</summary><p>支持 Android 模拟器（在 Android Studio 中创建并启动）；macOS 上也可使用已启动的 iOS 模拟器做界面测试。iOS 真机暂不支持，云手机敬请期待。</p></details>
 </div><div class="diagnostic"><div class="diagnostic-head"><span>仍然找不到设备？检查一下电脑侧的 USB 与调试连接。</span><button id="diagnose-connection">检查当前连接</button></div><div id="connection-diagnostic" aria-live="polite" hidden></div></div><div class="dialog-footer"><button data-close>关闭</button><button class="primary" id="guide-recheck">重新检测连接</button></div></dialog>
-<dialog id="devices" class="wide" aria-labelledby="devices-heading"><div class="dialog-heading"><h2 id="devices-heading">选择设备</h2><button data-close aria-label="关闭">×</button></div><p class="dialog-description" id="devices-message" aria-live="polite"></p><p class="device-goal" id="device-goal" hidden></p><div id="device-list"></div><div class="cloud-coming" aria-disabled="true"><div><b>云手机</b><p>让 AI 在多台云端设备上并行工作。</p></div><span>敬请期待</span></div><p class="dialog-description" id="device-binding" style="margin:14px 0 0">每个任务只绑定一台设备，确认后不会自动切换。</p><div class="dialog-footer"><button class="left" id="device-help">连接帮助</button><button id="refresh-devices">重新检测</button><button data-close>取消</button><button class="primary" id="confirm-device" disabled>连接设备</button></div></dialog>
+<dialog id="devices" class="wide" aria-labelledby="devices-heading"><div class="dialog-heading"><h2 id="devices-heading">选择设备</h2><button data-close aria-label="关闭">×</button></div><p class="dialog-description" id="devices-message" aria-live="polite"></p><p class="device-goal" id="device-goal" hidden></p><div id="device-list"></div><div class="cloud-coming" aria-disabled="true"><div><b>云手机</b><p>让 AI 在多台云端设备上并行工作。</p></div><span>敬请期待</span></div><p class="dialog-description" id="device-binding" style="margin:14px 0 0">每个任务只绑定一台设备，确认后不会自动切换。</p><div class="dialog-footer"><button class="left" id="device-help">连接帮助</button><button id="refresh-devices">重新检测</button><button data-close>取消</button><button class="primary" id="confirm-device" disabled>连接设备</button></div></dialog><dialog id="emulator-dialog" aria-labelledby="emulator-title"><div class="dialog-heading"><h2 id="emulator-title">安装 Android 模拟器</h2><button data-close aria-label="关闭">×</button></div><p class="dialog-description">没有手机也能使用 OpenGUI：下载官方 Android 模拟器和 Android 14 系统镜像（约 <span id="emulator-size">2.0 GB</span>），在本机创建一台虚拟手机并在后台启动，完成后会出现在设备列表中。</p><ul><li>需要约 8 GB 可用磁盘空间；下载时间取决于网络，关闭工作台不影响下载，中断后再次安装会续传。</li><li>文件来自 Google 官方源或腾讯云镜像，均按 Google 公布的大小和校验值核对。</li><li>只安装在 OpenGUI 自己的目录，不改动已有的 Android Studio 和模拟器。</li><li>Windows 需在「启用或关闭 Windows 功能」中开启「Windows 虚拟机监控程序平台」。</li></ul><label class="emulator-license"><input type="checkbox" id="emulator-accept">我已阅读并同意 <a href="https://developer.android.com/studio/terms" target="_blank" rel="noopener noreferrer">Android SDK 许可协议</a></label><div class="dialog-footer"><button data-close>取消</button><button class="primary" id="emulator-install" disabled>开始安装</button></div></dialog>
 <dialog id="model-info" class="popover" aria-labelledby="model-title"><div class="popover-label" id="model-title">执行模型</div><div id="model-list"></div><p class="popover-note" id="model-message" aria-live="polite">任务执行期间不能切换模型。</p></dialog>
 <dialog id="more-menu" class="popover" aria-label="更多设备操作"><button class="menu-item" id="menu-recheck">重新检测连接与环境</button><button class="menu-item" id="menu-help">设备连接帮助</button><button class="menu-item danger" id="disconnect" title="停止本次控制并释放设备；不会卸载应用或删除数据"><span>断开当前设备<small>停止本次控制，不卸载应用、不删数据</small></span></button></dialog>
 <dialog id="account-dialog" aria-labelledby="account-title" aria-describedby="account-state"><div class="dialog-heading"><h2 id="account-title">手机号登录</h2><button data-close aria-label="关闭">×</button></div><p id="account-state" class="account-description">使用手机号和短信验证码登录，未注册的手机号将自动注册。登录后模型与设备偏好会关联到账号。</p><form id="login-form" novalidate><label for="account-phone">手机号</label><input id="account-phone" type="tel" autocomplete="tel" inputmode="numeric" maxlength="11" placeholder="请输入 11 位手机号"><label for="account-code">验证码</label><div class="sms-row"><input id="account-code" autocomplete="one-time-code" inputmode="numeric" maxlength="6" placeholder="6 位验证码"><button type="button" id="send-otp">获取验证码</button></div></form><div id="account-profile" hidden><span class="account-avatar" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="3.5"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/></svg></span><div><strong id="account-phone-display"></strong><p>已登录</p></div></div><p id="account-error" role="alert" hidden></p><p id="account-lock-note" class="account-description" hidden>任务执行中，结束后可切换账号或服务。</p><div class="dialog-footer"><button class="left" id="sign-out" hidden>退出登录</button><button data-close>取消</button><button id="sign-in" class="primary" type="submit" form="login-form">登录</button></div></dialog>
@@ -693,7 +737,7 @@ async function showDevices(autoBind = false) {
 			|| (result.canSelectDevice && result.preferredDeviceId && !preferred ? "上次使用的设备当前不可用。连接后重新检测，或选择另一台；任务要求已保留。"
 			: !deviceInventory.length ? "还没有发现设备。连接手机并允许 USB 调试，或启动模拟器后点击「重新检测」。任务要求已保留。"
 			: result.canSelectDevice ? "按型号、系统版本和序列号后 4 位确认要使用的设备。" : "本次任务已绑定这台设备，重新检测不会切换手机。");
-		devicePickerPending = false; renderDeviceChoices();
+		devicePickerPending = false; renderDeviceChoices(); void refreshEmulator();
 		const eligible = deviceInventory.filter((d) => d.selectable);
 		const reusable = preferred || (!result.preferredDeviceId && eligible.length === 1 ? eligible[0] : undefined);
 		if (autoBind && result.canSelectDevice && reusable) { deviceSelectedId = reusable.id; renderDeviceChoices(); await confirmDevice(); }
@@ -708,6 +752,85 @@ async function confirmDevice() {
 }
 byId("refresh-devices").onclick = () => void showDevices();
 byId("confirm-device").onclick = () => void confirmDevice();
+
+/* One-click Android emulator: shown in both device pickers when no Android device is attached,
+   or while an install/start is running. The broker does the work; the page only polls progress. */
+let emulatorState = null, emulatorTimer = 0, emulatorLoading = false, emulatorPhase = "";
+const emulatorBoxes = [];
+function emulatorBox() { const box = el("div", "emulator-box"); box.hidden = true; emulatorBoxes.push(box); return box; }
+const startEmulatorBox = emulatorBox(), dialogEmulatorBox = emulatorBox();
+byId("device-list").after(dialogEmulatorBox);
+const sizeLabel = (bytes) => bytes >= 1024 ** 3 ? (bytes / 1024 ** 3).toFixed(1) + " GB" : Math.round(bytes / 1024 ** 2) + " MB";
+function openEmulatorDialog() {
+	byId("emulator-size").textContent = sizeLabel(emulatorState?.downloadBytes || 2.1 * 1024 ** 3);
+	byId("emulator-accept").checked = false; byId("emulator-install").disabled = true;
+	show("emulator-dialog");
+}
+const emulatorErrorText = (error) => error === "emulator_cancelled" ? "已取消" : String(error || "").includes(": ") ? String(error).slice(String(error).indexOf(": ") + 2) : "没有完成，请重试";
+async function refreshEmulator() {
+	clearTimeout(emulatorTimer);
+	if (emulatorLoading) return;
+	emulatorLoading = true;
+	try { const response = await fetch(location.pathname + "emulator", { signal: AbortSignal.timeout(12000) }); if (response.ok) emulatorState = await response.json(); }
+	catch {} finally { emulatorLoading = false; }
+	const phase = emulatorState?.job?.phase || "";
+	// A finished boot attaches a new device: refresh whichever picker is showing.
+	if (phase === "ready" && emulatorPhase && emulatorPhase !== "ready") {
+		startDevicesLoaded = false; if (boardStatus) renderStart(boardStatus, true);
+		if (byId("devices").open) void showDevices();
+		toast("Android 模拟器已就绪");
+	}
+	emulatorPhase = phase;
+	renderEmulator();
+	if (phase && !["ready", "error"].includes(phase)) emulatorTimer = setTimeout(() => void refreshEmulator(), 1500);
+}
+async function emulatorAction(body) {
+	try {
+		const response = await fetch(location.pathname + "emulator", { method: "POST", headers: { "Content-Type": "application/json", "X-OpenGUI-Board": boardToken || "" }, body: JSON.stringify(body) });
+		const result = await response.json().catch(() => ({}));
+		if (!response.ok) throw Error(result.error || "操作没有完成，请稍后重试");
+		emulatorState = result; emulatorPhase = result.job?.phase || "checking"; renderEmulator(); void refreshEmulator();
+	} catch (error) { toast(error.message); }
+}
+function emulatorRow(box, title, detail, buttons, className = "") {
+	const row = el("div", "emulator-row" + (className ? " " + className : "")), copy = el("div"), actions = el("div", "actions");
+	copy.append(el("b", "", title)); if (detail) copy.append(el("p", "", detail));
+	for (const button of buttons) actions.append(button);
+	row.append(copy, actions); box.append(row);
+}
+function emulatorButton(label, primary, onClick) { const button = el("button", primary ? "primary" : "", label); button.disabled = !boardToken; button.onclick = onClick; return button; }
+function renderEmulator() {
+	const state = emulatorState, job = state?.job, active = Boolean(job && !["ready", "error"].includes(job.phase));
+	const avds = (state?.avds || []).filter((avd) => !avd.running);
+	for (const box of emulatorBoxes) {
+		const androidFound = box === startEmulatorBox ? startDevices.length > 0 : (deviceInventory || []).some((d) => d.os !== "ios");
+		box.replaceChildren();
+		box.hidden = !state?.supported || (!active && job?.phase !== "error" && androidFound);
+		if (box.hidden) continue;
+		if (active) {
+			const percent = job.total ? Math.min(100, Math.floor(job.received / job.total * 100)) : undefined;
+			emulatorRow(box, job.label, job.total ? "已下载 " + sizeLabel(job.received || 0) + " / " + sizeLabel(job.total) + "（" + percent + "%）" + (job.source ? " · 来源 " + job.source : "") : "", [emulatorButton("取消", false, () => void emulatorAction({ action: "cancel" }))]);
+			const bar = el("div", "emulator-progress" + (percent === undefined ? " indeterminate" : "")), fill = el("span");
+			if (percent !== undefined) fill.style.width = percent + "%";
+			bar.append(fill); box.append(bar);
+		} else if (job?.phase === "error") {
+			emulatorRow(box, "Android 模拟器" + (job.error === "emulator_cancelled" ? "已取消" : "没有完成"), emulatorErrorText(job.error), [emulatorButton("重试", true, () => avds.length ? void emulatorAction({ action: "start", name: avds[0].name }) : openEmulatorDialog())], "emulator-error");
+		} else if (avds.length) {
+			const select = el("select");
+			for (const avd of avds) { const option = el("option", "", avd.name + (avd.origin === "opengui" ? "（OpenGUI）" : "（Android Studio）")); option.value = avd.name; select.append(option); }
+			const controls = avds.length > 1 ? [select] : [];
+			emulatorRow(box, avds.length > 1 ? "启动已有的 Android 模拟器" : "已有模拟器：" + avds[0].name, "在后台启动，启动后出现在设备列表中", [...controls, emulatorButton("启动模拟器", true, () => void emulatorAction({ action: "start", name: avds.length > 1 ? select.value : avds[0].name }))]);
+		} else {
+			emulatorRow(box, "没有手机？一键安装 Android 模拟器", "下载约 " + sizeLabel(state.downloadBytes || 2.1 * 1024 ** 3) + "，在本机后台运行一台虚拟手机", [emulatorButton("一键安装", true, openEmulatorDialog)]);
+		}
+	}
+}
+byId("emulator-accept").onchange = () => { byId("emulator-install").disabled = !byId("emulator-accept").checked || !boardToken; };
+byId("emulator-install").onclick = () => {
+	if (!byId("emulator-accept").checked) return;
+	byId("emulator-dialog").close();
+	void emulatorAction({ action: "install", acceptLicense: true });
+};
 
 const templates = [
 	["自动化测试", "@opengui 帮我测试【应用／页面】的【功能或操作流程】，重点检查【关注的问题】。如果发现异常，记录操作步骤和截图，做到【结束位置】就停。"],
@@ -1390,6 +1513,7 @@ function renderStart(status, force = false) {
 		const hint = device.connectionHint || connectionHint(device);
 		android.append(startOption("start-device", device.id, startDeviceId === device.id, !device.selectable, device.name, deviceDetails(device), device.selectable ? (device.preferred ? "上次使用" : "可连接") : hint.label, device.selectable ? "" : "warning", (v) => { startDeviceId = v; }));
 	}
+	if (startDevicesLoaded && !startDevicesLoading) { android.append(startEmulatorBox); renderEmulator(); if (!emulatorState) void refreshEmulator(); }
 	const blocker = !boardToken ? "请从当前任务打开工作台" : !user ? "请先登录" : startDevicesLoaded && !startDevicesLoading && !startDevices.length ? "未检测到已连接的 Android 设备" : !startDeviceId ? "请选择执行设备" : startMessage;
 	byId("start-blocker").textContent = blocker;
 	byId("start-run").disabled = startBusy || !boardToken || !user || !startDeviceId;
@@ -1532,10 +1656,14 @@ function renderBoard(status) {
 		const c = cards.get(device.id);
 		if (!c) continue;
 		const stale = device.state !== "ready" || c.canvas.classList.contains("stale");
-		c.watermark.hidden = mode !== "manual" && !stale;
-		c.watermark.classList.toggle("placeholder", mode !== "manual" && !c.hadFrame);
+		// During takeover an Android phone is operated directly on the live picture, so it stays uncovered.
+		const controllable = mode === "manual" && device.os !== "ios" && Boolean(boardToken) && typeof globalThis.openguiTakeover === "function";
+		globalThis.openguiTakeover?.(c, controllable);
+		const covered = controllable ? stale : mode === "manual" || stale;
+		c.watermark.hidden = !covered;
+		c.watermark.classList.toggle("placeholder", !(mode === "manual" && !controllable) && !c.hadFrame);
 		// An open stream waiting for its next key frame is refreshing, not disconnected.
-		c.watermark.textContent = mode === "manual" ? "你正在手动控制设备" : !c.hadFrame ? "正在连接设备画面…" : ended && !c.ws ? "最后画面 · 任务已结束" : c.ws ? "正在刷新画面…" : "连接中断 · 最后有效画面";
+		c.watermark.textContent = mode === "manual" && !controllable ? "你正在手动控制设备" : !c.hadFrame ? "正在连接设备画面…" : ended && !c.ws ? "最后画面 · 任务已结束" : c.ws ? "正在刷新画面…" : "连接中断 · 最后有效画面";
 	}
 	renderPlan(status);
 	renderStart(status);

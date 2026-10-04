@@ -25,7 +25,22 @@ export function zip(files: readonly { name: string; data: Buffer }[]): Buffer {
 
 export function wordReport(markdown: string): Buffer {
   const escape = (value: string) => value.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g, '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
-  const paragraphs = markdown.split('\n').map(line => `<w:p>${line.startsWith('#') ? '<w:pPr><w:spacing w:before="180" w:after="100"/></w:pPr>' : ''}<w:r>${line.startsWith('#') ? '<w:rPr><w:b/></w:rPr>' : ''}<w:t xml:space="preserve">${escape(line.replace(/^#+ /, ''))}</w:t></w:r></w:p>`).join('')
+  // The same Markdown subset as the PDF: tables become key：value or dotted rows, bullets and the
+  // quoted conclusion keep their meaning, and screenshots are referenced by name.
+  const text = (line: string): string | undefined => {
+    if (/^\|\s*-{3}/u.test(line)) return undefined
+    const row = /^\|(.*)\|\s*$/u.exec(line)
+    if (row) { const cells = row[1]!.split('|').map(value => value.trim()); if (cells.join() === '项目,内容') return undefined; return cells.length === 2 ? `${cells[0]}：${cells[1]}` : cells.join('  ·  ') }
+    const image = /^!\[([^\]]*)\]\(([^)]+)\)$/u.exec(line)
+    if (image) return `[截图] ${image[1]}（${image[2]}）`
+    return line.replace(/^#+ /u, '').replace(/^>\s?/u, '').replace(/^-\s+/u, '• ')
+  }
+  const paragraphs = markdown.split('\n').flatMap(line => {
+    const value = text(line)
+    if (value === undefined) return []
+    const heading = line.startsWith('#'), quote = line.startsWith('>')
+    return [`<w:p>${heading ? '<w:pPr><w:spacing w:before="180" w:after="100"/></w:pPr>' : ''}<w:r>${heading || quote ? '<w:rPr><w:b/></w:rPr>' : ''}<w:t xml:space="preserve">${escape(value)}</w:t></w:r></w:p>`]
+  }).join('')
   return zip([
     { name: '[Content_Types].xml', data: Buffer.from('<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>') },
     { name: '_rels/.rels', data: Buffer.from('<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>') },

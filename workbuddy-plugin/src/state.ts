@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto'
 import { lstat, mkdir, open, readFile } from 'node:fs/promises'
+import { lstatSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 
@@ -16,6 +17,27 @@ export function callBudgetMs(args: Record<string, unknown>): number {
 export function workbuddyStateDir(override?: string): string {
   const configured = override ?? process.env.OPENGUI_WORKBUDDY_HOME?.trim()
   return configured ? resolve(configured) : join(homedir(), '.workbuddy', 'opengui')
+}
+
+/**
+ * Preferred workbench port, stable per state directory so 打开控制台 links in chat survive a broker
+ * restart. A busy port falls back to a random one; old links then fail closed with 404/refusal.
+ */
+export function viewerPort(stateDir = workbuddyStateDir()): number {
+  return 53000 + createHash('sha256').update(`${stateDir}:viewer`).digest().readUInt32BE(0) % 10000
+}
+
+/** Owner-only key that signs 打开控制台 links; created once and kept with the private state. */
+export function consoleKey(stateDir = workbuddyStateDir()): Buffer {
+  mkdirSync(stateDir, { recursive: true, mode: 0o700 })
+  const path = join(stateDir, 'console-key')
+  try { writeFileSync(path, randomBytes(32).toString('hex'), { mode: 0o600, flag: 'wx' }) }
+  catch (error) { if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error }
+  const info = lstatSync(path)
+  if (!info.isFile() || info.isSymbolicLink() || (process.platform !== 'win32' && (info.mode & 0o077) !== 0)) throw new Error('unsafe_console_key')
+  const key = Buffer.from(readFileSync(path, 'utf8').trim(), 'hex')
+  if (key.length !== 32) throw new Error('invalid_console_key')
+  return key
 }
 
 /** Stable per-user endpoint. A collision fails closed; it never displaces another listener. */

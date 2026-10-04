@@ -6,7 +6,7 @@ import { connectionDiagnostic, inspectUsbInterfaces, type ConnectionDiagnostic, 
 import { ScrcpyVideoStreams } from './scrcpy-stream.ts'
 import { randomUUID } from 'node:crypto'
 import { join } from 'node:path'
-import { HUMAN_CONTROL_WAIT_MS, workbuddyStateDir } from './state.ts'
+import { HUMAN_CONTROL_WAIT_MS, consoleKey, viewerPort, workbuddyStateDir } from './state.ts'
 import { DeviceWallServer } from './wall.ts'
 import {
   assertAdbReady,
@@ -29,7 +29,7 @@ import type { BoardAction, CommentReview, HumanHandoff, ConnectionRecovery } fro
 import { TaskStore } from './task-store.ts'
 import { CoreMateClient } from './coremate-client.ts'
 import { runConfiguredPhone, transientModelFailure } from './configured-runner.ts'
-import { actionLabel, observationLabel } from './trace-labels.ts'
+import { actionLabel, deviceActionEvent, observationLabel } from './trace-labels.ts'
 import { retestComparison, testSummary, type TestCaseCommand } from './test-cases.ts'
 import { commentSummary, createCommentBudget, type CommentBudget, type CommentBudgetInput } from './comments.ts'
 import { deviceSelectionStatus, type DeviceInfo, type DeviceChoice } from './device-info.ts'
@@ -38,6 +38,7 @@ import { inputDiagnostic, isInputAction, type InputDiagnostic } from './input-di
 import { requestsPreSubmitStop, violatesPreSubmitStop, requiresPreSubmitClassification } from './stop-policy.ts'
 import { IosSimulatorHost } from './ios-simulator.ts'
 import { CombinedPhoneHost } from './phone-host.ts'
+import { AndroidEmulatorManager } from './android-emulator.ts'
 import { connectionHint } from './connection-status.ts'
 import { BASE_EXECUTION_BUDGET, MAX_STORED_EXECUTION_BUDGET, executionBudgetInput, requestedOperationLimit, type ExecutionBudgetInput } from './execution-budget.ts'
 
@@ -129,7 +130,7 @@ export class LocalAdbPhoneHost implements WorkBuddyPhoneHost {
     this.forwardRegistry = new OwnedForwardRegistry(join(stateDir, 'owned-forwards.json'))
     const installer = new ScrcpyInstaller({ cacheDir: join(stateDir, 'scrcpy') })
     this.mirror = new NativeMirror({ adbPath: this.path, installer, onEnded: serial => this.onMirrorEnded?.(serial) })
-    this.videoStreams = new ScrcpyVideoStreams({ adbPath: () => this.path, runAdb: (args, signal) => run(args, signal), installer, forwardRegistry: this.forwardRegistry })
+    this.videoStreams = new ScrcpyVideoStreams({ adbPath: () => this.path, runAdb: (args, signal) => run(args, signal), installer, forwardRegistry: this.forwardRegistry, control: true })
     const asset = resolveScrcpyAsset()
     this.textInput = new ScrcpyTextInput({
       adbPath: () => this.path,
@@ -432,6 +433,9 @@ export class LocalAdbPhoneHost implements WorkBuddyPhoneHost {
     }
   }
 
+  /** The managed ADB for the emulator manager: listing emulators and waiting for boot. */
+  async adb(args: readonly string[], signal: AbortSignal): Promise<string> { return String(await this.run(args, signal)) }
+
   private async run(args: readonly string[], signal: AbortSignal, buffer = false): Promise<string | Buffer> {
     await assertAdbReady(this.path, { repairPermissions: this.repairAdbPermissions })
     return runAdb(this.path, args, {
@@ -592,6 +596,8 @@ export interface WorkBuddyObservation {
 
 export interface WorkBuddyOpenGuiServiceOptions {
   readonly account?: CoreMateClient
+  /** One-click Android emulator; created for the real local host only. */
+  readonly emulators?: AndroidEmulatorManager
   readonly taskStore?: TaskStore
   readonly viewers?: ViewerServer
   readonly host?: WorkBuddyPhoneHost
@@ -614,6 +620,7 @@ export class WorkBuddyOpenGuiService {
   private readonly viewerTasks = new Map<string, ControlTask>()
   readonly viewers: ViewerServer
   readonly account: CoreMateClient | undefined
+  readonly emulators: AndroidEmulatorManager | undefined
   private readonly wall: DeviceWallServer
   private disposed = false
 
@@ -621,12 +628,14 @@ export class WorkBuddyOpenGuiService {
     this.leaseMs = options.leaseMs ?? 10 * 60_000
     this.confirmStart = options.confirmStart ?? !options.host
     this.now = options.now ?? Date.now
-    this.host = options.host ?? new CombinedPhoneHost(new LocalAdbPhoneHost(), new IosSimulatorHost())
+    const android = options.host ? undefined : new LocalAdbPhoneHost()
+    this.host = options.host ?? new CombinedPhoneHost(android!, new IosSimulatorHost())
+    this.emulators = options.emulators ?? (android ? new AndroidEmulatorManager({ stateDir: workbuddyStateDir(), runAdb: (args, signal) => android.adb(args, signal) }) : undefined)
     this.account = options.account ?? options.viewers?.account ?? (options.host ? undefined : new CoreMateClient(workbuddyStateDir()))
     this.viewers = options.viewers ?? new ViewerServer(this.host.videoStreams ?? {
       async prepare() { throw new Error('video_unavailable') },
       async subscribe() { throw new Error('video_unavailable') }, async dispose() {},
-    }, this.now, options.taskStore ?? (options.host ? undefined : new TaskStore(join(workbuddyStateDir(), 'reports'))), this.account)
+    }, this.now, options.taskStore ?? (options.host ? undefined : new TaskStore(join(workbuddyStateDir(), 'reports'))), this.account, options.host ? {} : { port: viewerPort(), consoleKey: consoleKey() })
     this.host.onDeviceUnavailable = serial => {
       const id = this.locks.get(serial)
       const record = id ? this.sessions.get(id) : undefined
@@ -665,6 +674,10 @@ export class WorkBuddyOpenGuiService {
     this.viewers.setBudgetHandler((id, additional, operationLimit, inferenceLimit) => this.extendBudget(id, additional, operationLimit, inferenceLimit))
     this.viewers.setDeviceHandlers((signal, refresh, viewerId) => this.deviceChoices(signal, refresh, viewerId), (id, deviceId) => this.selectViewerDevice(id, deviceId))
     this.viewers.setStartHandler((id, deviceId) => this.startViewerTask(id, deviceId))
+    this.viewers.setEmulatorHandlers(
+      signal => this.emulators?.status(signal) ?? Promise.resolve({ supported: false, reason: '当前环境不支持一键安装模拟器', avds: [] }),
+      input => this.emulatorAction(input),
+    )
     this.viewers.setPreviewHandlers((id, deviceId, signal) => this.previewChoice(id, deviceId, signal), async (id, deviceId, signal) => encodePhonePreview(await this.host.preview(await this.previewChoice(id, deviceId, signal), signal)))
     this.viewers.setConnectionDiagnosticHandler(signal => this.host.diagnoseConnection?.(signal) ?? Promise.resolve(connectionDiagnostic(undefined, { status: 'unknown' })))
     this.wall = new DeviceWallServer(
@@ -819,6 +832,21 @@ export class WorkBuddyOpenGuiService {
         connectionHint: connectionHint({ ...device, selectionStatus, busy: occupiedElsewhere }),
         selectable: connected && authorized && !busy && selectionStatus !== 'version_conflict' }
     })
+  }
+
+  /** The person's emulator choice from the device picker; installing requires accepting the Android SDK license. */
+  private emulatorAction(input: Record<string, unknown>): void {
+    if (!this.emulators) throw new Error('emulator_unsupported')
+    if (input.action === 'cancel') { this.emulators.cancel(); return }
+    if (input.action === 'install') {
+      if (input.acceptLicense !== true) throw new Error('emulator_license_required')
+      this.emulators.begin('install'); return
+    }
+    if (input.action === 'start') {
+      const name = typeof input.name === 'string' && /^[A-Za-z0-9._-]{1,64}$/u.test(input.name) ? input.name : undefined
+      this.emulators.begin('start', name); return
+    }
+    throw new Error('invalid_arguments: unknown emulator action')
   }
 
   /** A start-page candidate for display only; a phone in use by another task is never shown. */
@@ -1230,12 +1258,16 @@ export class WorkBuddyOpenGuiService {
     delete action.deviceId
     delete action.externalSideEffect
     delete action.confirmationRequestId
+    delete action.target
     delete action.hostContext
     delete action.taskNodeIndex
     delete action.stepId
     delete action.reviewId
     if (review && filling) { this.viewers.board(record.viewerId!).prepareInput(review.id, String(input.observationId), input.action === 'replace_text'); action.forceClipboard = true; if (input.action === 'replace_text') action.expectedOriginalText = review.platformInput!.text }
     if (review && sending) { this.viewers.board(record.viewerId!).prepareSubmission(review.id); action.expectedInputText = review.draft }
+    // The workbench animates the cursor as the action is dispatched; display only, never a permission.
+    const cursor = item.observation ? deviceActionEvent(input, item.observation.image) : undefined
+    if (cursor && record.viewerId) this.viewers.announceAction(record.viewerId, item.device.id, cursor)
     try {
       const result = await this.runPhoneOperation(sessionId, deviceId, signal, (item, combined) => this.host.act(item.actor, action, combined), String(input.action), actionLabel(input))
       if (review && filling) this.viewers.board(record.viewerId!).finishInput(review.id, result.observationId)
@@ -1280,8 +1312,11 @@ export class WorkBuddyOpenGuiService {
       void record.runner.catch(() => { /* Persistence failures remain visible through the task state. */ })
     }
     if (waitMs > 0) {
-      const end = Date.now() + Math.min(30_000, waitMs)
-      while (record.state === 'active' && Date.now() < end && !['paused', 'manual'].includes(record.controlMode) && !this.viewers.board(record.viewerId!).reviews.some(r => r.status === 'pending') && !this.viewers.board(record.viewerId!).pendingReplacement && !(this.viewers.board(record.viewerId!).apk?.existingApp && !this.viewers.board(record.viewerId!).apk?.updateApprovedAt)) {
+      // Event-driven: return when a step settles (done/failed/skipped), the person must act, or the run
+      // ends — not on a timer. A step merely starting is not worth a chat message.
+      const steps = (): string => this.viewers.taskSteps(record.viewerId!).map(step => ['pending', 'in_progress'].includes(step.status) ? 'open' : step.status).join()
+      const before = steps(), end = Date.now() + Math.min(HUMAN_CONTROL_WAIT_MS, waitMs)
+      while (record.state === 'active' && Date.now() < end && steps() === before && !['paused', 'manual'].includes(record.controlMode) && !this.viewers.board(record.viewerId!).reviews.some(r => r.status === 'pending') && !this.viewers.board(record.viewerId!).pendingReplacement && !(this.viewers.board(record.viewerId!).apk?.existingApp && !this.viewers.board(record.viewerId!).apk?.updateApprovedAt)) {
         signal.throwIfAborted()
         await Promise.race([record.runner, new Promise<void>(resolve => setTimeout(resolve, 100))])
       }

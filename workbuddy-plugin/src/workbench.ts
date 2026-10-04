@@ -514,26 +514,61 @@ export class Workbench {
       control: this.control, result: this.result, traces: this.traces, reviews: this.reviews,
       evidenceCount: Object.keys(this.evidenceFiles).length, evidenceFiles: { ...this.evidenceFiles }, model: this.modelConfig?.name ?? '跟随 WorkBuddy', modelConfig: this.modelConfig }
   }
-  markdown(todos: readonly TaskStep[]): string {
+  markdown(todos: readonly TaskStep[], context: { readonly devices?: readonly string[] } = {}): string {
     const clean = (value: string) => value.replace(/\r/g, '').replace(/^#/gm, '\\#')
-    const outcome = this.result?.outcome ?? '未结束'
-    const lines = ['# OpenGUI 任务报告', '', `创建时间：${this.createdAt}`, `任务状态：${outcome}`, '',
-      '## 目标与结束条件', clean(this.objective || '未提供'), '', clean(this.successCriteria || '未提供结束条件'), '',
+    const cell = (value: string) => clean(value).replace(/\|/gu, '｜').replace(/\n+/gu, ' ')
+    const pad = (value: number) => String(value).padStart(2, '0')
+    const time = (iso: string) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? iso : `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}` }
+    const clock = (iso: string) => time(iso).slice(11) || iso
+    const span = (ms: number) => ms < 1000 ? `${Math.max(0, Math.round(ms))} 毫秒` : ms < 60_000 ? `${(ms / 1000).toFixed(1)} 秒` : `${Math.floor(ms / 60_000)} 分 ${Math.round(ms % 60_000 / 1000)} 秒`
+    const outcomes: Record<BoardResult['outcome'], string> = { completed: '已完成', blocked: '受阻', unknown: '结果未知', cancelled: '已取消', stopped: '已停止' }
+    const ended = Boolean(this.result)
+    const stepStates: Record<string, string> = { completed: '✅ 已完成', failed: '❌ 失败', skipped: '⏭ 已跳过', awaiting_user: ended ? '⏸ 未完成' : '⏳ 待你处理', in_progress: ended ? '⏸ 未完成' : '▶ 进行中', pending: ended ? '⏸ 未执行' : '○ 待执行' }
+    const traceStates: Record<TraceEntry['status'], string> = { running: '进行中', executed: '完成', failed: '失败', unknown: '结果未知' }
+    const isOperation = (t: TraceEntry) => t.kind !== 'model'
+    const end = (t: TraceEntry) => Date.parse(t.startedAt) + (t.durationMs ?? 0)
+    const kept = (id: string) => this.storage ? Boolean(this.evidenceFiles[id]) : this.evidence.has(id)
+    const picture = (id: string) => `evidence/${this.evidenceFiles[id] ?? this.evidenceName(id) + '.jpg'}`
+    const started = Date.parse(this.createdAt), last = this.traces.length ? Math.max(...this.traces.map(end)) : NaN
+    const done = todos.filter(t => t.status === 'completed').length
+    const summary: Array<[string, string]> = [
+      ['任务', this.objective || '未提供'], ['结束条件', this.successCriteria || '未提供'], ['状态', this.result ? outcomes[this.result.outcome] : '未结束'],
+      ['开始时间', time(this.createdAt)], ...(Number.isFinite(last) && Number.isFinite(started) ? [['用时', span(last - started)] as [string, string]] : []),
+      ...(context.devices?.length ? [['执行设备', context.devices.join('、')] as [string, string]] : []),
+      ['执行模型', this.modelConfig ? `${this.modelConfig.name}（${this.modelConfig.model}）` : '跟随 WorkBuddy'],
+      ['执行步骤', todos.length ? `${done} / ${todos.length} 已完成` : '未拆分步骤'], ['设备操作', `${this.traces.filter(isOperation).length} 次`],
+    ]
+    const stepNames = new Set(todos.map(t => t.content))
+    const steps = todos.flatMap((todo, index) => {
+      const entries = this.traces.filter(t => t.step === todo.content), operations = entries.filter(isOperation)
+      const shot = [...entries].reverse().find(t => t.observationId && kept(t.observationId))
+      return [
+        `### ${index + 1}. ${clean(todo.content)}　${stepStates[todo.status] ?? todo.status}`,
+        entries.length ? `用时 ${span(Math.max(...entries.map(end)) - Math.min(...entries.map(t => Date.parse(t.startedAt))))} · ${operations.length} 次设备操作` : '没有执行记录',
+        ...(todo.reason ? [`说明：${clean(todo.reason)}`] : []),
+        ...entries.map(t => `- ${clock(t.startedAt)}　${clean(t.label ?? t.kind)}${t.status === 'executed' ? '' : `（${traceStates[t.status]}${t.code ? '：' + t.code : ''}）`}${t.durationMs === undefined ? '' : ` · ${span(t.durationMs)}`}`),
+        ...(shot ? [`![步骤 ${index + 1} 的最后画面](${picture(shot.observationId!)})`] : []), '',
+      ]
+    })
+    const others = this.traces.filter(t => !t.step || !stepNames.has(t.step))
+    const lines = ['# OpenGUI 任务报告', '', `> ${clean(this.result?.summary || '尚未收到业务结果结论。工具执行回执不代表检查通过或评论发送成功。').replace(/\n/gu, '\n> ')}`, '',
+      '| 项目 | 内容 |', '| --- | --- |', ...summary.map(([key, value]) => `| ${key} | ${cell(value)} |`), '',
       ...(this.stopBeforeSubmit ? ['执行限制：停在提交前。已声明的提交、发送、发布、付款、删除及 Enter 由运行时阻止；点击／滑动省略副作用标记时不执行。标为无副作用的用途仍需正确判断当前画面，不构成独立视觉验证。', ''] : []),
       ...(this.executionBudget?.initialLimits ? [`执行预算：手机操作最多 ${this.operationLimit} 次（包含观察与动作）；插件内模型调用最多 ${this.inferenceLimit} 次。宿主模型调用不计入插件内模型预算。恢复保留已用次数，追加需原工作台用户授权。`, ''] : []),
-      '## 执行结论', clean(this.result?.summary || '尚未收到业务结果结论。工具执行回执不代表检查通过或评论发送成功。'), '',
+      '## 执行步骤', ...(todos.length ? steps : ['未拆分执行步骤。', '']),
+      ...(others.length ? ['### 准备与其他操作', ...others.map(t => `- ${clock(t.startedAt)}　${clean(t.label ?? t.kind)}${t.status === 'executed' ? '' : `（${traceStates[t.status]}${t.code ? '：' + t.code : ''}）`}${t.durationMs === undefined ? '' : ` · ${span(t.durationMs)}`}`), ''] : []),
       ...(this.connectionRecovery ? ['## 原设备连接恢复', `检测：${this.connectionRecovery.detectedAt}；状态：${this.connectionRecovery.status}`, '设备断开或调试授权失去时暂停控制；只恢复原设备，不重放未知动作。', ...(this.connectionRecovery.recheckedAt ? [`用户重新检测：${this.connectionRecovery.recheckedAt}`] : []), ...(this.connectionRecovery.resolvedAt ? [`新画面：${this.connectionRecovery.resolvedAt}；证据：${this.connectionRecovery.evidenceObservationId}。连接恢复不证明之前的业务动作成功。`] : []), ''] : []),
       ...(this.executionBudget?.extensions.length ? ['## 用户追加执行预算', ...this.executionBudget.extensions.map(extension => `- ${extension.grantedAt}：追加最多 ${extension.additional} 次手机操作与插件内模型调用；累计上限分别为 ${extension.operationLimit}／${extension.inferenceLimit}。上一轮 ${extension.previousResult.outcome}：${clean(extension.previousResult.summary ?? '未提供结论')}。原目标、设备、审核与已发生结果不因此改变。`), ''] : []),
-      '## 任务清单', ...todos.map(t => `- [${t.status === 'completed' ? 'x' : ' '}] ${clean(t.content)}（${t.status}）`), '',
       ...(this.inputDiagnostic ? ['## 设备输入权限诊断', `来源：${this.inputDiagnostic.source}；状态：${this.inputDiagnostic.status}；检测：${this.inputDiagnostic.detectedAt}`, 'Android 明确拒绝输入注入；不根据画面未变化推断权限失败，不自动重放失败动作。', clean(this.inputDiagnostic.guidance), ...(this.inputDiagnostic.recheckedAt ? [`用户重新检测：${this.inputDiagnostic.recheckedAt}；连接及截图正常不证明触控权限已恢复。`] : []), ...(this.inputDiagnostic.resolvedAt ? [`后续输入回执及结果截图返回：${this.inputDiagnostic.resolvedAt}；系统权限开关未直接读取，业务结果仍须核对。`] : []), ''] : []),
       ...(this.apk ? ['## APK 准备', `文件：${clean(this.apk.fileName)}；包名：${clean(this.apk.packageName)}；版本：${clean(this.apk.versionName ?? '未解析')}；版本代码：${this.apk.versionCode ?? '未解析'}；最低 SDK：${this.apk.minSdk}`, `大小：${this.apk.bytes} 字节；SHA-256：${this.apk.sha256}`, ...(this.apk.existingApp ? [`覆盖已安装应用：现有版本 ${clean(this.apk.existingApp.version ?? '未能读取')}；用户确认：${this.apk.updateApprovedAt ?? '待确认'}。安装将替换应用程序并保留原数据，应用自身迁移可能改变数据。`] : []), `状态：${this.apk.status}；准备：${this.apk.preparedAt}${this.apk.startedAt ? '；开始安装：' + this.apk.startedAt : ''}${this.apk.finishedAt ? '；结束：' + this.apk.finishedAt : ''}${this.apk.code ? '；结果码：' + this.apk.code : ''}`, '安装成功仅表示安装事务成功；账号、权限、服务与业务结果仍须重新检查。不自动重试失败／未知安装。', ''] : []),
       ...(this.environment ? ['## 环境准备', `目标应用：${clean(this.environment.spec.packageName)}${this.environment.spec.expectedVersion ? '；要求版本 ' + clean(this.environment.spec.expectedVersion) : ''}`, `检查时间：${this.environment.checkedAt ?? '尚未检查'}；当前${environmentReady(this.environment) ? '已满足声明的前置条件' : this.environment.stale ? '需要重新检查，旧结果不能授权执行' : '存在失败或待确认项'}`, '账号与服务状态由模型比较画面记录，不属于独立验证；未声明条件不代表已检查。', ...this.environment.checks.map(item => `- ${clean(item.label)} · ${item.status} · ${item.source} · ${item.required ? '必需' : '提示'}：${clean(item.detail)}${item.evidenceObservationId ? '；证据 ' + item.evidenceObservationId : ''}`), ''] : []),
       ...(this.testCases.length ? this.testMarkdown(clean) : []),
       ...(this.handoffs.length ? ['## 人工处理记录', '重新观察完成只表示已取得交还后的新画面，不代表安全验证通过或支付成功。', ...this.handoffs.map(item => `- ${item.requestedAt} · ${item.category} · ${item.status}\n  原因：${clean(item.reason)}${item.resumedAt ? `\n  用户交还控制：${item.resumedAt}` : ''}${item.resolvedAt ? `\n  重新观察完成：${item.resolvedAt} · 证据 ${item.evidenceObservationId}` : ''}`), ''] : []),
-      '## 执行记录', this.modelConfig ? '工具和模型请求耗时均为实际调用往返时间；模型耗时包含网络。' : '仅记录实际工具调用耗时；宿主未提供模型推理耗时。', ...this.traces.map(t =>
-        `- ${t.startedAt} · ${t.label ?? t.kind}${t.step ? `（${t.step}）` : ''} · ${t.status} · ${t.durationMs ?? '进行中'} ms${t.observationId ? ` · 证据 ${t.observationId}` : ''}${t.code ? ` · ${t.code}` : ''}`), '',
-      '## 评论审核', ...(this.commentBudget ? [`已核验 ${this.comments.sent}／${this.commentBudget.targetCount ?? '未约定数量'}；已提交 ${this.comments.submitted}；结果未知 ${this.comments.unknown}；跳过 ${this.comments.skipped}。`, `开始：${this.commentBudget.startedAt}；时限：${this.commentBudget.deadlineAt ?? '未约定'}；停止原因：${this.commentBudget.stopReason ?? '尚未停止'}。暂停与人工等待计入约定运行时长；提交／未知不计成功，但占用目标名额。`] : []), ...this.reviews.flatMap(r => [`- ${clean(r.account)} · ${clean(r.target)} · ${r.status} · 内容版本 ${r.contentVersion ?? 1}\n  ${clean(r.draft)}${r.skipReason ? `\n  跳过原因：${clean(r.skipReason)}` : ''}${r.submittedAt ? `\n  提交时间：${r.submittedAt}` : ''}`, ...this.versions(r).map(item => `  - 版本 ${item.version} · ${item.source} · ${item.savedAt}${item.evidenceObservationId ? ` · 证据 ${item.evidenceObservationId}` : ''}\n    ${clean(item.draft)}`), ...(r.decisions ?? []).map(item => `  - 人工决定 ${item.decision} · 内容版本 ${item.contentVersion} · ${item.decidedAt}${item.reason ? ` · ${clean(item.reason)}` : ''}`), ...(r.platformInput ? [`  - 当前输入 ${r.platformInput.status} · ${r.platformInput.source} · ${r.platformInput.readAt} · 证据 ${r.platformInput.evidenceObservationId}；原稿记录不是覆盖许可。`] : []), ...(r.replacementDecisions ?? []).map(item => `  - 原稿决定 ${item.decision === 'keep' ? '保留，不发送' : '允许一次替换'} · 原稿版本 ${item.platformVersion} · 最终稿版本 ${item.contentVersion} · ${item.decidedAt}${item.usedAt ? ` · 已消耗 ${item.usedAt}` : ''}\n    ${clean(item.originalText)}`), ...(r.inputAttempts ?? []).map(item => `  - 填入事务 ${item.outcome} · 最终稿版本 ${item.contentVersion} · ${item.startedAt} · 执行前证据 ${item.beforeObservationId}${item.afterObservationId ? ` · 执行后证据 ${item.afterObservationId}` : ''}`)]), '',
-      '## 证据', ...this.traces.filter(t => t.observationId).map(t => (this.storage ? this.evidenceFiles[t.observationId!] : this.evidence.has(t.observationId!))
+      ...(this.reviews.length || this.commentBudget ? ['## 评论审核', ...(this.commentBudget ? [`已核验 ${this.comments.sent}／${this.commentBudget.targetCount ?? '未约定数量'}；已提交 ${this.comments.submitted}；结果未知 ${this.comments.unknown}；跳过 ${this.comments.skipped}。`, `开始：${this.commentBudget.startedAt}；时限：${this.commentBudget.deadlineAt ?? '未约定'}；停止原因：${this.commentBudget.stopReason ?? '尚未停止'}。暂停与人工等待计入约定运行时长；提交／未知不计成功，但占用目标名额。`] : []), ...this.reviews.flatMap(r => [`- ${clean(r.account)} · ${clean(r.target)} · ${r.status} · 内容版本 ${r.contentVersion ?? 1}\n  ${clean(r.draft)}${r.skipReason ? `\n  跳过原因：${clean(r.skipReason)}` : ''}${r.submittedAt ? `\n  提交时间：${r.submittedAt}` : ''}`, ...this.versions(r).map(item => `  - 版本 ${item.version} · ${item.source} · ${item.savedAt}${item.evidenceObservationId ? ` · 证据 ${item.evidenceObservationId}` : ''}\n    ${clean(item.draft)}`), ...(r.decisions ?? []).map(item => `  - 人工决定 ${item.decision} · 内容版本 ${item.contentVersion} · ${item.decidedAt}${item.reason ? ` · ${clean(item.reason)}` : ''}`), ...(r.platformInput ? [`  - 当前输入 ${r.platformInput.status} · ${r.platformInput.source} · ${r.platformInput.readAt} · 证据 ${r.platformInput.evidenceObservationId}；原稿记录不是覆盖许可。`] : []), ...(r.replacementDecisions ?? []).map(item => `  - 原稿决定 ${item.decision === 'keep' ? '保留，不发送' : '允许一次替换'} · 原稿版本 ${item.platformVersion} · 最终稿版本 ${item.contentVersion} · ${item.decidedAt}${item.usedAt ? ` · 已消耗 ${item.usedAt}` : ''}\n    ${clean(item.originalText)}`), ...(r.inputAttempts ?? []).map(item => `  - 填入事务 ${item.outcome} · 最终稿版本 ${item.contentVersion} · ${item.startedAt} · 执行前证据 ${item.beforeObservationId}${item.afterObservationId ? ` · 执行后证据 ${item.afterObservationId}` : ''}`)]), ''] : []),
+      '## 附录：完整执行记录', this.modelConfig ? '工具和模型请求耗时均为实际调用往返时间；模型耗时包含网络。' : '仅记录实际工具调用耗时；宿主未提供模型推理耗时。', '',
+      '| 时间 | 操作 | 所属步骤 | 结果 | 耗时 |', '| --- | --- | --- | --- | --- |',
+      ...this.traces.map(t => `| ${clock(t.startedAt)} | ${cell(t.label ?? t.kind)} | ${cell(t.step ?? '—')} | ${traceStates[t.status]}${t.code ? '：' + cell(t.code) : ''} | ${t.durationMs === undefined ? '进行中' : span(t.durationMs)} |`), '',
+      '## 附录：截图证据', ...this.traces.filter(t => t.observationId).map(t => (this.storage ? this.evidenceFiles[t.observationId!] : this.evidence.has(t.observationId!))
         ? `- [${t.observationId}](evidence/${this.evidenceName(t.observationId!)}.jpg)` : `- ${t.observationId}：证据未保留`), '',
       this.storage ? '任务、审核记录和截图已自动归档到本地；恢复后必须重新观察，原审核需重新确认。' : '当前记录仅保留于运行时。',
       '未执行、结果未知和待核验项目不计为业务成功。']

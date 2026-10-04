@@ -126,9 +126,9 @@ export class AutomationCoordinator {
     if (event.hook_event_name === 'Stop' || event.hook_event_name === 'SubagentStop') {
       // Keep the turn alive (bounded) while the person confirms model and device in the workbench.
       if (existing.outcome === 'active' && this.service.awaitingTaskStart(existing.execution)) {
-        if (existing.startWaits >= 20) return {}
+        if (existing.startWaits >= 6) return {}
         existing.startWaits++
-        return { decision: 'block', reason: `OpenGUI is waiting for the user to confirm the request, model and device and click 开始执行 in the workbench (${existing.startWaits}/20). Call opengui_viewer_status with the existing viewerId and waitMs 30000. Do not open a control session, observe or act until it returns startRequired false and a visible first frame. If waiting runs out, tell the user the task starts after they click 开始执行 and send any message here.` }
+        return { decision: 'block', reason: `OpenGUI is waiting for the user to confirm the request, model and device and click 开始执行 in the workbench (${existing.startWaits}/6). Call opengui_viewer_status with the existing viewerId and waitMs 600000; it returns as soon as the task starts. Do not open a control session, observe or act until it returns startRequired false and a visible first frame. If waiting runs out, tell the user the task starts after they click 开始执行 and send any message here.` }
       }
       if (!existing.controlStarted || existing.outcome !== 'active') return {}
       const states = this.states(existing)

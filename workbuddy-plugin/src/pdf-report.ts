@@ -37,10 +37,34 @@ export async function pdfReport(markdown: string, evidence: readonly ReportEvide
       runs.forEach((run, index) => doc.font(run.font).fontSize(size).fillColor(color).text(run.text, { continued: index < runs.length - 1, lineGap: 3 }))
       doc.font('Report').moveDown(0.3)
     }
+    // The report's Markdown subset: headings, a quoted conclusion, key/value and log tables, bullets and
+    // per-step screenshots, which are embedded inline as thumbnails (the full set follows as evidence pages).
+    const pictures = new Map(evidence.map(item => [item.name, item]))
     for (const raw of markdown.split('\n')) {
       const heading = /^(#{1,3})\s+(.*)$/u.exec(raw)
-      if (heading && doc.y > doc.page.height - 120) doc.addPage()
-      paragraph(heading?.[2] ?? raw, heading ? heading[1]!.length === 1 ? 20 : heading[1]!.length === 2 ? 15 : 12 : 10, heading ? '#31583f' : '#24332a')
+      if (heading) {
+        if (doc.y > doc.page.height - 120) doc.addPage()
+        paragraph(heading[2]!, heading[1]!.length === 1 ? 20 : heading[1]!.length === 2 ? 15 : 12, '#31583f'); continue
+      }
+      if (/^\|\s*-{3}/u.test(raw)) continue
+      const row = /^\|(.*)\|\s*$/u.exec(raw)
+      if (row) { const cells = row[1]!.split('|').map(value => value.trim()); if (cells.join() === '项目,内容') continue; paragraph(cells.length === 2 ? `${cells[0]}：${cells[1]}` : cells.join('  ·  '), cells.length === 2 ? 10 : 9); continue }
+      const image = /^!\[([^\]]*)\]\(evidence\/([^)]+)\)$/u.exec(raw)
+      if (image) {
+        const item = pictures.get(image[2]!)
+        if (!item) { paragraph(`[截图] ${image[1]}`, 9, '#647568'); continue }
+        // PDFKit's openImage (missing from its typings) reads the size so the flow continues below the picture.
+        const picture = (doc as unknown as { openImage(data: Buffer): { width: number; height: number } }).openImage(item.data), scale = Math.min(170 / picture.width, 230 / picture.height, 1)
+        if (doc.y + picture.height * scale + 30 > doc.page.height - 60) doc.addPage()
+        paragraph(image[1]!, 9, '#647568')
+        const top = doc.y + 2
+        doc.image(picture as unknown as Buffer, 48, top, { width: picture.width * scale, height: picture.height * scale })
+        doc.x = 48; doc.y = top + picture.height * scale + 10; continue
+      }
+      const quote = /^>\s?(.*)$/u.exec(raw)
+      if (quote) { paragraph(quote[1]!, 11, '#31583f'); continue }
+      const bullet = /^-\s+(.*)$/u.exec(raw)
+      paragraph(bullet ? `• ${bullet[1]}` : raw, 10)
     }
     for (const item of evidence) {
       doc.addPage()

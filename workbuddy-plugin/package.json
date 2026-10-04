@@ -27,7 +27,7 @@
   },
   "scripts": {
     "test:viewer": "npm run build && node scripts/test-viewer-browser.mjs",
-    "build": "tsc -p tsconfig.json && node scripts/finalize.mjs",
+    "build": "node -e \"require('node:fs').rmSync('lib', { recursive: true, force: true })\" && tsc -p tsconfig.json && node scripts/finalize.mjs",
     "test": "vitest run",
     "check": "npm test && npm run build && node scripts/validate.mjs",
     "pack:release": "npm run check && node scripts/package.mjs",
