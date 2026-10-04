@@ -223,10 +223,7 @@ export class GraphRunnerService {
       this.abortReasons.delete(taskExecutionId);
       clearCompletedSummaries(taskExecutionId);
 
-      return {
-        success: true,
-        summary: result.finalSummary || undefined,
-      };
+      return await this.getCompletionResult(result, threadId);
     } catch (error) {
       // Stop lease monitoring.
       this.stopLeaseMonitor(taskExecutionId);
@@ -650,10 +647,7 @@ export class GraphRunnerService {
       this.threadIdMap.delete(taskExecutionId);
       clearCompletedSummaries(taskExecutionId);
 
-      return {
-        success: true,
-        summary: result.finalSummary || undefined,
-      };
+      return await this.getCompletionResult(result, threadId);
     } catch (error) {
       // Stop lease monitoring.
       this.stopLeaseMonitor(taskExecutionId);
@@ -786,10 +780,7 @@ export class GraphRunnerService {
       this.threadIdMap.delete(taskExecutionId);
       clearCompletedSummaries(taskExecutionId);
 
-      return {
-        success: true,
-        summary: result.finalSummary || undefined,
-      };
+      return await this.getCompletionResult(result, threadId);
     } catch (error) {
       // Stop lease monitoring.
       this.stopLeaseMonitor(taskExecutionId);
@@ -1093,10 +1084,7 @@ export class GraphRunnerService {
       this.abortReasons.delete(taskExecutionId);
       clearCompletedSummaries(taskExecutionId);
 
-      return {
-        success: true,
-        summary: result.finalSummary || undefined,
-      };
+      return await this.getCompletionResult(result, newThreadId);
     } catch (error) {
       // Stop lease monitoring.
       this.stopLeaseMonitor(taskExecutionId);
@@ -1150,6 +1138,35 @@ export class GraphRunnerService {
         error: (error as Error).message,
       };
     }
+  }
+
+  /**
+   * Distinguish a finished graph from successful task completion.
+   */
+  private async getCompletionResult(
+    state: AgentState,
+    threadId: string,
+  ): Promise<ExecuteTaskResult> {
+    const todos = await this.workingMemoryService.getTodos(threadId);
+    const unsuccessfulTodo = todos?.find(
+      (todo) => todo.status !== "completed" ||
+        todo.result === "failure" || todo.result === "refused",
+    );
+    const executorFailed = state.executorOutput?.success === false ||
+      state.executor?.status === "error";
+    const error = executorFailed
+      ? state.executorOutput?.fail_reason || state.executor?.errorMessage || "Device execution failed"
+      : state.supervisorError
+        ? "Task planning failed"
+        : unsuccessfulTodo
+          ? `Task not completed: ${unsuccessfulTodo.content}`
+          : undefined;
+
+    return {
+      success: !error,
+      summary: state.finalSummary || undefined,
+      ...(error ? { error } : {}),
+    };
   }
 
   // ============= Token Usage =============

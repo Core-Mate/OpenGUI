@@ -40,7 +40,7 @@ object PermissionManager {
             context.contentResolver,
             Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
         )
-        return enabledServices?.contains(service) == true
+        return enabledServices?.contains(service) == true && GestureService.instance != null
     }
 
     fun showRequestPermissionWindow(context: Context) {
