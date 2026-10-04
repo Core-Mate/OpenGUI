@@ -16,6 +16,9 @@ const [packed] = JSON.parse(execFileSync(process.execPath, [npmCli, 'pack', '--j
 assert.equal(packed.filename, `opengui-mcp-${version}.tgz`)
 const files = packed.files.map(file => file.path)
 for (const expected of ['scripts/install-local.mjs', 'lib/mcp.js', 'lib/broker-main.js', 'lib/host-hook.js', 'lib/automation.js', 'lib/installation.js', 'lib/opengui-SKILL.md', 'assets/platform-tools/darwin/adb', 'assets/platform-tools/linux-x64/adb', 'assets/platform-tools/win32-x64/adb.exe', 'LICENSE', 'NOTICE.md']) assert(files.includes(expected), expected)
+for (const expected of ['lib/pdf-report.js', 'assets/fonts/NotoSansSC-Regular.otf', 'assets/fonts/NotoEmoji.ttf', 'third-party/noto-sans-sc/LICENSE', 'third-party/noto-emoji/LICENSE']) assert(files.includes(expected), expected)
+for (const expected of ['lib/ios-driver.js', 'lib/ios-simulator.js', 'lib/phone-host.js', 'third-party/axe/LICENSE', 'third-party/axe/THIRD_PARTY_LICENSES', 'third-party/axe/README.md']) assert(files.includes(expected), expected)
+assert(files.includes('lib/connection-diagnostics.js'), 'Missing native connection diagnosis')
 assert(!files.some(path => /confirmation|__pycache__|\.pyc$|\.DS_Store$/.test(path)), 'Obsolete approval code or build noise in package')
 assert(!files.some(path => /(^|\/)(src|tests|node_modules|\.env|connector)(\/|$)|codex|dsh/i.test(path)), 'Unexpected package contents')
 for (const path of ['lib/mcp.js', 'assets/platform-tools/darwin/adb', 'assets/platform-tools/linux-x64/adb']) {

@@ -3,17 +3,19 @@ import type { Duplex } from 'node:stream'
 import { afterEach, expect, vi } from 'vitest'
 import { ViewerServer } from '../src/viewer.ts'
 import type { ScrcpyStreamSink } from '../src/scrcpy-stream.ts'
+import type { CoreMateClient } from '../src/coremate-client.ts'
+import type { TaskStore } from '../src/task-store.ts'
 
 export const a = { id: 'a', serial: 'private-a', name: 'Phone A' }
 export const b = { id: 'b', serial: 'private-b', name: 'Phone B' }
 const resources: Array<() => Promise<unknown>> = []
 afterEach(async () => { for (const close of resources.splice(0).reverse()) await close() })
-export function setup() {
+export function setup(account?: CoreMateClient, store?: TaskStore) {
   let time = Date.now()
   const sinks = new Map<string, ScrcpyStreamSink>()
   const release = vi.fn()
   const prepare = vi.fn(async () => {})
-  const viewer = new ViewerServer({ prepare, async subscribe(device, sink) { sinks.set(device.id, sink); return release }, async dispose() {} }, () => time)
+  const viewer = new ViewerServer({ prepare, async subscribe(device, sink) { sinks.set(device.id, sink); return release }, async dispose() {} }, () => time, store, account)
   resources.push(() => viewer.dispose())
   return { viewer, sinks, release, prepare, advance: (ms: number) => { time += ms } }
 }

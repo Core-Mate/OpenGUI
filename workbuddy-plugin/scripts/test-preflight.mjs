@@ -36,5 +36,14 @@ try {
   r=run({WORKBUDDY_INSTANCE_NUMBER:'2'}); assert.equal(r.status,0,r.stderr); assert(r.stdout.includes(join(home,'.workbuddy-2')))
   await product('unknown'); r=run(); assert.notEqual(r.status,0); assert.match(r.stderr,/HOST_CONFIG_UNKNOWN/)
   await product('.workbuddy'); await writeFile(join(cli,'dist/codebuddy.js'),'UserPromptSubmit'); r=run(); assert.notEqual(r.status,0); assert.match(r.stderr,/HOST_HOOKS/)
-  console.log('PASS: product-specific paths, old version refusal, live 5.5.6 Electron/helper preflight, older-host restart fallback, custom root, instance suffix, unknown product, missing Hooks and zero-write preflight.')
+  await rm(join(cli, 'dist/codebuddy.js'))
+  await version('5.6.2')
+  for (const name of ['codebuddy-headless.js', 'codebuddy-lite-wb.mjs']) {
+    await writeFile(join(cli, 'dist', name), 'UserPromptSubmit PreToolUse Stop SubagentStop FinalStop SessionEnd StopFailure')
+    r=run(); assert.equal(r.status,0,r.stderr); assert.match(r.stdout,/PREFLIGHT_OK/)
+    await writeFile(join(cli, 'dist', name), 'UserPromptSubmit PreToolUse')
+    r=run(); assert.notEqual(r.status,0); assert.match(r.stderr,/HOST_HOOKS/)
+    await rm(join(cli, 'dist', name))
+  }
+  console.log('PASS: product-specific paths, old version refusal, live 5.5.6 Electron/helper preflight, 5.6.2 CLI names with all Hooks, older-host restart fallback, custom root, instance suffix, unknown product, missing Hooks and zero-write preflight.')
 } finally { await rm(temporary,{recursive:true,force:true}) }

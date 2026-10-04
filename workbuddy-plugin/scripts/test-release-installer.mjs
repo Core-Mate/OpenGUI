@@ -46,5 +46,5 @@ try {
  }
  assert.equal((await readdir(join(stateRoot, 'packages'))).length, 1, 'Repeat installation must reuse the same package directory')
  console.log(JSON.stringify({firstInstallMs:timings[0], repeatInstallMs:timings[1]}))
- console.log('PASS: live WorkBuddy 5.5.6 install, older-host restart fallback, native dependency import, retained foreign MCP/Hooks, idempotency, paths with spaces and rollback receipts.')
+ console.log('PASS: real release installer with a synthetic WorkBuddy 5.5.6 bundle/process fixture, older-host restart fallback, native dependency import, retained foreign MCP/Hooks, idempotency, paths with spaces and rollback receipts; real host loading remains unverified.')
 } finally { await rm(temporary,{recursive:true,force:true}) }

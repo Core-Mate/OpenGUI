@@ -11,9 +11,22 @@ export class OpenGuiError extends Error {
   ) { super(message); this.name = 'OpenGuiError' }
 }
 
+// Plain `code: detail` errors name their own cause. Waiting codes need a person in the
+// workbench; terminal codes cannot be fixed by the agent; every other prefixed code is a
+// rejected argument or ordering the agent can correct without ending the task.
+const WAITING_CODES = new Set(['start_required', 'model_selection_required', 'login_required', 'review_pending', 'comment_replacement_required', 'device_unavailable', 'account_change_in_progress'])
+const TERMINAL_CODES = new Set(['display_timeout', 'task_ended', 'session_ended', 'different_task_active', 'foreign_account', 'account_changed', 'device_frozen', 'environment_frozen', 'test_result_immutable', 'upgrade_blocked'])
+const CODE_ALIASES: Record<string, string> = { waiting_for_frame: 'waiting_for_display' }
+
 export function errorInfo(error: unknown): { code: string; message: string; executionState: ExecutionState; recovery: Recovery } {
   if (error instanceof OpenGuiError) return { code: error.code, message: error.message, executionState: error.executionState, recovery: error.recovery }
   const message = error instanceof Error ? error.message : String(error)
+  const prefixed = /^([a-z][a-z0-9]*(?:_[a-z0-9]+)+):/u.exec(message)?.[1]
+  if (prefixed) {
+    const code = CODE_ALIASES[prefixed] ?? prefixed
+    const recovery: Recovery = code === 'waiting_for_display' || WAITING_CODES.has(code) ? 'wait' : TERMINAL_CODES.has(code) ? 'stop' : 'replan'
+    return { code, message, executionState: 'not_executed', recovery }
+  }
   const code = /stale|observe.*before|observation.*unavailable|current frame/u.test(message) ? 'observation_required'
     : /invalid arguments|unknown tool|must be|is required/u.test(message) ? 'invalid_arguments'
     : /waiting_for_display/u.test(message) ? 'waiting_for_display'

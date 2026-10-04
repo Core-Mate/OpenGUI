@@ -11,6 +11,8 @@ import { x as extractTar } from 'tar'
 import { OwnedForwardRegistry } from './forward-registry.ts'
 import type { OwnedForward } from './forward-registry.ts'
 import { extractSafeZip } from './secure-zip.ts'
+import { OpenGuiError } from './errors.ts'
+import { inputPermissionDenied, inputPermissionError } from './input-diagnostics.ts'
 
 export const SCRCPY_VERSION = '4.1'
 
@@ -368,6 +370,7 @@ export function buildScrcpyControlServerArgs(scid: string, serverPath = SCRCPY_R
     'video=false',
     'audio=false',
     'control=true',
+    'clipboard_autosync=false',
     'cleanup=false',
     'send_dummy_byte=true',
     'send_device_meta=false',
@@ -396,19 +399,23 @@ export function buildSetClipboardControlMessage(
 
 export interface ParsedScrcpyDeviceMessages {
   acknowledgements: bigint[]
+  clipboards?: string[]
   remaining: Buffer
 }
 
 /** Parse complete scrcpy device messages while retaining a fragmented suffix. */
-export function parseScrcpyDeviceMessages(input: Buffer): ParsedScrcpyDeviceMessages {
+export function parseScrcpyDeviceMessages(input: Buffer, includeClipboard = false): ParsedScrcpyDeviceMessages {
   const acknowledgements: bigint[] = []
+  const clipboards: string[] = []
   let offset = 0
   while (offset < input.length) {
     const type = input[offset]
     if (type === 0) {
       if (input.length - offset < 5) break
       const length = input.readUInt32BE(offset + 1)
+      if (length > (1 << 18) - 5) throw new Error('opengui: oversized scrcpy clipboard message')
       if (input.length - offset < 5 + length) break
+      if (includeClipboard) clipboards.push(new TextDecoder('utf-8', { fatal: true }).decode(input.subarray(offset + 5, offset + 5 + length)))
       offset += 5 + length
       continue
     }
@@ -427,12 +434,20 @@ export function parseScrcpyDeviceMessages(input: Buffer): ParsedScrcpyDeviceMess
     }
     throw new Error(`opengui: unknown scrcpy device message type ${String(type)}`)
   }
-  return { acknowledgements, remaining: input.subarray(offset) }
+  return { acknowledgements, ...(includeClipboard ? { clipboards } : {}), remaining: input.subarray(offset) }
+}
+
+/** Fixed select-all/collapse shortcuts for the currently focused editable field. */
+export function buildFieldSelectionControlMessages(selectAll: boolean): Buffer {
+  const pair = Buffer.alloc(28)
+  for (let index = 0; index < 2; index++) { const offset = index * 14; pair[offset] = 0; pair[offset + 1] = index; pair.writeUInt32BE(selectAll ? 29 : 123, offset + 2); pair.writeUInt32BE(0x1000, offset + 10) }
+  return pair
 }
 
 type ScrcpyAdbRunner = (args: readonly string[], signal: AbortSignal) => Promise<unknown>
 
 interface ScrcpyTextConnection {
+  clipboardWaiter?: { resolve(text: string): void; reject(error: Error): void; timer: ReturnType<typeof setTimeout> } | undefined
   readonly serial: string
   readonly port: number
   readonly process: ChildProcess
@@ -489,10 +504,74 @@ export class ScrcpyTextInput {
     combined.throwIfAborted()
     const connection = await this.connection(serial, combined)
     combined.throwIfAborted()
+    await this.setClipboard(connection, text, true, combined)
+  }
 
+  async replace(serial: string, text: string, signal: AbortSignal): Promise<void> {
+    if (text.length < 1 || [...text].length > 500 || text.includes('\0')) throw new Error('opengui: replacement must contain 1-500 Unicode characters without NUL')
+    const combined = AbortSignal.any([signal, this.lifetime.signal]), connection = await this.connection(serial, combined)
+    await this.writeControl(connection, buildFieldSelectionControlMessages(true), combined)
+    await this.setClipboard(connection, text, true, combined)
+  }
+
+  /** Copy only a caller-identified focused comment field; unrelated clipboard contents stay in RAM. */
+  async readFocusedText(serial: string, signal: AbortSignal, provesEmpty?: (signal: AbortSignal) => Promise<boolean>): Promise<string | undefined> {
+    const combined = AbortSignal.any([signal, this.lifetime.signal]), connection = await this.connection(serial, combined)
+    let original: string | undefined, temporary: string | undefined, result: string | undefined, selected = false
+    try {
+      original = await this.getClipboard(connection, false, combined)
+      if (Buffer.byteLength(original, 'utf8') > (1 << 18) - 14) throw new Error('clipboard cannot be restored exactly')
+      temporary = `opengui-copy-check:${randomUUID()}`
+      await this.setClipboard(connection, temporary, false, combined)
+      if (await this.getClipboard(connection, false, combined) !== temporary) throw new Error('clipboard marker was not applied')
+      await this.writeControl(connection, buildFieldSelectionControlMessages(true), combined); selected = true
+      const copied = await this.getClipboard(connection, true, combined)
+      result = copied === temporary ? undefined : copied
+      // Copying an empty field changes nothing; prove emptiness while the selection is active.
+      if (result === undefined && provesEmpty && await provesEmpty(combined)) result = ''
+      temporary = copied
+      if (result !== undefined && (result.length > 2000 || result.includes('\0'))) throw new Error('comment field cannot be read within its bound')
+      await this.writeControl(connection, buildFieldSelectionControlMessages(false), combined); selected = false
+      if (await this.getClipboard(connection, false, combined) !== temporary) throw new Error('clipboard changed during the field read')
+      await this.setClipboard(connection, original, false, combined)
+      if (await this.getClipboard(connection, false, combined) !== original) throw new Error('clipboard restoration was not confirmed')
+      return result
+    } catch (error) {
+      // Never issue cleanup input after cancellation/handback, or overwrite a newer clipboard.
+      if (!combined.aborted && !connection.closed && original !== undefined && temporary !== undefined) {
+        try {
+          if (selected) await this.writeControl(connection, buildFieldSelectionControlMessages(false), combined)
+          if (await this.getClipboard(connection, false, combined) === temporary) await this.setClipboard(connection, original, false, combined)
+        } catch { /* The failed read remains unknown; no original clipboard value is returned. */ }
+      }
+      await this.close(connection, new Error('opengui: focused comment input read failed'))
+      if (inputPermissionDenied(error)) throw inputPermissionError()
+      throw new OpenGuiError('comment_input_unreadable', 'opengui: focused comment text or clipboard restoration could not be confirmed; inspect a fresh image or ask the user to handle the input. No send is permitted.', 'outcome_unknown', 'observe')
+    }
+  }
+
+  private writeControl(connection: ScrcpyTextConnection, payload: Buffer, signal: AbortSignal): Promise<void> {
+    signal.throwIfAborted()
+    return new Promise((resolve, reject) => { connection.socket.write(payload, error => error ? reject(error) : resolve()) })
+  }
+
+  private getClipboard(connection: ScrcpyTextConnection, copy: boolean, signal: AbortSignal): Promise<string> {
+    signal.throwIfAborted()
+    if (connection.clipboardWaiter) throw new Error('opengui: clipboard read already pending')
+    return new Promise((resolve, reject) => {
+      const cleanup = () => { clearTimeout(waiter.timer); signal.removeEventListener('abort', abort); if (connection.clipboardWaiter === waiter) delete connection.clipboardWaiter }
+      const abort = () => { cleanup(); reject(signal.reason) }
+      const waiter = { timer: setTimeout(() => { cleanup(); reject(new Error('opengui: clipboard read timed out')) }, SCRCPY_CLIPBOARD_ACK_TIMEOUT_MS), resolve(text: string) { cleanup(); resolve(text) }, reject(error: Error) { cleanup(); reject(error) } }
+      connection.clipboardWaiter = waiter; signal.addEventListener('abort', abort, { once: true })
+      connection.socket.write(Buffer.from([8, copy ? 1 : 0]), error => { if (error && connection.clipboardWaiter === waiter) waiter.reject(error) })
+    })
+  }
+
+  private async setClipboard(connection: ScrcpyTextConnection, text: string, paste: boolean, combined: AbortSignal): Promise<void> {
+    combined.throwIfAborted()
     const sequence = connection.sequence
     connection.sequence += 1n
-    const payload = buildSetClipboardControlMessage(text, true, sequence)
+    const payload = buildSetClipboardControlMessage(text, paste, sequence)
     try {
       await new Promise<void>((resolve, reject) => {
         const key = sequence.toString()
@@ -624,8 +703,9 @@ export class ScrcpyTextInput {
 
   private onData(connection: ScrcpyTextConnection, chunk: Buffer): void {
     try {
-      const parsed = parseScrcpyDeviceMessages(Buffer.concat([connection.readBuffer, chunk]))
+      const parsed = parseScrcpyDeviceMessages(Buffer.concat([connection.readBuffer, chunk]), true)
       connection.readBuffer = parsed.remaining
+      for (const text of parsed.clipboards ?? []) connection.clipboardWaiter?.resolve(text)
       for (const sequence of parsed.acknowledgements) {
         const key = sequence.toString()
         const waiter = connection.waiters.get(key)
@@ -649,6 +729,7 @@ export class ScrcpyTextInput {
       waiter.reject(error)
     }
     connection.waiters.clear()
+    connection.clipboardWaiter?.reject(error)
     connection.socket.destroy()
     connection.closing = (async () => {
       await terminateChildProcess(connection.process)

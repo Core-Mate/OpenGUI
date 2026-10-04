@@ -2,13 +2,19 @@
   "name": "OpenGUI",
   "name_zh": "OpenGUI 手机助手",
   "name_en": "OpenGUI Android Assistant",
-  "description": "Control locally connected Android phones and monitor a private device wall from WorkBuddy.",
-  "description_zh": "通过 WorkBuddy 操作本机连接的 Android 手机，并在只读设备墙中查看最多四台手机的画面。",
-  "description_en": "Control locally connected Android phones from WorkBuddy and monitor up to four phones in a read-only device wall.",
+  "description": "Let WorkBuddy operate a locally connected Android phone or emulator for GUI testing and reviewed comment operations, with a live workbench for the screen, task plan and run trace.",
+  "description_zh": "在 WorkBuddy 中让 AI 操作本机连接的 Android 手机或模拟器，完成自动化测试与经人工审核的评论运营；右侧工作台实时显示手机画面、任务清单和执行记录。",
+  "description_en": "Let WorkBuddy operate a locally connected Android phone or emulator for GUI testing and reviewed comment operations, with a live workbench for the screen, task plan and run trace.",
   "source": "opengui",
   "type": "mcp",
   "version": "0.3.1",
   "minWorkbuddyVersion": "5.5.3",
-  "examples_zh": ["看看手机上的 Android 版本", "在设备墙里查看这两台手机的画面"],
-  "examples_en": ["Check the Android version on my phone", "Show these two phones in the device wall"]
+  "examples_zh": [
+    "帮我测试这个 App 的登录页输入校验，做到提交前就停",
+    "帮我回复这篇笔记下的评论，每条先让我审核再发送"
+  ],
+  "examples_en": [
+    "Test the login form validation of this app and stop before submitting",
+    "Reply to comments under this post, letting me review each draft before sending"
+  ]
 }

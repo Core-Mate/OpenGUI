@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
-import { spawn } from 'node:child_process'
+import { execFileSync, spawn } from 'node:child_process'
 import { createConnection, createServer } from 'node:net'
 import { randomUUID } from 'node:crypto'
 import { managedAdbPath } from '../lib/adb.js'
@@ -30,6 +30,26 @@ if (process.platform !== 'win32') {
 // POSIX runtime discovery uses a deterministic empty adapter; Windows CI uses the
 // isolated bundled ADB because execFile cannot launch a command script directly.
 const smokeEnv = { ...process.env, ADB_SERVER_SOCKET: adbSocket, ADB_MDNS_AUTO_CONNECT: 'none', ADB_LOCAL_TRANSPORT_MAX_PORT: '5553', ANDROID_USER_HOME: join(temporary, 'android'), ...(process.platform === 'win32' ? {} : { OPENGUI_ADB_PATH: discoveryAdb }) }
+// Simulator discovery is read-only. Compare packed results with native simctl;
+// do not shut down the user's simulators merely to make an empty-list assertion pass.
+function nativeSimulatorMetadata() {
+  if (process.platform !== 'darwin') return []
+  let raw
+  try { raw = execFileSync('/usr/bin/xcrun', ['simctl', 'list', 'devices', '-j'], { encoding: 'utf8', timeout: 15_000, stdio: ['ignore', 'pipe', 'pipe'] }) }
+  catch { return [] }
+  const { devices } = JSON.parse(raw), seen = new Set(), rows = []
+  for (const [runtime, entries] of Object.entries(devices)) {
+    const osVersion = runtime.match(/^com\.apple\.CoreSimulator\.SimRuntime\.iOS-(\d+(?:-\d+){0,2})$/u)?.[1]?.replaceAll('-', '.')
+    if (!osVersion) continue
+    for (const entry of entries) {
+      if (entry.isAvailable !== true || seen.has(entry.udid.toUpperCase())) continue
+      seen.add(entry.udid.toUpperCase())
+      rows.push({ model: entry.name, osVersion, serialSuffix: entry.udid.slice(-4).toUpperCase(), connected: entry.state === 'Booted' })
+    }
+  }
+  return rows
+}
+function simulatorKey(device) { return JSON.stringify([device.model, device.osVersion, device.serialSuffix, device.connected]) }
 const adb = spawn(managedAdbPath(), ['-L', `tcp:${adbPort}`, '--one-device', `opengui-smoke-${randomUUID()}`, 'server', 'nodaemon'], { env: smokeEnv, stdio: ['ignore', 'ignore', 'pipe'] })
 let adbError, adbLog = ''
 adb.on('error', error => { adbError = error })
@@ -57,20 +77,26 @@ try {
     try {
       await client.connect(transport, { timeout: 120_000 })
       const { tools } = await client.listTools()
-      assert.equal(tools.length, 14)
+      assert(tools.some(tool => tool.name === 'opengui_history'))
       await client.ping()
+      const nativeSimulators = nativeSimulatorMetadata()
       const devices = await client.callTool({ name: 'opengui_list_devices', arguments: {} })
-      assert.notEqual(devices.isError, true, JSON.stringify(devices.content))
-      assert(Array.isArray(devices.structuredContent?.devices))
-      if (process.platform !== 'win32') {
-        assert.equal(devices.structuredContent.devices.length, 0, 'Smoke discovery must not acquire real phones')
-      }
-      assert(adb.exitCode === null && adb.signalCode === null, 'Test-owned ADB exited during discovery')
+      // The first tool call starts the lazy broker. Record it before checking
+      // results so a discovery assertion failure still cleans up this owned process.
       const probe = await BrokerClient.connect(brokerPort(stateDir), await brokerToken(stateDir))
       brokerPid = probe.brokerPid
       probe.close()
       assert(brokerPid && brokerPid !== process.pid)
-      console.log(`${offline ? 'Offline cached' : 'Fresh isolated cache'}: packed stdio, fourteen tools, ping, broker startup, and read-only ADB discovery passed.`)
+      assert.notEqual(devices.isError, true, JSON.stringify(devices.content))
+      assert(Array.isArray(devices.structuredContent?.devices))
+      if (process.platform !== 'win32') {
+        const found = devices.structuredContent.devices
+        assert(found.every(device => device.os === 'ios' && device.connection === 'local_simulator'), 'Isolated ADB discovery must not expose real Android phones')
+        assert.deepEqual(found.map(simulatorKey).sort(), nativeSimulators.map(simulatorKey).sort(), 'Packed iOS discovery must match read-only native simctl metadata')
+        assert(found.every(device => /^device-[a-f0-9]{32}$/u.test(device.id) && !('serial' in device)), 'Discovery must retain opaque public device identities')
+      }
+      assert(adb.exitCode === null && adb.signalCode === null, 'Test-owned ADB exited during discovery')
+      console.log(`${offline ? 'Offline cached' : 'Fresh isolated cache'}: packed stdio, ${tools.length} tools, ping, broker startup, isolated ADB discovery and ${nativeSimulators.length} read-only native iOS simulators passed; no control session opened.`)
     } finally {
       await client.close()
       if (brokerPid) {
