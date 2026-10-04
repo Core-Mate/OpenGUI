@@ -26,46 +26,11 @@ const UPLOADS_DIR = process.env.LOCAL_UPLOADS_DIR || "./uploads";
 @Injectable()
 export class TosService {
 	private readonly logger = new Logger(TosService.name);
-	private readonly uploadsDir = path.resolve(UPLOADS_DIR);
 
 	constructor() {
-		if (!fs.existsSync(this.uploadsDir)) {
-			fs.mkdirSync(this.uploadsDir, { recursive: true });
+		if (!fs.existsSync(UPLOADS_DIR)) {
+			fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 		}
-	}
-
-	private resolveKey(uri: string): { key: string; filePath: string } {
-		if (typeof uri !== "string") throw new Error("Invalid storage key");
-		const key = uri.startsWith("/uploads/") ? uri.slice("/uploads/".length) : uri;
-		if (
-			!key ||
-			path.posix.isAbsolute(key) ||
-			path.win32.isAbsolute(key) ||
-			/[\\:\0]/.test(key) ||
-			/%(?:25)*(?:2e|2f|5c|00|3a)/i.test(key) ||
-			key.split("/").some((segment) =>
-				!segment || segment === "." || segment === ".." || /[. ]$/.test(segment),
-			)
-		)
-			throw new Error("Invalid storage key");
-		const filePath = path.resolve(this.uploadsDir, key);
-		const relative = path.relative(this.uploadsDir, filePath);
-		if (relative === ".." || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative))
-			throw new Error("Invalid storage key");
-
-		// Check existing components, including the root, without following links.
-		let current = this.uploadsDir;
-		for (const segment of ["", ...key.split("/")]) {
-			if (segment) current = path.join(current, segment);
-			try {
-				if (fs.lstatSync(current).isSymbolicLink())
-					throw new Error("Invalid storage key");
-			} catch (error) {
-				if ((error as NodeJS.ErrnoException).code === "ENOENT") break;
-				throw error;
-			}
-		}
-		return { key, filePath };
 	}
 
 	async uploadImage(
@@ -75,9 +40,9 @@ export class TosService {
 	): Promise<UploadImageResult> {
 		try {
 			const ext = contentType.split("/")[1] || "png";
-			const { key, filePath } = this.resolveKey(fileName || `screenshots/${uuidv4()}.${ext}`);
+			const key = fileName || `screenshots/${uuidv4()}.${ext}`;
+			const filePath = path.join(UPLOADS_DIR, key);
 			fs.mkdirSync(path.dirname(filePath), { recursive: true });
-			this.resolveKey(key);
 			fs.writeFileSync(filePath, imageBuffer);
 			return { success: true, key, url: `/uploads/${key}` };
 		} catch (error) {
@@ -113,7 +78,8 @@ export class TosService {
 
 	async getImage(uri: string, _bucket?: string): Promise<GetImageResult> {
 		try {
-			const { filePath } = this.resolveKey(uri);
+			const key = uri.startsWith("/uploads/") ? uri.slice("/uploads/".length) : uri;
+			const filePath = path.join(UPLOADS_DIR, key);
 			if (!fs.existsSync(filePath)) {
 				return { success: false, error: "File not found" };
 			}
@@ -138,7 +104,7 @@ export class TosService {
 
 	async deleteImage(key: string, _bucket?: string): Promise<{ success: boolean; error?: string }> {
 		try {
-			const { filePath } = this.resolveKey(key);
+			const filePath = path.join(UPLOADS_DIR, key);
 			if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
 			return { success: true };
 		} catch (error) {
@@ -147,11 +113,11 @@ export class TosService {
 	}
 
 	getPublicUrl(key: string, _bucket?: string): string {
-		return `/uploads/${this.resolveKey(key).key}`;
+		return `/uploads/${key}`;
 	}
 
 	async getSignedUrl(key: string, _expiresIn: number = 43200, _bucket?: string): Promise<string> {
-		return this.getPublicUrl(key);
+		return `/uploads/${key}`;
 	}
 
 	async uploadLogFile(
@@ -168,7 +134,7 @@ export class TosService {
 	}
 
 	async getOssSignedUrl(key: string, _expiresIn: number = 3600): Promise<string> {
-		return this.getPublicUrl(key);
+		return `/uploads/${key}`;
 	}
 
 	async checkConnection(_bucket?: string): Promise<{ success: boolean; error?: string }> {

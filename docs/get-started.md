@@ -152,11 +152,6 @@ For local runs, the backend task controllers also default to `userId = 1`, so fi
 
 ## More detail
 
-Local upload keys must be relative paths within `LOCAL_UPLOADS_DIR` (default:
-`./uploads`); `/uploads/<key>` is also accepted. Traversal, absolute paths,
-encoded escapes, symbolic links and Windows junctions are rejected. Keep the
-storage directory and its parent directories protected from untrusted writes.
-
 - Backend details: [`server/apps/backend/README.md`](../server/apps/backend/README.md)
 - Discord remote control: [`docs/DISCORD.md`](./DISCORD.md)
 - Android client details: [`client/README.md`](../client/README.md)
