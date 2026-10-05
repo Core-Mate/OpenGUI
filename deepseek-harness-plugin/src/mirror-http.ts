@@ -1,4 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
+import { callPhoneTask } from './phone-background.ts'
 import type { Duplex } from 'node:stream'
 import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-host-webserver'
@@ -165,6 +166,19 @@ export function installMirrorHttp(
         }
       }
       try {
+        disposers.push(httpCtx.webServer.register({
+          kind: 'exact', path: '/api/opengui/phone-workbench',
+          async handler(request, response) {
+            if (request.method !== 'POST') return sendJson(response, 405, { error: 'method_not_allowed' })
+            if (!sameOriginMutation(request)) return sendJson(response, 403, { error: 'same_origin_required' })
+            let sessionId: string
+            try { sessionId = nonemptyString((await readJson(request)).sessionId, 'session_id') }
+            catch { return sendJson(response, 400, { error: 'session_id_required' }) }
+            try {
+              sendJson(response, 200, await callPhoneTask('opengui_open_workbench', { embedOrigin: request.headers.origin }, sessionId))
+            } catch { sendJson(response, 503, { error: '手机工作台启动失败，请检查插件安装。' }) }
+          },
+        }))
         disposers.push(httpCtx.webServer.register({
           kind: 'exact',
           path: RUNTIME_INFO_PATH,

@@ -1,3 +1,8 @@
+import { randomUUID } from 'node:crypto'
+import { callPhoneTask, assertPhoneUpgrade, interruptPhoneOwner } from './phone-background.ts'
+import { dispatchHostPhoneTask, bindHostPhoneLifecycle } from './phone-host-dispatch.ts'
+import { TASK_TOOLS } from '../../packages/phone-agent/src/host.ts'
+import { acquireDeviceLease } from '../../packages/device-runtime/src/device-lease.ts'
 /**
  * Dedicated Android phone-control plugin: one configurable vision-capable LLM
  * route, one fixed-target subagent per selected phone, and one allowlisted ADB tool.
@@ -35,7 +40,7 @@ import type { DeviceLeaseHandle, FleetDevice } from './device-fleet.ts'
 import { OwnedForwardRegistry } from './forward-registry.ts'
 import { installMirrorHttp } from './mirror-http.ts'
 import { relayNestedTaskProgress, relayPhoneTaskProgress } from './phone-progress.ts'
-import { OpenGuiTaskManager, OPENGUI_USAGE, runPreparedOpenGuiTask } from './phone-task.ts'
+import { OpenGuiTaskManager, runPreparedOpenGuiTask } from './phone-task.ts'
 import type { CoremateTaskPresentation, CoremateTaskResult, OpenGuiTaskLease } from './phone-task.ts'
 import { resolveMobileProfile, type MobileApi } from './provider.ts'
 import { latestPhoneScreenshotMessages } from './runtime.ts'
@@ -88,7 +93,7 @@ const NS = 'coremate-mobile'
 const LLM_PI_AI_NS = 'llm-pi-ai'
 const API_KEY_ENV = 'COREMATE_MOBILE_API_KEY'
 const CANCELLED_TEXT = '本次 OpenGUI 任务未执行；当前模型尚未配置。手机画面和手动投屏不受影响，下次提交时会重新询问。'
-const ROOT_ROUTING_PROMPT = `When phone_agent is available, every request to inspect, operate, test, or coordinate an Android phone, mobile app, or mobile game must use phone_agent. This routing is based on the user's intent; the user does not need to mention OpenGUI, @OpenGUI, or /opengui. Never substitute Bash, shell commands, raw adb, or another UI-control path. If phone_agent cannot start, report the OpenGUI connection or configuration problem instead of bypassing it.`
+const ROOT_ROUTING_PROMPT = `When phone_agent is available, every request to inspect, operate, test, or coordinate an Android phone, mobile app, or mobile game must use phone_agent. This routing is based on the user's intent; the user does not need to mention OpenGUI, @OpenGUI, or /opengui. Never substitute Bash, shell commands, raw adb, or another UI-control path. If phone_agent cannot start, report the OpenGUI connection or configuration problem instead of bypassing it. For an already accepted OpenGUI task, do not submit it again: continue with opengui_manage_task next/decide using the current host model until terminal or waiting for user help.`
 
 /** Pi-ai route that keeps durable phone history intact while bounding model-facing image history. */
 class PhonePiAiAdapter extends PiAiAdapter {
@@ -482,6 +487,9 @@ export function apply(ctx: Context, baseConfig: Config): void {
     readonly route: AgentOptions
   }
   const tasks = new OpenGuiTaskManager<OpenGuiExecutionContext>()
+  bindHostPhoneLifecycle(ctx, interruptPhoneOwner, () => {
+    ctx.logger.warn('OpenGUI phone cleanup could not be confirmed; inspect the workbench before starting another task.')
+  })
   ctx.on('agent/disposed', ({ agent }) => {
     const sessionId = agent.session?.id
     if (typeof sessionId !== 'string' || sessionId.trim().length === 0) return
@@ -547,10 +555,12 @@ export function apply(ctx: Context, baseConfig: Config): void {
         output,
       }
     }
-    if (showMirror) {
-      return parent.runMaintenance(maintenanceSignal => startRun(AbortSignal.any([lease.signal, maintenanceSignal])))
-    }
-    return startRun(lease.signal)
+    const locks: Awaited<ReturnType<typeof acquireDeviceLease>>[] = []
+    try {
+      for (const target of targets) locks.push(await acquireDeviceLease(target.serial, 'dsh:legacy:' + String(parent.session.id)))
+      if (showMirror) return await parent.runMaintenance(maintenanceSignal => startRun(AbortSignal.any([lease.signal, maintenanceSignal])))
+      return await startRun(lease.signal)
+    } finally { for (const lock of locks) await lock.release() }
   }
 
   const executeBrowserTask = async (
@@ -1008,9 +1018,35 @@ export function apply(ctx: Context, baseConfig: Config): void {
     input: { hint: '<task>' },
     handler: async (invocation): Promise<CommandResult> => {
       const task = invocation.rawInput.trim()
-      if (task.length === 0) return { kind: 'success', text: OPENGUI_USAGE }
+      if (task.length === 0 || task === 'workbench') {
+        const result = await callPhoneTask('opengui_open_workbench', {}, String(invocation.agent.session.id))
+        return { kind: 'success', text: JSON.stringify(result) }
+      }
+      if (task.startsWith('continue ')) {
+        const taskId = task.slice(9).trim()
+        if (!/^[a-f0-9]{8}-[a-f0-9-]{27}$/u.test(taskId)) return { kind: 'error', text: '无效的手机任务 ID。' }
+        const owner = String(invocation.agent.session.id)
+        const result = await dispatchHostPhoneTask(invocation.agent, async () => {
+          const status = await callPhoneTask('opengui_manage_task', { action: 'status', taskId }, owner) as { id?: string }
+          if (status.id !== taskId) throw new Error('任务暂不可查看，请检查是否属于其他会话。')
+          return { id: taskId }
+        }, id => callPhoneTask('opengui_manage_task', { action: 'stop', taskId: id }, owner))
+        return { kind: 'success', text: JSON.stringify(result) }
+      }
+      if (task.startsWith('legacy-phone ')) {
+        const result = await runRootTask(invocation, lease => executePhoneTask(task.slice(13), invocation.agent, lease, 'parent-chat'))
+        return { kind: 'success', text: textFromBlocks(result.output) }
+      }
+      if (!task.startsWith('browser ') && !task.startsWith('legacy ')) {
+        const goal = task.startsWith('phone ') ? task.slice(6).trim() : task
+        const owner = String(invocation.agent.session.id)
+        const result = await dispatchHostPhoneTask(invocation.agent,
+          () => callPhoneTask('opengui_run_task', { goal, successCriteria: goal, requestId: randomUUID() }, owner),
+          taskId => callPhoneTask('opengui_manage_task', { taskId, action: 'stop' }, owner))
+        return { kind: 'success', text: JSON.stringify(result) }
+      }
       try {
-        const result = await runRootTask(invocation, lease => executeRouterTask(task, invocation.agent, lease, 'parent-chat'))
+        const result = await runRootTask(invocation, lease => executeRouterTask(task.replace(/^(browser|legacy) /, ''), invocation.agent, lease, 'parent-chat'))
         const cleaned = cleanCoremateSuggestionBlocks(result.output)
         const text = textFromBlocks(cleaned.output).trim()
         return {
@@ -1064,7 +1100,7 @@ export function apply(ctx: Context, baseConfig: Config): void {
     validateTarget: async (serial, signal) => {
       const devices = parseDevices(String(await run(['devices', '-l'], signal)))
       if (!devices.some(device => device.serial === serial && device.state === 'device')) {
-        throw new Error('coremate-mobile: a phone locked to this task disconnected or lost USB authorization')
+        throw new Error('coremate-mobile: a device locked to this task disconnected or lost debugging authorization')
       }
     },
     pasteUnicode: (serial, text, signal) => textInput.paste(serial, text, signal),
@@ -1091,7 +1127,7 @@ export function apply(ctx: Context, baseConfig: Config): void {
     cancel: (sessionId: string, taskId: string): boolean => tasks.cancel(sessionId, taskId),
     browserOwner: () => tasks.browserOwnerIdentity(),
   }
-  const updater = new PluginUpdateManager()
+  const updater = new PluginUpdateManager({ beforeInstall: assertPhoneUpgrade })
   installMirrorHttp(ctx, mirror, fleet, taskControl, managedBrowser, updater, preview, streams)
   ctx.effect(function* () {
     yield async () => {
@@ -1275,15 +1311,40 @@ export function apply(ctx: Context, baseConfig: Config): void {
     },
   }))
 
+  for (const tool of TASK_TOOLS) ctx.tools.register(defineTool({
+    name: tool.name,
+    description: tool.description,
+    parameters: {
+      requestId: { type: 'string', ...(tool.name === 'opengui_run_task' ? { required: true } : {}) }, goal: { type: 'string', ...(tool.name === 'opengui_run_task' ? { required: true } : {}) }, successCriteria: { type: 'string' },
+      deviceId: { type: 'string' }, modelProfileId: { type: 'string' }, taskId: { type: 'string' },
+      action: { type: 'string', ...(tool.name === 'opengui_manage_task' ? { required: true } : {}), enum: ['status', 'stop', 'steer', 'resume', 'next', 'decide'] }, text: { type: 'string' }, decisionId: { type: 'string' }, decision: { type: 'json' },
+    },
+    output: { schema: { type: 'object', additionalProperties: false, properties: { text: { type: 'string', required: true }, image: { type: 'json' } } }, render: (_args, value) => [{ type: 'text', text: String(value.text) }, ...(value.image ? [value.image as unknown as ContentBlock] : [])] },
+    isConcurrencySafe: () => true,
+    async execute(args, exec) {
+      if (!exec.agent) throw new Error('A DSH conversation is required')
+      const value = await callPhoneTask(tool.name, args as Record<string, unknown>, String(exec.agent.session.id)) as { decision?: { context?: { image?: { data: string; mimeType: string } } } }
+      const rawImage = value.decision?.context?.image
+      let image: JsonValue | undefined
+      if (rawImage) {
+        if (rawImage.mimeType !== 'image/jpeg' || typeof rawImage.data !== 'string') throw new Error('Invalid phone decision image')
+        const attachment = await ctx.attachments.saveImage({ data: Buffer.from(rawImage.data, 'base64'), mediaType: 'image/jpeg', name: 'phone-decision.jpg' })
+        image = { type: 'image', attachment } as unknown as JsonValue
+        delete value.decision!.context!.image
+      }
+      return { text: JSON.stringify(value), ...(image ? { image } : {}) }
+    },
+  }))
+
   ctx.tools.register(defineTool({
     name: 'phone_agent',
-    description: 'Delegate one complete Android phone task to the receiving DSH model or the dedicated fallback and wait for its verified result.',
+    description: 'Submit an Android task to the shared OpenGUI service. The configured OpenGUI model executes it. Open the workbench for progress and evidence. Do not call next or decide. Closing this chat does not stop an accepted task.',
     parameters: { task: { type: 'string', required: true } },
     output: {
       schema: {
         type: 'object', additionalProperties: false,
         properties: {
-          status: { type: 'string', required: true, enum: ['completed', 'cancelled'] },
+          status: { type: 'string', required: true, enum: ['submitted', 'cancelled'] },
           runId: { type: 'string' },
           output: { type: 'array', required: true, items: { type: 'json' } },
         },
@@ -1293,16 +1354,8 @@ export function apply(ctx: Context, baseConfig: Config): void {
     isConcurrencySafe: () => false,
     async execute(args, exec) {
       if (exec.agent === undefined) throw new Error('coremate-mobile: phone_agent requires a calling agent')
-      const nested = tasks.nestedLease(exec.agent, exec.signal)
-      try {
-        const result = nested === undefined
-          ? await runRootTask({ agent: exec.agent, signal: exec.signal }, lease => executePhoneTask(args.task, exec.agent!, lease, { nestedUnderCallId: exec.callId }))
-          : await executePhoneTask(args.task, exec.agent, nested, { nestedUnderCallId: exec.callId })
-        return { status: 'completed' as const, runId: result.runId, output: result.output as unknown as JsonValue[] }
-      } catch (error) {
-        if (!(error instanceof OpenGuiTaskCancelled)) throw error
-        return { status: 'cancelled' as const, output: [{ type: 'text', text: error.message }] as unknown as JsonValue[] }
-      }
+      const result = await callPhoneTask('opengui_run_task', { goal: args.task, successCriteria: args.task, requestId: String(exec.callId) }, String(exec.agent.session.id))
+      return { status: 'submitted' as const, output: [{ type: 'text', text: JSON.stringify(result) }] as unknown as JsonValue[] }
     },
   }))
 

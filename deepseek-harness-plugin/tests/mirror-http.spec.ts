@@ -1,3 +1,4 @@
+import { callPhoneTask } from '../src/phone-background.ts'
 import { createServer } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import type { Context } from '@deepseek-ai/cordis'
@@ -8,6 +9,8 @@ import {
   PLUGIN_UPDATE_INSTALL_PATH, PLUGIN_UPDATE_STATUS_PATH, RUNTIME_INFO_PATH,
 } from '../src/mirror-contract.ts'
 import { installMirrorHttp, publicStreamError } from '../src/mirror-http.ts'
+
+vi.mock('../src/phone-background.ts', () => ({ callPhoneTask: vi.fn(async () => ({ url: 'http://127.0.0.1:1234/test/' })) }))
 
 const servers: ReturnType<typeof createServer>[] = []
 
@@ -343,4 +346,19 @@ describe('OpenGUI local preview HTTP surface', () => {
     expect(browser.declineInstall).toHaveBeenCalledOnce()
     expect(cancel).toHaveBeenCalledWith('session-1', 'task-1')
   })
+})
+
+
+it('opens the phone workbench for the requested host conversation', async () => {
+  vi.mocked(callPhoneTask).mockClear()
+  const { base } = await setup()
+  const open = (body: unknown) => fetch(base + '/api/opengui/phone-workbench', {
+    method: 'POST', headers: { Origin: base, 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+  })
+  expect((await open({})).status).toBe(400)
+  expect(callPhoneTask).not.toHaveBeenCalled()
+  for (const sessionId of ['chat-a', 'chat-b']) {
+    expect((await open({ sessionId })).status).toBe(200)
+    expect(callPhoneTask).toHaveBeenLastCalledWith('opengui_open_workbench', { embedOrigin: base }, sessionId)
+  }
 })

@@ -1,3 +1,11 @@
+import { mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { createConnection } from 'node:net'
+import type { PhoneTasks } from '../../packages/task-service/src/client.ts'
+import { TaskHost } from '../../packages/phone-agent/src/host.ts'
+import { PhoneRuntime } from '../../packages/phone-agent/src/runtime.ts'
+import { HostExecutor } from '../../packages/phone-agent/src/host-executor.ts'
 import { ReadyViewer } from './ready-viewer.ts'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { startBroker } from '../src/broker.ts'
@@ -10,10 +18,9 @@ const disposers: Array<() => unknown> = []
 afterEach(async () => { for (const dispose of disposers.splice(0).reverse()) await dispose() })
 const signal = () => AbortSignal.timeout(5000)
 
-async function setup() {
-  const host = new FakeHost()
+async function setup(host = new FakeHost(), tasks?: PhoneTasks) {
   const service = new WorkBuddyOpenGuiService({ viewers: new ReadyViewer(), host })
-  const broker = await startBroker({ port: 0, token: 'test-secret', service })
+  const broker = await startBroker({ port: 0, token: 'test-secret', service, ...(tasks ? { tasks } : {}) })
   disposers.push(broker.close)
   const a = await BrokerClient.connect(broker.port, 'test-secret')
   const b = await BrokerClient.connect(broker.port, 'test-secret')
@@ -26,6 +33,42 @@ async function open(client: BrokerClient, device = 'phone-a') {
 }
 
 describe('WorkBuddy broker isolation', () => {
+  it('allows only the installer to retire an idle broker without executing tools', async () => {
+    const { a, broker, host } = await setup()
+    await expect(a.prepareUpgrade(signal())).rejects.toThrow('installer')
+    const installer = await BrokerClient.connect(broker.port, 'test-secret', VERSION, 'installer')
+    disposers.push(() => installer.close())
+    await expect(installer.call('opengui_list_devices', {}, signal())).rejects.toThrow('cannot execute')
+    await expect(installer.prepareUpgrade(signal())).resolves.toEqual({ ready: true })
+    await vi.waitFor(async () => { await expect(BrokerClient.connect(broker.port, 'test-secret')).rejects.toMatchObject({ code: 'ECONNREFUSED' }) })
+    expect(host.released).toEqual([])
+  })
+
+  it('refuses retirement while a legacy session is active and preserves that session', async () => {
+    const { a, broker, host } = await setup()
+    const session = await open(a)
+    const installer = await BrokerClient.connect(broker.port, 'test-secret', VERSION, 'installer')
+    disposers.push(() => installer.close())
+    await expect(installer.prepareUpgrade(signal())).rejects.toThrow('upgrade_blocked')
+    await expect(a.call('opengui_status', { sessionId: session.sessionId }, signal())).resolves.toMatchObject({ state: 'active' })
+    expect(host.released).toEqual([])
+  })
+
+  it('refuses retirement while a tool is still opening a session', async () => {
+    const { a, broker, service } = await setup()
+    const original = service.openSession.bind(service)
+    let release!: () => void
+    const gate = new Promise<void>(resolve => { release = resolve })
+    let entered = false
+    vi.spyOn(service, 'openSession').mockImplementation(async (...args) => { entered = true; await gate; return original(...args) })
+    const pending = open(a)
+    const installer = await BrokerClient.connect(broker.port, 'test-secret', VERSION, 'installer')
+    disposers.push(() => installer.close())
+    try {
+      await vi.waitFor(() => expect(entered).toBe(true))
+      await expect(installer.prepareUpgrade(signal())).rejects.toThrow('upgrade_blocked')
+    } finally { release(); await pending }
+  })
   it('binds native host tasks, continues initial recoverable failure, and rejects cross-task display closure', async () => {
     const { a, broker, host } = await setup()
     const hook = await BrokerClient.connect(broker.port, 'test-secret', VERSION, 'hook')
@@ -165,4 +208,97 @@ describe('WorkBuddy broker isolation', () => {
     await vi.waitFor(() => expect(onIdle).toHaveBeenCalledOnce())
     await expect(BrokerClient.connect(broker.port, 'test')).rejects.toThrow()
   })
+
+  it('does not let repeated upgrade port probes postpone idle exit', async () => {
+    const onIdle = vi.fn()
+    const broker = await startBroker({ port: 0, token: 'test', service: new WorkBuddyOpenGuiService({ viewers: new ReadyViewer(), host: new FakeHost() }), idleMs: 180, onIdle })
+    disposers.push(broker.close)
+    let connected = 0
+    const probe = () => {
+      const socket = createConnection({ host: '127.0.0.1', port: broker.port })
+      socket.once('connect', () => { connected++; socket.destroy() })
+      socket.once('error', () => socket.destroy())
+    }
+    const timer = setInterval(probe, 20)
+    try {
+      await vi.waitFor(() => expect(onIdle).toHaveBeenCalledOnce(), { timeout: 800, interval: 20 })
+      expect(connected).toBeGreaterThanOrEqual(3)
+    } finally { clearInterval(timer) }
+  })
 })
+
+
+it('keeps conversation ownership and does not cancel tasks when the host turn ends', async () => {
+  const owners: string[] = []
+  let interrupts = 0
+  const tasks: PhoneTasks = {
+    get activeCount() { return 0 }, get watching() { return false }, snapshot: async () => {}, prepareMaintenance: () => true,
+    call: async (_name, _args, owner) => { owners.push(owner); return { tasks: [] } },
+    interruptOwner: async () => { interrupts += 1 },
+    close: async () => {},
+  }
+  const { a, broker } = await setup(new FakeHost(), tasks)
+  const hook = await BrokerClient.connect(broker.port, 'test-secret', VERSION, 'hook')
+  disposers.push(() => hook.close())
+  const invoke = async (session: string) => {
+    const bound = await hook.hostEvent({ hook_event_name: 'PreToolUse', session_id: session, tool_name: 'opengui_list_tasks', tool_input: {} }, signal()) as { hostContext: string }
+    await a.call('opengui_list_tasks', { hostContext: bound.hostContext }, signal())
+    return owners.at(-1)
+  }
+  const first = await invoke('same-chat')
+  await hook.hostEvent({ hook_event_name: 'FinalStop', session_id: 'same-chat' }, signal())
+  expect(interrupts).toBe(0)
+  await hook.hostEvent({ hook_event_name: 'UserPromptSubmit', session_id: 'same-chat' }, signal())
+  expect(await invoke('same-chat')).toBe(first)
+  expect(await invoke('other-chat')).not.toBe(first)
+  await hook.hostEvent({ hook_event_name: 'FinalStop', session_id: 'same-chat', final_stop_reason: 'interrupted' }, signal())
+  expect(interrupts).toBe(0)
+})
+
+
+it('keeps a web task bound to its hook conversation over a shared MCP connection', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'opengui-workbench-owner-'))
+  const previous = process.env.OPENGUI_WORKBUDDY_HOME
+  process.env.OPENGUI_WORKBUDDY_HOME = root
+  disposers.push(async () => {
+    if (previous === undefined) delete process.env.OPENGUI_WORKBUDDY_HOME
+    else process.env.OPENGUI_WORKBUDDY_HOME = previous
+    await rm(root, { recursive: true, force: true })
+  })
+  const host = Object.assign(new FakeHost(), { videoStreams: {
+    async prepare() { throw new Error('This ownership test must not start video') },
+    async subscribe() { throw new Error('This ownership test must not start video') },
+    async dispose() {},
+  } })
+  const service = new WorkBuddyOpenGuiService({ viewers: new ReadyViewer(), host })
+  const runtime = new PhoneRuntime({ root: join(root, 'phone-agent'), host: 'workbuddy', hardware: service.phoneHardware, credentials: { get: async () => '', set: async () => {} }, executor: new HostExecutor(), leaseRoot: join(root, 'leases') })
+  // Exercise conversation ownership on every CI OS with fake phone resources.
+  const tasks = new TaskHost(() => runtime, 'darwin')
+  disposers.push(() => tasks.close())
+  const broker = await startBroker({ port: 0, token: 'test-secret', service, tasks })
+  disposers.push(broker.close)
+  const a = await BrokerClient.connect(broker.port, 'test-secret')
+  disposers.push(() => a.close())
+  const hook = await BrokerClient.connect(broker.port, 'test-secret', VERSION, 'hook')
+  disposers.push(() => hook.close())
+  const invoke = async (session: string, name: string, args: Record<string, unknown> = {}) => {
+    const bound = await hook.hostEvent({ hook_event_name: 'PreToolUse', session_id: session, tool_name: name, tool_input: args }, signal()) as { hostContext: string }
+    return await a.call(name, { ...args, hostContext: bound.hostContext }, signal()) as Record<string, any>
+  }
+  const first = await invoke('chat-a', 'opengui_open_workbench')
+  const second = await invoke('chat-b', 'opengui_open_workbench')
+  expect(first.url).not.toBe(second.url)
+  const response = await fetch(new URL('run' + new URL(first.url).search, first.url), { method: 'POST',
+    headers: { origin: new URL(first.url).origin, 'content-type': 'application/json' },
+    body: JSON.stringify({ requestId: 'originating-chat', goal: 'Inspect settings' }),
+  })
+  expect(response.status).toBe(200)
+  const task = await response.json() as { id: string }
+  const foreign = await invoke('chat-b', 'opengui_manage_task', { action: 'next', taskId: task.id })
+  expect(foreign.decision).toBeNull()
+  expect(foreign.tasks).toEqual([])
+  const owned = await invoke('chat-a', 'opengui_manage_task', { action: 'next', taskId: task.id })
+  expect(owned.decision).toMatchObject({ taskId: task.id, kind: 'plan' })
+  expect(owned.workbenchUrl).toBe(first.url)
+  await invoke('chat-a', 'opengui_manage_task', { action: 'stop', taskId: task.id })
+}, 15000)

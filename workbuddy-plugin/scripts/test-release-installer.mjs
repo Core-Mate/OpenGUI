@@ -1,17 +1,21 @@
 import { createHash } from 'node:crypto'
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { cp, mkdir, mkdtemp, readFile, realpath, rm, writeFile, readdir } from 'node:fs/promises'
+import { chmod, cp, mkdir, mkdtemp, readFile, realpath, rm, writeFile, readdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { basename, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 if (process.platform !== 'darwin') { console.log('Release installer execution requires macOS.'); process.exit(0) }
 const root = fileURLToPath(new URL('..', import.meta.url))
 const temporary = await realpath(await mkdtemp(join(tmpdir(), 'opengui-workbuddy-installer-')))
+let nativeTarget
 try {
  const home = join(temporary, 'home with spaces'), config = join(home, '.workbuddy-ai'), stateRoot = join(home, '.workbuddy/opengui'), bin = join(home, 'bin')
  await mkdir(bin, { recursive: true })
  if (process.env.OPENGUI_TEST_VIDEO_CACHE) await cp(process.env.OPENGUI_TEST_VIDEO_CACHE, join(stateRoot, 'scrcpy'), {recursive:true})
+ if (process.env.OPENGUI_TEST_NODE_CACHE) await cp(process.env.OPENGUI_TEST_NODE_CACHE, join(stateRoot, 'runtime', basename(process.env.OPENGUI_TEST_NODE_CACHE)), {recursive:true})
+ await mkdir(stateRoot, {recursive:true}); await chmod(stateRoot, 0o700)
+ nativeTarget = `gui/${process.getuid()}/org.opengui.workbuddy.${createHash('sha256').update(config).digest('hex').slice(0,16)}`
  // Only the isolated test host is considered stopped; never quit the real app.
  const app = join(temporary, 'WorkBuddy AI.app')
  const cli = join(app, 'Contents/Resources/app.asar.unpacked/cli')
@@ -24,7 +28,7 @@ try {
  await mkdir(config, {recursive:true})
  await writeFile(join(config, 'mcp.json'), JSON.stringify({mcpServers:{other:{command:'keep-me'}}}))
  await writeFile(join(config, 'settings.json'), JSON.stringify({custom:true,hooks:{Stop:[{hooks:[{type:'command',command:'other-hook'}]}]}}))
- const archive = join(root, 'dist/opengui-mcp-0.3.1.tgz')
+ const archive = join(root, 'dist/opengui-mcp-0.4.0.tgz')
  const installer = process.argv[2] ?? join(root, 'scripts/install-macos.command')
  const run = (extra={}) => spawnSync('bash', [installer, '--archive', archive, ...(process.argv[2] ? [] : ['--app', app])], {encoding:'utf8',env:{...process.env,HOME:home,WORKBUDDY_CONFIG_DIR:'',CODEBUDDY_CONFIG_DIR:'',WORKBUDDY_INSTANCE_NUMBER:'',TEST_APP:app,PATH:bin+':'+process.env.PATH,...extra}})
  let result=run({TEST_HOST_RUNNING:'0'}); assert.notEqual(result.status,0); assert.match(result.stderr,/HOST_RESTART_REQUIRED/)
@@ -39,12 +43,16 @@ try {
   assert.match(await readFile(join(config,'skills/opengui/SKILL.md'),'utf8'),/opengui/)
   timings.push(Date.now() - started)
   if (i === 0) assert.match(result.stdout, /LIVE_CONFIG_WRITTEN/)
-  else assert.match(result.stdout, /ALREADY_CONFIGURED/)
+  else assert.match(result.stdout, /CONFIG_WRITTEN/)
+  assert.equal(mcp.mcpServers.opengui.type, 'http')
   const state=JSON.parse(await readFile(join(stateRoot,`local-install-${createHash('sha256').update(config).digest('hex').slice(0,16)}.json`)))
-  assert.equal(state.version,'0.3.1'); assert.equal(state.configRoot, config); assert(state.backups.every(b=>b.backup===null || b.backup.includes('before-opengui')))
+  assert.equal(state.version,'0.4.0'); assert.equal(state.configRoot, config); assert(state.backups.every(b=>b.backup===null || b.backup.includes('before-opengui')))
   assert((await readFile(join(state.packageDir,'scripts/install-local.mjs'),'utf8')).includes('mergeHostHooks'))
  }
  assert.equal((await readdir(join(stateRoot, 'packages'))).length, 1, 'Repeat installation must reuse the same package directory')
  console.log(JSON.stringify({firstInstallMs:timings[0], repeatInstallMs:timings[1]}))
  console.log('PASS: live WorkBuddy 5.5.6 install, older-host restart fallback, native dependency import, retained foreign MCP/Hooks, idempotency, paths with spaces and rollback receipts.')
-} finally { await rm(temporary,{recursive:true,force:true}) }
+} finally {
+ if (nativeTarget) { const stopped = spawnSync('/bin/launchctl', ['bootout', nativeTarget]); assert([0,3,113].includes(stopped.status), 'Test service cleanup failed; retain temporary files') }
+ await rm(temporary,{recursive:true,force:true})
+}

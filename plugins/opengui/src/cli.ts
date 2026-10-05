@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { OpenGuiError, errorInfo } from './errors.ts'
 import { execFile } from 'node:child_process'
 import { realpathSync } from 'node:fs'
 import { access } from 'node:fs/promises'
@@ -12,6 +13,8 @@ import { confirmLocalSetup } from './confirmation.ts'
 import { OPENGUI_CODEX_TOOLS, validateToolArguments } from './codex/tools.ts'
 import { ensureDaemon, ping, request, sendRequest, startDaemon } from './daemon.ts'
 import { VERSION, daemonEndpoint, dataDirectory } from './state.ts'
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
+import { daemonMcpCall, startCodexMcp } from './mcp-server.ts'
 
 export async function runCli(argv: readonly string[], signal = new AbortController().signal): Promise<unknown> {
   const [name, raw] = argv
@@ -19,12 +22,17 @@ export async function runCli(argv: readonly string[], signal = new AbortControll
     return {
       name: 'OpenGUI for Codex', version: VERSION,
       usage: 'opengui <interface> [json] (JSON can also be read from stdin)',
-      commands: ['--help', '--version', '--interfaces', '--doctor', '--prepare-video', '--setup-adb-server', '--shutdown-daemon'],
+      commands: ['--help', '--version', '--interfaces', '--doctor', '--prepare-video', '--setup-adb-server', '--shutdown-daemon', '--install-task-service'],
       interfaces: OPENGUI_CODEX_TOOLS.map(tool => tool.name),
       platform: 'Local macOS arm64/x64 only. Use a dedicated non-production device environment.',
     }
   }
   if (name === '--version') return { version: VERSION }
+  if (name === '--install-task-service') {
+    const { installTaskServiceLaunchAgent } = await import('../../../packages/task-service/src/launchd.ts')
+    const plist = await installTaskServiceLaunchAgent({ node: process.execPath, entry: fileURLToPath(new URL('./task-service.js', import.meta.url)), ...(process.env.OPENGUI_LAUNCH_AGENTS_DIR ? { agentsDir: process.env.OPENGUI_LAUNCH_AGENTS_DIR } : {}) })
+    return { launchAgent: plist, bootstrapped: false }
+  }
   if (name === '--interfaces') return { interfaces: OPENGUI_CODEX_TOOLS }
   if (process.platform !== 'darwin' || !['arm64', 'x64'].includes(process.arch)) {
     throw new Error('opengui: local Android control is supported only on macOS arm64/x64')
@@ -84,7 +92,10 @@ export async function runCli(argv: readonly string[], signal = new AbortControll
   }
   if (name === '--shutdown-daemon') {
     const result = await sendRequest(daemonEndpoint(), request('__shutdown__'), signal)
-    if (!result.ok) throw new Error(result.error)
+    if (!result.ok) {
+      if (result.failure) throw new OpenGuiError(result.failure.code, result.failure.message, result.failure.executionState, result.failure.recovery)
+      throw new Error(result.error)
+    }
     return result.result
   }
   const source = raw ?? (process.stdin.isTTY ? '{}' : await readStdin())
@@ -93,7 +104,10 @@ export async function runCli(argv: readonly string[], signal = new AbortControll
   if (!process.env.CODEX_THREAD_ID?.trim()) throw new Error('opengui: CODEX_THREAD_ID is required; run from a local Codex task')
   const endpoint = await ensureDaemon(fileURLToPath(import.meta.url), dataDirectory(), AbortSignal.any([signal, AbortSignal.timeout(15_000)]))
   const result = await sendRequest(endpoint, request(name, args as Record<string, unknown>), signal)
-  if (!result.ok) throw new Error(result.error)
+  if (!result.ok) {
+    if (result.failure) throw new OpenGuiError(result.failure.code, result.failure.message, result.failure.executionState, result.failure.recovery)
+    throw new Error(result.error)
+  }
   return result.result
 }
 
@@ -114,6 +128,11 @@ if (isEntry) {
       process.once('SIGINT', () => { void daemon.close() })
       await daemon.closed
     }).catch(error => { process.stderr.write(String(error) + '\n'); process.exitCode = 1 })
+  } else if (process.argv[2] === '--mcp' && process.argv.length === 3) {
+    startCodexMcp(new StdioServerTransport(), daemonMcpCall(fileURLToPath(import.meta.url))).then(server => {
+      process.once('SIGTERM', () => { void server.close() })
+      process.once('SIGINT', () => { void server.close() })
+    }).catch(() => { process.stderr.write('OpenGUI MCP startup failed\n'); process.exitCode = 1 })
   } else {
     const controller = new AbortController()
     process.once('SIGINT', () => controller.abort(new Error('opengui: interrupted')))
@@ -121,7 +140,7 @@ if (isEntry) {
     runCli(process.argv.slice(2), controller.signal)
       .then(result => process.stdout.write(JSON.stringify(result, null, 2) + '\n'))
       .catch(error => {
-        process.stderr.write(JSON.stringify({ error: error instanceof Error ? error.message : String(error) }) + '\n')
+        process.stderr.write(JSON.stringify({ error: error instanceof Error ? error.message : String(error), ...(error instanceof OpenGuiError ? { failure: errorInfo(error) } : {}) }) + '\n')
         process.exitCode = 1
       })
   }

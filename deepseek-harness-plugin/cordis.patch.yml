@@ -1,3 +1,10 @@
+# The shipped web profile disables HMR, but its CLI watches user patches.
+# Restore that service; exact config watchers do not need a broad source root.
+- id: hmr
+  disabled: false
+  config:
+    root: []
+
 - insert:
     - id: coremate-mobile
       name: dsh-coremate-mobile

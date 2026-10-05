@@ -34,6 +34,7 @@ interface AvailableRelease {
 }
 
 interface PluginUpdateManagerOptions {
+  beforeInstall?: () => Promise<void>
   currentVersion?: string
   cacheDir?: string
   dshHome?: string
@@ -364,6 +365,7 @@ function defaultInstall(profile: string, archive: string, signal: AbortSignal): 
 
 /** Owns rate-limited update checks and one user-approved verified installation. */
 export class PluginUpdateManager {
+  private readonly beforeInstall: () => Promise<void>
   private readonly currentVersion: string
   private readonly cacheDir: string
   private readonly home: string
@@ -383,6 +385,7 @@ export class PluginUpdateManager {
   private updating: Promise<void> | undefined
 
   constructor(options: PluginUpdateManagerOptions = {}) {
+    this.beforeInstall = options.beforeInstall ?? (async () => {})
     this.currentVersion = options.currentVersion ?? packageVersion()
     this.home = options.dshHome ?? dshHome()
     this.cacheDir = options.cacheDir ?? join(this.home, 'cache', 'coremate-mobile', 'releases')
@@ -481,6 +484,7 @@ export class PluginUpdateManager {
       await rm(archivePath, { force: true })
       await rename(temporary, archivePath)
       const profile = await resolveCurrentProfile(this.home, this.currentPackageRoot, this.configuredProfile)
+      await this.beforeInstall()
       this.phase = 'installing'
       await this.installImpl(profile, archivePath, this.lifetime.signal)
       await verifyInstalledRelease(this.home, profile, release.version)

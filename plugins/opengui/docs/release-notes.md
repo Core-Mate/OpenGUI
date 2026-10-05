@@ -1,5 +1,10 @@
-# Codex 0.2.0 candidate
+# OpenGUI for Codex 0.3.0
 
-Adds independent read-only real-time Viewers and first-visible-video authorization. Control completion preserves viewing; page closure preserves established control. Adds bounded H.264 recovery, native-host Skill routing, eager video-resource preparation, and upgrade checks. Protocol 3 rejects old runtimes; retain old packages and end old sessions/displays before switching. Existing observation safety and host isolation remain.
+Development candidate; not published or accepted as stable.
 
-This candidate has not been published. See the candidate acceptance report for passed and outstanding gates. Do not equate source tests or a decoder capability check with installed-host real-device acceptance.
+- Shares the device execution, viewer, video transport and session resource core with the other standalone host.
+- Keeps host-specific installation, state, permissions, image delivery and rollback independent.
+- Preserves typed uncertain outcomes and prevents replay after screenshot delivery failure.
+- Embeds a runtime provenance manifest and validates isolated builds and packaged entry points.
+
+Real desktop-host, two-physical-device, Unicode and sustained-video acceptance remain separate release gates. Cross-host concurrent control of one device is unsupported.

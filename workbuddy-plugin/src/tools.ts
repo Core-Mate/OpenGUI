@@ -1,3 +1,4 @@
+import { TASK_TOOLS } from '../../packages/phone-agent/src/host.ts'
 import type { WorkBuddyOpenGuiService, WorkBuddyObservation, OpenSessionOptions, SessionResult } from './service.ts'
 import { Ajv } from 'ajv'
 
@@ -23,6 +24,7 @@ const deviceSchema = {
   additionalProperties: false,
   properties: {
     id: { type: 'string' }, name: { type: 'string' }, model: { type: 'string' },
+    connection: { type: 'string', enum: ['emulator', 'usb', 'tcp'] },
     state: { type: 'string' }, connected: { type: 'boolean' }, authorized: { type: 'boolean' },
     mirror: { type: 'object' },
     displayError: { type: 'object' },
@@ -87,6 +89,7 @@ const observationSchema = {
 }
 
 export const OPENGUI_WORKBUDDY_TOOLS: readonly WorkBuddyToolDefinition[] = [
+  ...TASK_TOOLS,
   ...(['open', 'status', 'close'] as const).map(action => ({
     name: action === 'status' ? 'opengui_viewer_status' : `opengui_${action}_viewer`,
     title: 'OpenGUI Real-time Viewer',
@@ -124,7 +127,7 @@ export const OPENGUI_WORKBUDDY_TOOLS: readonly WorkBuddyToolDefinition[] = [
   {
     name: 'opengui_list_devices',
     title: 'List OpenGUI Devices',
-    description: 'List locally attached Android devices with opaque ids, display names, connection state, and USB authorization state.',
+    description: 'List locally attached Android phones and emulators with opaque ids, display names, attachment kind, and debugging authorization.',
     inputSchema: { type: 'object', additionalProperties: false, properties: {} },
     outputSchema: { type: 'object', additionalProperties: false, properties: { devices: { type: 'array', items: deviceSchema } }, required: ['devices'] },
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },

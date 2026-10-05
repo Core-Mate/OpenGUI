@@ -3,7 +3,21 @@ import { defineConfig } from 'tsdown'
 /** Bundle the plugin and invariant companion while keeping Harness peers external. */
 export default defineConfig([
   {
-    entry: ['lib/types/index.js'],
+    name: 'opengui/task-service',
+    entry: { 'task-service': 'lib/types/deepseek-harness-plugin/src/task-service.js' },
+    outDir: 'lib',
+    format: ['esm'],
+    platform: 'node',
+    target: 'es2024',
+    fixedExtension: false,
+    deps: { alwaysBundle: id => !id.startsWith('node:') },
+    outputOptions: { codeSplitting: false },
+    dts: false,
+    clean: false,
+  },
+  { entry: ['lib/types/deepseek-harness-plugin/src/phone-worker.js'], outDir: 'lib', format: ['esm'], platform: 'node', target: 'es2024', fixedExtension: false, dts: false, clean: false, outputOptions: { codeSplitting: false } },
+  {
+    entry: ['lib/types/deepseek-harness-plugin/src/index.js'],
     outDir: 'lib',
     format: ['esm'],
     platform: 'node',
@@ -14,7 +28,7 @@ export default defineConfig([
     clean: false,
   },
   {
-    entry: ['lib/types/invariant.js'],
+    entry: ['lib/types/deepseek-harness-plugin/src/invariant.js'],
     outDir: 'lib',
     format: ['esm'],
     platform: 'node',
@@ -26,7 +40,7 @@ export default defineConfig([
   },
   {
     name: 'opengui/codex-mcp',
-    entry: ['lib/types/codex-mcp.js'],
+    entry: ['lib/types/deepseek-harness-plugin/src/codex-mcp.js'],
     outDir: 'lib',
     format: ['esm'],
     platform: 'node',
@@ -39,7 +53,7 @@ export default defineConfig([
   },
   {
     name: 'opengui/codex-cli',
-    entry: ['lib/types/codex-cli.js'],
+    entry: ['lib/types/deepseek-harness-plugin/src/codex-cli.js'],
     outDir: 'lib',
     format: ['esm'],
     platform: 'node',
@@ -52,7 +66,7 @@ export default defineConfig([
   },
   {
     name: 'dsh-coremate-mobile/client',
-    entry: { client: 'lib/types/client/index.js' },
+    entry: { client: 'lib/types/deepseek-harness-plugin/src/client/index.js' },
     outDir: 'lib',
     format: ['cjs'],
     platform: 'browser',

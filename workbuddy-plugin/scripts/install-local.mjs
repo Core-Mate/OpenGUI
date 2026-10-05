@@ -4,7 +4,12 @@ import { execFileSync } from 'node:child_process'
 import { copyFile, lstat, mkdir, readFile, realpath, rename, unlink, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { dirname, join, relative, resolve } from 'node:path'
-import { HOST_HOOK_EVENTS, mergeHostHooks, mergeMcpConfig } from '../lib/installation.js'
+import { HOST_HOOK_EVENTS, mergeHostHooks, mergeMcpConfig, mergeNativeMcpConfig } from '../lib/installation.js'
+import { nativeEndpoint } from '../lib/native-endpoint.js'
+import { stageNativeService } from '../lib/native-service-install.js'
+
+let nativeService
+try {
 
 const args = process.argv.slice(2)
 const option = name => { const i = args.indexOf(name); return i < 0 ? undefined : args[i + 1] }
@@ -26,7 +31,7 @@ const packagesRoot = await realpath(join(stateRoot, 'packages'))
 assert(!relative(packagesRoot, packageDir).startsWith('..') && relative(packagesRoot, packageDir), 'Install from an immutable WorkBuddy version directory')
 const pkg = JSON.parse(await readFile(join(packageDir, 'package.json'), 'utf8'))
 assert.equal(pkg.name, 'opengui-mcp')
-assert.equal(pkg.version, '0.3.1')
+assert.equal(pkg.version, '0.4.0')
 assert.match(execFileSync(node, ['--version'], { encoding: 'utf8' }).trim(), /^v(?:22\.(?:19|2\d|[3-9]\d)|2[4-9]\.|[3-9]\d\.)/)
 const quote = value => process.platform === 'win32' ? `'${value.replaceAll("'", "''")}'` : `'${value.replaceAll("'", `'"'"'`)}'`
 const command = `${quote(node)} ${quote(join(packageDir, 'lib', 'host-hook.js'))}`
@@ -43,6 +48,9 @@ const optional = async path => { try { return await readFile(path, 'utf8') } cat
 const ownReceipt = await optional(installState)
 const legacy = ownReceipt ? {} : JSON.parse(await optional(join(stateRoot, 'local-install.json')) ?? '{}')
 const previous = ownReceipt ? JSON.parse(ownReceipt) : (!legacy.configRoot || legacy.configRoot === root ? legacy : {})
+const transport = option('--transport') ?? previous.transport ?? 'stdio'
+assert(['stdio', 'http'].includes(transport), 'Unsupported MCP transport')
+assert(transport !== 'http' || process.platform === 'darwin', 'Native HTTP installation requires macOS')
 const legacyMigration = !ownReceipt && !legacy.configRoot && Boolean(legacy.packageDir)
 const targets = [join(root, 'mcp.json'), join(root, 'settings.json'), join(root, 'skills', 'opengui', 'SKILL.md')]
 const original = await Promise.all(targets.map(optional))
@@ -50,17 +58,26 @@ for (const path of targets) await assertOwnedPath(path)
 const existingMcp = JSON.parse(original[0] ?? '{}').mcpServers?.opengui
 if (existingMcp) {
   const knownEntrypoints = [packageDir, previous.packageDir].filter(Boolean).map(path => join(path, 'lib', 'mcp.js'))
-  assert(Array.isArray(existingMcp.args) && existingMcp.args.length === 1 && knownEntrypoints.includes(existingMcp.args[0]),
+  const ownedStdio = Array.isArray(existingMcp.args) && existingMcp.args.length === 1 && knownEntrypoints.includes(existingMcp.args[0])
+  const ownedHttp = previous.transport === 'http' && existingMcp.type === 'http' && previous.nativeServerSha256 === createHash('sha256').update(JSON.stringify(existingMcp)).digest('hex')
+  assert(ownedStdio || ownedHttp,
     'MCP_CONFLICT: an unrecognized opengui server already exists; preserve it and resolve the conflict explicitly')
 }
+const mcpConfig = transport === 'http'
+  ? mergeNativeMcpConfig(JSON.parse(original[0] ?? '{}'), await nativeEndpoint(stateRoot))
+  : mergeMcpConfig(JSON.parse(original[0] ?? '{}'), node, join(packageDir, 'lib', 'mcp.js'))
 const values = [
-  JSON.stringify(mergeMcpConfig(JSON.parse(original[0] ?? '{}'), node, join(packageDir, 'lib', 'mcp.js')), null, 2) + '\n',
+  JSON.stringify(mcpConfig, null, 2) + '\n',
   JSON.stringify(mergeHostHooks(JSON.parse(original[1] ?? '{}'), command, previous.hookCommands ?? []), null, 2) + '\n',
   (await readFile(join(packageDir, 'lib', 'opengui-SKILL.md'), 'utf8')).replaceAll('(references.md)', `(${join(packageDir, 'lib', 'opengui-reference.md')})`),
 ]
-if (original.every((value, i) => value === values[i]) && previous.packageDir === packageDir && previous.configRoot === root) {
+if (!args.includes('--native-service') && original.every((value, i) => value === values[i]) && previous.packageDir === packageDir && previous.configRoot === root) {
   console.log(JSON.stringify({ status: 'ALREADY_CONFIGURED', version: pkg.version, installState, configRoot: root, hostLoaded: 'unverified' }))
   process.exit(0)
+}
+if (args.includes('--native-service')) {
+  nativeService = await stageNativeService({ configRoot: root, stateRoot, node, packageDir, enabled: transport === 'http',
+    ...(option('--launch-agents-dir') ? { launchAgentsDir: resolve(option('--launch-agents-dir')) } : {}) })
 }
 const stamp = new Date().toISOString().replaceAll(/[:.]/g, '-')
 const backups = []
@@ -80,7 +97,9 @@ for (let i = 0; i < targets.length; i++) {
 if (await optional(installState)) await copyFile(installState, `${installState}.before-${stamp}`)
 await assertStatePath()
 const journal = `${installState}.pending-${stamp}`
-const state = { configRoot: root, version: pkg.version, packageDir, hookCommands: [command], backups, installedAt: new Date().toISOString() }
+const state = { configRoot: root, version: pkg.version, packageDir, transport,
+  ...(transport === 'http' ? { nativeServerSha256: createHash('sha256').update(JSON.stringify(mcpConfig.mcpServers.opengui)).digest('hex') } : {}),
+  hookCommands: [command], backups, installedAt: new Date().toISOString() }
 await writeFile(journal, JSON.stringify(state, null, 2) + '\n', { mode: 0o600, flag: 'wx' })
 const temporary = targets.map(path => `${path}.opengui-${stamp}.tmp`)
 for (let i = 0; i < targets.length; i++) await writeFile(temporary[i], values[i], { mode: 0o600, flag: 'wx' })
@@ -113,6 +132,7 @@ try {
 // Restore only byte-identical files recorded by a previous installation in another
 // host configuration root. Preserve any subsequent user edit for manual review.
 const migration = []
+await nativeService?.commit()
 const oldRoot = previous.configRoot ?? dirname(stateRoot)
 if (args.includes('--repair-legacy') && legacyMigration && oldRoot !== root) {
   const allowed = ['mcp.json', 'settings.json', 'skills/opengui/SKILL.md'].map(path => join(oldRoot, path))
@@ -139,3 +159,4 @@ if (args.includes('--repair-legacy') && legacyMigration && oldRoot !== root) {
   }
 }
 console.log(JSON.stringify({ status: 'CONFIG_WRITTEN', installState, configRoot: root, hostLoaded: 'unverified', migration, previousConfigRoot: previous.configRoot ?? null, version: pkg.version, packageDir, backups, recoveryJournal: journal, hookEvents: HOST_HOOK_EVENTS }, null, 2))
+} finally { await nativeService?.rollback() }

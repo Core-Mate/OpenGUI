@@ -1,8 +1,10 @@
 # OpenGUI
 
+> Current candidate phone execution is host-driven: the current DSH conversation model plans and inspects screenshots through `opengui_manage_task next/decide`. The workbench has no separate model configuration. `/opengui` opens the workbench; `/opengui <goal>` submits once and hands the accepted task back to the host. Embedded homepage handoff uses `/opengui continue <taskId>`. Closing the page does not stop execution, but execution cannot continue without host decisions. New phone tasks currently support macOS only. Dedicated-model and router/subagent instructions below describe legacy/browser paths, not the new phone workbench. See the [current Chinese flow](README.zh.md). Real DSH host/model acceptance remains pending.
+
 English | [中文](README.zh.md)
 
-`dsh-coremate-mobile` is the OpenGUI plugin for DeepSeek Harness. It uses restricted child tasks to control authorized Android phones and a plugin-managed local browser. It provides `/opengui` and the `phone_agent` and `browser_agent` delegation tools. OpenGUI prefers the model already selected in the receiving DSH conversation; a separate visual model is only a compatibility fallback. The legacy `/coremate` command remains available for compatibility.
+`dsh-coremate-mobile` is the OpenGUI plugin for DeepSeek Harness. Current phone tasks use host decisions and a shared device runtime; the plugin-managed local browser retains its existing execution path. It provides `/opengui` and the `phone_agent` and `browser_agent` delegation tools. New phone tasks use the model selected in the receiving DSH conversation, without a separate model fallback. The legacy `/coremate` command remains available for compatibility.
 
 The plugin does not modify DeepSeek Harness and does not depend on CoreMateDesktop2, system Chrome, Python, or Hermes CLI. Chromium is installed on demand only after the first browser task receives user approval.
 

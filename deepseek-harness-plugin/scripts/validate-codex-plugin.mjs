@@ -4,6 +4,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
+import assert from 'node:assert/strict'
+import { createRequire, isBuiltin } from 'node:module'
+import { bundleImports, validateManifest, validateSourceBoundary } from '../../packages/device-runtime/build.mjs'
 
 const root = new URL('../', import.meta.url)
 const json = async path => JSON.parse(await readFile(new URL(path, root), 'utf8'))
@@ -13,6 +16,12 @@ const publicPlugin = await json('codex-public/.codex-plugin/plugin.json')
 const compatibility = await json('skills/opengui-coremate-install/dsh-compatibility.json')
 const mcp = await json('.mcp.json')
 const marketplace = await json('../.agents/plugins/marketplace.json')
+await validateSourceBoundary(fileURLToPath(root))
+await validateManifest(fileURLToPath(root))
+const ts = createRequire(new URL('../package.json', import.meta.url))('typescript')
+for (const specifier of bundleImports(await readFile(new URL('lib/task-service.js', root), 'utf8'), ts)) {
+  assert(isBuiltin(specifier), `Unbundled task-service dependency: ${specifier}`)
+}
 
 if (pkg.version !== '0.1.13' || plugin.version !== pkg.version || publicPlugin.version !== pkg.version) {
   throw new Error('package, Codex, and public Skills-only versions must all be 0.1.13')

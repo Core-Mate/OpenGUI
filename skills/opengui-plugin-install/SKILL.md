@@ -20,3 +20,10 @@ Required release assets:
 If no complete release exists or downloads fail, report that precise state. Do not replace the installer with source builds or invent a working download link. For explicitly requested candidate testing, use a maintainer-provided archive with its adjacent checksum and the matching source installer: `bash install-macos.command --archive /absolute/package.tar.gz` (WorkBuddy uses `.tgz`). Keep candidate and published status separate.
 
 Rollback uses the previous version's verified installer after tasks end. WorkBuddy also records scoped configuration backups in `~/.workbuddy/opengui/local-install-<configuration-id>.json`; Codex retains previous inventories and a configuration backup beside each immutable package. Preserve subsequent unrelated edits when recovering; do not reset an entire host or touch DSH.
+
+The two packages embed shared device-runtime code but install independently. Do
+not install a third runtime service or reuse another host's state directory.
+Report configuration installation, MCP tool discovery, Hook continuation, and
+visible-device readiness separately. A candidate `lib/runtime-manifest.json`
+identifies its host, package version, source commit and shared-source digest;
+it is provenance metadata, not a replacement for release checksum verification.

@@ -1,5 +1,5 @@
 import { execFile as execFileCallback, spawn } from 'node:child_process'
-import { createServer } from 'node:net'
+import { createServer, createConnection } from 'node:net'
 import { access, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { isAbsolute, join, resolve } from 'node:path'
@@ -85,6 +85,40 @@ async function stop(child) {
   if (!exited && child.exitCode === null) child.kill('SIGKILL')
 }
 
+async function taskServiceRequest(root, name) {
+  return await new Promise((resolveReply, reject) => {
+    const socket = createConnection(join(root, 'service.sock'))
+    let body = ''
+    socket.setTimeout(2_000, () => socket.destroy(new Error('Task service request timed out')))
+    socket.once('error', reject)
+    socket.once('connect', () => socket.write(JSON.stringify({ protocol: 2, host: 'dsh', name, args: {}, owner: 'compatibility' }) + '\n'))
+    socket.on('data', data => { body += data })
+    socket.once('end', () => {
+      try {
+        const reply = JSON.parse(body)
+        if (reply.error || !('result' in reply)) throw new Error(reply.error ?? 'Missing task service result')
+        resolveReply(reply.result)
+      } catch (error) { reject(error) }
+    })
+  })
+}
+
+async function waitForTaskService(root, child, logs) {
+  const deadline = Date.now() + 15_000
+  while (Date.now() < deadline) {
+    if (child.exitCode !== null) throw new Error(`Packaged task service exited with code ${child.exitCode}\n${logs()}`)
+    try {
+      const status = await taskServiceRequest(root, '__ping__')
+      if (status.protocol !== 2 || status.activeTasks !== 0) throw new Error('Unexpected initial task service state')
+      return
+    } catch (error) {
+      if (!['ENOENT', 'ECONNREFUSED'].includes(error?.code)) throw error
+    }
+    await new Promise(resolveWait => setTimeout(resolveWait, 100))
+  }
+  throw new Error(`Packaged task service startup timed out\n${logs()}`)
+}
+
 function ensureListValue(lines, key, value) {
   const keyIndex = lines.findIndex(line => line.startsWith(`${key}:`))
   if (keyIndex === -1) {
@@ -137,6 +171,7 @@ const runtimeDirectory = join(temporary, 'runtime')
 const dshHome = join(temporary, 'dsh-home')
 const archive = await archivePath()
 let host
+let taskService
 let browser
 let output = ''
 
@@ -160,7 +195,14 @@ allowBuilds:
   const version = (await execFile(dsh, ['-V'], { env: process.env })).stdout.trim()
   if (version !== dshVersion) throw new Error(`Expected DSH ${dshVersion}, resolved ${version}`)
 
-  const env = { ...process.env, DSH_HOME: dshHome }
+  const taskRoot = join(temporary, 'task-service')
+  const env = {
+    ...process.env, DSH_HOME: dshHome, OPENGUI_TASK_SERVICE_ROOT: taskRoot,
+    OPENGUI_TASK_SERVICE_AUTOSTART: '0',
+    OPENGUI_CODEX_DATA_DIR: join(temporary, 'legacy-codex'),
+    OPENGUI_WORKBUDDY_HOME: join(temporary, 'legacy-workbuddy'),
+    OPENGUI_DSH_HOME: join(temporary, 'legacy-dsh'),
+  }
   await execFile(dsh, ['plugin', '--profile', 'web', '--help'], { env, maxBuffer: 20 * 1024 * 1024 })
   const profileWorkspacePath = join(dshHome, 'profiles', 'web', 'pnpm-workspace.yaml')
   const profileWorkspace = (await readFile(profileWorkspacePath, 'utf8')).split('\n')
@@ -169,11 +211,20 @@ allowBuilds:
   ensureListValue(profileWorkspace, 'onlyBuiltDependencies', 'protobufjs')
   ensureMapValue(profileWorkspace, 'allowBuilds', '@google/genai', false)
   ensureMapValue(profileWorkspace, 'allowBuilds', 'protobufjs', false)
+  ensureMapValue(profileWorkspace, 'allowBuilds', 'esbuild', true)
   await writeFile(profileWorkspacePath, `${profileWorkspace.join('\n').replace(/\n+$/u, '')}\n`)
   await execFile(dsh, ['plugin', '--profile', 'web', 'add', '--save-exact', archive], {
     env,
     maxBuffer: 20 * 1024 * 1024,
   })
+
+  const serviceEntry = join(dshHome, 'profiles', 'web', 'node_modules', pkg.name, 'lib', 'task-service.js')
+  let serviceLogs = ''
+  taskService = spawn(process.execPath, [serviceEntry], { env, stdio: ['ignore', 'pipe', 'pipe'] })
+  taskService.stdout.on('data', chunk => { serviceLogs += chunk })
+  taskService.stderr.on('data', chunk => { serviceLogs += chunk })
+  await waitForTaskService(taskRoot, taskService, () => serviceLogs.slice(-4_000))
+  await taskServiceRequest(taskRoot, 'opengui_list_tasks')
 
   const port = await freePort()
   const origin = `http://127.0.0.1:${port}`
@@ -243,14 +294,16 @@ allowBuilds:
   if (consoleErrors.length > 0) throw new Error(`Browser console errors: ${consoleErrors.join(' | ')}`)
 
   const loaded = runtime.dshVersion === dshVersion ? '' : ` (Host components ${runtime.dshVersion})`
-  process.stdout.write(`DSH ${dshVersion}${loaded}: package install, Host boot, runtime API, task API, and client registration passed\n`)
+  process.stdout.write(`DSH ${dshVersion}${loaded}: package install, packaged task-service ping/list, Host boot, runtime API, task API, and client registration passed\n`)
 } catch (error) {
+  if (error?.stdout) process.stderr.write(String(error.stdout).slice(-12000).replace(/([?&]token=)[^\s&]+/gu, '$1[redacted]'))
   if (output) process.stderr.write(`\nDSH output:\n${output.slice(-12_000).replace(/([?&]token=)[^\s&]+/gu, '$1[redacted]')}\n`)
   throw new Error(String(error instanceof Error ? error.stack ?? error.message : error)
     .replace(/([?&]token=)[^\s&]+/gu, '$1[redacted]'))
 } finally {
   if (browser) await browser.close().catch(() => undefined)
   if (host) await stop(host)
+  if (taskService) await stop(taskService)
   if (process.env.OPENGUI_COMPAT_KEEP_TEMP === '1') {
     process.stderr.write(`Compatibility fixture preserved at ${temporary}\n`)
   } else {

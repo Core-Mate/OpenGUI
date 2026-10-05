@@ -47,7 +47,7 @@ function sink() {
   } satisfies ScrcpyStreamSink & { disconnect(): void }
 }
 
-function setup(maxSources = 4, forwardRegistry = {
+function setup(maxSources = 4, forwardRegistry: { track: (...args: unknown[]) => Promise<unknown>; release: (...args: unknown[]) => Promise<unknown> } = {
   track: vi.fn(async () => undefined),
   release: vi.fn(async () => true),
 }) {
@@ -56,7 +56,7 @@ function setup(maxSources = 4, forwardRegistry = {
   const runAdb = vi.fn(async () => '')
   const streams = new ScrcpyVideoStreams({
     asset: SCRCPY_ASSETS['darwin-arm64']!,
-    installer: new ReadyInstaller(),
+    installer: new ReadyInstaller({ cacheDir: '/test-cache' }),
     adbPath: () => '/adb',
     runAdb,
     freePort: async () => 40123 + sockets.length,
@@ -84,12 +84,12 @@ describe('shared embedded scrcpy sources', () => {
     const diagnostic = vi.fn()
     const target = sink()
     const streams = new ScrcpyVideoStreams({
-      asset: SCRCPY_ASSETS['darwin-arm64']!, installer: new FailingInstaller(), adbPath: () => '/adb',
-      runAdb: async () => '', onError: diagnostic,
+      asset: SCRCPY_ASSETS['darwin-arm64']!, installer: new FailingInstaller({ cacheDir: '/test-cache' }), adbPath: () => '/adb',
+      runAdb: async () => '', forwardRegistry: { track: async () => {}, release: async () => true } as never, onError: diagnostic,
     })
-    await streams.subscribe({ id: 'one', serial: 'private', label: 'Pixel' }, target)
+    await streams.subscribe({ id: 'one', serial: 'private' }, target)
     await vi.waitFor(() => expect(target.sendText).toHaveBeenCalledWith(JSON.stringify({
-      type: 'error', message: '实时画面启动失败，已切换为截图预览。',
+      type: 'error', message: 'video_failed: encoder or device connection failed; reconnect the selected phone and retry video',
     })))
     expect(diagnostic).toHaveBeenCalledWith(expect.objectContaining({ message: 'scrcpy failed at /private/tmp/secret' }))
     await streams.dispose()
@@ -97,9 +97,9 @@ describe('shared embedded scrcpy sources', () => {
 
   it('automatically prepares first-use video without an approval gate', async () => {
     const streams = new ScrcpyVideoStreams({
-      asset: SCRCPY_ASSETS['darwin-arm64']!, installer: new MissingInstaller(), adbPath: () => '/adb', runAdb: async () => '',
+      asset: SCRCPY_ASSETS['darwin-arm64']!, installer: new MissingInstaller({ cacheDir: '/test-cache' }), adbPath: () => '/adb', runAdb: async () => '', forwardRegistry: { track: async () => {}, release: async () => true } as never,
     })
-    await expect(streams.subscribe({ id: 'one', serial: 'private', label: 'Pixel' }, sink())).resolves.toEqual(expect.any(Function))
+    await expect(streams.subscribe({ id: 'one', serial: 'private' }, sink())).resolves.toEqual(expect.any(Function))
     await expect(streams.status()).resolves.toMatchObject({ supported: true, approved: true })
     expect(streams.approve()).toBe(true)
     await streams.dispose()
@@ -109,7 +109,7 @@ describe('shared embedded scrcpy sources', () => {
     const { streams, children, sockets, runAdb } = setup()
     const first = sink()
     const second = sink()
-    const device = { id: 'opaque-one', serial: 'private-one', label: 'Pixel' }
+    const device = { id: 'opaque-one', serial: 'private-one' }
     const unsubscribeFirst = await streams.subscribe(device, first)
     const unsubscribeSecond = await streams.subscribe(device, second)
 
@@ -144,11 +144,12 @@ describe('shared embedded scrcpy sources', () => {
     await streams.dispose()
   })
 
-  it('drops backpressured delta packets but preserves key frames', async () => {
+  it('discards broken reference chains until the next key frame', async () => {
     const { streams, sockets } = setup()
     const slow = sink()
-    slow.bufferedBytes = () => 2_000_000
-    await streams.subscribe({ id: 'opaque', serial: 'private', label: 'Pixel' }, slow)
+    let queued = 1_500_000
+    slow.bufferedBytes = () => queued
+    await streams.subscribe({ id: 'opaque', serial: 'private' }, slow)
     await vi.waitFor(() => expect(sockets).toHaveLength(1))
     const session = Buffer.alloc(12)
     session.writeUInt32BE(0x80000000, 0)
@@ -162,20 +163,28 @@ describe('shared embedded scrcpy sources', () => {
       return value
     }
     sockets[0]!.write(Buffer.concat([Buffer.from('h264'), session, packet(0x2000000000000001n), packet(2n)]))
+    await new Promise(resolve => setTimeout(resolve, 20))
+    expect(slow.sendBinary).not.toHaveBeenCalled()
+    queued = 0
+    sockets[0]!.write(packet(3n))
+    await new Promise(resolve => setTimeout(resolve, 10))
+    expect(slow.sendBinary).not.toHaveBeenCalled()
+    sockets[0]!.write(packet(0x2000000000000004n))
     await vi.waitFor(() => expect(slow.sendBinary).toHaveBeenCalledTimes(1))
+    expect(slow.sendText).toHaveBeenCalledWith(JSON.stringify({ type: 'reset' }))
     await streams.dispose()
   })
 
   it('caps active device encoders without exposing serials to subscribers', async () => {
     const { streams } = setup(1)
-    await streams.subscribe({ id: 'opaque-one', serial: 'private-one', label: 'One' }, sink())
-    await expect(streams.subscribe({ id: 'opaque-two', serial: 'private-two', label: 'Two' }, sink()))
+    await streams.subscribe({ id: 'opaque-one', serial: 'private-one' }, sink())
+    await expect(streams.subscribe({ id: 'opaque-two', serial: 'private-two' }, sink()))
       .rejects.toThrow('stream_capacity_wait')
     await expect(streams.status()).resolves.toMatchObject({ activeSources: 1, maxSources: 1 })
     await streams.dispose()
   })
 
-  it('starts a fresh source when a subscriber arrives while the old entry is still closing', async () => {
+  it('waits for closing sources before allocating a replacement encoder', async () => {
     let releaseCleanup!: () => void
     const cleanupGate = new Promise<void>(resolve => { releaseCleanup = resolve })
     const forwardRegistry = {
@@ -185,16 +194,18 @@ describe('shared embedded scrcpy sources', () => {
         .mockResolvedValue(true),
     }
     const { streams, sockets } = setup(4, forwardRegistry)
-    const device = { id: 'opaque', serial: 'private', label: 'Pixel' }
+    const device = { id: 'opaque', serial: 'private' }
     const unsubscribe = await streams.subscribe(device, sink())
     await vi.waitFor(() => expect(sockets).toHaveLength(1))
 
     unsubscribe()
     await vi.waitFor(() => expect(forwardRegistry.release).toHaveBeenCalledTimes(1))
-    await streams.subscribe(device, sink())
-    await vi.waitFor(() => expect(sockets).toHaveLength(2))
-
+    const replacement = streams.subscribe(device, sink())
+    await new Promise(resolve => setTimeout(resolve, 10))
+    expect(sockets).toHaveLength(1)
     releaseCleanup()
+    await replacement
+    await vi.waitFor(() => expect(sockets).toHaveLength(2))
     await streams.dispose()
   })
 
@@ -206,7 +217,7 @@ describe('shared embedded scrcpy sources', () => {
       release: vi.fn(async () => cleanupGate),
     }
     const { streams, sockets } = setup(4, forwardRegistry)
-    const unsubscribe = await streams.subscribe({ id: 'opaque', serial: 'private', label: 'Pixel' }, sink())
+    const unsubscribe = await streams.subscribe({ id: 'opaque', serial: 'private' }, sink())
     await vi.waitFor(() => expect(sockets).toHaveLength(1))
 
     unsubscribe()

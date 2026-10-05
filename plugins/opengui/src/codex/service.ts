@@ -1,3 +1,6 @@
+import { acquireDeviceLease } from '../../../../packages/device-runtime/src/device-lease.ts'
+import { OpenGuiError } from '../errors.ts'
+import { SessionRuntime } from '../../../../packages/device-runtime/src/session-runtime.ts'
 import { ViewerServer, type ViewerStreams } from '../viewer.ts'
 import { ScrcpyVideoStreams } from '../scrcpy-stream.ts'
 import { randomBytes, randomUUID } from 'node:crypto'
@@ -13,6 +16,7 @@ import {
   parseDevices,
   runAdb,
 } from '../adb.ts'
+import type { DeviceConnection } from '../adb.ts'
 import type { FleetDeviceStatusView } from '../device-fleet.ts'
 import { DeviceFleet } from '../device-fleet.ts'
 import { AsyncSemaphore } from '../concurrency.ts'
@@ -30,6 +34,7 @@ export interface CodexDeviceInfo {
   readonly id: string
   readonly name: string
   readonly model?: string
+  readonly connection?: DeviceConnection
   readonly state: string
   readonly connected: boolean
   readonly authorized: boolean
@@ -104,7 +109,7 @@ export class LocalAdbPhoneHost implements CodexPhoneHost {
       validateTarget: async (serial, signal) => {
         const devices = parseDevices(String(await run(['devices', '-l'], signal)))
         if (!devices.some(device => device.serial === serial && device.state === 'device')) {
-          throw new Error('opengui: a phone frozen to this session disconnected or lost USB authorization')
+          throw new Error('opengui: a device frozen to this session disconnected or lost debugging authorization')
         }
       },
       pasteUnicode: (serial, text, signal) => this.textInput.paste(serial, text, signal),
@@ -122,10 +127,10 @@ export class LocalAdbPhoneHost implements CodexPhoneHost {
     let ids = [...new Set(deviceIds ?? [])]
     if (ids.length === 0) {
       if (snapshot.devices.length === 0) {
-        throw new Error('opengui: no authorized Android device is connected; accept the USB debugging prompt first')
+        throw new Error('opengui: no authorized Android device is connected; connect a USB phone or start an Android emulator and accept its debugging prompt')
       }
       if (snapshot.devices.length > 1) {
-        throw new Error('opengui: multiple authorized phones are connected; pass one to four deviceIds from opengui_list_devices')
+        throw new Error('opengui: multiple authorized Android devices are connected; pass one to four deviceIds from opengui_list_devices')
       }
       ids = [snapshot.devices[0]!.id]
     }
@@ -184,6 +189,7 @@ export class LocalAdbPhoneHost implements CodexPhoneHost {
       id: device.id,
       name: device.label,
       ...(device.model === undefined ? {} : { model: device.model }),
+      connection: device.connection,
       state: device.state,
       connected: device.connected,
       authorized: device.authorized,
@@ -274,10 +280,13 @@ export interface CodexOpenGuiServiceOptions {
 
 /** Stateful session adapter consumed by both Codex transports. */
 export class CodexOpenGuiService {
+  get phoneHardware(): CodexPhoneHost { return this.host }
+  private readonly deviceLeases = new Map<string, Awaited<ReturnType<typeof acquireDeviceLease>>[]>()
   private readonly host: CodexPhoneHost
   private readonly createSessionId: () => string
-  private readonly sessions = new Map<string, SessionRecord>()
-  private readonly locks = new Map<string, string>()
+  private readonly runtime = new SessionRuntime<SessionRecord>()
+  private readonly sessions = this.runtime.sessions
+  private readonly locks = this.runtime.locks
   readonly viewers: ViewerServer
   private readonly wall: DeviceWallServer
   private readonly now: () => number
@@ -343,10 +352,14 @@ export class CodexOpenGuiService {
     }
     for (const item of record.devices) {
       this.host.assignTarget(item.actor, item.device.serial)
-      if (mode === 'control') this.locks.set(item.device.serial, id)
     }
-    this.sessions.set(id, record)
+    this.runtime.register(record, mode === 'control')
     try {
+      if (mode === 'control' && this.host instanceof LocalAdbPhoneHost) {
+        const leases: Awaited<ReturnType<typeof acquireDeviceLease>>[] = []
+        this.deviceLeases.set(record.id, leases)
+        for (const item of record.devices) leases.push(await acquireDeviceLease(item.device.serial, 'codex:' + record.id))
+      }
       await this.wall.start()
       signal.throwIfAborted()
       return this.snapshot(record)
@@ -381,7 +394,7 @@ export class CodexOpenGuiService {
     delete action.deviceId
     delete action.externalSideEffect
     delete action.confirmedExternalSideEffect
-    return this.runPhoneOperation(sessionId, deviceId, signal, (item, combined) => this.host.act(item.actor, action, combined))
+    return this.runPhoneOperation(sessionId, deviceId, signal, (item, combined) => this.host.act(item.actor, action, combined), true)
   }
 
   async status(sessionId: string, signal: AbortSignal, renew = true): Promise<CodexSessionStatus> {
@@ -462,23 +475,24 @@ export class CodexOpenGuiService {
     deviceId: string | undefined,
     signal: AbortSignal,
     operation: (item: SessionDevice, combined: AbortSignal) => Promise<RawPhoneObservation>,
+    mutating = false,
   ): Promise<CodexObservation> {
     const record = this.requireActiveSession(sessionId)
     this.viewers.assertReady(record.viewerId!)
     record.lastRequestAt = this.now()
     const item = this.resolveDevice(record, deviceId)
     const combined = AbortSignal.any([record.controller.signal, signal])
-    const pending = operation(item, combined)
-    record.pending.add(pending)
+    const pending = this.runtime.track(record, () => operation(item, combined))
+    let completed = false
     try {
       const value = await pending
+      completed = true
       combined.throwIfAborted()
       return this.publicObservation(record.id, item.device.id, value)
     } catch (error) {
       record.lastError = error instanceof Error ? error.message : String(error)
+      if (mutating && completed) throw new OpenGuiError('result_delivery_failed', record.lastError, 'outcome_unknown', 'observe')
       throw error
-    } finally {
-      record.pending.delete(pending)
     }
   }
 
@@ -502,40 +516,27 @@ export class CodexOpenGuiService {
     }
   }
 
-  private requireSession(sessionId: string): SessionRecord {
-    const record = this.sessions.get(sessionId)
-    if (record === undefined) throw new Error('opengui: unknown sessionId')
-    return record
-  }
+  private requireSession(sessionId: string): SessionRecord { return this.runtime.requireSession(sessionId) }
 
-  private requireActiveSession(sessionId: string): SessionRecord {
-    const record = this.requireSession(sessionId)
-    if (record.state !== 'active') throw new Error(`opengui: session is ${record.state}`)
-    return record
-  }
+  private requireActiveSession(sessionId: string): SessionRecord { return this.runtime.requireActiveSession(sessionId) }
 
   private resolveDevice(record: SessionRecord, deviceId: string | undefined): SessionDevice {
-    if (deviceId === undefined) {
-      if (record.devices.length !== 1) throw new Error('opengui: deviceId is required for a multi-device session')
-      return record.devices[0]!
-    }
-    const item = record.devices.find(candidate => candidate.device.id === deviceId)
-    if (item === undefined) throw new Error('opengui: deviceId is not locked by this session')
-    return item
+    return this.runtime.resolveDevice(record, deviceId)
   }
 
-  private release(record: SessionRecord): void {
-    for (const item of record.devices) {
-      if (this.locks.get(item.device.serial) === record.id) this.locks.delete(item.device.serial)
-    }
-  }
+  private release(record: SessionRecord): void { this.runtime.release(record) }
 
   private async releaseDeviceResources(record: SessionRecord): Promise<void> {
     if (record.mode === 'observe') return
-    const results = await Promise.allSettled(record.devices.map(item => this.host.releaseDevice(item.device.serial)))
+    const leases = this.deviceLeases.get(record.id)
+    const resources = this.host instanceof LocalAdbPhoneHost ? record.devices.slice(0, leases?.length ?? 0) : record.devices
+    const results = await Promise.allSettled(resources.map(item => this.host.releaseDevice(item.device.serial)))
     const failure = results.find((result): result is PromiseRejectedResult => result.status === 'rejected')
     if (failure !== undefined) {
       record.lastError = failure.reason instanceof Error ? failure.reason.message : String(failure.reason)
+    } else {
+      for (const lease of leases ?? []) await lease.release()
+      this.deviceLeases.delete(record.id)
     }
   }
 
@@ -571,14 +572,12 @@ export class CodexOpenGuiService {
     record.state = state
     record.closedAt = new Date(this.now()).toISOString()
     record.controller.abort(new Error('opengui: session ' + state))
-    record.finishing = (async () => {
-      // Keep the exclusive lease until old work and its cleanup have finished.
-      await Promise.allSettled(record.pending)
+    record.finishing = this.runtime.drain(record, async () => {
       await this.releaseDeviceResources(record)
       try { await this.onSessionClosed(record.id) }
       catch (error) { record.lastError = error instanceof Error ? error.message : String(error) }
-      finally { this.release(record); this.pruneClosedSessions() }
-    })()
+      finally { this.pruneClosedSessions() }
+    })
     return record.finishing
   }
 }

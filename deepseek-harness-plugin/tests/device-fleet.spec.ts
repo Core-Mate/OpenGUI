@@ -203,4 +203,23 @@ describe('multi-phone device fleet', () => {
     lease.release()
     await expect(fleet.acquireSelected(ownerB, signal)).resolves.toMatchObject({ devices: [expect.objectContaining({ id: 'id-a' })] })
   })
+
+  it('auto-selects an Android emulator and keeps its serial for execution', async () => {
+    const fleet = new DeviceFleet(async () => [{
+      serial: 'emulator-5554',
+      state: 'device',
+      model: 'sdk_gphone64_arm64',
+      connection: 'emulator',
+    }], () => 'emu-1')
+    const signal = new AbortController().signal
+    expect((await fleet.snapshot(signal)).devices[0]).toMatchObject({
+      id: 'emu-1',
+      label: '模拟器 sdk gphone64 arm64',
+      selected: true,
+    })
+    await expect(fleet.selectedDevices(signal)).resolves.toEqual([
+      { id: 'emu-1', serial: 'emulator-5554', label: '模拟器 sdk gphone64 arm64', model: 'sdk gphone64 arm64' },
+    ])
+    expect((await fleet.inspect(signal))[0]).toMatchObject({ connection: 'emulator', authorized: true })
+  })
 })

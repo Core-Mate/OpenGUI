@@ -4,6 +4,8 @@ import { execFileSync } from 'node:child_process'
 import { cp, mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
+import { Client } from '@modelcontextprotocol/sdk/client/index.js'
+import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 
 // This smoke never requests a device, starts ADB, or installs into a Codex profile.
 const [pluginArchive, nodeArchive] = process.argv.slice(2).map(value => resolve(value))
@@ -21,7 +23,7 @@ const temp = await mkdtemp(join(tmpdir(), 'opengui-installed-smoke-'))
 try {
   const entries = execFileSync('tar', ['-tzf', pluginArchive], { encoding: 'utf8' }).trim().split('\n')
   assert.ok(entries.every(entry => entry.startsWith('opengui/') && !entry.split('/').includes('..')))
-  assert.ok(entries.every(entry => !/(node_modules|__pycache__|\.pyc$|\.DS_Store|\.log$|\.mcp\.json)/.test(entry)))
+  assert.ok(entries.every(entry => !/(node_modules|__pycache__|\.pyc$|\.DS_Store|\.log$)/.test(entry)))
   execFileSync('tar', ['-xzf', pluginArchive, '-C', temp])
   execFileSync('tar', ['-xzf', nodeArchive, '-C', temp])
   const root = join(temp, 'opengui')
@@ -37,11 +39,22 @@ try {
   assert.ok(run('--help').includes('OpenGUI for Codex'))
   const interfaces = JSON.parse(run('--interfaces'))
   assert.equal(JSON.parse(execFileSync(join(runtime, 'bin/node'), [join(root, 'lib/cli.js'), '--help'], { encoding: 'utf8' })).version, version)
-  assert.equal(interfaces.interfaces.length, 8)
+  assert.equal(interfaces.interfaces.length, 15)
   assert.ok((await stat(join(root, 'assets/platform-tools/darwin/adb'))).mode & 0o111)
   assert.ok((await stat(join(root, 'scripts/opengui'))).mode & 0o111)
+  const config = JSON.parse(await readFile(join(root, '.mcp.json'), 'utf8')).mcpServers.opengui
+  assert.equal(config.command, './scripts/opengui')
+  const client = new Client({ name: 'archive-native-check', version: '1' })
+  try {
+    await client.connect(new StdioClientTransport({ command: join(root, config.command), args: config.args, cwd: root, env, stderr: 'pipe' }))
+    assert.equal((await client.listTools()).tools.length, 15)
+    const resources = (await client.listResources()).resources
+    assert.equal(resources.length, 1)
+    assert.equal((await client.readResource({ uri: resources[0].uri })).contents[0].mimeType, 'text/html;profile=mcp-app')
+    assert.equal((await client.callTool({ name: 'opengui_list_tasks', arguments: {} })).isError, true)
+  } finally { await client.close() }
   assert.deepEqual(await readdir(data), ['runtime'], 'Read-only interface discovery must not create daemon state')
-  console.log('Verified archive -> private pinned Node -> packaged launcher -> 8 interfaces; no ADB or profile mutation.')
+  console.log('Verified archive -> private pinned Node -> packaged launcher -> 15 interfaces and native MCP resource; no ADB or profile mutation.')
 } finally {
   await rm(temp, { recursive: true, force: true })
 }
