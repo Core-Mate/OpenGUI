@@ -19,6 +19,7 @@ import {
 } from "../../../../common/base/enum";
 import { ExecutionGateway } from "../../../../common/ws";
 import type { AgentConfigProvider } from "../../config/agent-config.provider";
+import { ModelConfigurationError } from "../../config/model-configuration.error";
 import { createConfiguredChatModel } from "../../config/chat-model.factory";
 import { AgentName } from "../../config/types";
 import type {
@@ -478,6 +479,10 @@ Use read_todos to inspect the current todo list, then decide the next operation 
 			};
 		} catch (error) {
 			const err = error as Error;
+
+			if (err instanceof ModelConfigurationError) {
+				throw err;
+			}
 
 			// GraphInterrupt from billing interrupt — re-throw without logging as error
 			if (err.name === "GraphInterrupt") {

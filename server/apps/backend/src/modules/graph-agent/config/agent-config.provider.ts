@@ -1,6 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { prisma } from "@repo/db";
+import { ModelConfigurationError } from "./model-configuration.error";
 import {
 	type AgentConfigDTO,
 	AgentName,
@@ -52,31 +53,27 @@ export class AgentConfigProvider {
 	 *
 	 */
 	async getModelConfig(agentName: AgentName, region = "CN"): Promise<ModelConfig> {
+		const apiKey = this.configService.get<string>("VLM_API_KEY") ?? "";
+		const baseURL = this.configService.get<string>("VLM_BASE_URL") ?? "";
+		const model = this.configService.get<string>("VLM_MODEL") ?? "";
+		const missing = Object.entries({
+			VLM_API_KEY: apiKey,
+			VLM_BASE_URL: baseURL,
+			VLM_MODEL: model,
+		})
+			.filter(([, value]) => !value.trim())
+			.map(([name]) => name);
+
+		if (missing.length > 0) {
+			throw new ModelConfigurationError(missing);
+		}
+
 		const config = await this.getConfig(agentName, region);
-
-		const apiKey = this.configService.get<string>("VLM_API_KEY");
-		const baseURL = this.configService.get<string>("VLM_BASE_URL");
-		const model = this.configService.get<string>("VLM_MODEL");
-
-
-		if (!apiKey) {
-			throw new Error(
-				`API key not configured for agent: ${agentName}. ` +
-					"Set VLM_API_KEY in .env",
-			);
-		}
-
-		if (!model) {
-			throw new Error(
-				`Model not configured for agent: ${agentName}. ` +
-					"Set VLM_MODEL in .env",
-			);
-		}
 
 		return {
 			model,
 			apiKey,
-			baseURL: baseURL || undefined,
+			baseURL,
 			fallbackModel: model,
 			temperature: config.temperature ?? undefined,
 			maxTokens: config.maxTokens ?? undefined,

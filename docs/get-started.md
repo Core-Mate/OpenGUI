@@ -89,9 +89,12 @@ VLM_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 VLM_MODEL=qwen3.6-plus
 ```
 
-The backend can start without `VLM_API_KEY`, but real task execution will fail
-when the graph needs to call the model. LangSmith tracing and IM channel
-credentials are optional for the first run.
+All three variables (`VLM_API_KEY`, `VLM_BASE_URL`, and `VLM_MODEL`) must be
+non-empty for task execution; `.env.example` supplies the URL and model defaults.
+The backend and its API/docs can start without model configuration. Before a
+model call, task execution fails with a message listing every missing or
+whitespace-only variable and pointing to `server/apps/backend/.env`. LangSmith
+tracing and IM channel credentials are optional for the first run.
 
 Useful endpoints after startup:
 
