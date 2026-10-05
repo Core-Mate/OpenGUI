@@ -45,6 +45,10 @@ Complete old phone tasks and close old displays before upgrading. If an old brok
 
 WorkBuddy 5.5.3 domestic and overseas configuration discovery, version-aware running-host preflight, per-configuration receipts, and native Hooks are retained. Use `--check` or `--app /absolute/WorkBuddy.app` for explicit preflight. Legacy `opengui_start` and native mirror tools are compatibility-only, on explicit request. They never substitute for browser first-frame authorization.
 
+## Content review before publishing
+
+The start page's 高级选项 offers 发内容前需要审核 (off by default). When checked, posting any text (posts, comments, replies, messages) requires the person's approval, and the runtime publishes only when the field reads back exactly the approved text; likes, follows and favorites need no review. See [docs/content-review.zh-CN.md](docs/content-review.zh-CN.md).
+
 ## One-click Android emulator
 
 Without a phone, the confirmation page and the device dialog offer an emulator entry. Existing Android Studio emulators can be started directly; otherwise, after the person accepts the Android SDK license, the plugin downloads the official emulator (~0.4 GB) and the Android 14 Google APIs system image (~1.6 GB; arm64-v8a on Apple silicon, x86_64 on Intel Macs and 64-bit Windows). Archives come from Google or the public Tencent Cloud mirror (a 1 MB speed probe picks the faster) and are verified against Google's published sizes and SHA-1 checksums pinned in the code. The system curl downloads with resume and proxy environment support; the system tar extracts. Everything lives in the plugin's private directory (`~/.workbuddy/opengui/android`); existing SDKs, `~/.android` and environment variables are untouched. The emulator boots headless and appears in the device list when boot completes; a failed start reports the emulator's own reason from `android/emulator.log`. Windows needs the Windows Hypervisor Platform enabled. About 8 GB of free space is required.

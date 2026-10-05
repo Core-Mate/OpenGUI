@@ -36,7 +36,12 @@ export interface TraceEntry {
   /** The plan step this entry belonged to. */
   step?: string
 }
+/** What a reviewed text is published as; posts and messages may repeat on one target, comments may not. */
+export type ContentKind = 'post' | 'comment' | 'reply' | 'message'
+export const CONTENT_KINDS: readonly ContentKind[] = ['post', 'comment', 'reply', 'message']
 export interface CommentReview {
+  kind?: ContentKind | undefined
+  title?: string | undefined
   platformInput?: PlatformInput | undefined
   replacementDecisions?: ReplacementDecision[] | undefined
   inputAttempts?: InputAttempt[] | undefined
@@ -73,6 +78,8 @@ export interface WorkbenchState {
   connectionRecovery?: ConnectionRecovery | undefined
   executionBudget?: ExecutionBudget | undefined
   stopBeforeSubmit?: true | undefined
+  /** 发内容前需要审核: chosen on the start page; publishing text requires an approved review. */
+  contentReview?: true | undefined
   inputDiagnostic?: InputDiagnostic | undefined
   apk?: ApkRecord | undefined
   environment?: EnvironmentState | undefined
@@ -106,6 +113,7 @@ export class Workbench {
   connectionRecovery: ConnectionRecovery | undefined
   executionBudget: ExecutionBudget | undefined
   stopBeforeSubmit: true | undefined
+  contentReview: true | undefined
   inputDiagnostic: InputDiagnostic | undefined
   apk: ApkRecord | undefined
   environment: EnvironmentState | undefined
@@ -134,6 +142,7 @@ export class Workbench {
       for (const trace of state.traces) if (!['model', 'environment', 'apk_inspect'].includes(trace.kind)) operations[trace.deviceId] = (operations[trace.deviceId] ?? 0) + 1
       this.executionBudget = validatedExecutionBudget(state.executionBudget ?? { initialLimits: { operationLimit: LEGACY_EXECUTION_BUDGET, inferenceLimit: LEGACY_EXECUTION_BUDGET }, operationLimit: LEGACY_EXECUTION_BUDGET, inferenceLimit: LEGACY_EXECUTION_BUDGET, operations, extensions: [] })
       this.stopBeforeSubmit = state.stopBeforeSubmit === true ? true : undefined
+      this.contentReview = state.contentReview === true ? true : undefined
       this.connectionRecovery = structuredClone(state.connectionRecovery)
       if (this.connectionRecovery && this.connectionRecovery.status !== 'resolved') this.connectionRecovery.status = 'waiting_recheck'
       this.inputDiagnostic = structuredClone(state.inputDiagnostic)
@@ -444,11 +453,17 @@ export class Workbench {
     this.evidenceBytes += data.length
     this.checkpoint()
   }
-  requestReview(input: { account: string; target: string; context: string; draft: string }): CommentReview {
+  requestReview(request: { account: string; target: string; context: string; draft: string; kind?: ContentKind; title?: string }): CommentReview {
+    const { kind, title, ...input } = request
     for (const [key, value] of Object.entries(input)) {
       if (typeof value !== 'string' || !value.trim() || value.length > (key === 'context' ? 4000 : 2000)) throw new Error('invalid_review')
     }
-    const existing = this.reviews.find(r => r.account === input.account && r.target === input.target && r.status !== 'skipped')
+    if (kind !== undefined && !CONTENT_KINDS.includes(kind)) throw new Error('invalid_review')
+    if (title !== undefined && (typeof title !== 'string' || !title.trim() || title.length > 200)) throw new Error('invalid_review')
+    // A comment or reply is one per account and target; posts and messages may repeat there, but never with the same text.
+    const repeatable = kind === 'post' || kind === 'message'
+    if (repeatable && this.reviews.some(r => r.kind === kind && r.account === input.account && r.target === input.target && r.draft === input.draft && ['submitted', 'sent', 'unknown'].includes(r.status))) throw new Error('content_already_published: this text was already published here; do not publish it again')
+    const existing = this.reviews.find(r => r.account === input.account && r.target === input.target && r.status !== 'skipped' && (!repeatable || r.kind === kind && ['pending', 'approved'].includes(r.status)))
     if (existing) {
       if (existing.draft !== input.draft && !this.versions(existing).some(item => item.source === 'generated' && item.draft === input.draft)) {
         if (!['pending', 'approved'].includes(existing.status)) throw new Error('review_exists: preserve the submitted content')
@@ -457,11 +472,11 @@ export class Workbench {
       return existing
     }
     this.assertCommentSlot()
-    const historical = this.storage?.previousComment(input.account, input.target)
+    const historical = repeatable ? undefined : this.storage?.previousComment(input.account, input.target)
     if (historical) throw new Error(historical.status === 'sent' ? 'comment_already_sent: this account has a verified historical comment on this target' : 'comment_pending_verification: verify the historical submission; do not send again')
     if (this.reviews.some(r => r.status === 'pending' || r.status === 'approved' || r.status === 'submitted' || r.status === 'unknown')) throw new Error('review_pending: finish or verify the previous comment first')
     if (this.reviews.length >= 100) throw new Error('review_capacity')
-    const review: CommentReview = { ...input, originalDraft: input.draft, contentVersion: 1, draftVersions: [{ version: 1, source: 'generated', draft: input.draft, savedAt: new Date().toISOString() }], decisions: [], id: randomUUID(), status: 'pending' }
+    const review: CommentReview = { ...input, ...(kind ? { kind } : {}), ...(title ? { title: title.trim() } : {}), originalDraft: input.draft, contentVersion: 1, draftVersions: [{ version: 1, source: 'generated', draft: input.draft, savedAt: new Date().toISOString() }], decisions: [], id: randomUUID(), status: 'pending' }
     this.reviews.push(review)
     try { this.checkpoint() } catch (error) { this.reviews.pop(); throw error }
     return review
@@ -509,7 +524,7 @@ export class Workbench {
     this.updateReview(id, { status: 'submitted', submittedAt: new Date().toISOString() })
   }
   snapshot(): WorkbenchState {
-    return { connectionRecovery: this.connectionRecovery, executionBudget: this.executionBudget, stopBeforeSubmit: this.stopBeforeSubmit, inputDiagnostic: this.inputDiagnostic, apk: this.apk, environment: this.environment, createdAt: this.createdAt, objective: this.objective, ...(this.request ? { request: this.request } : {}), successCriteria: this.successCriteria,
+    return { connectionRecovery: this.connectionRecovery, executionBudget: this.executionBudget, stopBeforeSubmit: this.stopBeforeSubmit, contentReview: this.contentReview, inputDiagnostic: this.inputDiagnostic, apk: this.apk, environment: this.environment, createdAt: this.createdAt, objective: this.objective, ...(this.request ? { request: this.request } : {}), successCriteria: this.successCriteria,
       scenario: this.scenario, testCases: this.testCases, activeTestCaseId: this.activeTestCaseId, handoffs: this.handoffs, commentBudget: this.commentBudget,
       control: this.control, result: this.result, traces: this.traces, reviews: this.reviews,
       evidenceCount: Object.keys(this.evidenceFiles).length, evidenceFiles: { ...this.evidenceFiles }, model: this.modelConfig?.name ?? '跟随 WorkBuddy', modelConfig: this.modelConfig }
@@ -536,6 +551,7 @@ export class Workbench {
       ['开始时间', time(this.createdAt)], ...(Number.isFinite(last) && Number.isFinite(started) ? [['用时', span(last - started)] as [string, string]] : []),
       ...(context.devices?.length ? [['执行设备', context.devices.join('、')] as [string, string]] : []),
       ['执行模型', this.modelConfig ? `${this.modelConfig.name}（${this.modelConfig.model}）` : '跟随 WorkBuddy'],
+      ...(this.contentReview ? [['发内容前审核', '已开启（发布文字内容前需用户批准）'] as [string, string]] : []),
       ['执行步骤', todos.length ? `${done} / ${todos.length} 已完成` : '未拆分步骤'], ['设备操作', `${this.traces.filter(isOperation).length} 次`],
     ]
     const stepNames = new Set(todos.map(t => t.content))
@@ -564,7 +580,7 @@ export class Workbench {
       ...(this.environment ? ['## 环境准备', `目标应用：${clean(this.environment.spec.packageName)}${this.environment.spec.expectedVersion ? '；要求版本 ' + clean(this.environment.spec.expectedVersion) : ''}`, `检查时间：${this.environment.checkedAt ?? '尚未检查'}；当前${environmentReady(this.environment) ? '已满足声明的前置条件' : this.environment.stale ? '需要重新检查，旧结果不能授权执行' : '存在失败或待确认项'}`, '账号与服务状态由模型比较画面记录，不属于独立验证；未声明条件不代表已检查。', ...this.environment.checks.map(item => `- ${clean(item.label)} · ${item.status} · ${item.source} · ${item.required ? '必需' : '提示'}：${clean(item.detail)}${item.evidenceObservationId ? '；证据 ' + item.evidenceObservationId : ''}`), ''] : []),
       ...(this.testCases.length ? this.testMarkdown(clean) : []),
       ...(this.handoffs.length ? ['## 人工处理记录', '重新观察完成只表示已取得交还后的新画面，不代表安全验证通过或支付成功。', ...this.handoffs.map(item => `- ${item.requestedAt} · ${item.category} · ${item.status}\n  原因：${clean(item.reason)}${item.resumedAt ? `\n  用户交还控制：${item.resumedAt}` : ''}${item.resolvedAt ? `\n  重新观察完成：${item.resolvedAt} · 证据 ${item.evidenceObservationId}` : ''}`), ''] : []),
-      ...(this.reviews.length || this.commentBudget ? ['## 评论审核', ...(this.commentBudget ? [`已核验 ${this.comments.sent}／${this.commentBudget.targetCount ?? '未约定数量'}；已提交 ${this.comments.submitted}；结果未知 ${this.comments.unknown}；跳过 ${this.comments.skipped}。`, `开始：${this.commentBudget.startedAt}；时限：${this.commentBudget.deadlineAt ?? '未约定'}；停止原因：${this.commentBudget.stopReason ?? '尚未停止'}。暂停与人工等待计入约定运行时长；提交／未知不计成功，但占用目标名额。`] : []), ...this.reviews.flatMap(r => [`- ${clean(r.account)} · ${clean(r.target)} · ${r.status} · 内容版本 ${r.contentVersion ?? 1}\n  ${clean(r.draft)}${r.skipReason ? `\n  跳过原因：${clean(r.skipReason)}` : ''}${r.submittedAt ? `\n  提交时间：${r.submittedAt}` : ''}`, ...this.versions(r).map(item => `  - 版本 ${item.version} · ${item.source} · ${item.savedAt}${item.evidenceObservationId ? ` · 证据 ${item.evidenceObservationId}` : ''}\n    ${clean(item.draft)}`), ...(r.decisions ?? []).map(item => `  - 人工决定 ${item.decision} · 内容版本 ${item.contentVersion} · ${item.decidedAt}${item.reason ? ` · ${clean(item.reason)}` : ''}`), ...(r.platformInput ? [`  - 当前输入 ${r.platformInput.status} · ${r.platformInput.source} · ${r.platformInput.readAt} · 证据 ${r.platformInput.evidenceObservationId}；原稿记录不是覆盖许可。`] : []), ...(r.replacementDecisions ?? []).map(item => `  - 原稿决定 ${item.decision === 'keep' ? '保留，不发送' : '允许一次替换'} · 原稿版本 ${item.platformVersion} · 最终稿版本 ${item.contentVersion} · ${item.decidedAt}${item.usedAt ? ` · 已消耗 ${item.usedAt}` : ''}\n    ${clean(item.originalText)}`), ...(r.inputAttempts ?? []).map(item => `  - 填入事务 ${item.outcome} · 最终稿版本 ${item.contentVersion} · ${item.startedAt} · 执行前证据 ${item.beforeObservationId}${item.afterObservationId ? ` · 执行后证据 ${item.afterObservationId}` : ''}`)]), ''] : []),
+      ...(this.reviews.length || this.commentBudget ? [this.contentReview && this.scenario !== 'comments' ? '## 内容审核' : '## 评论审核', ...(this.commentBudget ? [`已核验 ${this.comments.sent}／${this.commentBudget.targetCount ?? '未约定数量'}；已提交 ${this.comments.submitted}；结果未知 ${this.comments.unknown}；跳过 ${this.comments.skipped}。`, `开始：${this.commentBudget.startedAt}；时限：${this.commentBudget.deadlineAt ?? '未约定'}；停止原因：${this.commentBudget.stopReason ?? '尚未停止'}。暂停与人工等待计入约定运行时长；提交／未知不计成功，但占用目标名额。`] : []), ...this.reviews.flatMap(r => [`- ${r.kind ? `${({ post: '帖子', comment: '评论', reply: '回复', message: '私信' } as const)[r.kind]} · ` : ''}${clean(r.account)} · ${clean(r.target)} · ${r.status} · 内容版本 ${r.contentVersion ?? 1}${r.title ? `\n  标题：${clean(r.title)}` : ''}\n  ${clean(r.draft)}${r.skipReason ? `\n  跳过原因：${clean(r.skipReason)}` : ''}${r.submittedAt ? `\n  提交时间：${r.submittedAt}` : ''}`, ...this.versions(r).map(item => `  - 版本 ${item.version} · ${item.source} · ${item.savedAt}${item.evidenceObservationId ? ` · 证据 ${item.evidenceObservationId}` : ''}\n    ${clean(item.draft)}`), ...(r.decisions ?? []).map(item => `  - 人工决定 ${item.decision} · 内容版本 ${item.contentVersion} · ${item.decidedAt}${item.reason ? ` · ${clean(item.reason)}` : ''}`), ...(r.platformInput ? [`  - 当前输入 ${r.platformInput.status} · ${r.platformInput.source} · ${r.platformInput.readAt} · 证据 ${r.platformInput.evidenceObservationId}；原稿记录不是覆盖许可。`] : []), ...(r.replacementDecisions ?? []).map(item => `  - 原稿决定 ${item.decision === 'keep' ? '保留，不发送' : '允许一次替换'} · 原稿版本 ${item.platformVersion} · 最终稿版本 ${item.contentVersion} · ${item.decidedAt}${item.usedAt ? ` · 已消耗 ${item.usedAt}` : ''}\n    ${clean(item.originalText)}`), ...(r.inputAttempts ?? []).map(item => `  - 填入事务 ${item.outcome} · 最终稿版本 ${item.contentVersion} · ${item.startedAt} · 执行前证据 ${item.beforeObservationId}${item.afterObservationId ? ` · 执行后证据 ${item.afterObservationId}` : ''}`)]), ''] : []),
       '## 附录：完整执行记录', this.modelConfig ? '工具和模型请求耗时均为实际调用往返时间；模型耗时包含网络。' : '仅记录实际工具调用耗时；宿主未提供模型推理耗时。', '',
       '| 时间 | 操作 | 所属步骤 | 结果 | 耗时 |', '| --- | --- | --- | --- | --- |',
       ...this.traces.map(t => `| ${clock(t.startedAt)} | ${cell(t.label ?? t.kind)} | ${cell(t.step ?? '—')} | ${traceStates[t.status]}${t.code ? '：' + cell(t.code) : ''} | ${t.durationMs === undefined ? '进行中' : span(t.durationMs)} |`), '',
