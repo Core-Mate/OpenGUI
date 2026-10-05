@@ -2,7 +2,11 @@
 
 ## Unreleased
 
+### Fixed
+- Release Android builds now honor the backend URL saved in Settings, matching Debug builds.
+
 ### Documentation
+- Added an ordered checklist for empty remote-control device lists, covering backend selection, USB forwarding, standby registration, and disconnects.
 - Added a troubleshooting guide for backend connection, Android permissions, model configuration, and local Redis/PostgreSQL conflicts.
 
 ## [0.1.2] - 2026-05-16
