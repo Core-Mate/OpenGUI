@@ -3,6 +3,7 @@ import { access, chmod, stat } from 'node:fs/promises'
 import { constants } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
+import { inputPermissionDenied, inputPermissionError } from './input-diagnostics.ts'
 
 /** Opaque identity of one completed phone observation. */
 export type ObservationId = string & { readonly __observationId: unique symbol }
@@ -51,6 +52,8 @@ export type PhoneAction =
   | { action: 'tap'; observationId: ObservationId; targetBBox: TargetBoundingBox }
   | { action: 'swipe'; observationId: ObservationId; x1: number; y1: number; x2: number; y2: number; durationMs?: number }
   | { action: 'text'; observationId: ObservationId; text: string }
+  | { action: 'replace_text'; observationId: ObservationId; text: string }
+  | { action: 'read_text'; observationId: ObservationId; targetBBox: TargetBoundingBox }
   | { action: 'key'; observationId: ObservationId; key: 'Back' | 'Home' | 'Enter' | 'AppSwitch' }
   | { action: 'launch'; observationId: ObservationId; packageName: string }
   | { action: 'wait'; observationId: ObservationId; waitMs: number }
@@ -128,9 +131,11 @@ export function normalizePhoneAction(input: Record<string, unknown>): PhoneActio
       }
       return action
     }
+    case 'read_text': return { action: 'read_text', observationId: requiredObservationId(input.observationId, 'read_text'), targetBBox: requiredTargetBBox(input.targetBBox) }
+    case 'replace_text':
     case 'text':
       if (typeof input.text !== 'string') throw new Error('opengui: text requires text as a string')
-      return { action: 'text', observationId: requiredObservationId(input.observationId, 'text'), text: input.text }
+      return { action: input.action, observationId: requiredObservationId(input.observationId, input.action), text: input.text }
     case 'key':
       if (input.key !== 'Back' && input.key !== 'Home' && input.key !== 'Enter' && input.key !== 'AppSwitch') {
         throw new Error('opengui: key requires one of Back, Home, Enter, or AppSwitch')
@@ -225,13 +230,31 @@ function targetCenter(box: TargetBoundingBox, screen: PhoneCoordinateSpace): { x
   }
 }
 
+function validatePackageName(packageName: string): void {
+  if (!/^[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]+)+$/u.test(packageName)) throw new Error('opengui: packageName must be a valid Android application id')
+}
+
+/** Resolve only the requested application's launcher without starting it. */
+export function launcherQueryCommand(packageName: string): string[] {
+  validatePackageName(packageName)
+  return ['shell', 'pm', 'resolve-activity', '--brief', '-a', 'android.intent.action.MAIN', '-c', 'android.intent.category.LAUNCHER', '-p', packageName]
+}
+
+/** Accept one explicit activity owned by the requested application. */
+export function parseLauncherActivity(output: string, packageName: string): string {
+  validatePackageName(packageName)
+  const activities = output.split(/\r?\n/u).map(line => line.trim()).filter(line => /^[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]+)+\/\.?[A-Za-z_$][A-Za-z0-9_.$]*$/u.test(line))
+  if (activities.length !== 1 || !activities[0]!.startsWith(`${packageName}/`)) throw new Error('opengui: requested application has no unambiguous launcher activity; no launch was dispatched')
+  return activities[0]!
+}
+
 /**
  * Build the allowlisted device-side command for one validated operation.
  * @param action A validated phone action.
  * @param screen Device input dimensions and the screenshot pixel space shown to the model.
  * @returns ADB arguments, or no arguments for a pure observation.
  */
-export function actionCommand(action: PhoneAction, screen: PhoneCoordinateSpace): string[] | undefined {
+export function actionCommand(action: PhoneAction, screen: PhoneCoordinateSpace, launcherActivity?: string): string[] | undefined {
   switch (action.action) {
     case 'observe': return undefined
     case 'tap': {
@@ -252,6 +275,8 @@ export function actionCommand(action: PhoneAction, screen: PhoneCoordinateSpace)
         String(duration),
       ]
     }
+    case 'read_text':
+    case 'replace_text': return undefined
     case 'text': {
       if (action.text.length < 1 || action.text.length > 500 || !/^[A-Za-z0-9 .,!?_@+:'"()-]+$/u.test(action.text)) {
         throw new Error('opengui: text must be 1-500 characters supported by Android adb input text')
@@ -260,10 +285,8 @@ export function actionCommand(action: PhoneAction, screen: PhoneCoordinateSpace)
     }
     case 'key': return ['shell', 'input', 'keyevent', KEY_CODES[action.key]]
     case 'launch':
-      if (!/^[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]+)+$/u.test(action.packageName)) {
-        throw new Error('opengui: packageName must be a valid Android application id')
-      }
-      return ['shell', 'monkey', '-p', action.packageName, '-c', 'android.intent.category.LAUNCHER', '1']
+      validatePackageName(action.packageName)
+      return ['shell', 'am', 'start', '-W', '-a', 'android.intent.action.MAIN', '-c', 'android.intent.category.LAUNCHER', '-n', parseLauncherActivity(launcherActivity ?? '', action.packageName)]
     case 'wait': {
       if (!Number.isInteger(action.waitMs) || action.waitMs < 100 || action.waitMs > 10_000) {
         throw new Error('opengui: waitMs must be an integer from 100 through 10000')
@@ -364,8 +387,15 @@ export function runAdb(path: string, args: readonly string[], options: AdbRunOpt
       maxBuffer: options.maxBuffer ?? 20 * 1024 * 1024,
       encoding: options.encoding === 'buffer' ? 'buffer' : options.encoding ?? 'utf8',
     }, (error, stdout, stderr) => {
+      const diagnostic = Buffer.isBuffer(stderr) ? stderr.toString('utf8') : stderr
+      const shell = args.indexOf('shell')
+      if (shell >= 0 && args[shell + 1] === 'input' && inputPermissionDenied(`${String(stdout)}\n${diagnostic}`)) {
+        reject(inputPermissionError()); return
+      }
+      if (shell >= 0 && args[shell + 1] === 'am' && args[shell + 2] === 'start' && /(?:^|\n)\s*(?:Error:|Error type \d+|Exception occurred while executing)/u.test(`${String(stdout)}\n${diagnostic}`)) {
+        reject(new Error('opengui: Android could not start the requested application; check that it has an enabled launcher activity')); return
+      }
       if (error !== null) {
-        const diagnostic = Buffer.isBuffer(stderr) ? stderr.toString('utf8') : stderr
         reject(new Error(`opengui: ADB command failed: ${(diagnostic || error.message).trim().slice(0, 2_000)}`, { cause: error }))
         return
       }
@@ -373,3 +403,18 @@ export function runAdb(path: string, args: readonly string[], options: AdbRunOpt
     })
   })
 }
+
+/**
+ * The focused editor's selection as tracked by the app's input method client. After select-all,
+ * a zero-length selection at 0 proves the field is empty even when copy leaves the clipboard
+ * untouched; anything else (or a missing editor) stays unknown.
+ */
+export function parseFocusedEditorSelection(output: string): { packageName: string; start: number; end: number } | undefined {
+  const box = /mCurrentTextBoxAttribute:\n([\s\S]*?)\n  m[A-Z]/u.exec(output)?.[1]
+  const packageName = box && /\bpackageName=([A-Za-z][\w.]*)/u.exec(box)?.[1]
+  if (!packageName || !/^ {2}mServedView=(?!null)\S/mu.test(output)) return undefined
+  const selection = /mCursorSelStart=(-?\d+) mCursorSelEnd=(-?\d+)/u.exec(output)
+  if (!selection) return undefined
+  return { packageName, start: Number(selection[1]), end: Number(selection[2]) }
+}
+

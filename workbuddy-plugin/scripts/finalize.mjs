@@ -1,6 +1,16 @@
-import { chmod, copyFile, mkdir, rm } from 'node:fs/promises'
+import { chmod, copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
+
+
+// Every build bundles a fixed account service: the official CoreMate service by default, or the one
+// named by OPENGUI_ACCOUNT_SERVICE_URL (environment or an uncommitted .env.local), e.g. self-hosted.
+const { DEFAULT_ACCOUNT_SERVICE_URL } = await import(new URL('../lib/service-config.js', import.meta.url).href)
+const localEnv = await readFile(new URL('../.env.local', import.meta.url), 'utf8').catch(() => '')
+const serviceUrl = (process.env.OPENGUI_ACCOUNT_SERVICE_URL?.trim() || /^OPENGUI_ACCOUNT_SERVICE_URL=(.+)$/mu.exec(localEnv)?.[1]?.trim() || DEFAULT_ACCOUNT_SERVICE_URL)
+const parsed = new URL(serviceUrl)
+if (parsed.protocol !== 'https:' || parsed.username || parsed.password || parsed.search || parsed.hash) throw new Error('OPENGUI_ACCOUNT_SERVICE_URL must be a plain HTTPS URL')
+await writeFile(new URL('../lib/service-config.json', import.meta.url), JSON.stringify({ accountServiceUrl: parsed.toString().replace(/\/+$/u, '') }) + '\n')
 
 await chmod(new URL('../lib/mcp.js', import.meta.url), 0o755)
 await copyFile(new URL('../connector/skills/control/SKILL.md', import.meta.url), new URL('../lib/opengui-SKILL.md', import.meta.url))

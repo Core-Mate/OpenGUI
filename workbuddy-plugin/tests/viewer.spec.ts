@@ -79,7 +79,10 @@ describe('independent first-frame viewer contract', () => {
   it('makes the deadline terminal across repeated opens and sessions', async () => {
     const { viewer, advance } = setup()
     const old = await viewer.open('task', [a], AbortSignal.timeout(1000)); advance(30_001)
-    expect(await viewer.status(old.viewerId, 'task')).toMatchObject({ state: 'error', errorCode: 'display_timeout' })
+    expect(await viewer.status(old.viewerId, 'task')).toMatchObject({
+      state: 'error', errorCode: 'display_timeout', taskState: 'ended',
+      board: { control: 'ended', result: { outcome: 'blocked' } },
+    })
     expect((await viewer.open('task', [a], AbortSignal.timeout(1000))).viewerId).toBe(old.viewerId)
     expect(() => viewer.find('task', [a])).toThrow('display_timeout')
     expect(() => viewer.assertReady(old.viewerId)).toThrow('display_timeout')

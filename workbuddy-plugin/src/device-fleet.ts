@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import type { AdbDevice } from './adb.ts'
+import type { DeviceConnection } from './device-info.ts'
 
 /** Host-private device identity paired with its browser-safe presentation. */
 export interface FleetDevice {
@@ -19,6 +20,7 @@ export interface FleetDeviceView {
 
 /** Read-only connection state exposed by WorkBuddy device discovery. */
 export interface FleetDeviceStatusView {
+  readonly connection: DeviceConnection
   readonly id: string
   readonly label: string
   readonly model?: string
@@ -54,7 +56,7 @@ export class DeviceFleet {
 
   constructor(
     private readonly discover: DiscoverDevices,
-    private readonly createId: () => string = randomUUID,
+    private readonly createId: (serial: string) => string = () => randomUUID(),
   ) {}
 
   async snapshot(signal: AbortSignal): Promise<DeviceFleetSnapshot> {
@@ -117,7 +119,8 @@ export class DeviceFleet {
         label: (modelCounts.get(base) ?? 0) > 1 ? `${base} ${index}` : base,
         ...(model === undefined ? {} : { model }),
         state: device.state,
-        connected: true,
+        connection: device.serial.startsWith('emulator-') ? 'local_simulator' : device.serial.includes(':') || device.serial.includes('_adb-tls-') ? 'network' : 'usb',
+        connected: device.state === 'device' || device.state === 'unauthorized',
         authorized: device.state === 'device',
       }
     })
@@ -190,7 +193,7 @@ export class DeviceFleet {
       return authorization === 0 ? a.serial.localeCompare(b.serial) : authorization
     })) {
       if (!this.records.has(device.serial)) {
-        this.records.set(device.serial, { id: this.createId(), serial: device.serial })
+        this.records.set(device.serial, { id: this.createId(device.serial), serial: device.serial })
       }
     }
   }

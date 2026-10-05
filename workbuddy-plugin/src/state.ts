@@ -5,6 +5,13 @@ import { join, resolve } from 'node:path'
 
 export const VERSION = '0.3.1'
 export const BROKER_PROTOCOL = 8
+/** Longest single wait for the person to hand control back; nothing is captured and no model runs meanwhile. */
+export const HUMAN_CONTROL_WAIT_MS = 600_000
+/** Per-call budget: a long control wait gets its wait plus margin, every other call the usual two minutes. */
+export function callBudgetMs(args: Record<string, unknown>): number {
+  const wait = Number(args.waitMs ?? 0)
+  return Math.max(120_000, (Number.isFinite(wait) ? wait : 0) + 30_000)
+}
 
 export function workbuddyStateDir(override?: string): string {
   const configured = override ?? process.env.OPENGUI_WORKBUDDY_HOME?.trim()

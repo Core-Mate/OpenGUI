@@ -59,6 +59,7 @@ describe('standard MCP transport', () => {
     const c = new Client({ name: 'recovery-test', version: '1' })
     cleanup.push(() => server.close(), () => c.close())
     await c.connect(a)
+    await c.listTools()
     expect((await c.callTool({ name: 'opengui_list_devices', arguments: {} })).isError).toBe(true)
     expect(connection.call).not.toHaveBeenCalled()
     const result = await c.callTool({ name: 'opengui_list_devices', arguments: {} })
@@ -76,10 +77,15 @@ describe('standard MCP transport', () => {
     const c = new Client({ name: 'no-replay-test', version: '1' })
     cleanup.push(() => server.close(), () => c.close())
     await c.connect(a)
+    await c.listTools()
     const result = await c.callTool({ name: 'opengui_act', arguments: {
       sessionId: 'session-a', observationId: 'observation-a', action: 'key', key: 'Home',
     } })
     expect(result.isError).toBe(true)
+    expect(result.structuredContent).toBeUndefined()
+    expect(JSON.parse((result.content[0] as { text: string }).text)).toMatchObject({
+      code: 'connection_lost', recovery: 'reconnect',
+    })
     expect(connect).toHaveBeenCalledTimes(1)
     expect(connection.call).toHaveBeenCalledTimes(1)
   })

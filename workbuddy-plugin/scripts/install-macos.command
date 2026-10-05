@@ -71,10 +71,17 @@ if [ -z "$config_root" ]; then
   config_root="$HOME/$folder"
 fi
 case "$config_root" in /*) ;; *) fail HOST_CONFIG_PATH 'Configuration root must be absolute.' ;; esac
-cli="$app/Contents/Resources/app.asar.unpacked/cli/dist/codebuddy.js"
-for event in UserPromptSubmit PreToolUse Stop SubagentStop FinalStop SessionEnd StopFailure; do
-  grep -Fq "$event" "$cli" 2>/dev/null || fail HOST_HOOKS "The bundled CLI does not expose $event. Upgrade to a compatible WorkBuddy build."
+cli_compatible=false
+for cli_name in codebuddy.js codebuddy-headless.js codebuddy-lite-wb.mjs; do
+  cli="$app/Contents/Resources/app.asar.unpacked/cli/dist/$cli_name"
+  [ -f "$cli" ] || continue
+  all_hooks=true
+  for event in UserPromptSubmit PreToolUse Stop SubagentStop FinalStop SessionEnd StopFailure; do
+    if ! grep -Fq "$event" "$cli"; then all_hooks=false; break; fi
+  done
+  if [ "$all_hooks" = true ]; then cli_compatible=true; break; fi
 done
+[ "$cli_compatible" = true ] || fail HOST_HOOKS 'No recognized bundled CLI exposes all required lifecycle Hooks. Upgrade to a compatible WorkBuddy build.'
 host_is_running() {
   local processes executable
   processes=$(ps -axo comm=) || fail HOST_PROCESS_CHECK 'Cannot inspect running applications.'

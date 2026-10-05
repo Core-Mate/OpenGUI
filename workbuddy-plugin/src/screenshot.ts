@@ -22,3 +22,10 @@ export async function encodeWorkBuddyPhoneScreenshot(source: Buffer): Promise<En
   }
   throw new Error('opengui: screenshot exceeds the model image budget')
 }
+
+/** A small, display-only frame for choosing a device; never handed to a model. */
+export async function encodePhonePreview(source: Buffer, maxEdge = 640): Promise<Buffer> {
+  return sharp(source, { limitInputPixels: 40_000_000 })
+    .resize({ width: maxEdge, height: maxEdge, fit: 'inside', withoutEnlargement: true })
+    .jpeg({ quality: 70 }).toBuffer()
+}
