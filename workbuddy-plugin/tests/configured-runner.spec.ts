@@ -44,6 +44,22 @@ function latestImage(request: Json): Json {
 }
 
 describe('configured phone executor', () => {
+  it('returns from a long execute wait at the next settled step instead of polling on a timer', async () => {
+    const f = await fixture()
+    const plan = f.viewer.writeTodos(f.display.viewerId, 'runner-task', [{ content: 'Check the visible page', status: 'pending' }, { content: 'Confirm the result', status: 'pending' }])
+    const [first, second] = plan.todos.map(step => step.stepId!)
+    const infer = vi.spyOn(f.client, 'infer').mockImplementation(async (_model, body, signal) => {
+      if (infer.mock.calls.length === 1) return f.call('opengui_observe', { stepId: first })
+      if (infer.mock.calls.length === 2) return f.call('opengui_observe', { stepId: second, evidenceObservationId: latestImage(body).observationId })
+      return new Promise<Json>((_resolve, reject) => { signal!.addEventListener('abort', () => reject(signal!.reason), { once: true }) })
+    })
+    const started = Date.now()
+    const status = await f.service.executeConfigured(f.session.sessionId, 600_000, f.signal)
+    expect(Date.now() - started).toBeLessThan(8000)
+    expect(status).toMatchObject({ state: 'active' })
+    expect(f.viewer.taskSteps(f.display.viewerId).map(step => step.status)).toEqual(['completed', 'in_progress'])
+    await f.service.cancel(f.session.sessionId)
+  })
   it('uses the saved inference ceiling rather than an independent one-hundred-round cutoff', async () => {
     const f = await fixture(), board = f.viewer.board(f.display.viewerId)
     board.configureExecutionBudget({ inferenceLimit: 101 })
@@ -399,7 +415,7 @@ describe('configured phone executor', () => {
     expect(act).not.toHaveBeenCalled()
   })
   it('uses screenshot pixels by default and converts only 0-1000 model families', () => {
-    expect(['deepseek-v4.1-flash', 'gpt-6-astra', 'grok-4.6'].map(model => modelCoordinateSpace({ model }))).toEqual(['screenshot_pixels', 'screenshot_pixels', 'screenshot_pixels'])
+    expect(['deepseek-v4.1-flash', 'vendor-vision-a', 'vendor-vision-b'].map(model => modelCoordinateSpace({ model }))).toEqual(['screenshot_pixels', 'screenshot_pixels', 'screenshot_pixels'])
     expect(['qwen3.6-plus', 'doubao-seed-2-1-pro-260628'].map(model => modelCoordinateSpace({ model }))).toEqual(['normalized_1000', 'normalized_1000'])
     expect(modelCoordinateSpace({ model: 'qwen3.6-plus', coordinateSpace: 'screenshot_pixels' })).toBe('screenshot_pixels')
     const screen = { width: 591, height: 1280 }

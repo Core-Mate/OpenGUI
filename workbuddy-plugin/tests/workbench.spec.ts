@@ -188,7 +188,8 @@ describe('receipt-backed workbench', () => {
   it('keeps one status wait open across a long takeover and returns as soon as control is resumed', async () => {
     expect(() => validateToolArguments('opengui_status', { sessionId: 's', waitMs: 600_000 })).not.toThrow()
     expect(() => validateToolArguments('opengui_status', { sessionId: 's', waitMs: 600_001 })).toThrow()
-    expect(() => validateToolArguments('opengui_viewer_status', { viewerId: 'v', waitMs: 600_000 })).toThrow()
+    expect(() => validateToolArguments('opengui_viewer_status', { viewerId: 'v', waitMs: 600_000 })).not.toThrow()
+    expect(() => validateToolArguments('opengui_viewer_status', { viewerId: 'v', waitMs: 600_001 })).toThrow()
     expect(callBudgetMs({})).toBe(120_000); expect(callBudgetMs({ waitMs: 600_000 })).toBe(630_000)
     const f = await fixture()
     try {

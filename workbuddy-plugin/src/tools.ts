@@ -27,6 +27,8 @@ const executionBudgetSchema = { type: 'object', additionalProperties: false, min
   inferenceLimit: { type: 'integer', minimum: 1, maximum: MAX_INITIAL_EXECUTION_BUDGET, description: 'Agreed plugin-owned inference calls; host model calls cannot be counted here.' },
 }, description: 'Declare explicit user operation/inference ceilings before any operation. Only initial limits can be lowered; this never grants an extension. Saved limits and counts survive recovery. Explicit total-operation clauses in the saved objective/criteria also constrain the budget. Read executionBudget from the returned session and verify it matches the user request.' }
 const waitMs = { type: 'integer', minimum: 0, maximum: 30000, description: 'Bounded wait for a human decision or handback. Timeout preserves task state; do not loop repeatedly.' }
+/** Event-driven wait: the call returns at the next meaningful event, so one call replaces repeated polling. */
+const eventWaitMs = { type: 'integer', minimum: 0, maximum: HUMAN_CONTROL_WAIT_MS, description: 'Wait for the next event: it returns as soon as a step finishes or starts, the person must act (review, takeover, approval) or the run ends; otherwise after waitMs. Use 600000 and narrate each return briefly instead of polling.' }
 const controlWaitMs = { type: 'integer', minimum: 0, maximum: HUMAN_CONTROL_WAIT_MS, description: 'Wait while the person controls the phone (接管). Returns as soon as they click 恢复控制; nothing is captured and no model is called meanwhile. Use 600000 after task_paused.' }
 const deviceId = { type: 'string', minLength: 1, description: 'Required when the session contains more than one phone.' }
 
@@ -170,8 +172,8 @@ export const OPENGUI_WORKBUDDY_TOOLS: readonly WorkBuddyToolDefinition[] = [
   },
   {
     name: 'opengui_execute', title: 'Execute With Configured Phone Model',
-    description: 'Run the model selected from the published admin catalog on this existing authorized session and plan. The runtime handles the scoped screenshot/action loop and human review waiting. The host remains conversational. Follow WorkBuddy mode uses normal observe/act instead. Use waitMs up to 30000 for progress; repeated calls reuse the same runner, never start another. While it runs, use status/cancel rather than parallel phone actions.',
-    inputSchema: { type: 'object', additionalProperties: false, properties: { sessionId, waitMs }, required: ['sessionId'] }, outputSchema: sessionSchema,
+    description: 'Run the model selected from the published admin catalog on this existing authorized session and plan. The runtime handles the scoped screenshot/action loop and human review waiting. The host remains conversational. Follow WorkBuddy mode uses normal observe/act instead. Use waitMs 600000: the call returns as soon as a step finishes or starts, the person must act, or the run ends, so narrate that event in one short message and call again; repeated calls reuse the same runner, never start another. While it runs, use status/cancel rather than parallel phone actions.',
+    inputSchema: { type: 'object', additionalProperties: false, properties: { sessionId, waitMs: eventWaitMs }, required: ['sessionId'] }, outputSchema: sessionSchema,
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
   },
   {
@@ -212,7 +214,7 @@ export const OPENGUI_WORKBUDDY_TOOLS: readonly WorkBuddyToolDefinition[] = [
     description: action === 'open' ? 'Open this task’s workbench with present_files. A new task waits there until the user signs in, confirms request, model and device and clicks 开始执行; nothing is bound before that. Then wait for a visible decoded first frame before observing or acting.' : action === 'status' ? 'Wait at most 30 seconds per call. While startRequired is true, call again with waitMs 30000 and do not open control. After the start, it waits for verified first video frames; first-frame timeout is terminal, never recreate sessions to bypass it.' : 'Close watching only; established control continues.',
     inputSchema: { type: 'object', additionalProperties: false, properties: action === 'open'
       ? { deviceIds: { type: 'array', uniqueItems: true, minItems: 1, maxItems: 1, items: { type: 'string', minLength: 1 } }, resumeTaskId: { type: 'string', pattern: '^[0-9a-fA-F-]{36}$' }, objective: { type: 'string', minLength: 1, maxLength: 4000 }, successCriteria: { type: 'string', minLength: 1, maxLength: 4000 } }
-      : { viewerId: { type: 'string', minLength: 1 }, ...(action === 'status' ? { waitMs: { type: 'integer', minimum: 0, maximum: 30000 } } : {}) },
+      : { viewerId: { type: 'string', minLength: 1 }, ...(action === 'status' ? { waitMs: { type: 'integer', minimum: 0, maximum: HUMAN_CONTROL_WAIT_MS, description: 'Returns as soon as the person clicks 开始执行 and the first frame shows, or on failure; otherwise after waitMs. Use 600000.' } } : {}) },
       ...(action === 'open' ? {} : { required: ['viewerId'] }) },
     outputSchema: { type: 'object' },
     annotations: { readOnlyHint: action === 'status', destructiveHint: false, idempotentHint: true, openWorldHint: false },
@@ -292,6 +294,7 @@ export const OPENGUI_WORKBUDDY_TOOLS: readonly WorkBuddyToolDefinition[] = [
         reviewId: { type: 'string', minLength: 1, description: 'Saved human-approved comment id. Required for comment text and sending after a review has been created. Use externalSideEffect send for the final send action; the runtime records a single submission intent.' },
         confirmationRequestId: { type: 'string', minLength: 1, description: 'Deprecated compatibility field; ignored, never grants permission.' },
         action: { type: 'string', enum: ['tap', 'swipe', 'text', 'replace_text', 'key', 'launch', 'wait'] },
+        target: { type: 'string', minLength: 1, maxLength: 24, description: 'Optional, 2-8 characters naming what is operated as seen on screen, e.g. 搜索框, 登录按钮, 评论列表; shown in the run log and report. Never put typed text or secrets here.' },
         observationId: { type: 'string', minLength: 1 },
         targetBBox: {
           type: 'object', additionalProperties: false,

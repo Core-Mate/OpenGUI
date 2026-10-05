@@ -1,12 +1,16 @@
-import { createHash, randomBytes, randomUUID } from 'node:crypto'
+import { createHash, createHmac, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto'
 import { basename, join } from 'node:path'
-import { createServer, type IncomingMessage, type Server } from 'node:http'
+import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http'
 import type { Duplex } from 'node:stream'
 import type { ScrcpyStreamSink, VideoDevice } from './scrcpy-stream.ts'
 import { acceptStreamWebSocket } from './websocket.ts'
 import { viewerPage } from './viewer-page.ts'
 import { TaskPlan } from './todos.ts'
 import { OpenGuiError } from './errors.ts'
+import { HUMAN_CONTROL_WAIT_MS } from './state.ts'
+import { encodeTakeoverInput, type FrameSize } from './scrcpy-control.ts'
+import type { EmulatorStatus } from './android-emulator.ts'
+import type { DeviceActionEvent } from './trace-labels.ts'
 import { Workbench, type BoardAction } from './workbench.ts'
 import { zip, wordReport } from './report-export.ts'
 import { pdfReport, type ReportEvidence } from './pdf-report.ts'
@@ -19,6 +23,9 @@ export interface ViewerDevice extends VideoDevice, Partial<Pick<DeviceInfo, 'mod
 export interface ViewerStreams {
   prepare(signal: AbortSignal, devices?: readonly VideoDevice[]): Promise<void>
   subscribe(device: VideoDevice, sink: ScrcpyStreamSink): Promise<() => void>
+  /** Person-driven takeover input on the live stream (Android); absent where unsupported. */
+  inject?(device: VideoDevice, message: Buffer): boolean
+  frameSize?(device: VideoDevice): FrameSize | undefined
   dispose(): Promise<void>
 }
 type Phase = 'preparing' | 'waiting_for_frame' | 'ready' | 'disconnected' | 'error' | 'closed'
@@ -77,11 +84,13 @@ export class ViewerServer {
   private deviceListHandler: ((signal: AbortSignal, refresh: boolean, viewerId: string) => Promise<readonly DeviceChoice[]>) | undefined
   private deviceSelectHandler: ((id: string, deviceId: string) => Promise<void>) | undefined
   private startHandler: ((id: string, deviceId: string) => Promise<void>) | undefined
+  private emulatorStatusHandler: ((signal: AbortSignal) => Promise<EmulatorStatus>) | undefined
+  private emulatorActionHandler: ((input: Record<string, unknown>) => void) | undefined
   private previewDeviceHandler: ((id: string, deviceId: string, signal: AbortSignal) => Promise<VideoDevice>) | undefined
   private previewFrameHandler: ((id: string, deviceId: string, signal: AbortSignal) => Promise<Buffer>) | undefined
   private connectionDiagnosticHandler: ((signal: AbortSignal) => Promise<ConnectionDiagnostic>) | undefined
   private readonly sweep: ReturnType<typeof setInterval>
-  constructor(private readonly streams: ViewerStreams, private readonly now = Date.now, private readonly store?: TaskStore, readonly account?: CoreMateClient) {
+  constructor(private readonly streams: ViewerStreams, private readonly now = Date.now, private readonly store?: TaskStore, readonly account?: CoreMateClient, private readonly options: { port?: number; consoleKey?: Buffer } = {}) {
     this.sweep = setInterval(() => {
       for (const viewer of this.viewers.values()) {
         this.update(viewer)
@@ -182,7 +191,8 @@ export class ViewerServer {
 
   async status(id: string, owner: string, waitMs = 0, signal?: AbortSignal) {
     const viewer = this.require(id, owner)
-    const end = this.now() + Math.min(30_000, Math.max(0, waitMs))
+    // Event-driven: returns as soon as the first frame is established (after 开始执行) or the viewer fails.
+    const end = this.now() + Math.min(HUMAN_CONTROL_WAIT_MS, Math.max(0, waitMs))
     while (true) {
       signal?.throwIfAborted()
       this.update(viewer)
@@ -216,6 +226,7 @@ export class ViewerServer {
   setConnectionDiagnosticHandler(handler: (signal: AbortSignal) => Promise<ConnectionDiagnostic>): void { this.connectionDiagnosticHandler = handler }
   requestDeviceSelection(id: string): void { this.require(id).selectionRequested = true }
   setStartHandler(handler: (id: string, deviceId: string) => Promise<void>): void { this.startHandler = handler }
+  setEmulatorHandlers(status: (signal: AbortSignal) => Promise<EmulatorStatus>, action: (input: Record<string, unknown>) => void): void { this.emulatorStatusHandler = status; this.emulatorActionHandler = action }
   /** Resolve a selectable candidate for a start-page live view, as video or a single frame. */
   setPreviewHandlers(device: (id: string, deviceId: string, signal: AbortSignal) => Promise<VideoDevice>, frame: (id: string, deviceId: string, signal: AbortSignal) => Promise<Buffer>): void { this.previewDeviceHandler = device; this.previewFrameHandler = frame }
   /** Hold a new task for the person's explicit start; the original request is shown for confirmation. */
@@ -308,7 +319,7 @@ export class ViewerServer {
   }
   async archiveReports(id: string): Promise<void> {
     if (!this.store) return
-    const v = this.require(id), markdown = v.board.markdown(v.plan.todos)
+    const v = this.require(id), markdown = v.board.markdown(v.plan.todos, { devices: v.devices.map(d => d.name) })
     const key = createHash('sha256').update(markdown).digest('hex')
     if (v.reportExportKey === key && v.reportExports?.md && v.reportExports.pdf && v.reportExports.docx) return
     v.reportExports = {}
@@ -317,16 +328,45 @@ export class ViewerServer {
       v.reportExports.md = this.store.exportReport(id, 'md', markdown, name)
       v.reportExports.docx = this.store.exportReport(id, 'docx', wordReport(markdown), name)
       v.reportExports.pdf = this.store.exportReport(id, 'pdf', await pdfReport(markdown, this.evidence(v)), name)
-      const links = reportLinks(v.reportExports)
-      if (links) v.reportExports.chatMarkdown = links
+      const links = reportLinks(v.reportExports), console = this.consoleUrl(id)
+      const chat = [links, console ? `[打开控制台](${console})` : ''].filter(Boolean).join('\n\n')
+      if (chat) v.reportExports.chatMarkdown = chat
       v.reportExportKey = key
     } catch { v.reportExports.error = '报告导出未完成，请检查本地证据与存储空间。Markdown 与已有证据保留。' }
   }
   reportFiles(id: string) { return this.require(id).reportExports }
+  /** Push a dispatched phone action to open workbench pages for the cursor animation (display only). */
+  announceAction(id: string, deviceId: string, action: DeviceActionEvent): void {
+    const v = this.viewers.get(id)
+    if (!v || v.phase === 'closed' || !v.devices.some(device => device.id === deviceId)) return
+    const text = JSON.stringify({ type: 'action', deviceId, action })
+    for (const page of v.pages) page.sendText(text)
+  }
+  /** A durable, signed link back to this task's workbench for the chat's 打开控制台; undefined without a key. */
+  consoleUrl(id: string): string | undefined {
+    return this.options.consoleKey && this.origin ? `${this.origin}/console/${id}?k=${this.consoleMac(id)}` : undefined
+  }
+  private consoleMac(id: string): string { return createHmac('sha256', this.options.consoleKey!).update(`console:${id}`).digest('base64url').slice(0, 32) }
+  /** Reopen a task from a console link: the live workbench, or a read-only view restored from the archive. */
+  private openConsole(id: string, mac: string, res: ServerResponse): void {
+    const expected = this.options.consoleKey && /^[0-9a-f-]{36}$/iu.test(id) ? this.consoleMac(id) : ''
+    if (!expected || mac.length !== expected.length || !timingSafeEqual(Buffer.from(mac), Buffer.from(expected))) { res.writeHead(404).end(); return }
+    let v = this.viewers.get(id)
+    if (!v || v.phase === 'closed') {
+      let saved: StoredTask | undefined
+      try { saved = this.store?.load(id) } catch { saved = undefined }
+      if (!saved || this.viewers.size >= 100) { res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }).end('任务记录不存在或已删除'); return }
+      const plan = new TaskPlan()
+      plan.restore(saved.todos); plan.pause()
+      v = { id: saved.id, token: randomBytes(32).toString('base64url'), boardToken: randomBytes(32).toString('base64url'), board: new Workbench(structuredClone(saved.board), undefined, this.now), owner: 'console', principal: saved.principal ?? 'local', devices: [], phase: 'ready', deadline: 0, established: false, ended: true, connections: new Map(), pages: new Set(), readyDevices: new Set(), plan, lastPage: this.now() }
+      this.viewers.set(v.id, v)
+    }
+    res.writeHead(302, { Location: `/${v.token}/#board=${v.boardToken}` }).end()
+  }
   private persist(v: Viewer): void {
     if (!this.store) return
     const task: StoredTask = { version: 1, id: v.id, owner: v.owner, principal: v.principal, devices: v.devices, board: v.board.snapshot(), todos: v.plan.todos, updatedAt: new Date().toISOString(), displayError: v.error }
-    this.store.save(task, v.board.markdown(v.plan.todos))
+    this.store.save(task, v.board.markdown(v.plan.todos, { devices: v.devices.map(d => d.name) }))
   }
 
   /** Called only through an owned control session, before dispatching phone work. */
@@ -400,6 +440,7 @@ export class ViewerServer {
           if (!this.local(req)) { res.writeHead(403).end(); return }
           const url = new URL(req.url ?? '/', this.origin)
           const [token, route = ''] = url.pathname.slice(1).split('/')
+          if (token === 'console' && req.method === 'GET') { this.openConsole(route, url.searchParams.get('k') ?? '', res); return }
           const v = [...this.viewers.values()].find(v => v.token === token)
           if (!v) { res.writeHead(404).end(); return }
           res.setHeader('Cache-Control', 'no-store')
@@ -413,6 +454,18 @@ export class ViewerServer {
             this.update(v)
             const preferredDeviceId = v.principal === (this.account?.scope ?? 'local') ? this.account?.preferredDeviceId : undefined
             res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify({ preferredDeviceId, devicePreferenceError: v.devicePreferenceError, devices: devices.map(device => ({ ...device, preferred: device.id === preferredDeviceId, selected: v.devices.some(bound => bound.id === device.id) })), canSelectDevice: !v.devices.length && !v.binding && v.board.control === 'idle' && !v.ended && !v.error && v.phase !== 'closed' })); return
+          }
+          // One-click Android emulator from the device picker: status for every page, actions with the board capability.
+          if (route === 'emulator') {
+            if (!this.emulatorStatusHandler || !this.emulatorActionHandler) { res.writeHead(404).end(); return }
+            if (req.method === 'POST') {
+              if (req.headers.origin !== this.origin || req.headers['x-opengui-board'] !== v.boardToken) { res.writeHead(403).end(); return }
+              if (v.ended || v.phase === 'closed') { res.writeHead(409).end(); return }
+              let body = ''
+              for await (const chunk of req) { body += String(chunk); if (Buffer.byteLength(body) > 4096) { res.writeHead(413).end(); return } }
+              this.emulatorActionHandler(JSON.parse(body) as Record<string, unknown>)
+            } else if (req.method !== 'GET') { res.writeHead(405).end(); return }
+            res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(await this.emulatorStatusHandler(AbortSignal.timeout(8000)))); return
           }
           // A read-only frame of a candidate device when its live video is unavailable.
           if (req.method === 'GET' && route === 'device-preview') {
@@ -449,7 +502,7 @@ export class ViewerServer {
             res.setHeader('Content-Type', 'image/jpeg'); res.end(data); return
           }
           if (req.method === 'GET' && route === 'report') {
-            const markdown = v.board.markdown(v.plan.todos), format = url.searchParams.get('format') ?? 'md'
+            const markdown = v.board.markdown(v.plan.todos, { devices: v.devices.map(d => d.name) }), format = url.searchParams.get('format') ?? 'md'
             if (!['md', 'docx', 'pdf', 'zip'].includes(format)) { res.writeHead(400).end(); return }
             const evidence = format === 'pdf' || format === 'zip' ? this.evidence(v) : []
             const data = format === 'md' ? markdown : format === 'docx' ? wordReport(markdown) : format === 'pdf' ? await pdfReport(markdown, evidence) : zip([
@@ -460,6 +513,30 @@ export class ViewerServer {
             res.setHeader('Content-Disposition', `attachment; filename="${reportFileName(v.board.createdAt)}.${format}"`)
             res.setHeader('Content-Type', format === 'md' ? 'text/markdown; charset=utf-8' : format === 'docx' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : format === 'pdf' ? 'application/pdf' : 'application/zip')
             res.end(data); return
+          }
+          // Person-driven phone input while taken over (接管设备). Every event is re-checked so input
+          // racing 恢复控制, the end of the task or an account change is dropped, never delivered.
+          if (req.method === 'POST' && route === 'input' && req.headers.origin === this.origin) {
+            if (req.headers['x-opengui-board'] !== v.boardToken) { res.writeHead(403).end(); return }
+            let body = ''
+            for await (const chunk of req) { body += String(chunk); if (Buffer.byteLength(body) > 32_768) { res.writeHead(413).end(); return } }
+            const input = JSON.parse(body) as { deviceId?: unknown; events?: unknown }
+            const device = v.devices.find(d => d.id === input.deviceId)
+            if (!device || !Array.isArray(input.events) || input.events.length > 64) { res.writeHead(400).end(); return }
+            const reply = (status: number, value: Record<string, unknown>): void => { res.writeHead(status, { 'Content-Type': 'application/json' }).end(JSON.stringify(value)) }
+            if (device.os === 'ios') { reply(409, { error: 'iOS 模拟器暂不支持在工作台中直接操作' }); return }
+            let delivered = 0, stale = false
+            for (const event of input.events) {
+              if (v.board.control !== 'manual' || v.ended || v.phase === 'closed' || v.principal !== (this.account?.scope ?? 'local')) { reply(409, { error: '当前不在接管状态，输入没有发送到手机', delivered }); return }
+              const frame = this.streams.frameSize?.(device)
+              if (!frame || !this.streams.inject) { reply(503, { error: '手机画面尚未就绪，暂时无法操作', delivered }); return }
+              const message = encodeTakeoverInput(event, frame)
+              if (!message) { stale = true; continue }
+              if (!this.streams.inject(device, message)) { reply(503, { error: '手机画面连接已断开，请稍后重试', delivered }); return }
+              delivered++
+            }
+            reply(200, { delivered, stale })
+            return
           }
           if (req.method === 'POST' && route === 'board' && req.headers.origin === this.origin) {
             // The read-only viewing URL never grants this separate, narrowly scoped capability.
@@ -565,6 +642,10 @@ export class ViewerServer {
             : message.startsWith('task_already_started') ? '任务已经开始执行'
             : message.startsWith('model_not_configured') ? '所选模型已不可用，请重新选择'
             : message.startsWith('preview_unavailable') ? '该设备暂时无法预览'
+            : message.startsWith('invalid_input_event') || message.startsWith('unsupported_key') ? '不支持的输入操作'
+            : message.startsWith('emulator_busy') ? '模拟器正在安装或启动，请稍候'
+            : message.startsWith('emulator_license_required') ? '请先阅读并同意 Android SDK 许可协议'
+            : message.startsWith('emulator_unsupported') ? '当前电脑暂不支持一键安装模拟器（支持 macOS 与 64 位 Windows）'
             : message.startsWith('start_input_invalid') || message.startsWith('one_device_required') ? '请选择一台执行设备'
             : message.startsWith('review_version_changed') ? '草稿已被另一处更新。你的输入保留，请查看版本并选择要批准的内容。'
             : message.startsWith('comment_budget_exhausted') ? '已达到约定停止条件，本次评论任务已停止'
@@ -616,12 +697,18 @@ export class ViewerServer {
           sink.sendText(JSON.stringify({ type: 'error', message: String(error) })); sink.close(1011, 'video_failed')
         })
       })
-      server.once('error', reject)
-      server.listen(0, '127.0.0.1', () => {
-        const address = server.address()
-        if (!address || typeof address === 'string') { reject(new Error('viewer_listen_failed')); return }
-        this.origin = `http://127.0.0.1:${address.port}`; resolve()
-      })
+      // A stable port keeps 打开控制台 links valid across restarts; a busy one falls back to any free port.
+      const listen = (port: number): void => {
+        const failed = (error: NodeJS.ErrnoException): void => { if (port && ['EADDRINUSE', 'EACCES'].includes(error.code ?? '')) listen(0); else reject(error) }
+        server.once('error', failed)
+        server.listen(port, '127.0.0.1', () => {
+          server.off('error', failed)
+          const address = server.address()
+          if (!address || typeof address === 'string') { reject(new Error('viewer_listen_failed')); return }
+          this.origin = `http://127.0.0.1:${address.port}`; resolve()
+        })
+      }
+      listen(this.options.port ?? 0)
     })
     return this.starting
   }
