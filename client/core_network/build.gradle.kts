@@ -69,6 +69,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.rx2)
 
     testImplementation(libs.junit)
+    testImplementation("org.mockito:mockito-core:5.14.2")
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     implementation(libs.mmkv)
