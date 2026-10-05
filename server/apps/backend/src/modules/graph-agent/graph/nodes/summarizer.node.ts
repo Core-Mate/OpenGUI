@@ -14,6 +14,7 @@ import { ExecutionGateway } from "../../../../common/ws";
 import { PrismaService } from "../../../../prisma/prisma.service";
 import type { BillingService } from "../../../credits/billing.service";
 import type { AgentConfigProvider } from "../../config/agent-config.provider";
+import { ModelConfigurationError } from "../../config/model-configuration.error";
 import { createConfiguredChatModel } from "../../config/chat-model.factory";
 import { AgentName } from "../../config/types";
 import type { TaskMemoryService } from "../../memory/task-memory.service";
@@ -430,6 +431,10 @@ Summarize the execution in clear English.`),
 			};
 		} catch (error) {
 			const err = error as Error;
+
+			if (err instanceof ModelConfigurationError) {
+				throw err;
+			}
 			logger.error(`Summarizer node error: ${err.message}`, err.stack);
 
 

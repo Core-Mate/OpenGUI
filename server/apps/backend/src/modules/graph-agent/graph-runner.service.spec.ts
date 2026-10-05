@@ -1,5 +1,15 @@
+import { BillingService } from "../credits/billing.service";
+import { Logger } from "@nestjs/common";
+import { START, END, StateGraph } from "@langchain/langgraph";
+import { ConfigService } from "@nestjs/config";
+import { AgentConfigProvider } from "./config/agent-config.provider";
+import { AgentStateSchema } from "./graph/state/state.types";
+import { createSupervisorNode } from "./graph/nodes/plan-supervisor.node";
+
 import { GraphRunnerService } from "./graph-runner.service";
 import type { SupervisorTodo } from "./graph/state/state.types";
+
+jest.mock("@repo/db", () => ({ prisma: { system_prompt_config: { findFirst: jest.fn() } } }));
 
 // These providers initialize database/model infrastructure at module load.
 // Keep the runner real and replace only its external execution/storage boundary.
@@ -17,9 +27,9 @@ const input = {
 
 type RunMode = "new" | "pause" | "hitl" | "fork";
 
-function createRunner(state: Record<string, unknown>, todos: SupervisorTodo[] = []) {
+function createRunner(state: Record<string, unknown>, todos: SupervisorTodo[] = [], invoke = async () => state) {
   const graph = {
-    invoke: async () => state,
+    invoke,
     updateState: async () => undefined,
     getState: async () => ({ values: { userInput: input.userInput, executorInput: { instruction: input.userInput } } }),
   };
@@ -113,3 +123,36 @@ describe("GraphRunner terminal failure boundaries", () => {
     expect(await runner.executeTask(input)).toEqual({ success: true, summary: "Answered without device actions" });
   });
 });
+
+
+describe.each<RunMode>(["new", "pause", "hitl", "fork"])("GraphRunner model readiness (%s)", mode => {
+  it("returns missing configuration from the real supervisor graph", async () => {
+    const provider = new AgentConfigProvider(new ConfigService({}));
+    type Dependencies = Parameters<typeof createSupervisorNode>;
+    const supervisor = createSupervisorNode(provider, {} as Dependencies[1], {} as Dependencies[2],
+      { sendAgentEvent: () => undefined } as unknown as Dependencies[3],
+      new BillingService(), {} as Dependencies[5]);
+    const graph = new StateGraph(AgentStateSchema).addNode("supervisor", supervisor)
+      .addEdge(START, "supervisor").addEdge("supervisor", END).compile();
+    const runner = createRunner({}, [], () => graph.invoke(input));
+    expect(await run(runner, mode)).toEqual({
+      success: false,
+      error: "Backend is running, but task execution requires model configuration. " +
+        "Missing: VLM_API_KEY, VLM_BASE_URL, VLM_MODEL. " +
+        "Set these variables in server/apps/backend/.env before executing tasks.",
+    });
+    expect(runner.hasExecution(input.taskExecutionId)).toBe(false);
+  });
+});
+
+// Error logs are expected in failure-path tests; keep their output readable.
+beforeEach(() => {
+  const environment = { ...process.env };
+  for (const key of ["VLM_API_KEY", "VLM_BASE_URL", "VLM_MODEL"]) delete environment[key];
+  jest.replaceProperty(process, "env", environment);
+  jest.spyOn(Logger.prototype, "log").mockImplementation(() => undefined);
+  jest.spyOn(Logger.prototype, "error").mockImplementation(() => undefined);
+  jest.spyOn(Logger.prototype, "warn").mockImplementation(() => undefined);
+  jest.spyOn(Logger.prototype, "debug").mockImplementation(() => undefined);
+});
+afterEach(() => jest.restoreAllMocks());

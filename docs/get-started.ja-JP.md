@@ -60,7 +60,7 @@ VLM_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 VLM_MODEL=qwen3.6-plus
 ```
 
-`VLM_API_KEY` がなくてもバックエンドは起動できますが、graph がモデルを呼び出す段階で実際のタスク実行は失敗します。初回実行では LangSmith tracing と IM channel の認証情報は任意です。
+タスク実行には `VLM_API_KEY`、`VLM_BASE_URL`、`VLM_MODEL` のすべてに空でない値が必要です。サンプルには URL とモデル名のデフォルト値が用意されています。モデル設定がなくてもバックエンドと API/ドキュメントは起動できます。モデル呼び出し前にタスクが失敗し、未設定または空白のみの変数すべてと `server/apps/backend/.env` の設定先が表示されます。初回実行では LangSmith tracing と IM channel の認証情報は任意です。
 
 起動後に利用できるエンドポイント：
 
