@@ -578,11 +578,13 @@ export class ViewerServer {
             } else if (input.action === 'model') {
               await this.chooseModel(v, input.modelId)
             } else if (input.action === 'start' && this.startHandler) {
-              if (Object.keys(input).some(key => !['action', 'modelId', 'deviceId'].includes(key)) || typeof input.deviceId !== 'string' || !input.deviceId || typeof input.modelId !== 'string') throw new Error('start_input_invalid')
+              if (Object.keys(input).some(key => !['action', 'modelId', 'deviceId', 'contentReview'].includes(key)) || typeof input.deviceId !== 'string' || !input.deviceId || typeof input.modelId !== 'string' || (input.contentReview !== undefined && typeof input.contentReview !== 'boolean')) throw new Error('start_input_invalid')
               if (!v.awaitingStart) throw new Error('task_already_started')
               if (this.account && !this.account.status().user) throw new Error('login_required: sign in before starting')
               // The confirmed model becomes the cached default for the next task.
               await this.chooseModel(v, input.modelId)
+              // 高级选项 · 发内容前需要审核: chosen by the person here only, never by the model.
+              v.board.contentReview = input.contentReview === true ? true : undefined
               await this.startHandler(v.id, input.deviceId)
             } else if (input.action === 'apk_update_confirm') {
               if (v.ended || v.board.control === 'ended') throw new Error('task_ended')

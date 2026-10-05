@@ -25,7 +25,7 @@ import { resolveScrcpyAsset, ScrcpyInstaller, ScrcpyTextInput } from './scrcpy.t
 import { encodePhonePreview, encodeWorkBuddyPhoneScreenshot } from './screenshot.ts'
 import { NativeMirror, type MirrorStatus } from './mirror.ts'
 import { errorInfo, OpenGuiError, retryRead } from './errors.ts'
-import type { BoardAction, CommentReview, HumanHandoff, ConnectionRecovery } from './workbench.ts'
+import type { BoardAction, CommentReview, ContentKind, HumanHandoff, ConnectionRecovery } from './workbench.ts'
 import { TaskStore } from './task-store.ts'
 import { CoreMateClient } from './coremate-client.ts'
 import { runConfiguredPhone, transientModelFailure } from './configured-runner.ts'
@@ -35,7 +35,7 @@ import { commentSummary, createCommentBudget, type CommentBudget, type CommentBu
 import { deviceSelectionStatus, type DeviceInfo, type DeviceChoice } from './device-info.ts'
 import { deviceIdentity } from './device-identity.ts'
 import { inputDiagnostic, isInputAction, type InputDiagnostic } from './input-diagnostics.ts'
-import { requestsPreSubmitStop, violatesPreSubmitStop, requiresPreSubmitClassification } from './stop-policy.ts'
+import { requestsPreSubmitStop, violatesPreSubmitStop, requiresPreSubmitClassification, requiresContentClassification } from './stop-policy.ts'
 import { IosSimulatorHost } from './ios-simulator.ts'
 import { CombinedPhoneHost } from './phone-host.ts'
 import { AndroidEmulatorManager } from './android-emulator.ts'
@@ -1229,6 +1229,8 @@ export class WorkBuddyOpenGuiService {
       if (violatesPreSubmitStop(input)) throw new OpenGuiError('stop_before_submit', 'opengui: the task must stop before final submission; inspect the current screen and record submission as not checked', 'not_executed', 'replan')
       if (requiresPreSubmitClassification(input)) throw new OpenGuiError('stop_action_unclassified', 'opengui: pre-submit taps and swipes require explicit externalSideEffect classification from the current image; hand off if the control is ambiguous', 'not_executed', 'replan')
     }
+    // 发内容前需要审核: every gesture and Enter must say whether it publishes, so publishing cannot pass unclassified.
+    if (record.viewerId && this.viewers.board(record.viewerId).contentReview && requiresContentClassification(input)) throw new OpenGuiError('content_action_unclassified', 'opengui: content review is on; declare externalSideEffect on every tap, swipe and Enter (none for navigation and typing, publish or send for posting text)', 'not_executed', 'replan')
     if (record.apkBusy) throw new Error('apk_preparation_busy: wait before phone actions')
     if (record.viewerId && this.viewers.board(record.viewerId).apk && this.viewers.board(record.viewerId).apk!.status !== 'installed') throw new Error('apk_not_installed: prepare the original requested APK before phone actions')
     const item = this.resolveDevice(record, deviceId)
@@ -1248,7 +1250,13 @@ export class WorkBuddyOpenGuiService {
     if (input.reviewId !== undefined && (!review || review.status !== 'approved')) throw new OpenGuiError('review_required', 'opengui: this comment has no valid approval or was already submitted', 'not_executed', 'wait')
     const filling = input.action === 'text' || input.action === 'replace_text', sending = input.externalSideEffect === 'send' || input.externalSideEffect === 'publish'
     if (review && filling && input.text !== review.draft) throw new OpenGuiError('review_changed', 'opengui: input must match the exact saved and approved draft', 'not_executed', 'replan')
-    if (record.viewerId && (this.viewers.board(record.viewerId).reviews.length && filling || (this.viewers.board(record.viewerId).scenario === 'comments' || this.viewers.board(record.viewerId).reviews.length) && sending) && !review) throw new OpenGuiError('review_required', 'opengui: comment input and sending require the approved reviewId', 'not_executed', 'wait')
+    if (record.viewerId && !review) {
+      const board = this.viewers.board(record.viewerId)
+      // Content review leaves ordinary typing (search, forms) free; only publishing needs the approved, read-back text.
+      const fillingNeedsReview = filling && board.reviews.length > 0 && !(board.contentReview && board.scenario !== 'comments')
+      const sendingNeedsReview = sending && (board.scenario === 'comments' || Boolean(board.contentReview) || board.reviews.length > 0)
+      if (fillingNeedsReview || sendingNeedsReview) throw new OpenGuiError('review_required', 'opengui: publishing content requires the approved reviewId; submit the exact text with opengui_review_comment and wait for the user', 'not_executed', 'wait')
+    }
     if (input.action === 'replace_text' && !review) throw new OpenGuiError('comment_replacement_required', 'opengui: replacement is only available for an approved comment with a human original-draft decision')
     if (review && (filling || sending)) this.viewers.board(record.viewerId!).assertPlatformInput(review.id, String(input.observationId), sending ? 'send' : input.action as 'text' | 'replace_text')
     this.syncTaskNode(sessionId, deviceId, input.taskNodeIndex, String(input.observationId), signal, input.stepId as string | undefined)
@@ -1351,6 +1359,7 @@ export class WorkBuddyOpenGuiService {
     return {
       executor: { mode: record.viewerId && this.viewers.board(record.viewerId).modelConfig ? 'configured' : 'workbuddy', started: Boolean(record.runner), ...(record.viewerId && this.viewers.board(record.viewerId).modelConfig ? { model: this.viewers.board(record.viewerId).modelConfig!.name } : {}) },
       ...(record.task.stopBeforeSubmit || record.viewerId && this.viewers.board(record.viewerId).stopBeforeSubmit ? { stopBeforeSubmit: true as const } : {}),
+      ...(record.viewerId && this.viewers.board(record.viewerId).contentReview ? { contentReview: true as const } : {}),
       ...(record.viewerId && this.viewers.board(record.viewerId).apk ? { apk: this.viewers.board(record.viewerId).apk! } : {}),
       ...(record.viewerId && this.viewers.board(record.viewerId).environment ? { environment: this.viewers.board(record.viewerId).environment! } : {}),
       ...(record.viewerId && this.viewers.board(record.viewerId).inputDiagnostic ? { inputDiagnostic: this.viewers.board(record.viewerId).inputDiagnostic! } : {}),
@@ -1599,7 +1608,7 @@ export class WorkBuddyOpenGuiService {
     return this.waitForUser(sessionId, waitMs, signal) as Promise<WorkBuddySessionStatus>
   }
 
-  reviewComment(sessionId: string, input?: { account: string; target: string; context: string; draft: string }) {
+  reviewComment(sessionId: string, input?: { account: string; target: string; context: string; draft: string; kind?: ContentKind; title?: string }) {
     const record = input ? this.requireActiveSession(sessionId) : this.requireSession(sessionId)
     if (!record.viewerId) throw new Error('viewer_required')
     const board = this.viewers.board(record.viewerId)

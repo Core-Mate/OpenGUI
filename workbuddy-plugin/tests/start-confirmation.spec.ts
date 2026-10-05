@@ -79,6 +79,16 @@ describe('start confirmation before execution', () => {
     expect(String(stop.reason)).toContain('开始执行')
   })
 
+  it('records 发内容前需要审核 from the start page, off unless the person checks it', async () => {
+    const f = await fixture()
+    expect((await f.action({ action: 'start', modelId: 'host', deviceId: 'phone-a', contentReview: 'yes' })).status).toBe(400)
+    expect((await f.action({ action: 'start', modelId: 'host', deviceId: 'phone-a', contentReview: true })).status).toBe(200)
+    expect(f.service.viewers.board(f.opened.viewerId).contentReview).toBe(true)
+    const g = await fixture()
+    expect((await g.action({ action: 'start', modelId: 'host', deviceId: 'phone-a' })).status).toBe(200)
+    expect(g.service.viewers.board(g.opened.viewerId).contentReview).toBeUndefined()
+  })
+
   it('shows a candidate device live only while the person is choosing', async () => {
     const f = await fixture()
     const socket = await previewStream(f.opened.url, 'phone-a')

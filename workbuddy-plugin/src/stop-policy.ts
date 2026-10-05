@@ -17,6 +17,11 @@ export function violatesPreSubmitStop(input: Record<string, unknown>): boolean {
   return ['submit', 'send', 'publish', 'purchase', 'delete'].includes(String(input.externalSideEffect)) || input.action === 'key' && input.key === 'Enter'
 }
 
+/** With content review on, Enter may also post text, so it needs the same explicit classification as gestures. */
+export function requiresContentClassification(input: Record<string, unknown>): boolean {
+  return input.externalSideEffect === undefined && (input.action === 'tap' || input.action === 'swipe' || input.action === 'key' && input.key === 'Enter')
+}
+
 /** Omission cannot silently classify a visual gesture as having no side effects. */
 export function requiresPreSubmitClassification(input: Record<string, unknown>): boolean {
   return (input.action === 'tap' || input.action === 'swipe') && input.externalSideEffect === undefined
