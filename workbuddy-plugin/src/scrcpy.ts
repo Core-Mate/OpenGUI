@@ -359,6 +359,8 @@ export class ScrcpyInstaller {
 
 const SCRCPY_REMOTE_SERVER = '/data/local/tmp/opengui-workbuddy-scrcpy-server.jar'
 const SCRCPY_CLIPBOARD_ACK_TIMEOUT_MS = 5_000
+/** scrcpy sends no reply for an empty clipboard (Android 13+ also clears it on its own after a while). */
+const SCRCPY_EMPTY_CLIPBOARD_MS = 2_000
 
 /** Build the standard scrcpy server command for a control-only connection. */
 export function buildScrcpyControlServerArgs(scid: string, serverPath = SCRCPY_REMOTE_SERVER): string[] {
@@ -519,7 +521,11 @@ export class ScrcpyTextInput {
     const combined = AbortSignal.any([signal, this.lifetime.signal]), connection = await this.connection(serial, combined)
     let original: string | undefined, temporary: string | undefined, result: string | undefined, selected = false
     try {
-      original = await this.getClipboard(connection, false, combined)
+      // A short silence means there is no text clip to preserve; the clipboard is left empty afterwards.
+      original = await this.getClipboard(connection, false, combined, SCRCPY_EMPTY_CLIPBOARD_MS).catch((error: unknown) => {
+        if (!combined.aborted && error instanceof Error && error.message === 'opengui: clipboard read timed out') return ''
+        throw error
+      })
       if (Buffer.byteLength(original, 'utf8') > (1 << 18) - 14) throw new Error('clipboard cannot be restored exactly')
       temporary = `opengui-copy-check:${randomUUID()}`
       await this.setClipboard(connection, temporary, false, combined)
@@ -555,13 +561,13 @@ export class ScrcpyTextInput {
     return new Promise((resolve, reject) => { connection.socket.write(payload, error => error ? reject(error) : resolve()) })
   }
 
-  private getClipboard(connection: ScrcpyTextConnection, copy: boolean, signal: AbortSignal): Promise<string> {
+  private getClipboard(connection: ScrcpyTextConnection, copy: boolean, signal: AbortSignal, timeoutMs = SCRCPY_CLIPBOARD_ACK_TIMEOUT_MS): Promise<string> {
     signal.throwIfAborted()
     if (connection.clipboardWaiter) throw new Error('opengui: clipboard read already pending')
     return new Promise((resolve, reject) => {
       const cleanup = () => { clearTimeout(waiter.timer); signal.removeEventListener('abort', abort); if (connection.clipboardWaiter === waiter) delete connection.clipboardWaiter }
       const abort = () => { cleanup(); reject(signal.reason) }
-      const waiter = { timer: setTimeout(() => { cleanup(); reject(new Error('opengui: clipboard read timed out')) }, SCRCPY_CLIPBOARD_ACK_TIMEOUT_MS), resolve(text: string) { cleanup(); resolve(text) }, reject(error: Error) { cleanup(); reject(error) } }
+      const waiter = { timer: setTimeout(() => { cleanup(); reject(new Error('opengui: clipboard read timed out')) }, timeoutMs), resolve(text: string) { cleanup(); resolve(text) }, reject(error: Error) { cleanup(); reject(error) } }
       connection.clipboardWaiter = waiter; signal.addEventListener('abort', abort, { once: true })
       connection.socket.write(Buffer.from([8, copy ? 1 : 0]), error => { if (error && connection.clipboardWaiter === waiter) waiter.reject(error) })
     })

@@ -17,7 +17,7 @@ async function fixture() {
   const directory = await mkdtemp(join(tmpdir(), 'opengui-copy-'))
   cleanup.push(() => rm(directory, { recursive: true, force: true }))
   const sockets = new Set<Socket>(), events: Array<{ type: number; copy?: number; paste?: boolean; text?: string }> = []
-  const state = { clipboard: 'unrelated private clipboard', field: '中文 😀\nSecond line', selected: false, copyEnabled: true, interfere: false, onCopy: undefined as (() => void) | undefined }
+  const state = { clipboard: 'unrelated private clipboard' as string | null, field: '中文 😀\nSecond line', selected: false, copyEnabled: true, interfere: false, onCopy: undefined as (() => void) | undefined }
   const server = createServer(socket => {
     socket.on('error', error => { if ((error as NodeJS.ErrnoException).code !== 'ECONNRESET') throw error })
     sockets.add(socket); socket.once('close', () => sockets.delete(socket)); socket.write(Buffer.from([0]))
@@ -38,7 +38,8 @@ async function fixture() {
             state.onCopy?.()
             if (state.copyEnabled && state.selected) state.clipboard = state.field
           } else if (state.interfere && events.some(event => event.copy === 1)) state.clipboard = 'new clipboard from another source'
-          send(clipboardMessage(state.clipboard))
+          // Like scrcpy, an empty clipboard gets no reply at all.
+          if (state.clipboard !== null) send(clipboardMessage(state.clipboard))
         } else if (type === 9) {
           const text = message.subarray(14).toString('utf8'), paste = Boolean(message[9])
           state.clipboard = text; events.push({ type, text, paste })
@@ -91,6 +92,14 @@ describe('focused comment clipboard transport', () => {
     const proof = vi.fn(async () => true)
     expect(await f.input.readFocusedText('fixture-phone', AbortSignal.timeout(5000), proof)).toBe('中文 😀\nSecond line')
     expect(proof).not.toHaveBeenCalled()
+  })
+
+  it('reads an empty field when the phone clipboard is empty and leaves it empty, without waiting for a reply that never comes', async () => {
+    const f = await fixture(); f.state.clipboard = null; f.state.field = ''
+    const started = Date.now()
+    expect(await f.input.readFocusedText('fixture-phone', AbortSignal.timeout(8000), async () => true)).toBe('')
+    expect(Date.now() - started).toBeLessThan(4500)
+    expect(f.state.clipboard).toBe('')
   })
 
   it('does not overwrite a newer clipboard and does not disclose original clipboard values in errors', async () => {
