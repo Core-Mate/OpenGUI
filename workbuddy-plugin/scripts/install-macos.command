@@ -94,12 +94,16 @@ host_running=false
 check_host_state() {
   local previous=$host_running
   host_running=false
+  # Live-compatible hosts do not need process enumeration, which WorkBuddy's
+  # command sandbox may deny. Keep the separate active-broker upgrade guard.
+  if (( 10#$major > 5 || (10#$major == 5 && 10#$minor > 5) || (10#$major == 5 && 10#$minor == 5 && 10#$patch >= 6) )); then
+    host_running=true
+    [ "$previous" = true ] || stage 'LIVE_PREFLIGHT_OK: WorkBuddy supports live configuration; process enumeration is not required. Finish any existing OpenGUI phone task before installation.'
+    return
+  fi
   if host_is_running; then
     host_running=true
-    if (( 10#$major < 5 || (10#$major == 5 && 10#$minor < 5) || (10#$major == 5 && 10#$minor == 5 && 10#$patch < 6) )); then
-      fail HOST_RESTART_REQUIRED "WorkBuddy $host_version does not expose the verified live configuration flow. Finish OpenGUI tasks, quit WorkBuddy with Command-Q, then rerun this installer. No configuration was changed."
-    fi
-    [ "$previous" = true ] || stage 'LIVE_PREFLIGHT_OK: WorkBuddy may stay open. Finish any existing OpenGUI phone task before installation.'
+    fail HOST_RESTART_REQUIRED "WorkBuddy $host_version does not expose the verified live configuration flow. Finish OpenGUI tasks, quit WorkBuddy with Command-Q, then rerun this installer. No configuration was changed."
   fi
 }
 stage "Preflight: WorkBuddy $host_version; configuration: $config_root"
@@ -227,11 +231,19 @@ execFileSync('bash', [installer, '--check', '--app', app, '--config-root', confi
 execFileSync(process.execPath, [path.join(pkg, 'lib/check-upgrade.js')], { stdio: 'inherit', env: { ...process.env, OPENGUI_WORKBUDDY_HOME: root } });
 execFileSync(process.execPath, [path.join(pkg, 'scripts/install-local.mjs'), '--package-dir', pkg, '--node', process.execPath, '--config-root', configRoot, '--state-root', root, ...(repairLegacy === 'true' ? ['--repair-legacy'] : [])], { stdio: 'inherit' });
 if (hostRunning === 'true') {
-  console.log('LIVE_CONFIG_WRITTEN: MCP, Skill and lifecycle Hooks configured while WorkBuddy stayed open. In WorkBuddy, trust/enable the OpenGUI MCP, open /hooks to review and apply the external Hook change, then open /skills to confirm opengui. Start a new task only if the current task does not refresh. Verify by listing phones without operating them.');
+  console.log('LIVE_CONFIG_WRITTEN: MCP, Skill and lifecycle Hooks configured for a live-compatible WorkBuddy host. Open or return to WorkBuddy, trust/enable the OpenGUI MCP, open /hooks to review and apply the external Hook change, then open /skills to confirm opengui. Start a new task only if the current task does not refresh. Verify by listing phones without operating them.');
 } else {
   console.log('CONFIG_WRITTEN: MCP, Skill and lifecycle Hooks configured. Open WorkBuddy, trust/enable the OpenGUI MCP, open /hooks to review the Hooks, then verify read-only device discovery.');
 }
 console.log('Rollback receipt: see installState in the result above. Old packages and per-configuration receipts are retained.');
+console.log('下一步 / Next steps:');
+console.log('1. 打开 WorkBuddy，在 MCP 管理中确认 OpenGUI 已启用；如有首次信任提示，请核对后授权。');
+console.log('2. 检查 /hooks 和 /skills 中的 OpenGUI。当前聊天未刷新时，新建聊天。');
+console.log('3. 发送 @opengui，右侧会打开任务首页。先登录、选择执行模型，再连接 Android 手机或启动模拟器。');
+console.log('4. Try it / 先试一下：打开手机设置，再返回桌面，确认回到桌面后结束。');
+console.log('5. 在首页填写任务并点击「开始执行」。审核、接管和执行结果在右侧显示；结束后可查看报告或新建任务。');
+console.log('App 测试请准备：应用/页面、测试数据、预期结果、停止位置。评论任务另需账号/目标链接、范围和数量或时限。密码与验证码请自行在设备或登录面板输入。');
+
 
 INSTALL_JS
 

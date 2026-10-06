@@ -44,6 +44,33 @@ function latestImage(request: Json): Json {
 }
 
 describe('configured phone executor', () => {
+  it.each([false, true])('waits through unchanged review state and continues after skip (progress=%s)', async progress => {
+    const f = await fixture(), board = f.viewer.board(f.display.viewerId), notify = vi.fn(), act = vi.spyOn(f.host, 'act')
+    const infer = vi.spyOn(f.client, 'infer').mockImplementation(async () => infer.mock.calls.length === 1
+      ? f.call('opengui_review_comment', { account: 'qa-private-account', target: 'post:private', context: 'Private source', draft: 'Private draft' })
+      : f.call('opengui_close_session', { outcome: 'blocked', summary: 'The user skipped the only requested comment; nothing was sent.' }))
+    let settled = false
+    let waiting = f.service.executeConfigured(f.session.sessionId, 2000, f.signal, progress ? notify : undefined)
+    await vi.waitFor(() => expect(board.reviews[0]?.status).toBe('pending'))
+    if (!progress) {
+      expect(await waiting).toMatchObject({ state: 'active', event: { changed: true, delivery: 'event_wait' } })
+      waiting = f.service.executeConfigured(f.session.sessionId, 2000, f.signal)
+    }
+    void waiting.then(() => { settled = true })
+    const review = board.reviews[0]!
+    board.saveDraft(review.id, 'Human draft still awaiting approval', review.contentVersion)
+    await new Promise(resolve => setTimeout(resolve, 60))
+    expect(settled).toBe(false)
+    expect(infer).toHaveBeenCalledTimes(1)
+    expect(notify.mock.calls.filter(([message]) => message.includes('内容待审核'))).toHaveLength(progress ? 1 : 0)
+    expect(JSON.stringify(notify.mock.calls)).not.toMatch(/private|Private|Human draft/u)
+    expect((await f.action({ action: 'review', reviewId: review.id, decision: 'skip' })).status).toBe(200)
+    await waiting
+    await vi.waitFor(() => expect(f.service.snapshotSession(f.session.sessionId).state).toBe('closed'))
+    expect(infer).toHaveBeenCalledTimes(2); expect(act).not.toHaveBeenCalled()
+    expect((await f.service.executeConfigured(f.session.sessionId, 1000, f.signal)).result?.outcome).toBe('blocked')
+  })
+
   it('returns from a long execute wait at the next settled step instead of polling on a timer', async () => {
     const f = await fixture()
     const plan = f.viewer.writeTodos(f.display.viewerId, 'runner-task', [{ content: 'Check the visible page', status: 'pending' }, { content: 'Confirm the result', status: 'pending' }])
@@ -438,4 +465,3 @@ describe('configured phone executor', () => {
     expect([transientModelFailure(new Error('model_upstream_error: HTTP 503')), transientModelFailure(new Error('model_upstream_error: HTTP 400')), transientModelFailure(new Error('invalid_model_response'))]).toEqual([true, false, false])
   }, 15_000)
 })
-

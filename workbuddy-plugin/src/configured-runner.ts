@@ -108,11 +108,12 @@ export async function runConfiguredPhone(service: WorkBuddyOpenGuiService, accou
     }
     if (calls.length > 8) throw new Error('excessive_model_tool_calls')
     const observations: Message[] = []
+    const batchSignal = service.configuredSignal(sessionId, signal)
     for (const call of calls) {
       if (typeof call.id !== 'string' || typeof call.function?.name !== 'string') throw new Error('invalid_model_tool_call')
       let result: Message
       try {
-        if (['paused', 'manual'].includes(service.findSession(sessionId)?.controlMode ?? '')) throw new Error('human_control_active')
+        if (batchSignal.aborted || ['paused', 'manual'].includes(service.findSession(sessionId)?.controlMode ?? '')) throw new Error('human_control_active')
         if (!ALLOWED.has(call.function.name)) throw new Error('tool_not_allowed')
         const args = JSON.parse(call.function.arguments)
         if (!args || typeof args !== 'object' || Array.isArray(args) || ['sessionId', 'deviceId', 'hostContext'].some(key => key in args)) throw new Error('bound_session_parameters')

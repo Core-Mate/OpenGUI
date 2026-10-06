@@ -38,7 +38,8 @@ describe('host-bound autonomous lifecycle', () => {
     f.service.viewers.board('unit-viewer').modelConfig = { id: 'phone', revision: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', name: 'Configured fixture', model: 'fixture-vlm', protocol: 'openai_chat' }
     const next = await f.automation.event({ session_id: 'host-a', hook_event_name: 'Stop' })
     expect(next.reason).toContain('opengui_execute')
-    expect(next.reason).toContain('waitMs 30000')
+    expect(next.reason).toContain('waitMs 600000')
+    expect(next.reason).toContain('Never inspect or poll the workbench webpage')
     const image = await f.service.observe(session.sessionId, undefined, AbortSignal.timeout(5000))
     await f.service.closeSession(session.sessionId, { outcome: 'completed', evidenceObservationIds: [image.observationId] })
     expect(await f.automation.event({ session_id: 'host-a', hook_event_name: 'Stop' })).toEqual({})

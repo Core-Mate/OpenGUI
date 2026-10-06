@@ -1,3 +1,7 @@
+## Progress delivery
+
+Never inspect the right workbench page with browser/DOM/screenshot/HTTP tools to check status. For a configured runner, keep one `opengui_execute` with waitMs 600000 pending. MCP progress sends request-scoped changes when the host supports it; otherwise the call returns a changed event once. On unchanged timeout, renew silently. Do not run parallel monitors or repeat review prompts. Ended host turns cannot reliably receive these notifications; independent home tasks remain visible in the workbench.
+
 # Detailed interfaces and installation
 
 The default display is opengui_open_viewer → present_files → opengui_viewer_status. It is real video, not the legacy screenshot wall. Video failure before first readiness blocks control; subsequent video failure affects watching only.

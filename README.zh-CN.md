@@ -82,19 +82,39 @@ OpenGUI 正式支持 DSH `0.1.0-rc.7`、`0.1.0-rc.8`、`0.1.1-rc.1` 和 `0.1.1-r
 
 ## WorkBuddy 安装
 
-WorkBuddy 使用独立的 [MCP + Skill + Hooks 插件](./workbuddy-plugin/README.zh-CN.md#macos-安装)，由当前视觉模型看图操作 Android 手机，默认打开只读 scrcpy 投屏窗口。不需要安装 DSH、部署完整 OpenGUI 后端或额外配置模型 API Key。
-
-当前 `0.3.1` 是 macOS 公测预发布版，不代表已经上架市场或完成全部真机验收。安装会把 MCP、`opengui` Skill 和生命周期 Hooks 一起配置，备份相关 WorkBuddy 配置并保留其他插件。WorkBuddy 5.5.6 及以上支持运行中安装；旧版兼容宿主会由预检明确要求 Command-Q。
-
-安装后按宿主提示启用并信任 `opengui` MCP，在 `/hooks` 中审查外部 Hook 变更，并在 `/skills` 中确认 `opengui`。连接已授权 USB 调试的 Android 手机，在输入框选择 `/opengui`，发送：
+在 **macOS** 上打开 WorkBuddy，新建聊天，直接发送：
 
 ```text
-打开手机设置，查看并告诉我 Android 版本。
+安装 https://github.com/Core-Mate/OpenGUI
 ```
 
-手机任务会把截图发送给当前模型。只想看投屏时，可以说“展示手机投屏，不截图给模型，也不要操作手机”。任务结束后投屏保留；关闭投屏窗口不会取消正在执行的任务，停止操作请使用 WorkBuddy 的停止按钮。
+也可以明确指定安装目标：
 
-找不到 `/opengui` 或任务不能自动续跑时，查看 [安装验证与排查](./workbuddy-plugin/README.zh-CN.md#安装验证与排查)。只添加 MCP 不会自动安装技能和 Hooks。
+```text
+把 https://github.com/Core-Mate/OpenGUI 的 OpenGUI 插件安装到 WorkBuddy
+```
+
+**给执行安装的 AI：**如果当前宿主是 WorkBuddy，请按 [WorkBuddy 安装指南](./workbuddy-plugin/INSTALL.md)操作，使用经过校验的 WorkBuddy Release 安装器，同时安装 MCP、`opengui` Skill 和生命周期 Hooks。DSH 安装器和完整后端部署属于其他使用方式。
+
+**WorkBuddy 5.6.2 兼容性：**公开 0.3.1 安装器仍检查旧版 CLI 文件名，会报 `HOST_HOOKS`；源码安装器已修复，但尚未发布。因此目前不能承诺 5.6.2 上仅凭这条短提示词就能安装完成。具体阻塞与本地候选版验证方式见[安装指南](./workbuddy-plugin/INSTALL.md)。
+
+WorkBuddy 文件策略要求授权时，还需允许安装器写入配置。本次默认权限实测在该步被拒并回滚；仅下载或解压了安装包，不代表安装完成。
+
+安装器会识别 WorkBuddy、下载并校验插件、准备独立运行环境、备份受影响的设置并保留其他插件。用户无需手动克隆仓库、安装 Node.js、部署 OpenGUI 后端或安装 DSH。建议使用 **WorkBuddy 5.5.6 及以上**，可保持应用打开完成安装；旧版兼容宿主会提示先退出。升级前请结束现有手机任务并关闭其预览页面。
+
+**安装后这样用：**
+
+1. 如果 WorkBuddy 弹出提示，启用并信任 `opengui` MCP；在 `/hooks` 中审查外部 Hook 变更，在 `/skills` 中确认 `opengui`。当前聊天未刷新时，新建聊天。
+2. 用 USB 连接 Android 手机，开启 USB 调试，并在手机上允许这台电脑调试；也支持 Android 模拟器。先发送 `@opengui 列出已连接设备，不要操作手机` 检查连接。
+3. 在 WorkBuddy 中选择 `opengui` 技能，试一个简单任务：
+
+   ```text
+   @opengui 打开手机设置，再返回桌面，确认回到桌面后结束。
+   ```
+
+4. 在右侧面板查看手机画面和进度；如果所装版本展示设备、模型选择或开始确认，按页面提示完成。停止任务请使用任务的停止按钮，单纯关闭预览不会停止操作。
+
+目前可下载的 [WorkBuddy 0.3.1](https://github.com/Core-Mate/OpenGUI/releases/tag/opengui-workbuddy-v0.3.1) 是公测预发布版。[当前开发版说明](./workbuddy-plugin/README.zh-CN.md)中的部分功能（例如只发 `@opengui` 打开可编辑任务首页）可能晚于该固定发布包。任务截图会发送给所选执行模型；本地视频预览不会把每帧发送给模型。找不到技能或工具时，参见[安装验证与恢复](./workbuddy-plugin/INSTALL.md#verify-the-installation)。
 
 ## 运行完整 OpenGUI 技术栈
 

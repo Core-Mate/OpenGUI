@@ -2,6 +2,24 @@ import { describe, expect, it, vi } from 'vitest'
 import { handleHostHook, normalizeHookTool } from '../src/host-hook.ts'
 
 describe('WorkBuddy native hook adapter', () => {
+  it('does not start a broker for repository installation or maintenance requests', async () => {
+    const connection = { hostEvent: vi.fn(async () => ({})), close: vi.fn() }
+    const connect = vi.fn(async () => connection)
+    for (const prompt of ['安装 https://github.com/Core-Mate/OpenGUI', 'Install https://github.com/Core-Mate/OpenGUI into WorkBuddy', '请升级 OpenGUI 插件', 'Explain OpenGUI installation']) {
+      await handleHostHook({ hook_event_name: 'UserPromptSubmit', session_id: 'installer', prompt }, connect)
+      expect(connect).toHaveBeenLastCalledWith(false)
+      expect(connection.hostEvent.mock.calls.at(-1)?.[0]).not.toHaveProperty('prompt')
+    }
+  })
+  it('preserves explicit native skill invocation formats', async () => {
+    const connection = { hostEvent: vi.fn(async () => ({})), close: vi.fn() }
+    const connect = vi.fn(async () => connection)
+    for (const prompt of ['@opengui', '@skill:opengui Open Settings', '/opengui Open Settings', 'opengui \uFEFF Open Settings', 'Please @opengui open Settings']) {
+      await handleHostHook({ hook_event_name: 'UserPromptSubmit', session_id: 'phone-task', prompt }, connect)
+      expect(connect).toHaveBeenLastCalledWith(true)
+      expect(connection.hostEvent.mock.calls.at(-1)?.[0]).toMatchObject({ prompt })
+    }
+  })
   it.each([false, true])('injects a binding into deferred parameters without changing host permissions (string=%s)', async stringify => {
     const args = { sessionId: 'own-session' }
     const event = { hook_event_name: 'PreToolUse', session_id: 'native-host-id', tool_name: 'DeferExecuteTool', tool_input: {

@@ -30,6 +30,10 @@ try {
   r=run({TEST_PROCESS:join(app,'Contents/Frameworks/WorkBuddy Helper.app/Contents/MacOS/WorkBuddy Helper')}); assert.notEqual(r.status,0); assert.match(r.stderr,/HOST_RESTART_REQUIRED/)
   await version('5.5.6'); r=run({TEST_PROCESS:join(app,'Contents/MacOS/Electron')}); assert.equal(r.status,0,r.stderr); assert.match(r.stdout,/LIVE_PREFLIGHT_OK/)
   r=run({TEST_PROCESS:join(app,'Contents/Frameworks/WorkBuddy Helper.app/Contents/MacOS/WorkBuddy Helper')}); assert.equal(r.status,0,r.stderr); assert.match(r.stdout,/LIVE_PREFLIGHT_OK/)
+  await writeFile(join(bin, 'ps'), '#!/bin/sh\necho "Operation not permitted" >&2\nexit 1\n', {mode: 0o755})
+  r=run(); assert.equal(r.status,0,r.stderr); assert.match(r.stdout,/LIVE_PREFLIGHT_OK/)
+  await version('5.5.3'); r=run(); assert.notEqual(r.status,0); assert.match(r.stderr,/HOST_PROCESS_CHECK/)
+  await writeFile(join(bin, 'ps'), '#!/bin/sh\nprintf "%s\\n" "$TEST_PROCESS"\n', {mode: 0o755})
   await version('5.5.3')
   r=run({TEST_PROCESS:'/Applications/Unrelated.app/Contents/MacOS/Electron'}); assert.equal(r.status,0,r.stderr)
   r=run({WORKBUDDY_CONFIG_DIR:join(home,'custom')}); assert.equal(r.status,0,r.stderr); assert(r.stdout.includes(join(home,'custom')))
@@ -45,5 +49,5 @@ try {
     r=run(); assert.notEqual(r.status,0); assert.match(r.stderr,/HOST_HOOKS/)
     await rm(join(cli, 'dist', name))
   }
-  console.log('PASS: product-specific paths, old version refusal, live 5.5.6 Electron/helper preflight, 5.6.2 CLI names with all Hooks, older-host restart fallback, custom root, instance suffix, unknown product, missing Hooks and zero-write preflight.')
+  console.log('PASS: product-specific paths, old version refusal, live preflight without process enumeration, 5.6.2 CLI names with all Hooks, fail-closed older-host process checks, custom root, instance suffix, unknown product, missing Hooks and zero-write preflight.')
 } finally { await rm(temporary,{recursive:true,force:true}) }

@@ -3,6 +3,7 @@ import { VERSION } from './state.ts'
 import { BASE_EXECUTION_BUDGET } from './execution-budget.ts'
 
 const ICONS: Record<string, string> = {
+  plus: '<path d="M12 5v14M5 12h14"/>',
   chevron: '<path d="m6 9 6 6 6-6"/>',
   more: '<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',
   expand: '<path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/>',
@@ -196,9 +197,6 @@ svg.ui-icon { width: 14px; height: 14px; flex: none; }
 .phone .message { font-size: 10px; color: var(--muted); margin-top: 10px; min-height: 0; }
 .phone .message:empty { display: none; }
 .phone .retry { font-size: 10px; margin-top: 6px; padding: 3px 9px; }
-.empty { display: grid; justify-items: center; text-align: center; gap: 0; padding: 70px 20px 40px; }
-.empty p { margin: 13px 0 6px; font-size: 11px; color: #979d91; }
-.empty .primary { padding: 9px 20px; }
 
 /* Start confirmation: request, model and device before any phone work */
 .start-panel { width: min(600px, 100%); background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; box-shadow: 0 6px 24px #1c22180a; }
@@ -209,8 +207,14 @@ svg.ui-icon { width: 14px; height: 14px; flex: none; }
 .start-hint { margin-top: 4px; font-size: 11px; color: var(--muted); }
 .start-field { margin-top: 16px; }
 .start-label { display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: #77776f; margin-bottom: 6px; }
-.start-request { padding: 10px 12px; background: #f6f7f3; border-radius: 8px; font-size: 12px; line-height: 1.75; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 180px; overflow: auto; }
+.start-prefix { display: inline-block; margin-bottom: 8px; color: var(--soft-ink); background: var(--soft); border-radius: 5px; padding: 2px 7px; font-size: 11px; font-weight: 600; }
+.start-request { display: block; width: 100%; min-height: 104px; max-height: 300px; resize: vertical; padding: 10px 12px; border: 1px solid var(--line-strong); background: #fff; border-radius: 8px; color: var(--ink); font-size: 12px; line-height: 1.75; }
+.start-request::placeholder { color: var(--faint); }
 .start-criteria { margin-top: 6px; font-size: 11px; color: var(--muted); overflow-wrap: anywhere; }
+.start-comment-limits { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 8px; }
+.start-comment-limits label { min-width: 0; font-size: 11px; color: var(--muted); }
+.start-comment-limits input { width: 100%; min-width: 0; margin-top: 4px; padding: 8px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+.start-comment-limits p { grid-column: 1 / -1; }
 .start-options { display: grid; gap: 6px; }
 .start-option { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 9px 11px; border: 1px solid var(--line); border-radius: 8px; background: #fff; cursor: pointer; }
 .start-option:hover { background: #fafbf8; }
@@ -404,6 +408,7 @@ svg.ui-icon { width: 14px; height: 14px; flex: none; }
 .result-list span.passed { color: #557046; }
 .exports { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
 .exports a, .exports button { font-size: 11px; padding: 5px 10px; }
+.exports .new-task { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; }
 .report-note { margin-top: 10px; font-size: 10px; color: var(--faint); overflow-wrap: anywhere; }
 
 /* Run overview (trace) */
@@ -549,9 +554,9 @@ dialog.wide { width: min(640px, calc(100vw - 32px)); }
 <header class="panel-header"><div class="brand"><h1 class="opengui-name">OpenGUI</h1><span class="version-tag">${VERSION}</span></div><div class="pluginlinks"><button class="plugin-account" id="account-button" aria-haspopup="dialog">登录</button><a class="icon-link" href="https://github.com/Core-Mate/OpenGUI" target="_blank" rel="noopener noreferrer" title="OpenGUI GitHub" aria-label="OpenGUI GitHub">${GITHUB_ICON}</a></div></header>
 <div class="devicebar"><div class="device-info"><span class="environment-help"><button class="status-dot" id="connection-dot-button" aria-describedby="connection-tip" aria-label="设备连接状态"><span class="dot" id="connection-dot"></span></button><span role="tooltip" id="connection-tip">等待设备画面</span></span><button class="device-selector" id="device-name" aria-haspopup="dialog"><span id="device-label">选择设备</span>${icon('chevron')}</button><button class="model-selector" id="model" aria-haspopup="dialog" aria-controls="model-info" aria-expanded="false"><span id="model-label">跟随 WorkBuddy</span>${icon('chevron')}</button></div><div class="device-actions"><button class="scenario-button" id="examples">场景示例</button><button class="takeover" id="takeover" hidden>${icon('hand')}<span>接管设备</span></button><div class="more"><button id="more" aria-label="更多设备操作" aria-haspopup="menu" aria-expanded="false">${icon('more')}</button></div></div></div>
 <div class="alerts" id="alerts" aria-live="polite"><div class="alert" id="handoff-notice" hidden><div><strong id="handoff-title">需要你在手机上处理</strong><p id="handoff-reason"></p><p id="handoff-instruction"></p></div></div><div class="alert" id="input-notice" hidden><div><strong id="input-title">手机拒绝了模拟点击</strong><p id="input-guidance"></p><p id="input-state"></p></div><div class="alert-actions"><button id="input-details">查看处理方法</button></div></div><div class="alert" id="connection-alert" hidden><div><strong id="connection-alert-title"></strong><p id="connection-alert-detail"></p></div><div class="alert-actions"><button id="recheck">重新检测</button></div></div><div class="alert" id="apk-alert" hidden></div><div class="alert info" id="device-preference-notice" hidden></div><div class="alert" id="execution-budget" hidden></div></div>
-<div class="canvas" id="stage"><div class="environment-status"><details class="environment" id="environment-details"><summary id="health-label">正在连接设备画面…</summary><div class="environment-panel"><p id="health-detail">正在等待第一帧画面。</p><div id="environment"></div></div></details><span class="environment-help" id="environment-help"><button id="health-info" aria-label="连接诊断" aria-describedby="environment-tip">${icon('info')}</button><span role="tooltip" id="environment-tip">遇到连接或操作问题，点击查看解决办法。</span></span><button class="access-link" id="access-link">连接帮助</button></div><button class="quiet zoom" id="zoom" aria-label="放大设备画面" aria-pressed="false" hidden>${icon('expand')}</button><section class="start-panel" id="start-panel" hidden aria-labelledby="start-title"><div class="start-head"><h2 id="start-title">确认任务</h2><span class="start-account" id="start-account"></span></div><p class="start-hint">在上方选择执行模型，确认任务和设备后点击「开始执行」，OpenGUI 才会连接设备并操作手机。</p><div class="start-field"><span class="start-label">你的任务</span><div class="start-request" id="start-request"></div><p class="start-criteria" id="start-criteria" hidden></p></div><div class="start-field"><span class="start-label">执行设备<span class="start-label-actions"><button class="help-link" id="start-device-help" title="查看设备连接帮助">未检测到已连接设备？</button><button class="access-link" id="start-refresh">重新检测</button></span></span><div class="start-device-layout"><div class="start-options" id="start-devices" role="radiogroup" aria-label="执行设备"></div><figure class="start-preview" id="start-preview" data-state="idle" aria-label="所选设备实时画面"><div class="start-preview-frame" id="start-preview-frame"><div class="start-preview-screen"><canvas id="start-preview-canvas" width="540" height="1170" hidden></canvas><span class="start-preview-note" id="start-preview-note">选择设备后显示画面</span></div></div><figcaption class="start-preview-caption" id="start-preview-caption">实时画面</figcaption></figure></div></div><div class="start-field start-advanced"><span class="start-label">高级选项</span><div class="start-advanced-row"><label class="start-switch"><input type="checkbox" role="switch" id="start-content-review"><span class="start-switch-track" aria-hidden="true"></span><span>发内容前需要审核</span></label><span class="content-review-help"><button type="button" class="help-icon" aria-label="发内容前需要审核是怎么工作的" aria-describedby="content-review-tip">?</button><span role="tooltip" id="content-review-tip">开启后，OpenGUI 在发帖、评论、回复、私信等对外发布文字内容前会先暂停，把发布账号、发布位置、上下文和完整内容交给你审核，你可以批准、修改或跳过。批准的内容输入后会与输入框逐字核对，一致才会发布；发布后截图确认已出现，结果不确定时不会自动重发。点赞、关注、收藏等不含文字的操作不需要审核。</span></span></div></div><div class="start-actions"><p class="start-blocker" id="start-blocker" aria-live="polite"></p><button class="primary" id="start-run" disabled>开始执行</button></div></section><div id="workbench"><main id="wall" class="phones"></main><div id="empty" class="empty" hidden><button class="primary" id="empty-pick">选择设备</button><p>Android USB 真机 · Android / iOS 模拟器</p><button class="access-link" id="empty-help">接入指引</button></div></div><aside class="review-panel" id="review-panel" aria-label="评论审核" hidden><div class="comment-progress" id="comment-progress"></div><div id="reviews"></div></aside><aside class="floating-plan" id="plan" aria-label="执行步骤"><div class="plan-body"><div class="plan-head"><button class="plan-toggle" id="plan-heading" aria-expanded="true" aria-controls="todos" hidden><span class="plan-title"><strong id="plan-title">执行步骤</strong><span id="plan-count"></span></span>${icon('chevron')}</button><p class="plan-state" id="task" aria-live="polite">准备中</p></div><ol class="task-list" id="todos" hidden></ol></div></aside></div>
-<div class="workspace"><section class="section" id="report-section" hidden aria-labelledby="report-title"><div class="report-card"><div class="eyebrow">TASK REPORT · 任务报告</div><h2 class="report-title" id="report-title">任务报告</h2><div class="report-callout" id="report-callout"><strong id="report-state">任务尚未结束</strong><p id="report-summary"></p></div><div class="report-meta" id="report-meta"></div><div class="result-list" id="report-tests"></div><div class="exports"><a class="button primary" id="export-md">下载 Markdown</a><a class="button" id="export-pdf">下载 PDF</a><a class="button" id="export-word">下载 Word</a><a class="button" id="export-evidence">截图证据包</a></div><p class="report-note" id="report-note"></p></div></section><section class="section" id="checks-section" hidden><div class="section-head"><strong>检查项</strong><span id="scenario-counts"></span></div><div id="test-cases"></div></section><section class="section" id="trace-section" aria-label="本次运行"><div class="section-head"><strong>本次运行</strong><span id="trace-stats">等待执行</span></div><div id="trace-chart" hidden><div class="run-axis" id="trace-axis" aria-label="时间刻度"></div><div class="run-track-row"><span>模型</span><div class="run-track" id="model-track"></div></div><div class="run-track-row"><span>设备</span><div class="run-track" id="tool-track"></div></div><p class="run-note" id="model-source"></p></div><div class="run-log" id="trace-list"></div></section></div>
-<dialog id="examples-dialog" aria-labelledby="examples-title"><div class="dialog-heading"><h2 id="examples-title">场景示例</h2><button data-close aria-label="关闭">×</button></div><p class="dialog-description">复制一段到 WorkBuddy 对话，替换【】里的内容即可。未替换的部分不会当作任务条件。</p><div class="prompt-library" id="templates"></div></dialog>
+<div class="canvas" id="stage"><div class="environment-status"><details class="environment" id="environment-details"><summary id="health-label">正在连接设备画面…</summary><div class="environment-panel"><p id="health-detail">正在等待第一帧画面。</p><div id="environment"></div></div></details><span class="environment-help" id="environment-help"><button id="health-info" aria-label="连接诊断" aria-describedby="environment-tip">${icon('info')}</button><span role="tooltip" id="environment-tip">遇到连接或操作问题，点击查看解决办法。</span></span><button class="access-link" id="access-link">连接帮助</button></div><button class="quiet zoom" id="zoom" aria-label="放大设备画面" aria-pressed="false" hidden>${icon('expand')}</button><section class="start-panel" id="start-panel" hidden aria-labelledby="start-title"><div class="start-head"><h2 id="start-title">新建任务</h2><span class="start-account" id="start-account"></span></div><p class="start-hint">先登录并选择执行模型，再连接设备、填写任务。点击「开始执行」后才会操作手机；首次使用可从「场景示例」选一个简单任务。</p><div class="start-field"><label class="start-label" for="start-request">你的任务</label><span class="start-prefix" id="start-prefix">@opengui</span><textarea class="start-request" id="start-request" aria-describedby="start-prefix" maxlength="4000" placeholder="描述你想让手机完成的任务，例如：打开小红书，搜索少儿英语"></textarea><p class="start-criteria" id="start-criteria" hidden></p></div><div class="start-field"><span class="start-label">执行设备<span class="start-label-actions"><button class="help-link" id="start-device-help" title="查看设备连接帮助">未检测到已连接设备？</button><button class="access-link" id="start-refresh">重新检测</button></span></span><div class="start-device-layout"><div class="start-options" id="start-devices" role="radiogroup" aria-label="执行设备"></div><figure class="start-preview" id="start-preview" data-state="idle" aria-label="所选设备实时画面"><div class="start-preview-frame" id="start-preview-frame"><div class="start-preview-screen"><canvas id="start-preview-canvas" width="540" height="1170" hidden></canvas><span class="start-preview-note" id="start-preview-note">选择设备后显示画面</span></div></div><figcaption class="start-preview-caption" id="start-preview-caption">实时画面</figcaption></figure></div></div><div class="start-field start-advanced"><span class="start-label">高级选项</span><div class="start-advanced-row"><label class="start-switch"><input type="checkbox" role="switch" id="start-content-review"><span class="start-switch-track" aria-hidden="true"></span><span>发内容前需要审核</span></label><span class="content-review-help"><button type="button" class="help-icon" aria-label="发内容前需要审核是怎么工作的" aria-describedby="content-review-tip">?</button><span role="tooltip" id="content-review-tip">开启后，OpenGUI 在发帖、评论、回复、私信等对外发布文字内容前会先暂停，把发布账号、发布位置、上下文和完整内容交给你审核，你可以批准、修改或跳过。批准的内容输入后会与输入框逐字核对，一致才会发布；发布后截图确认已出现，结果不确定时不会自动重发。点赞、关注、收藏等不含文字的操作不需要审核。</span></span></div></div><div class="start-field"><label class="start-switch"><input type="checkbox" id="start-comment-task"><span>评论任务数量与时限</span></label><div id="start-comment-limits" class="start-comment-limits" hidden><label>核验发送条数<input id="start-comment-count" type="number" min="1" max="100" step="1" placeholder="1–100 条"></label><label>运行时限（分钟）<input id="start-comment-minutes" type="number" min="1" max="1440" step="1" placeholder="1–1440 分钟"></label><p class="start-criteria">至少填写一项；两项都填写时，达到任一限制即结束。评论逐条审核，等待审核也计入时限。</p></div></div><div class="start-actions"><p class="start-blocker" id="start-blocker" aria-live="polite"></p><button class="primary" id="start-run" disabled>开始执行</button></div></section><div id="workbench"><main id="wall" class="phones"></main></div><aside class="review-panel" id="review-panel" aria-label="评论审核" hidden><div class="comment-progress" id="comment-progress"></div><div id="reviews"></div></aside><aside class="floating-plan" id="plan" aria-label="执行步骤"><div class="plan-body"><div class="plan-head"><button class="plan-toggle" id="plan-heading" aria-expanded="true" aria-controls="todos" hidden><span class="plan-title"><strong id="plan-title">执行步骤</strong><span id="plan-count"></span></span>${icon('chevron')}</button><p class="plan-state" id="task" aria-live="polite">准备中</p></div><ol class="task-list" id="todos" hidden></ol></div></aside></div>
+<div class="workspace"><section class="section" id="report-section" hidden aria-labelledby="report-title"><div class="report-card"><div class="eyebrow">TASK REPORT · 任务报告</div><h2 class="report-title" id="report-title">任务报告</h2><div class="report-callout" id="report-callout"><strong id="report-state">任务尚未结束</strong><p id="report-summary"></p></div><div class="report-meta" id="report-meta"></div><div class="result-list" id="report-tests"></div><div class="exports"><a class="button primary" id="export-md">下载 Markdown</a><a class="button" id="export-pdf">下载 PDF</a><a class="button" id="export-word">下载 Word</a><a class="button" id="export-evidence">截图证据包</a><button type="button" class="primary new-task" id="report-new-task">${icon('plus')}新建任务</button></div><p class="report-note" id="report-note"></p></div></section><section class="section" id="checks-section" hidden><div class="section-head"><strong>检查项</strong><span id="scenario-counts"></span></div><div id="test-cases"></div></section><section class="section" id="trace-section" aria-label="本次运行"><div class="section-head"><strong>本次运行</strong><span id="trace-stats">等待执行</span></div><div id="trace-chart" hidden><div class="run-axis" id="trace-axis" aria-label="时间刻度"></div><div class="run-track-row"><span>模型</span><div class="run-track" id="model-track"></div></div><div class="run-track-row"><span>设备</span><div class="run-track" id="tool-track"></div></div><p class="run-note" id="model-source"></p></div><div class="run-log" id="trace-list"></div></section></div>
+<dialog id="examples-dialog" aria-labelledby="examples-title"><div class="dialog-heading"><h2 id="examples-title">场景示例</h2><button data-close aria-label="关闭">×</button></div><p class="dialog-description">首次使用可先试「设置与返回桌面」。选择「填入任务」后可继续编辑，替换【】中的占位内容，再点击「开始执行」。也可复制到 WorkBuddy 对话。</p><div class="prompt-library" id="templates"></div></dialog>
 <dialog id="guide" aria-labelledby="guide-title"><div class="dialog-heading"><h2 id="guide-title">设备连接帮助</h2><button data-close aria-label="关闭">×</button></div><p class="dialog-description">找到你遇到的问题，按提示在手机或电脑上操作。</p><div class="connection-faq">
 <details open><summary>第一次连接 Android 手机，要做什么？${icon('chevron')}</summary><ol><li>打开「设置 → 关于手机」，连续点击「版本号」7 次，直到提示已进入开发者模式。</li><li>进入「设置 → 系统 → 开发者选项」，打开「USB 调试」。</li><li>用支持数据传输的数据线连接电脑，通知栏的 USB 用途选择「传输文件（MTP）」，不要选「仅充电」。</li><li>小米、Redmi、vivo 等机型还需打开「USB 调试（安全设置）」和「允许通过 USB 安装应用」。</li><li>手机弹出「允许 USB 调试吗？」时，勾选「始终允许」并点击确定。</li></ol></details>
 <details><summary>电脑找不到手机怎么办？${icon('chevron')}</summary><p>解锁手机，把 USB 用途改为「传输文件」（仅充电模式无法建立调试连接），再看手机是否出现授权弹窗。仍找不到时，换一根支持数据传输的线或换一个 USB 接口，然后点击「重新检测连接」。</p></details>
@@ -641,10 +646,13 @@ document.addEventListener("pointerdown", (event) => {
 });
 addEventListener("resize", () => { placePopover(byId("model-info"), byId("model")); placePopover(byId("more-menu"), byId("more")); });
 
-for (const id of ["access-link", "empty-help", "menu-help", "device-help", "health-info", "input-connection-help"]) byId(id).onclick = () => show("guide");
+for (const id of ["access-link", "menu-help", "device-help", "health-info", "input-connection-help"]) byId(id).onclick = () => show("guide");
 byId("examples").onclick = () => show("examples-dialog");
+byId("report-new-task").onclick = async () => {
+	const button = byId("report-new-task"); button.disabled = true;
+	if (!await boardAction("new_task")) button.disabled = !boardToken;
+};
 byId("device-name").onclick = () => { if (boardStatus?.startRequired) { byId("start-devices").scrollIntoView({ block: "center", behavior: "smooth" }); byId("start-devices").querySelector("input:not(:disabled)")?.focus(); } else void showDevices(); };
-byId("empty-pick").onclick = () => void showDevices();
 byId("more").onclick = () => togglePopover("more-menu", byId("more"));
 byId("account-button").onclick = () => show("account-dialog");
 byId("zoom").onclick = () => {
@@ -849,7 +857,8 @@ byId("emulator-install").onclick = () => {
 };
 
 const templates = [
-	["自动化测试", "@opengui 帮我测试【应用／页面】的【功能或操作流程】，重点检查【关注的问题】。如果发现异常，记录操作步骤和截图，做到【结束位置】就停。"],
+	["先试一下 · 设置与返回桌面", "@opengui 打开手机设置，再返回桌面，确认回到桌面后结束。"],
+	["自动化测试", "@opengui 帮我测试【应用／页面】的【功能或操作流程】，使用【测试数据】，预期看到【结果】。如果发现异常，记录操作步骤和截图，做到【结束位置】就停。"],
 	["运营评论", "@opengui 帮我处理【平台／账号／帖子链接】下的【评论范围】。逐条查看评论及上下文并用【期望语气】起草回复，交给我审核后发送。不需要回复的直接跳过并记录原因。直到【处理满 N 条／运行 X 分钟】或我主动停止，最后汇总处理结果。"],
 ];
 for (const [title, text] of templates) {
@@ -866,7 +875,17 @@ for (const [title, text] of templates) {
 			toast("剪贴板不可用，已选中模板文字，请手动复制");
 		}
 	};
-	heading.append(el("strong", "", title), copy);
+	const use = el("button", "", "填入任务");
+	use.onclick = () => {
+		if (!boardStatus?.startRequired || startBusy) { toast("请先点击「新建任务」，再填入示例"); return; }
+		const comments = title === "运营评论";
+		byId("start-comment-task").checked = comments; startCommentsDirty = true;
+		if (comments) byId("start-content-review").checked = true;
+		byId("start-request").value = taskText(comments ? text.replace("直到【处理满 N 条／运行 X 分钟】或我主动停止", "达到设置的核验发送条数或运行时限，或我主动停止时结束") : text); startRequestDirty = true;
+		byId("examples-dialog").close(); renderStart(boardStatus, true); byId("start-request").focus();
+		toast("已填入任务，请检查内容；点击「开始执行」后才会运行");
+	};
+	heading.append(el("strong", "", title), use, copy);
 	section.append(heading, pre);
 	byId("templates").append(section);
 }
@@ -888,7 +907,9 @@ async function boardAction(action, extra = {}) {
 			throw Error(response.status === 403 ? "控制入口已失效，请回到当前任务"
 				: response.status === 409 ? "任务已结束"
 				: (await response.json().catch(() => ({}))).error || "操作没有完成，请确认设备仍然连接");
-		renderBoard(await response.json());
+		const result = await response.json();
+		if (action === "new_task") { location.assign(result.workbenchUrl); return true; }
+		renderBoard(result);
 		if (action === "recheck" || action === "resume") {
 			const originalIds = new Set((boardStatus?.devices || []).map((device) => device.id));
 			for (const c of cards.values()) if (originalIds.has(c.id) && (!c.ws || !c.rendered || c.canvas.classList.contains("stale") || Date.now() - c.decodedAt > 3000)) { c.retries = 0; connect(c); }
@@ -934,16 +955,16 @@ async function showModels() {
 		button.onclick = async () => { if (await boardAction("model", { modelId: model.id })) picker.close(); };
 		list.append(button);
 	};
-	option({ id: "host", name: "跟随 WorkBuddy", model: "使用当前对话的模型" }, "默认");
+	if (!boardStatus?.workbenchManaged) option({ id: "host", name: "跟随 WorkBuddy", model: "使用当前对话的模型" }, "默认");
 	byId("model-message").textContent = "正在读取可用模型…";
 	try {
 		const response = await fetch(location.pathname + "models", { signal: AbortSignal.any([request.signal, AbortSignal.timeout(10000)]) }), result = await response.json();
 		if (modelRequest !== request || !picker.open) return;
-		if (!response.ok) throw Error(result.error || "模型列表暂不可用，可继续跟随 WorkBuddy");
+		if (!response.ok) throw Error(result.error || "模型列表暂不可用，请稍后重试");
 		for (const model of result.models) option(model, model.recommended ? "推荐" : undefined);
-		byId("model-message").textContent = result.models.length ? "官方模型由后台统一配置，密钥不经过本机；选中即生效，任务执行期间锁定。" : boardStatus?.account?.user ? "后台暂无可用的手机模型，可继续跟随 WorkBuddy。" : "登录后可使用官方模型；当前跟随 WorkBuddy。";
+		byId("model-message").textContent = result.models.length ? "官方模型由后台统一配置，密钥不经过本机；选中即生效，任务执行期间锁定。" : boardStatus?.account?.user ? "后台暂无可用的手机模型。" : "登录后可使用官方模型。";
 	} catch (error) {
-		if (modelRequest === request && picker.open) byId("model-message").textContent = error.name === "TimeoutError" ? "模型列表读取超时，可继续跟随 WorkBuddy。" : error.message;
+		if (modelRequest === request && picker.open) byId("model-message").textContent = error.name === "TimeoutError" ? "模型列表读取超时，请稍后重试。" : error.message;
 	} finally { if (modelRequest === request && picker.open) placePopover(picker, trigger); }
 }
 byId("model").onclick = () => void showModels();
@@ -1231,7 +1252,7 @@ function reviewCard(board, review, index) {
 	if (review.platformInput) card.append(originalDraft(board, review));
 	if (editable) {
 		const actions = el("div", "review-actions"), reason = el("input");
-		reason.placeholder = "跳过原因（可选）"; reason.maxLength = 2000; reason.setAttribute("aria-label", "跳过原因");
+		reason.placeholder = "跳过原因（可选，仅跳过此条，任务继续）"; reason.maxLength = 2000; reason.setAttribute("aria-label", "跳过原因");
 		reason.hidden = !skipOpen.has(review.id);
 		const submit = async (action, extra) => {
 			actions.querySelectorAll("button").forEach((b) => (b.disabled = true));
@@ -1254,7 +1275,7 @@ function reviewCard(board, review, index) {
 		} else {
 			button("批准并发送", "primary", () => submit("approve"));
 			button("修改草稿", "", () => { unsavedDrafts.set(review.id, { draft: review.draft, expectedVersion: review.contentVersion || 1 }); reviewSnapshot = ""; renderReviews(boardStatus.board || {}); byId("reviews").querySelector("textarea:not([hidden])")?.focus(); });
-			button("跳过此篇", "quiet", () => { skipOpen.add(review.id); reviewSnapshot = ""; renderReviews(boardStatus.board || {}); byId("reviews").querySelector("input")?.focus(); });
+			button("跳过此条", "quiet", () => { skipOpen.add(review.id); reviewSnapshot = ""; renderReviews(boardStatus.board || {}); byId("reviews").querySelector("input")?.focus(); });
 		}
 		card.append(reason, actions);
 	}
@@ -1430,6 +1451,7 @@ function renderInputDiagnostic(status) {
 function renderReport(status) {
 	const board = status.board || {}, outcome = board.result?.outcome;
 	byId("report-section").hidden = !outcome;
+	byId("report-new-task").disabled = !boardToken || status.taskState !== "ended";
 	if (!outcome) { finishedReport = false; return; }
 	for (const [id, format] of [["export-md", "md"], ["export-word", "docx"], ["export-pdf", "pdf"], ["export-evidence", "zip"]]) byId(id).setAttribute("download", (status.reportFileName || "opengui-report") + "." + format);
 	const cases = board.testCases || [], reviews = board.reviews || [];
@@ -1485,14 +1507,22 @@ function connectionState(status, board, devices, connected) {
 
 /* Start confirmation. Sign-in, the cached model (WorkBuddy on first use) and the device are
    confirmed here; only 开始执行 binds the device and lets the waiting host open control. */
-let startDevices = [], startDevicesLoaded = false, startDevicesLoading = false, startDeviceId = null, startLoginPrompted = false, startBusy = false, startMessage = "";
+let startDevices = [], startDevicesLoaded = false, startDevicesLoading = false, startDeviceId = null, startLoginPrompted = false, startBusy = false, startMessage = "", startRequestDirty = false, startRequestSource = "", startCommentsDirty = false;
+const taskText = (text) => String(text || "").replace(/^\s*@(?:skill:)?opengui\b\s*/iu, "").trim();
+byId("start-request").oninput = () => { startRequestDirty = true; if (boardStatus) renderStart(boardStatus, true); };
+function startCommentBudget() {
+	const count = byId("start-comment-count"), minutes = byId("start-comment-minutes");
+	if (!count.checkValidity() || !minutes.checkValidity() || !count.value && !minutes.value) return null;
+	return { ...(count.value ? { targetCount: Number(count.value) } : {}), ...(minutes.value ? { maxDurationSeconds: Number(minutes.value) * 60 } : {}) };
+}
+for (const id of ["start-comment-task", "start-comment-count", "start-comment-minutes"]) byId(id).oninput = () => { startCommentsDirty = true; if (boardStatus) renderStart(boardStatus, true); };
 async function loadStartDevices() {
 	startDevicesLoaded = true; startDevicesLoading = true;
 	try {
 		const response = await fetch(location.pathname + "devices?refresh=1"), result = await response.json();
 		if (!response.ok) throw Error(result.error || "设备检测没有完成");
 		startDevices = (result.devices || []).filter((d) => d.os !== "ios");
-		const suggested = boardStatus?.suggestedDeviceId;
+		const suggested = boardStatus?.suggestedDeviceId || result.preferredDeviceId;
 		if (!startDevices.some((d) => d.id === startDeviceId && d.selectable)) startDeviceId = startDevices.find((d) => d.id === suggested && d.selectable)?.id || (startDevices.filter((d) => d.selectable).length === 1 ? startDevices.find((d) => d.selectable).id : null);
 	} catch (error) { startDevices = []; startMessage = error.message; }
 	startDevicesLoading = false;
@@ -1513,13 +1543,25 @@ function renderStart(status, force = false) {
 	if (!visible) return;
 	byId("plan").hidden = true;
 	const board = status.board || {}, user = status.account?.user;
+		if (!startCommentsDirty) {
+			byId("start-comment-task").checked = board.scenario === "comments";
+			byId("start-comment-count").value = board.commentBudget?.targetCount || "";
+			byId("start-comment-minutes").value = board.commentBudget?.maxDurationSeconds ? board.commentBudget.maxDurationSeconds / 60 : "";
+		}
+		const comments = byId("start-comment-task").checked;
+		byId("start-comment-limits").hidden = !comments;
+		for (const id of ["start-comment-task", "start-comment-count", "start-comment-minutes"]) byId(id).disabled = startBusy || !boardToken;
+		const invalidCommentBudget = comments && !startCommentBudget();
 	if (!user && boardToken && !startLoginPrompted && !document.querySelector("dialog[open]")) { startLoginPrompted = true; show("account-dialog"); }
 	if (!startDevicesLoaded) void loadStartDevices();
-	const snapshot = JSON.stringify({ request: board.request, objective: board.objective, criteria: board.successCriteria, user, startDevices, startDevicesLoading, startDeviceId, startBusy, startMessage, modelError: status.modelSelectionError });
+		const snapshot = JSON.stringify({ request: board.request, objective: board.objective, criteria: board.successCriteria, scenario: board.scenario, commentBudget: board.commentBudget, modelConfig: board.modelConfig, workbenchManaged: status.workbenchManaged, user, startDevices, startDevicesLoading, startDeviceId, startBusy, startMessage, modelError: status.modelSelectionError });
 	if (!force && panel.dataset.snapshot === snapshot) return;
 	panel.dataset.snapshot = snapshot;
-	byId("start-request").textContent = board.request || board.objective || "（未收到任务描述）";
-	byId("start-criteria").hidden = !board.successCriteria;
+	startRequestSource = board.objective ? taskText(board.request || board.objective) : "";
+	if (!startRequestDirty) byId("start-request").value = startRequestSource;
+	byId("start-request").disabled = startBusy || !boardToken;
+	byId("start-title").textContent = status.workbenchManaged ? "新建任务" : "确认任务";
+	byId("start-criteria").hidden = !board.successCriteria || taskText(byId("start-request").value) !== startRequestSource;
 	byId("start-criteria").textContent = "结束条件：" + (board.successCriteria || "");
 	const account = byId("start-account"); account.replaceChildren();
 	if (user) account.textContent = "账号 " + user.phone;
@@ -1538,9 +1580,9 @@ function renderStart(status, force = false) {
 		android.append(startOption("start-device", device.id, startDeviceId === device.id, !device.selectable, device.name, deviceDetails(device), device.selectable ? (device.preferred ? "上次使用" : "可连接") : hint.label, device.selectable ? "" : "warning", (v) => { startDeviceId = v; }));
 	}
 	if (startDevicesLoaded && !startDevicesLoading) { android.append(startEmulatorBox); renderEmulator(); if (!emulatorState) void refreshEmulator(); }
-	const blocker = !boardToken ? "请从当前任务打开工作台" : !user ? "请先登录" : startDevicesLoaded && !startDevicesLoading && !startDevices.length ? "未检测到已连接的 Android 设备" : !startDeviceId ? "请选择执行设备" : startMessage;
+	const blocker = !boardToken ? "请从当前任务打开工作台" : !user ? "请先登录" : startDevicesLoaded && !startDevicesLoading && !startDevices.length ? "请连接 Android 手机并允许 USB 调试，或在下方启动模拟器，再点击「重新检测」" : !taskText(byId("start-request").value) ? "请填写要执行的任务" : status.workbenchManaged && !board.modelConfig ? "请在上方选择执行模型" : !startDeviceId ? "请选择执行设备" : invalidCommentBudget ? "请填写评论核验发送条数或运行时限" : startMessage || "准备就绪。开始后在右侧查看进度；需审核或接管时会显示提示。";
 	byId("start-blocker").textContent = blocker;
-	byId("start-run").disabled = startBusy || !boardToken || !user || !startDeviceId;
+	byId("start-run").disabled = startBusy || !boardToken || !user || !startDeviceId || !taskText(byId("start-request").value) || Boolean(status.workbenchManaged && !board.modelConfig) || invalidCommentBudget;
 	byId("start-run").textContent = startBusy ? "正在连接设备…" : "开始执行";
 }
 byId("start-refresh").onclick = () => { startDevicesLoaded = false; if (boardStatus) renderStart(boardStatus, true); };
@@ -1591,9 +1633,9 @@ async function pullPreview(run, deviceId, failures) {
 }
 document.addEventListener("visibilitychange", syncPreview);
 byId("start-run").onclick = async () => {
-	if (startBusy || !startDeviceId) return;
+	if (startBusy || byId("start-run").disabled) return;
 	startBusy = true; renderStart(boardStatus, true);
-	try { if (await boardAction("start", { modelId: boardStatus?.modelSelectionError ? "host" : boardStatus?.board?.modelConfig?.id || "host", deviceId: startDeviceId, contentReview: byId("start-content-review").checked })) toast("已开始执行，正在连接设备画面"); }
+	try { if (await boardAction("start", { modelId: boardStatus?.modelSelectionError ? "host" : boardStatus?.board?.modelConfig?.id || "host", deviceId: startDeviceId, request: taskText(byId("start-request").value), contentReview: byId("start-content-review").checked, ...(startCommentsDirty || byId("start-comment-task").checked ? { commentTask: byId("start-comment-task").checked } : {}), ...(byId("start-comment-task").checked ? { commentBudget: startCommentBudget() } : {}) })) toast("已开始执行，正在连接设备画面"); }
 	finally { startBusy = false; if (boardStatus) { renderBoard(boardStatus); renderStart(boardStatus, true); } }
 };
 
@@ -1629,7 +1671,7 @@ function renderBoard(status) {
 	byId("send-otp").textContent = Date.now() < otpDeadline ? "重新获取（" + Math.ceil((otpDeadline - Date.now()) / 1000) + "s）" : "获取验证码";
 	byId("sign-in").textContent = accountPending ? "请稍候…" : "登录";
 
-	byId("model-label").textContent = status.modelSelectionError ? "请选择执行模型" : board.model || "跟随 WorkBuddy";
+	byId("model-label").textContent = status.modelSelectionError || status.workbenchManaged && !board.modelConfig ? "选择执行模型" : board.model || "跟随 WorkBuddy";
 	byId("model").disabled = !boardToken || mode !== "idle";
 	byId("model").title = byId("model").disabled ? "任务执行期间锁定模型，下次任务开始前可切换" : "选择执行模型";
 	if (byId("model").disabled && byId("model-info").open) byId("model-info").close();
@@ -1643,7 +1685,6 @@ function renderBoard(status) {
 		byId("handoff-instruction").textContent = ended ? "任务已结束，这一步没有完成。" : handoff.status === "waiting_observation" ? "已恢复控制，正在核对当前画面。" : "完成后点击右上角「恢复控制」，系统会重新核对画面再继续。请不要在对话中发送密码或验证码。";
 	}
 
-	byId("empty").hidden = devices.length > 0;
 	byId("wall").hidden = devices.length === 0;
 	byId("plan").hidden = devices.length === 0 && !(status.todos || []).length;
 	byId("device-label").textContent = devices.length === 1 ? devices[0].name + " · …" + (devices[0].serialSuffix || "") : devices.length ? devices.length + " 台设备" : "选择设备";
@@ -1692,6 +1733,7 @@ function renderBoard(status) {
 	renderPlan(status);
 	renderStart(status);
 	renderTrace(status);
+	byId("trace-section").hidden = !byId("start-panel").hidden && !(board.traces || []).length;
 	renderReviews(board);
 	renderTests(board);
 	renderExecutionBudget(status);

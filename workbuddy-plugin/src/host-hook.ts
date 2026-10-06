@@ -50,8 +50,10 @@ export async function handleHostHook(
   if (!['PreToolUse', 'UserPromptSubmit', 'Stop', 'SubagentStop', 'FinalStop', 'SessionEnd', 'StopFailure'].includes(kind)) return {}
   if (typeof event.session_id !== 'string') return {}
   const stopBeforeSubmit = kind === 'UserPromptSubmit' && requestsPreSubmitStop(event.prompt)
-  // Only a request addressed to OpenGUI is forwarded, to show it for confirmation before the task starts.
-  const prompt = kind === 'UserPromptSubmit' && typeof event.prompt === 'string' && /opengui/iu.test(event.prompt) ? event.prompt.trim().slice(0, 4000) : undefined
+  // Only explicit skill invocations start a task. A repository installation URL
+  // must not start the old broker and thereby block its own upgrade.
+  const addressed = typeof event.prompt === 'string' && /(?:^\s*(?:@(?:skill:)?|\/)?opengui|(?:^|\s)@(?:skill:)?opengui)(?=$|\s|[，。,:：])/iu.test(event.prompt)
+  const prompt = kind === 'UserPromptSubmit' && addressed ? (event.prompt as string).trim().slice(0, 4000) : undefined
   const connection = await connect(kind === 'PreToolUse' || stopBeforeSubmit || Boolean(prompt))
   if (!connection) return {}
   try {

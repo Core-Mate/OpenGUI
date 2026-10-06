@@ -81,19 +81,39 @@ Model availability, pricing, and policy behavior vary by version and region. Whi
 
 ## Use OpenGUI in WorkBuddy
 
-WorkBuddy has a separate [MCP + Skill + Hooks connector](./workbuddy-plugin/README.md#install-on-macos). It uses WorkBuddy's current visual model to operate Android phones and opens read-only scrcpy windows by default. No DSH installation, full OpenGUI backend, or extra model API key is required.
-
-Version `0.3.1` is a macOS public-testing prerelease, not marketplace approval or complete real-device acceptance. It installs the MCP, `opengui` Skill and lifecycle Hooks together, preserves other plugins, and backs up the affected WorkBuddy configuration. WorkBuddy 5.5.6+ supports the live installation flow; older compatible versions use the Command-Q fallback reported by preflight.
-
-After installation, enable/trust the `opengui` MCP if prompted, review the external Hook change in `/hooks`, confirm `opengui` in `/skills`, connect a USB-debugging-authorized Android phone, select `/opengui`, and send:
+On **macOS**, open WorkBuddy and send this in a new chat:
 
 ```text
-Open Settings and report the Android version on my phone.
+Install https://github.com/Core-Mate/OpenGUI into WorkBuddy
 ```
 
-Phone tasks send screenshots to the selected model. For local viewing only, ask “Show my phone screens without taking screenshots for the model or operating the phones.” Task completion leaves the mirrors open. Closing a mirror does not cancel a running task; use WorkBuddy's stop control to stop execution.
+You can also request installation in Chinese:
 
-If `/opengui` is missing or tasks do not continue automatically, see [installation checks and troubleshooting](./workbuddy-plugin/README.md#verify-the-installation). MCP alone does not install the Skill or Hooks.
+```text
+安装 https://github.com/Core-Mate/OpenGUI
+```
+
+**For the installing assistant:** when this request comes from WorkBuddy, follow the [WorkBuddy installation guide](./workbuddy-plugin/INSTALL.md). Install the WorkBuddy MCP, `opengui` Skill and lifecycle Hooks together. Use the verified WorkBuddy release assets; the DSH installer and full backend bootstrap are separate options.
+
+**WorkBuddy 5.6.2 compatibility:** the public 0.3.1 installer currently reports `HOST_HOOKS` because it checks an older CLI filename. The source installer has the compatibility fix, pending publication. Until then, the short prompt is an installation request, not a verified one-step install on 5.6.2; see the [known blocker and local candidate procedure](./workbuddy-plugin/INSTALL.md).
+
+WorkBuddy must also authorize configuration writes when its file policy requests approval. With the tested default permissions, that step was refused and rolled back; a completed package download alone is not a completed installation.
+
+The installer detects WorkBuddy, downloads and checks the package, prepares its private runtime, backs up affected settings, and preserves other plugins. You do not need to clone the repository, install Node.js yourself, deploy the OpenGUI backend, or install DSH. Use WorkBuddy **5.5.6 or newer** for installation while the app stays open; the installer reports when an older compatible host needs to quit first. Finish existing phone tasks and close their viewers before upgrading.
+
+**After installation:**
+
+1. Enable/trust the `opengui` MCP if WorkBuddy prompts you. Review the external Hook change in `/hooks` and confirm `opengui` in `/skills`. Open a new chat if the current one has not refreshed.
+2. Connect an Android phone by USB, enable USB debugging, and accept the authorization prompt on the phone. An Android emulator also works. Ask `@opengui List connected devices without operating them` to check the connection.
+3. Select the `opengui` Skill in WorkBuddy and try:
+
+   ```text
+   @opengui Open Settings, then return to the home screen. Stop after confirming the home screen is visible.
+   ```
+
+4. View the phone and progress in WorkBuddy's right-hand panel. Follow any device/model selection or start confirmation shown by your installed version. Use the task's stop control to end execution; closing the preview alone does not stop a task.
+
+The downloadable [WorkBuddy 0.3.1 release](https://github.com/Core-Mate/OpenGUI/releases/tag/opengui-workbuddy-v0.3.1) is a public-testing prerelease. Features described in the [current development guide](./workbuddy-plugin/README.md), including the editable task home opened by a bare `@opengui`, may be newer than that immutable release. Phone tasks send screenshots to the selected execution model; local video preview does not send every frame to a model. See [installation checks and recovery](./workbuddy-plugin/INSTALL.md#verify-the-installation) if the Skill or tools are missing.
 
 ## Run the Full OpenGUI Stack
 

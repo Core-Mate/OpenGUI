@@ -8,6 +8,7 @@ import { viewerPage } from './viewer-page.ts'
 import { TaskPlan } from './todos.ts'
 import { OpenGuiError } from './errors.ts'
 import { HUMAN_CONTROL_WAIT_MS } from './state.ts'
+import { waitForEvent, type ToolProgress } from './task-events.ts'
 import { encodeTakeoverInput, type FrameSize } from './scrcpy-control.ts'
 import type { EmulatorStatus } from './android-emulator.ts'
 import type { DeviceActionEvent } from './trace-labels.ts'
@@ -48,6 +49,9 @@ interface Viewer {
   devicePreferenceError?: string | undefined
   /** A new task waits in the workbench until the person confirms model and device and starts it. */
   awaitingStart?: boolean
+  workbenchManaged?: boolean
+  starting?: boolean
+  nextTask?: Promise<{ viewerId: string; workbenchUrl: string }>
   suggestedDeviceId?: string | undefined
   /** Live views of a candidate device on the start page; never the task's display. */
   previews?: Set<ScrcpyStreamSink>
@@ -83,12 +87,29 @@ export class ViewerServer {
   private budgetHandler: ((id: string, additional: number, operationLimit: number, inferenceLimit: number) => Promise<void>) | undefined
   private deviceListHandler: ((signal: AbortSignal, refresh: boolean, viewerId: string) => Promise<readonly DeviceChoice[]>) | undefined
   private deviceSelectHandler: ((id: string, deviceId: string) => Promise<void>) | undefined
-  private startHandler: ((id: string, deviceId: string) => Promise<void>) | undefined
+  private startHandler: ((id: string, deviceId: string, request?: string, comments?: { enabled: boolean; budget?: unknown }) => Promise<void>) | undefined
+  private newTaskHandler: ((id: string) => Promise<{ viewerId: string; workbenchUrl: string }>) | undefined
   private emulatorStatusHandler: ((signal: AbortSignal) => Promise<EmulatorStatus>) | undefined
   private emulatorActionHandler: ((input: Record<string, unknown>) => void) | undefined
   private previewDeviceHandler: ((id: string, deviceId: string, signal: AbortSignal) => Promise<VideoDevice>) | undefined
   private previewFrameHandler: ((id: string, deviceId: string, signal: AbortSignal) => Promise<Buffer>) | undefined
   private connectionDiagnosticHandler: ((signal: AbortSignal) => Promise<ConnectionDiagnostic>) | undefined
+  private readonly taskListeners = new Map<string, Set<() => void>>()
+  private readonly queuedChanges = new Set<string>()
+  onTaskChange(id: string, listener: () => void): () => void {
+    const listeners = this.taskListeners.get(id) ?? new Set<() => void>()
+    listeners.add(listener); this.taskListeners.set(id, listeners)
+    return () => { listeners.delete(listener); if (!listeners.size) this.taskListeners.delete(id) }
+  }
+  private taskChanged(id: string): void {
+    if (this.queuedChanges.has(id)) return
+    this.queuedChanges.add(id)
+    // Publish after the whole synchronous mutation commits, never half a node transition.
+    queueMicrotask(() => {
+      this.queuedChanges.delete(id)
+      for (const listener of this.taskListeners.get(id) ?? []) listener()
+    })
+  }
   private readonly sweep: ReturnType<typeof setInterval>
   constructor(private readonly streams: ViewerStreams, private readonly now = Date.now, private readonly store?: TaskStore, readonly account?: CoreMateClient, private readonly options: { port?: number; consoleKey?: Buffer } = {}) {
     this.sweep = setInterval(() => {
@@ -138,7 +159,7 @@ export class ViewerServer {
         save: () => this.persist(archived),
         capture: (_id, name, data) => this.store!.evidence(archived.id, name, data),
         previousComment: (account, target) => this.store!.previousComment(account, target, archived.id, archived.principal),
-      } : undefined, this.now)
+      } : undefined, this.now, () => this.taskChanged(archived.id))
       if (saved && !devices.length && !saved.board.result) { viewer.board.control = 'idle'; viewer.selectionRequested = Boolean(viewer.board.objective) }
       if (!saved && this.account) {
         try { viewer.board.modelConfig = await this.account.selectedModel(signal) }
@@ -176,7 +197,7 @@ export class ViewerServer {
     const viewer = id ? this.require(id, owner) : [...this.viewers.values()].find(v => v.owner === owner && v.principal === (this.account?.scope ?? 'local') && !v.ended && this.same(v, devices))
     if (viewer && viewer.principal !== (this.account?.scope ?? 'local')) throw new Error('foreign_account: start a task under the current account')
     if (viewer?.modelSelectionError) throw new Error('model_selection_required: explicitly choose an available model or follow WorkBuddy before control')
-    if ((viewer ? viewer.awaitingStart : [...this.viewers.values()].some(v => v.owner === owner && v.awaitingStart && !v.ended))) throw new Error('start_required: the user has not clicked 开始执行 in the workbench yet; call opengui_viewer_status with waitMs 30000 and wait, never open control before it returns startRequired false')
+    if ((viewer ? viewer.awaitingStart : [...this.viewers.values()].some(v => v.owner === owner && v.awaitingStart && !v.ended))) throw new Error('start_required: the user has not clicked 开始执行 in the workbench yet; call opengui_viewer_status with waitMs 600000 and await the start event, never open control before it returns startRequired false')
     if (!viewer || viewer.ended || !this.same(viewer, devices)) throw new Error('display_required: open the viewer for this task and these devices first')
     this.update(viewer)
     if (!viewer.established && ['closed', 'error'].includes(viewer.phase)) throw new Error(viewer.error ?? 'display_required')
@@ -189,22 +210,25 @@ export class ViewerServer {
     if (!viewer.established) throw new Error(viewer.error ?? 'waiting_for_frame: visible decoded video is required before observation or action')
   }
 
-  async status(id: string, owner: string, waitMs = 0, signal?: AbortSignal) {
+  async status(id: string, owner: string, waitMs = 0, signal?: AbortSignal, onProgress?: ToolProgress) {
     const viewer = this.require(id, owner)
-    // Event-driven: returns as soon as the first frame is established (after 开始执行) or the viewer fails.
-    const end = this.now() + Math.min(HUMAN_CONTROL_WAIT_MS, Math.max(0, waitMs))
-    while (true) {
-      signal?.throwIfAborted()
+    let reported = ''
+    await waitForEvent(listener => this.onTaskChange(id, listener), () => {
       this.update(viewer)
-      if (viewer.established || ['closed', 'error'].includes(viewer.phase) || this.now() >= end) break
-      await new Promise(resolve => setTimeout(resolve, Math.min(100, end - this.now())))
-    }
+      const message = viewer.established ? '设备画面已连接，开始执行任务。'
+        : viewer.ended || ['closed', 'error'].includes(viewer.phase) ? '本次任务已停止，请查看右侧原因。'
+        : viewer.awaitingStart ? '请在右侧确认任务、模型和设备，点击「开始执行」。'
+        : '正在连接设备画面，请稍候。'
+      if (message !== reported) { reported = message; onProgress?.(message) }
+      return viewer.established || viewer.ended || ['closed', 'error'].includes(viewer.phase)
+    }, Math.min(HUMAN_CONTROL_WAIT_MS, Math.max(0, waitMs)), signal ?? new AbortController().signal)
     return this.snapshot(viewer)
   }
 
   closeViewer(id: string, owner: string) {
     const viewer = this.require(id, owner)
     viewer.phase = 'closed'
+    this.taskChanged(viewer.id)
     for (const c of viewer.connections.values()) c.sink.close(1000, 'viewer_closed')
     for (const page of viewer.pages) page.close(1000, 'viewer_closed')
     this.closePreviews(viewer)
@@ -225,7 +249,11 @@ export class ViewerServer {
   setDeviceHandlers(list: (signal: AbortSignal, refresh: boolean, viewerId: string) => Promise<readonly DeviceChoice[]>, select: (id: string, deviceId: string) => Promise<void>): void { this.deviceListHandler = list; this.deviceSelectHandler = select }
   setConnectionDiagnosticHandler(handler: (signal: AbortSignal) => Promise<ConnectionDiagnostic>): void { this.connectionDiagnosticHandler = handler }
   requestDeviceSelection(id: string): void { this.require(id).selectionRequested = true }
-  setStartHandler(handler: (id: string, deviceId: string) => Promise<void>): void { this.startHandler = handler }
+  setStartHandler(handler: (id: string, deviceId: string, request?: string, comments?: { enabled: boolean; budget?: unknown }) => Promise<void>): void { this.startHandler = handler }
+  setNewTaskHandler(handler: (id: string) => Promise<{ viewerId: string; workbenchUrl: string }>): void { this.newTaskHandler = handler }
+  manageInWorkbench(id: string, enabled = true): void { this.require(id).workbenchManaged = enabled }
+  isWorkbenchManaged(id: string): boolean { return this.require(id).workbenchManaged === true }
+  detachFromHost(id: string): string { const v = this.require(id); v.owner = `workbench:${id}`; this.persist(v); return v.owner }
   setEmulatorHandlers(status: (signal: AbortSignal) => Promise<EmulatorStatus>, action: (input: Record<string, unknown>) => void): void { this.emulatorStatusHandler = status; this.emulatorActionHandler = action }
   /** Resolve a selectable candidate for a start-page live view, as video or a single frame. */
   setPreviewHandlers(device: (id: string, deviceId: string, signal: AbortSignal) => Promise<VideoDevice>, frame: (id: string, deviceId: string, signal: AbortSignal) => Promise<Buffer>): void { this.previewDeviceHandler = device; this.previewFrameHandler = frame }
@@ -364,9 +392,11 @@ export class ViewerServer {
     res.writeHead(302, { Location: `/${v.token}/#board=${v.boardToken}` }).end()
   }
   private persist(v: Viewer): void {
-    if (!this.store) return
-    const task: StoredTask = { version: 1, id: v.id, owner: v.owner, principal: v.principal, devices: v.devices, board: v.board.snapshot(), todos: v.plan.todos, updatedAt: new Date().toISOString(), displayError: v.error }
-    this.store.save(task, v.board.markdown(v.plan.todos, { devices: v.devices.map(d => d.name) }))
+    if (this.store) {
+      const task: StoredTask = { version: 1, id: v.id, owner: v.owner, principal: v.principal, devices: v.devices, board: v.board.snapshot(), todos: v.plan.todos, updatedAt: new Date().toISOString(), displayError: v.error }
+      this.store.save(task, v.board.markdown(v.plan.todos, { devices: v.devices.map(d => d.name) }))
+    }
+    this.taskChanged(v.id)
   }
 
   /** Called only through an owned control session, before dispatching phone work. */
@@ -385,7 +415,7 @@ export class ViewerServer {
   pauseNodes(id: string): void { const v = this.require(id); v.plan.pause(); this.persist(v) }
   awaitUser(id: string, waiting: boolean): void { const v = this.require(id); v.plan.awaitUser(waiting); this.persist(v) }
   settleNode(id: string, stepId: string, status: 'failed' | 'skipped', reason: string): void { const v = this.require(id); v.plan.settle(stepId, status, reason); this.persist(v) }
-  endOwner(owner: string): void { for (const v of this.viewers.values()) if (v.owner === owner) { v.ended = true; v.plan.pause(); this.closePreviews(v); this.persist(v) } }
+  endOwner(owner: string): void { for (const v of this.viewers.values()) if (v.owner === owner && !v.workbenchManaged) { v.ended = true; v.plan.pause(); this.closePreviews(v); this.persist(v) } }
   endTask(id: string): void { const viewer = this.require(id); viewer.ended = true; viewer.plan.pause(); this.persist(viewer) }
   url(id: string): string { const v = this.require(id); return `${this.origin}/${v.token}/` }
   async dispose(): Promise<void> {
@@ -405,7 +435,7 @@ export class ViewerServer {
     return v
   }
   private update(v: Viewer): void {
-    if (!v.established && v.deadline && this.now() >= v.deadline && !['closed', 'error'].includes(v.phase)) {
+    if (!v.ended && v.board.control !== 'ended' && !v.established && v.deadline && this.now() >= v.deadline && !['closed', 'error'].includes(v.phase)) {
       v.phase = 'error'; v.error = 'display_timeout: no visible first video frame within 30 seconds; stop this task'
       v.board.control = 'ended'
       v.board.result = { outcome: 'blocked', summary: '设备画面未在 30 秒内完成首帧验证，本次任务受阻。尚未取得手机控制权，未执行手机操作；原目标与清单已保留。' }
@@ -417,7 +447,7 @@ export class ViewerServer {
   private snapshot(v: Viewer) {
     this.update(v)
     return { viewerId: v.id, url: this.url(v.id), state: v.phase, firstDisplayEstablished: v.established, todos: v.plan.todos, progress: v.plan.progress(), board: v.board.snapshot(), reportExports: v.reportExports, reportFileName: reportFileName(v.board.createdAt),
-      selectionRequired: !v.devices.length, selectionRequested: Boolean(v.selectionRequested), startRequired: Boolean(v.awaitingStart), ...(v.suggestedDeviceId ? { suggestedDeviceId: v.suggestedDeviceId } : {}), selectionBusy: Boolean(v.binding), canSelectDevice: !v.binding && !v.devices.length && !v.ended && v.board.control === 'idle' && !v.error && v.phase !== 'closed', devicePreferenceError: v.devicePreferenceError,
+      selectionRequired: !v.devices.length, selectionRequested: Boolean(v.selectionRequested), startRequired: Boolean(v.awaitingStart), workbenchManaged: Boolean(v.workbenchManaged), ...(v.suggestedDeviceId ? { suggestedDeviceId: v.suggestedDeviceId } : {}), selectionBusy: Boolean(v.binding || v.starting), canSelectDevice: !v.binding && !v.starting && !v.devices.length && !v.ended && v.board.control === 'idle' && !v.error && v.phase !== 'closed', devicePreferenceError: v.devicePreferenceError,
       account: { ...(this.account?.status() ?? { serviceUrl: '', user: null }), busy: this.accountBusy },
       ...(v.modelSelectionError ? { modelSelectionError: v.modelSelectionError } : {}),
       ...(this.store ? { archivePath: this.store.path(v.id) } : {}),
@@ -544,7 +574,18 @@ export class ViewerServer {
             let body = ''
             for await (const chunk of req) { body += String(chunk); if (Buffer.byteLength(body) > 16_384) { res.writeHead(413).end(); return } }
             const input = JSON.parse(body) as Record<string, unknown>
+            if (input.action === 'new_task' && this.newTaskHandler) {
+              if (Object.keys(input).length !== 1 || !(v.ended || v.board.control === 'ended')) { res.writeHead(409).end(); return }
+              if (this.accountBusy || v.principal !== (this.account?.scope ?? 'local')) { res.writeHead(403).end(); return }
+              if (v.nextTask) {
+                const pending = v.nextTask, next = this.viewers.get((await pending).viewerId)
+                if (v.nextTask === pending && (!next || !next.awaitingStart || next.ended || next.board.control !== 'idle')) delete v.nextTask
+              }
+              v.nextTask ??= this.newTaskHandler(v.id).catch(error => { delete v.nextTask; throw error })
+              res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(await v.nextTask)); return
+            }
             if ((v.ended || v.phase === 'closed') && !['account', 'budget_extend'].includes(String(input.action))) { res.writeHead(409).end(); return }
+            if (v.starting) throw new Error('task_already_started')
             if (input.action === 'account' && this.account) {
               if (this.accountBusy) throw new Error('account_change_in_progress')
               if ([...this.viewers.values()].some(viewer => ['agent', 'paused', 'manual', 'reconciling'].includes(viewer.board.control))) throw new Error('finish_task_before_account_change')
@@ -578,14 +619,19 @@ export class ViewerServer {
             } else if (input.action === 'model') {
               await this.chooseModel(v, input.modelId)
             } else if (input.action === 'start' && this.startHandler) {
-              if (Object.keys(input).some(key => !['action', 'modelId', 'deviceId', 'contentReview'].includes(key)) || typeof input.deviceId !== 'string' || !input.deviceId || typeof input.modelId !== 'string' || (input.contentReview !== undefined && typeof input.contentReview !== 'boolean')) throw new Error('start_input_invalid')
+              if (Object.keys(input).some(key => !['action', 'modelId', 'deviceId', 'contentReview', 'request', 'commentTask', 'commentBudget'].includes(key)) || typeof input.deviceId !== 'string' || !input.deviceId || typeof input.modelId !== 'string' || (input.contentReview !== undefined && typeof input.contentReview !== 'boolean') || (input.commentTask !== undefined && typeof input.commentTask !== 'boolean') || (input.commentBudget !== undefined && input.commentTask !== true)) throw new Error('start_input_invalid')
+              if (input.request !== undefined && (typeof input.request !== 'string' || !input.request.trim() || input.request.length > 4000)) throw new Error('task_request_required')
+              if (v.workbenchManaged && (input.modelId === 'host' || !this.account)) throw new Error('workbench_model_required')
               if (!v.awaitingStart) throw new Error('task_already_started')
               if (this.account && !this.account.status().user) throw new Error('login_required: sign in before starting')
+              v.starting = true
+              try {
               // The confirmed model becomes the cached default for the next task.
               await this.chooseModel(v, input.modelId)
-              // 高级选项 · 发内容前需要审核: chosen by the person here only, never by the model.
+              // Content review is chosen by the person here only, never by the model.
               v.board.contentReview = input.contentReview === true ? true : undefined
-              await this.startHandler(v.id, input.deviceId)
+              await this.startHandler(v.id, input.deviceId, input.request as string | undefined, input.commentTask === undefined ? undefined : { enabled: input.commentTask === true, budget: input.commentBudget })
+              } finally { v.starting = false }
             } else if (input.action === 'apk_update_confirm') {
               if (v.ended || v.board.control === 'ended') throw new Error('task_ended')
               v.board.confirmApkUpdate(String(input.artifactId), String(input.sha256), String(input.existingVersion))
@@ -620,6 +666,7 @@ export class ViewerServer {
               if (v.devices.every(d => [...v.connections.values()].some(x => x.deviceId === d.id && x.media && this.now() - x.painted < 2000))) {
                 v.firstFrameMs ??= this.now() - (v.deadline - 30_000)
                 v.established = true; v.phase = 'ready'
+                this.taskChanged(v.id)
               }
             }
             c.challenge = randomBytes(24).toString('base64url'); c.issued = this.now()
@@ -642,6 +689,8 @@ export class ViewerServer {
             : message === 'login_required: sign in before starting' ? '请先登录，再开始执行'
             : message.startsWith('login_required') ? '登录已过期，请重新登录'
             : message.startsWith('task_already_started') ? '任务已经开始执行'
+            : message.startsWith('task_request_required') ? '请填写要执行的任务（最多 4000 字）'
+            : message.startsWith('workbench_model_required') ? '请在上方选择执行模型，工作台新任务由所选模型直接执行'
             : message.startsWith('model_not_configured') ? '所选模型已不可用，请重新选择'
             : message.startsWith('preview_unavailable') ? '该设备暂时无法预览'
             : message.startsWith('invalid_input_event') || message.startsWith('unsupported_key') ? '不支持的输入操作'

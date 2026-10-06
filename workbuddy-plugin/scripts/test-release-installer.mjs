@@ -12,6 +12,10 @@ try {
  const home = join(temporary, 'home with spaces'), config = join(home, '.workbuddy-ai'), stateRoot = join(home, '.workbuddy/opengui'), bin = join(home, 'bin')
  await mkdir(bin, { recursive: true })
  if (process.env.OPENGUI_TEST_VIDEO_CACHE) await cp(process.env.OPENGUI_TEST_VIDEO_CACHE, join(stateRoot, 'scrcpy'), {recursive:true})
+ if (process.env.OPENGUI_TEST_NODE_CACHE) {
+  const nodeCache = await realpath(process.env.OPENGUI_TEST_NODE_CACHE)
+  await cp(nodeCache, join(stateRoot, 'runtime', nodeCache.split('/').at(-1)), {recursive:true})
+ }
  // Only the isolated test host is considered stopped; never quit the real app.
  const app = join(temporary, 'WorkBuddy AI.app')
  const cli = join(app, 'Contents/Resources/app.asar.unpacked/cli')
