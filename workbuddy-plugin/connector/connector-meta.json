@@ -3,18 +3,20 @@
   "name_zh": "OpenGUI 手机助手",
   "name_en": "OpenGUI Android Assistant",
   "description": "Let WorkBuddy operate a locally connected Android phone or emulator for GUI testing and reviewed comment operations, with a live workbench for the screen, task plan and run trace.",
-  "description_zh": "在 WorkBuddy 中让 AI 操作本机连接的 Android 手机或模拟器，完成自动化测试与经人工审核的评论运营；右侧工作台实时显示手机画面、任务清单和执行记录。",
+  "description_zh": "连接手机，在右侧确认任务后开始。支持真实截图操作、App 测试和发布内容审核；执行进度自动更新，结束后生成报告。",
   "description_en": "Let WorkBuddy operate a locally connected Android phone or emulator for GUI testing and reviewed comment operations, with a live workbench for the screen, task plan and run trace.",
   "source": "opengui",
   "type": "mcp",
   "version": "0.3.1",
   "minWorkbuddyVersion": "5.5.3",
   "examples_zh": [
-    "帮我测试这个 App 的登录页输入校验，做到提交前就停",
-    "帮我回复这篇笔记下的评论，每条先让我审核再发送"
+    "@opengui",
+    "@opengui 打开手机设置，再返回桌面，确认回到桌面后结束。",
+    "@opengui 帮我测试【应用／页面】的【功能】，输入【测试数据】，预期【结果】，做到【停止位置】就停。"
   ],
   "examples_en": [
-    "Test the login form validation of this app and stop before submitting",
-    "Reply to comments under this post, letting me review each draft before sending"
+    "@opengui",
+    "@opengui Open phone Settings, then return to the home screen. Verify the home screen and finish.",
+    "@opengui Test [feature] in [app/page] using [test data], expect [result], and stop at [endpoint]."
   ]
 }

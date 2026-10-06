@@ -125,11 +125,14 @@ export async function startBroker(options: BrokerOptions): Promise<{ port: numbe
         const signal = AbortSignal.any([lifetime.signal, controller.signal, AbortSignal.timeout(callBudgetMs(args)), ...(!lifecycleOnly && task ? [task.controller.signal] : [])])
         requests.set(id, { controller, ...(sessionId ? { sessionId } : {}) })
         try {
+          const onProgress = message.progress === true ? (message: string): void => {
+            if (!signal.aborted) sendFrame(socket, { id, type: 'progress', message })
+          } : undefined
           let result = message.name === 'opengui_start' && task?.started
             ? await service.displayStatus(signal)
             : !sessionId && (message.name === 'opengui_open_mirror' || message.name === 'opengui_close_mirror')
             ? await service.deviceMirror(String(args.deviceId), message.name === 'opengui_close_mirror', signal, automation.closeableSessions(owned, task))
-            : await callOpenGuiTool(service, message.name, args, signal, task ? { task: task.execution, owner: task.id, skipActivation: task.started } : { owner: connectionOwner })
+            : await callOpenGuiTool(service, message.name, args, signal, { ...(task ? { task: task.execution, owner: task.id, skipActivation: task.started } : { owner: connectionOwner }), onProgress })
           if (message.name === 'opengui_open_session') {
             const created = (result as { sessionId: string }).sessionId
             if (signal.aborted || socket.destroyed || (task && task.outcome !== 'active')) {

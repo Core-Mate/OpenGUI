@@ -25,6 +25,29 @@ async function client(capabilities: ClientCapabilities = {}, action: 'accept' | 
 }
 
 describe('standard MCP transport', () => {
+  it('delivers ordered request-scoped progress only when requested and ignores late callbacks', async () => {
+    const [a, b] = InMemoryTransport.createLinkedPair()
+    let late: ((message: string) => void) | undefined
+    const call = vi.fn(async (_name, _args, _signal, progress) => {
+      late = progress
+      progress?.('等待开始'); progress?.('内容待审核')
+      return { devices: [] }
+    })
+    const server = await startMcp(b, async () => ({ call, close() {} }))
+    const c = new Client({ name: 'progress-test', version: '1' })
+    cleanup.push(() => server.close(), () => c.close())
+    await c.connect(a)
+    const notices: unknown[] = []
+    const result = await c.callTool({ name: 'opengui_list_devices', arguments: {} }, undefined, { onprogress: value => notices.push(value) })
+    expect(result.structuredContent).toEqual({ devices: [] })
+    expect(notices).toMatchObject([{ progress: 1, message: '等待开始' }, { progress: 2, message: '内容待审核' }])
+    late?.('Late event')
+    await new Promise(resolve => setTimeout(resolve, 0))
+    expect(notices).toHaveLength(2)
+    await c.callTool({ name: 'opengui_list_devices', arguments: {} })
+    expect(late).toBeUndefined()
+  })
+
   it('reconnects the next independent call after an established connection closes', async () => {
     const [a, b] = InMemoryTransport.createLinkedPair()
     let disconnect: (() => void) | undefined

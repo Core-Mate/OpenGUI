@@ -26,6 +26,30 @@ async function open(client: BrokerClient, device = 'phone-a') {
 }
 
 describe('WorkBuddy broker isolation', () => {
+  it('routes progress to only the owned request without treating it as a tool result', async () => {
+    const { a, b, service } = await setup(), first = await open(a), second = await open(b, 'phone-b')
+    let release!: () => void
+    const gate = new Promise<void>(resolve => { release = resolve })
+    vi.spyOn(service, 'executeConfigured').mockImplementation(async (id, _wait, _signal, progress) => {
+      progress?.('Status for ' + id)
+      await gate
+      return service.snapshotSession(id)
+    })
+    const noticesA = vi.fn(), noticesB = vi.fn()
+    const pendingA = a.call('opengui_execute', { sessionId: first.sessionId, waitMs: 1000 }, signal(), noticesA)
+    const pendingB = b.call('opengui_execute', { sessionId: second.sessionId, waitMs: 1000 }, signal(), noticesB)
+    let settled = false; void pendingA.then(() => { settled = true })
+    await vi.waitFor(() => { expect(noticesA).toHaveBeenCalledTimes(1); expect(noticesB).toHaveBeenCalledTimes(1) })
+    expect(settled).toBe(false)
+    expect(noticesA).toHaveBeenCalledWith('Status for ' + first.sessionId)
+    expect(noticesB).toHaveBeenCalledWith('Status for ' + second.sessionId)
+    await expect(b.call('opengui_execute', { sessionId: first.sessionId }, signal(), noticesB)).rejects.toThrow('another WorkBuddy connection')
+    release()
+    expect(await pendingA).toMatchObject({ sessionId: first.sessionId })
+    expect(await pendingB).toMatchObject({ sessionId: second.sessionId })
+    expect(noticesB).toHaveBeenCalledTimes(1)
+  })
+
   it('binds native host tasks, continues initial recoverable failure, and rejects cross-task display closure', async () => {
     const { a, broker, host } = await setup()
     const hook = await BrokerClient.connect(broker.port, 'test-secret', VERSION, 'hook')

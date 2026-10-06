@@ -5,11 +5,12 @@ import { fileURLToPath } from 'node:url'
 import { brokerPort, brokerToken, BROKER_PROTOCOL, VERSION, workbuddyStateDir } from './state.ts'
 import { readFrames, sendFrame, type Message } from './wire.ts'
 import { OpenGuiError, type ExecutionState, type Recovery } from './errors.ts'
+import type { ToolProgress } from './task-events.ts'
 
 export class BrokerClient {
   /** Authenticated process identity for lifecycle diagnostics; never exposed as an MCP tool. */
   brokerPid: number | undefined
-  private readonly pending = new Map<string, { resolve: (value: unknown) => void; reject: (error: Error) => void; mutating: boolean }>()
+  private readonly pending = new Map<string, { resolve: (value: unknown) => void; reject: (error: Error) => void; mutating: boolean; onProgress?: ToolProgress | undefined }>()
   private readonly disconnectListeners = new Set<() => void>()
   private constructor(private readonly socket: Socket) {
     socket.on('error', () => undefined)
@@ -22,6 +23,10 @@ export class BrokerClient {
     readFrames(socket, message => {
       const waiter = this.pending.get(String(message.id))
       if (!waiter) return
+      if (message.type === 'progress') {
+        if (typeof message.message === 'string') waiter.onProgress?.(message.message)
+        return
+      }
       if (typeof message.error === 'string') waiter.reject(new OpenGuiError(String(message.code ?? 'operation_failed'), message.error, (message.executionState ?? 'not_executed') as ExecutionState, (message.recovery ?? 'stop') as Recovery))
       else waiter.resolve(message.result)
     })
@@ -43,8 +48,8 @@ export class BrokerClient {
     } catch (error) { client.close(); throw error }
   }
 
-  call(name: string, args: Record<string, unknown>, signal: AbortSignal): Promise<unknown> {
-    return this.request({ method: 'call', name, args }, signal)
+  call(name: string, args: Record<string, unknown>, signal: AbortSignal, onProgress?: ToolProgress): Promise<unknown> {
+    return this.request({ method: 'call', name, args, ...(onProgress ? { progress: true } : {}) }, signal, onProgress)
   }
 
   hostEvent(event: Record<string, unknown>, signal: AbortSignal): Promise<unknown> {
@@ -59,7 +64,7 @@ export class BrokerClient {
 
   close(): void { this.socket.destroy() }
 
-  private async request(message: Message, signal: AbortSignal): Promise<unknown> {
+  private async request(message: Message, signal: AbortSignal, onProgress?: ToolProgress): Promise<unknown> {
     signal.throwIfAborted()
     if (this.socket.destroyed) throw new OpenGuiError('connection_lost', 'opengui: broker is disconnected; reconnect on the next call', 'not_executed', 'reconnect')
     const id = randomUUID()
@@ -71,7 +76,7 @@ export class BrokerClient {
           sendFrame(this.socket, { id: randomUUID(), method: 'cancel', requestId: id })
           reject(new OpenGuiError('cancelled', 'opengui: request aborted', mutating ? 'outcome_unknown' : 'not_executed', mutating ? 'observe' : 'stop'))
         }
-        this.pending.set(id, { resolve, reject, mutating })
+        this.pending.set(id, { resolve, reject, mutating, onProgress })
         signal.addEventListener('abort', onAbort, { once: true })
         sendFrame(this.socket, { ...message, id })
       })

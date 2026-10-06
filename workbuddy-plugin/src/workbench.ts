@@ -134,7 +134,7 @@ export class Workbench {
   modelConfig: ConfiguredModel | undefined
   private evidenceBytes = 0
   private readonly evidenceFiles: Record<string, string> = {}
-  constructor(state?: WorkbenchState, private readonly storage?: WorkbenchStorage, private readonly now: () => number = Date.now) {
+  constructor(state?: WorkbenchState, private readonly storage?: WorkbenchStorage, private readonly now: () => number = Date.now, private readonly onChange?: () => void) {
     this.createdAt = state?.createdAt ?? new Date().toISOString()
     if (state) {
       // Archives predating explicit budgets retain their original default and trace usage.
@@ -171,7 +171,7 @@ export class Workbench {
       Object.assign(this.evidenceFiles, state.evidenceFiles)
     }
   }
-  checkpoint(): void { this.storage?.save() }
+  checkpoint(): void { this.storage?.save(); this.onChange?.() }
   blockConnection(deviceId: string): void {
     if (this.connectionRecovery?.deviceId === deviceId && this.connectionRecovery.status === 'waiting_recheck') return
     // Keep the barrier in memory even if durable storage fails.

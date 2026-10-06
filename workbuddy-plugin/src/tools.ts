@@ -28,7 +28,7 @@ const executionBudgetSchema = { type: 'object', additionalProperties: false, min
 }, description: 'Declare explicit user operation/inference ceilings before any operation. Only initial limits can be lowered; this never grants an extension. Saved limits and counts survive recovery. Explicit total-operation clauses in the saved objective/criteria also constrain the budget. Read executionBudget from the returned session and verify it matches the user request.' }
 const waitMs = { type: 'integer', minimum: 0, maximum: 30000, description: 'Bounded wait for a human decision or handback. Timeout preserves task state; do not loop repeatedly.' }
 /** Event-driven wait: the call returns at the next meaningful event, so one call replaces repeated polling. */
-const eventWaitMs = { type: 'integer', minimum: 0, maximum: HUMAN_CONTROL_WAIT_MS, description: 'Wait for the next event: it returns as soon as a step finishes or starts, the person must act (review, takeover, approval) or the run ends; otherwise after waitMs. Use 600000 and narrate each return briefly instead of polling.' }
+const eventWaitMs = { type: 'integer', minimum: 0, maximum: HUMAN_CONTROL_WAIT_MS, description: 'Keep one request waiting for task events, up to 600000 ms. With MCP progress support, updates are pushed during this call until completion or timeout. Otherwise return the next changed state once; repeated waits do not return the same pending review immediately. Narrate only event.changed, never an unchanged timeout. Do not inspect the workbench page to check progress.' }
 const controlWaitMs = { type: 'integer', minimum: 0, maximum: HUMAN_CONTROL_WAIT_MS, description: 'Wait while the person controls the phone (接管). Returns as soon as they click 恢复控制; nothing is captured and no model is called meanwhile. Use 600000 after task_paused.' }
 const deviceId = { type: 'string', minLength: 1, description: 'Required when the session contains more than one phone.' }
 
@@ -73,7 +73,7 @@ const sessionSchema = {
     handoff: { type: 'object' },
     tests: { type: 'object' },
     comments: { type: 'object' },
-    reportExports: { type: 'object' }, executionBudget: { type: 'object' },
+    reportExports: { type: 'object' }, executionBudget: { type: 'object' }, event: { type: 'object' },
     leaseExpiresAt: { type: 'string' }, objective: { type: 'string' }, successCriteria: { type: 'string' },
     result: { type: 'object' }, automation: { type: 'object' }, progress: progressSchema,
     createdAt: { type: 'string' }, closedAt: { type: 'string' }, lastError: { type: 'string' },
@@ -172,7 +172,7 @@ export const OPENGUI_WORKBUDDY_TOOLS: readonly WorkBuddyToolDefinition[] = [
   },
   {
     name: 'opengui_execute', title: 'Execute With Configured Phone Model',
-    description: 'Run the model selected from the published admin catalog on this existing authorized session and plan. The runtime handles the scoped screenshot/action loop and human review waiting. The host remains conversational. Follow WorkBuddy mode uses normal observe/act instead. Use waitMs 600000: the call returns as soon as a step finishes or starts, the person must act, or the run ends, so narrate that event in one short message and call again; repeated calls reuse the same runner, never start another. While it runs, use status/cancel rather than parallel phone actions.',
+    description: 'Run the model selected from the published admin catalog on this existing authorized session and plan. The runtime handles the scoped screenshot/action loop and human review waiting. The host remains conversational. Follow WorkBuddy mode uses normal observe/act instead. Use waitMs 600000. When the host requests MCP progress, keep this call open and receive status notifications until the run ends or the wait expires. Otherwise each changed step/review/control state returns once. Renew a timed-out wait silently; narrate only changed events. Repeated calls reuse the same runner. Never use browser screenshots, DOM, HTTP fetches, or timer-based status calls to monitor the workbench. While it runs, use status/cancel rather than parallel phone actions.',
     inputSchema: { type: 'object', additionalProperties: false, properties: { sessionId, waitMs: eventWaitMs }, required: ['sessionId'] }, outputSchema: sessionSchema,
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
   },
@@ -183,8 +183,8 @@ export const OPENGUI_WORKBUDDY_TOOLS: readonly WorkBuddyToolDefinition[] = [
     outputSchema: { type: 'object' }, annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   },
   {
-    name: 'opengui_open_guide', title: 'Open OpenGUI Connection Guide',
-    description: 'Open a workbench with connection instructions and two copyable task templates, without preparing video, observing or controlling a phone. Use for a bare @opengui mention or when no authorized device is available. Present workbenchUrl in the current host panel. It does not grant first-display readiness for a later task.',
+    name: 'opengui_open_guide', title: 'Open OpenGUI Task Home',
+    description: 'Open the task home with an editable request, fixed @opengui label, model/device selection, display-only device preview and connection help. Use for a bare @opengui mention or when no authorized device is available. Present workbenchUrl in the current host panel. Opening the home does not start execution or grant first-display readiness. The user can enter a new request, choose a configured model and click Start to run it directly from the workbench.',
     inputSchema: { type: 'object', additionalProperties: false, properties: { objective: { type: 'string', minLength: 1, maxLength: 4000 }, successCriteria: { type: 'string', minLength: 1, maxLength: 4000 } } }, outputSchema: { type: 'object' },
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   },
@@ -211,7 +211,7 @@ export const OPENGUI_WORKBUDDY_TOOLS: readonly WorkBuddyToolDefinition[] = [
   ...(['open', 'status', 'close'] as const).map(action => ({
     name: action === 'status' ? 'opengui_viewer_status' : `opengui_${action}_viewer`,
     title: 'OpenGUI Real-time Viewer',
-    description: action === 'open' ? 'Open this task’s workbench with present_files. A new task waits there until the user signs in, confirms request, model and device and clicks 开始执行; nothing is bound before that. Then wait for a visible decoded first frame before observing or acting.' : action === 'status' ? 'Wait at most 30 seconds per call. While startRequired is true, call again with waitMs 30000 and do not open control. After the start, it waits for verified first video frames; first-frame timeout is terminal, never recreate sessions to bypass it.' : 'Close watching only; established control continues.',
+    description: action === 'open' ? 'Open this task’s workbench with present_files. A new task waits there until the user signs in, confirms request, model and device and clicks 开始执行; nothing is bound before that. Then wait for a visible decoded first frame before observing or acting.' : action === 'status' ? 'Wait for the saved Start/first-frame event with waitMs 600000; MCP progress reports the current prompt if supported. Renew only after timeout, without repeating chat prompts or reading the workbench page; do not open control while startRequired is true. After the start, it waits for verified first video frames; first-frame timeout is terminal, never recreate sessions to bypass it.' : 'Close watching only; established control continues.',
     inputSchema: { type: 'object', additionalProperties: false, properties: action === 'open'
       ? { deviceIds: { type: 'array', uniqueItems: true, minItems: 1, maxItems: 1, items: { type: 'string', minLength: 1 } }, resumeTaskId: { type: 'string', pattern: '^[0-9a-fA-F-]{36}$' }, objective: { type: 'string', minLength: 1, maxLength: 4000 }, successCriteria: { type: 'string', minLength: 1, maxLength: 4000 } }
       : { viewerId: { type: 'string', minLength: 1 }, ...(action === 'status' ? { waitMs: { type: 'integer', minimum: 0, maximum: HUMAN_CONTROL_WAIT_MS, description: 'Returns as soon as the person clicks 开始执行 and the first frame shows, or on failure; otherwise after waitMs. Use 600000.' } } : {}) },
@@ -392,7 +392,7 @@ export async function callOpenGuiTool(
     case 'opengui_environment': return service.environment(requiredString(args.sessionId, 'sessionId'), optionalString(args.deviceId, 'deviceId'), args.command as 'read' | 'check' | 'verify', signal, args.spec, args.verification as Parameters<WorkBuddyOpenGuiService['environment']>[5])
     case 'opengui_handoff': return service.requestHandoff(requiredString(args.sessionId, 'sessionId'), args.category as HumanHandoff['category'], requiredString(args.reason, 'reason'), Number(args.waitMs ?? 0), signal)
     case 'opengui_test_case': return service.testCase(requiredString(args.sessionId, 'sessionId'), args as unknown as TestCaseCommand)
-    case 'opengui_execute': return service.executeConfigured(requiredString(args.sessionId, 'sessionId'), Number(args.waitMs ?? 0), signal)
+    case 'opengui_execute': return service.executeConfigured(requiredString(args.sessionId, 'sessionId'), Number(args.waitMs ?? 0), signal, options.onProgress)
     case 'opengui_history': return { history: service.viewers.history(optionalString(args.taskId, 'taskId')) }
     case 'opengui_review_comment': {
       if (args.platformDraft) { const input = args.platformDraft as { reviewId: string; text: string; evidenceObservationId: string }; return service.platformDraft(requiredString(args.sessionId, 'sessionId'), input.reviewId, input.text, input.evidenceObservationId) }
@@ -402,7 +402,7 @@ export async function callOpenGuiTool(
     case 'opengui_verify_comment': return service.verifyComment(requiredString(args.sessionId, 'sessionId'), requiredString(args.reviewId, 'reviewId'), requiredString(args.evidenceObservationId, 'evidenceObservationId'))
     case 'opengui_open_viewer': return service.openViewer(deviceIds(args.deviceIds), signal, { ...options, objective: optionalString(args.objective, 'objective') ?? options.objective, successCriteria: optionalString(args.successCriteria, 'successCriteria') ?? options.successCriteria, resumeTaskId: optionalString(args.resumeTaskId, 'resumeTaskId') })
     case 'opengui_open_guide': return service.openGuide(signal, { ...options, objective: optionalString(args.objective, 'objective') ?? options.objective, successCriteria: optionalString(args.successCriteria, 'successCriteria') ?? options.successCriteria })
-    case 'opengui_viewer_status': return service.viewers.status(requiredString(args.viewerId, 'viewerId'), options.owner ?? options.task?.viewerOwner ?? 'local', Number(args.waitMs ?? 0), signal)
+    case 'opengui_viewer_status': return service.viewers.status(requiredString(args.viewerId, 'viewerId'), options.owner ?? options.task?.viewerOwner ?? 'local', Number(args.waitMs ?? 0), signal, options.onProgress)
     case 'opengui_close_viewer': return service.viewers.closeViewer(requiredString(args.viewerId, 'viewerId'), options.owner ?? options.task?.viewerOwner ?? 'local')
     case 'opengui_todo_write': return service.viewers.writeTodos(requiredString(args.viewerId, 'viewerId'), options.owner ?? options.task?.viewerOwner ?? 'local', args.todos)
 
