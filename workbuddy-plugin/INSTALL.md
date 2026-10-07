@@ -46,14 +46,14 @@ Download to a new directory and verify before extraction. The following block **
 
 ### Open the installer folder and hand off
 
-The handoff action is **点击打开安装脚本目录 / Open installer folder**. Its target is the actual extracted **directory containing** `OpenGUI-Install.command`, not the executable itself. Opening Finder must not execute the script. The tested WorkBuddy 5.7.6 environment refused opening the `.command` document in Terminal automatically; keep the user’s Finder double-click and Terminal Return as separate steps.
+The handoff action is **打开安装脚本目录（打开后双击运行 OpenGUI-Install.command 文件） / Open installer folder (then double-click OpenGUI-Install.command to run it)**. Its target is the actual extracted **directory containing** `OpenGUI-Install.command`, not the executable itself. Opening Finder must not execute the script. The tested WorkBuddy 5.7.6 environment refused opening the `.command` document in Terminal automatically; keep the user’s Finder double-click and Terminal Return as separate steps.
 
 1. Verify the ZIP and extracted files, then offer the host’s supported **Open folder / Show in Finder** action for the actual directory. If only Markdown links are available, link the absolute directory with a trailing slash as below. A Markdown label cannot force Finder: WorkBuddy may route local links to an internal preview. In that case use its native Open folder action, or show Command-Shift-G instructions. Do not invent a `workbuddy://` URL, embed executable shell links, or claim the one-click Finder behavior was tested when it was not. Keep `installer.sh` beside the launcher. If download or extraction was blocked, link the official ZIP for manual download; do not call files ready until they exist and match the verified archive.
 
 ```markdown
 安装文件已下载并校验完成。请打开安装脚本所在的文件夹：
 
-[点击打开安装脚本目录](<ABSOLUTE_INSTALLER_FOLDER/>)
+[打开安装脚本目录（打开后双击运行 OpenGUI-Install.command 文件）](<ABSOLUTE_INSTALLER_FOLDER/>)
 
 在 Finder 中双击 OpenGUI-Install.command，然后在终端窗口按回车开始安装。
 输入 q 后回车可取消。
