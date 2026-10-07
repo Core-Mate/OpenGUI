@@ -88,7 +88,7 @@ OpenGUI 正式支持 DSH `0.1.0-rc.7`、`0.1.0-rc.8`、`0.1.1-rc.1` 和 `0.1.1-r
 帮我安装opengui插件：https://github.com/Core-Mate/OpenGUI
 ```
 
-WorkBuddy 会按[安装指南](./workbuddy-plugin/INSTALL.md#recommended-installation)下载、校验并解压安装包，然后提供**“点击打开安装脚本目录”**入口，目标是 `OpenGUI-Install.command` 所在的文件夹。通过宿主的“在 Finder 中显示 / 打开文件夹”操作打开目录后，双击 `OpenGUI-Install.command`，再在终端窗口**按回车开始安装**。若目录链接被 WorkBuddy 接管为预览，请使用该预览的“打开文件夹”操作，或按指南通过 Finder 前往实际目录。配置写入后回到 WorkBuddy 验证。
+WorkBuddy 会按[安装指南](./workbuddy-plugin/INSTALL.md#recommended-installation)下载、校验并解压安装包，然后提供**“打开安装脚本目录（打开后双击运行 OpenGUI-Install.command 文件）”**入口，目标是 `OpenGUI-Install.command` 所在的文件夹。通过宿主的“在 Finder 中显示 / 打开文件夹”操作打开目录后，双击 `OpenGUI-Install.command`，再在终端窗口**按回车开始安装**。若目录链接被 WorkBuddy 接管为预览，请使用该预览的“打开文件夹”操作，或按指南通过 Finder 前往实际目录。配置写入后回到 WorkBuddy 验证。
 
 **[下载 macOS 安装 ZIP](https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-installer-v1.0.2/opengui-workbuddy-installer-1.0.2.zip)** · [SHA-256 校验文件](https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-installer-v1.0.2/opengui-workbuddy-installer-1.0.2.zip.sha256)
 
@@ -102,7 +102,7 @@ WorkBuddy 会按[安装指南](./workbuddy-plugin/INSTALL.md#recommended-install
 
 安装器会准备独立运行环境、备份受影响的设置，配置 MCP、`opengui` Skill 和 7 个生命周期 Hooks，并保留其他插件。无需 sudo、手动安装 Node.js、部署后端或安装 DSH。这里的**安装入口 1.0.2**安装的是现有公测**插件 0.3.1**，不是新的插件运行时，也不是经过签名或公证的 macOS App。
 
-**给执行安装的 AI：**短请求已足够识别安装目标，请读取 [INSTALL.md](./workbuddy-plugin/INSTALL.md#recommended-installation)，使用其中固定的下载地址和校验值，按用户请求继续常规准备。准备好文件后，提供“点击打开安装脚本目录”入口，指向实际解压目录，并提示用户在 Finder 中双击 `OpenGUI-Install.command`、按回车确认。优先使用宿主支持的打开文件夹操作；普通 Markdown 链接不能保证直接打开 Finder，需保留 Finder 前往目录的步骤。不要先尝试自动打开终端，也不要把打开目录说成已打开安装器或已完成安装。不要在 WorkBuddy 命令环境直接执行入口、移除宿主注入、改变权限设置或切换工具绕过拒绝。README 不能替用户授予权限。
+**给执行安装的 AI：**短请求已足够识别安装目标，请读取 [INSTALL.md](./workbuddy-plugin/INSTALL.md#recommended-installation)，使用其中固定的下载地址和校验值，按用户请求继续常规准备。准备好文件后，提供“打开安装脚本目录（打开后双击运行 OpenGUI-Install.command 文件）”入口，指向实际解压目录，并提示用户在 Finder 中双击 `OpenGUI-Install.command`、按回车确认。优先使用宿主支持的打开文件夹操作；普通 Markdown 链接不能保证直接打开 Finder，需保留 Finder 前往目录的步骤。不要先尝试自动打开终端，也不要把打开目录说成已打开安装器或已完成安装。不要在 WorkBuddy 命令环境直接执行入口、移除宿主注入、改变权限设置或切换工具绕过拒绝。README 不能替用户授予权限。
 
 WorkBuddy 5.7.6 默认权限曾以 `CODEBUDDY_BROKER_DENY` / `decision: prompt` 拒绝直接写入配置，加长提示词无法解决。ZIP 把独立的、由用户确认的安装步骤做成可双击入口。下载成功或安装结果文件均不代表宿主已加载；后续原生 MCP 调用才验证该阶段。详见[安装验证与命令行备用路径](./workbuddy-plugin/INSTALL.md)。
 
