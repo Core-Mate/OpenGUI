@@ -82,7 +82,41 @@ OpenGUI 正式支持 DSH `0.1.0-rc.7`、`0.1.0-rc.8`、`0.1.1-rc.1` 和 `0.1.1-r
 
 ## WorkBuddy 安装
 
-在 **macOS** 上打开 WorkBuddy，新建聊天，粘贴下面这段完整指令：
+**WorkBuddy 5.7.6 默认权限的已知限制：**“帮我安装opengui插件：https://github.com/Core-Mate/OpenGUI”可以让助手找到正确流程，但不能保证完成安装。实测配置写入被 `CODEBUDDY_BROKER_DENY` / `decision: prompt` 拒绝，当前工具又没有可响应的授权入口；加长提示词无法解决这个权限问题。相同官方包已通过用户授权的本机终端安装，并通过 WorkBuddy 工具调用验证。
+
+### 已验证的安装路径：macOS 终端
+
+打开 macOS 自带的「终端」（不是 WorkBuddy 内的命令执行工具），粘贴下面整段。它会下载固定版本的兼容安装器、核对 SHA-256，再安装官方包；无需关闭 WorkBuddy 或自行安装 Node.js。
+
+```bash
+(
+  set -euo pipefail
+  install_dir=$(mktemp -d "${TMPDIR:-/tmp}/opengui-workbuddy.XXXXXXXX")
+  installer_commit='d6a5f5ce240cdd6ca393ea516206b8a329411ac0'
+  installer_sha='b3581c8d928068e7bf7a8a886f75c1c436efdb71ae2c5bf97b220b36bf9f0239'
+  installer='opengui-workbuddy-install.command'
+  cd "$install_dir"
+  curl --proto '=https' --proto-redir '=https' --tlsv1.2 --fail --location \
+    --connect-timeout 15 --max-time 240 --retry 2 \
+    "https://raw.githubusercontent.com/Core-Mate/OpenGUI/$installer_commit/workbuddy-plugin/scripts/install-macos.command" \
+    -o "$installer"
+  printf '%s  %s\n' "$installer_sha" "$installer" | shasum -a 256 -c -
+  bash "$installer" --check
+  bash "$installer"
+)
+```
+
+看到 `CONFIG_WRITTEN` 和 `LIVE_CONFIG_WRITTEN` 后，回到 WorkBuddy，发送：
+
+```text
+OpenGUI 已通过终端安装。请检查并尽可能启用 OpenGUI 的 Skill 和 MCP，直接调用 opengui_list_devices 验证工具加载，不要操作手机。仅在确实需要我手动开启时，展示 https://github.com/Core-Mate/OpenGUI/blob/main/workbuddy-plugin/docs/enable-opengui.md 中对应的截图和入口步骤。
+```
+
+若配置已经写入，但连接器管理中还没有 OpenGUI，请先结束其他任务，再退出并重新打开 WorkBuddy 后检查一次。如需手动开启，参见[开关图示](./workbuddy-plugin/docs/enable-opengui.md)。没有连接手机时，工具返回空设备列表也是有效的安装验证结果。
+
+### 由 WorkBuddy 助手尝试安装
+
+可发送上面的短请求，或在新聊天中使用下面的完整指令明确范围。如果当前环境已知没有文件授权入口，应直接给出终端安装步骤；首次遇到上述拒绝后停止重试，不要切换权限模式、关闭沙箱或移除宿主注入来继续写入。独立终端操作应由用户执行，或由用户明确授权本机助手执行。
 
 ```text
 帮我把 OpenGUI 插件安装到当前 WorkBuddy：https://github.com/Core-Mate/OpenGUI。请按仓库 workbuddy-plugin/INSTALL.md 的推荐流程，使用已固定提交并校验 SHA-256 的兼容安装器，安装官方 WorkBuddy 发布包及其 MCP、opengui Skill 和生命周期 Hooks。请完成安装并验证工具加载；不要操作手机。请先检查并尽可能自动启用 OpenGUI 的 Skill 和 MCP；已启用就直接继续，仅在确实需要我手动打开开关时，展示安装指南中的对应截图和入口步骤。正常的下载、校验、预检和安装步骤请直接继续，不必再让我选择是否安装或是否使用文档指定的兼容安装器；如果 WorkBuddy 或系统实际要求授权，或有无法安全解决的错误，再停下来告诉我。

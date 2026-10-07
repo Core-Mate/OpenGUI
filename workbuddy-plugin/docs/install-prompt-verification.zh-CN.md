@@ -105,3 +105,18 @@ WorkBuddy 技能页已显示启用的 `opengui`，但聊天最初检索不到 MC
 因此，本轮 **配置写入、WorkBuddy MCP 加载、只读设备发现已通过**；Skill 存在或安装器退出成功都不足以独立证明这些阶段全部完成。
 
 本次 README 将推荐流程明确为“固定提交的兼容安装器 + 原始官方发布包”，并提供完整安装请求，减少无必要的安装器选择。完整新提示词尚未在全新环境独立验收；不能写成已证明所有版本、模型都不会询问。默认权限下 **WorkBuddy 内全自动安装仍未通过**，本机终端成功属于用户另行授权的备用流程。
+
+
+## 2026-10-07：短提示词重试、终端恢复与缓存权限缺陷
+
+用户卸载后再次发送同一短提示词，原生对话从 13:25 到 13:58，最终报告配置重命名被 `CODEBUDDY_BROKER_DENY` / `decision: prompt` 拒绝并回滚。此次确认不是误入其他插件的安装任务。检查本机时，OpenGUI MCP、Skill 与 Hooks 均不存在，但下载和运行时缓存仍在。
+
+沿用用户明确允许的本机终端备用流程，同一已校验安装器和官方包约 4 秒返回 `CONFIG_WRITTEN`、`LIVE_CONFIG_WRITTEN`。与本次备份对比，其他 MCP 和非 Hook 设置保持不变；Skill 与 7 个 Hook 事件写入。原聊天仍找不到工具，原生 MCP 管理最初也未列出 OpenGUI；退出并重开空闲 WorkBuddy 后，总开关已开启、状态绿色、14/14 个工具，无需再手动切换。
+
+真实调用随后暴露另一个问题：`WorkBuddy state directory must be private, owned by this user, and not a symlink`。本机 `~/.workbuddy/opengui` 是当前用户所有的普通目录，模式为 `0755`。直接调用已安装官方包的 `ensurePrivateState()` 同样失败；仅将该目录收紧至 `0700` 后同一检查通过。没有更改 WorkBuddy 根目录或宿主权限策略。
+
+原安装器虽然设置 `umask 077`，但 `mkdir -p` 不会改变已有缓存目录的权限。此次修复在既有归属和符号链接检查后，仅收紧 OpenGUI 状态根目录。回归先在旧脚本上失败（期望 `0700`，实际 `0755`），修复后通过；同时验证预检不改变权限、宿主根目录保持原模式、符号链接被拒且目标权限不变。该测试在归档检查处停止，不用网络下载模拟权限问题。
+
+最终在原生 WorkBuddy 原安装对话中再次直接调用 `mcp__opengui__opengui_list_devices` 成功，返回 1 台 `sdk gphone64 arm64` 模拟器，`connected: true`、`authorized: true`、`state: device`。本轮没有读取手机屏幕或执行手机动作。
+
+当前推荐安装器固定为提交 `d6a5f5ce240cdd6ca393ea516206b8a329411ac0`，SHA-256 为 `b3581c8d928068e7bf7a8a886f75c1c436efdb71ae2c5bf97b220b36bf9f0239`；官方 0.3.1 包及其哈希不变。README 把已验证的终端路径直接放在 WorkBuddy 安装入口，保留助手安装请求但明确权限边界。此次成功是终端恢复加原生只读验收，仍不能声称 WorkBuddy 默认权限的一句话全自动安装通过。

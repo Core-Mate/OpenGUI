@@ -10,6 +10,16 @@ Use this guide when a user asks WorkBuddy to install `https://github.com/Core-Ma
 
 Use the public **`opengui-workbuddy-v0.3.1`** prerelease below. Do not use GitHub's generic `/releases/latest`: this repository also publishes DSH and Codex plugins. Do not substitute a local development archive or claim unreleased features are included in the public package.
 
+## Choose the execution route before installing
+
+A short request such as `帮我安装opengui插件：https://github.com/Core-Mate/OpenGUI` is sufficient to identify this workflow; do not require the user to resubmit a longer prompt. Prompt wording does not fix host file permissions.
+
+- For the verified WorkBuddy 5.7.6/default-permission environment where no usable file-authorization channel exists, explain the limitation and show the complete verified command below for the user to run in the macOS **Terminal** app. Do not spend another installation attempt rediscovering a known refusal. Do not launch an external process on the user's behalf to evade the host policy; a local assistant needs explicit authorization for this separate operation.
+- In an untested environment with an available normal authorization flow, proceed within the installation request and use that flow when needed. If a configuration write returns `CODEBUDDY_BROKER_DENY` with `decision: prompt`, stop after the first failure, confirm the reported rollback result, and present the Terminal fallback. Do not repeat dependency downloads, run permission probes, switch permission modes, disable the sandbox, or strip host-injected variables.
+- If rollback is incomplete, report the affected paths and recovery receipt before any retry. Do not describe the environment as clean without evidence.
+
+The fallback message must say **configuration was not written**, distinguish the macOS Terminal app from WorkBuddy's command tool, include the runnable command, and explain the success markers and return-to-WorkBuddy verification. A generic “try it yourself” or “run outside the sandbox” is insufficient. Never attribute every installation failure to this limitation; checksum, download, compatibility, and active-broker failures retain their own diagnostics.
+
 ## Recommended installation
 
 Use the **commit-pinned compatible installer** below with the **official 0.3.1 release package**. This is the documented installation route, not a choice the user must make between two installers. The old installer attached to the release checks only `codebuddy.js` and fails with `HOST_HOOKS` on the WorkBuddy 5.6.2/5.7.6 headless/lite layout. The pinned script recognizes those layouts and avoids `/bin/ps` on live-compatible hosts. It still checks Hooks, archive integrity, ownership, redirected paths, and active-broker upgrade safety.
@@ -22,8 +32,8 @@ Download this exact script, verify its pinned SHA-256, then run preflight and in
 (
   set -euo pipefail
   install_dir=$(mktemp -d "${TMPDIR:-/tmp}/opengui-workbuddy.XXXXXXXX")
-  installer_commit='4e4c57f15811fabaecfe8f00a4af1400fb2b1b8c'
-  installer_sha='6a8ce9087e761c7772711d1a5316669fccb6618bb342d017e364acc62af2e864'
+  installer_commit='d6a5f5ce240cdd6ca393ea516206b8a329411ac0'
+  installer_sha='b3581c8d928068e7bf7a8a886f75c1c436efdb71ae2c5bf97b220b36bf9f0239'
   installer='opengui-workbuddy-install.command'
   cd "$install_dir"
   curl --proto '=https' --proto-redir '=https' --tlsv1.2 --fail --location \
@@ -53,11 +63,17 @@ For upgrades, finish existing OpenGUI tasks and close their viewers first. If th
 Report each stage separately:
 
 1. **Configuration written:** the installer exits successfully and reports `CONFIG_WRITTEN`, `LIVE_CONFIG_WRITTEN`, or an already-configured result. This alone does not prove WorkBuddy loaded the plugin.
-2. **Host loaded:** check that the `opengui` Skill and MCP server are enabled. If either is off, use the host's supported enable action or available UI control within the user's installation request, then verify the new state. If both are already enabled, or you enable them successfully, continue without asking the user to visit settings. Only when a required switch cannot be enabled by the assistant, show the relevant screenshot and directions from [manual enablement help](#manual-enablement-help). An enabled Skill or “14/14 tools enabled” label does not prove the MCP server's master switch is on. Complete normal trust prompts and review external Hook changes in `/hooks` if requested. A new chat may be needed to refresh discovery.
+2. **Host loaded:** check that the `opengui` Skill and MCP server are enabled. If either is off, use the host's supported enable action or available UI control within the user's installation request, then verify the new state. If both are already enabled, or you enable them successfully, continue without asking the user to visit settings. Only when a required switch cannot be enabled by the assistant, show the relevant screenshot and directions from [manual enablement help](#manual-enablement-help). An enabled Skill or “14/14 tools enabled” label does not prove the MCP server's master switch is on. Complete normal trust prompts and review external Hook changes in `/hooks` if requested. A new chat may be needed to refresh discovery. If the configuration is present but the MCP manager still does not list OpenGUI, finish other work and quit/reopen WorkBuddy once, then recheck the native manager. This was needed in the 5.7.6 retest; do not reinstall or toggle an already-enabled server merely to refresh discovery.
 3. **Device discovery:** discover and call the loaded `opengui_list_devices` MCP tool directly; WorkBuddy may expose its full name as `mcp__opengui__opengui_list_devices`. Read its actual result. Avoid invoking the phone-control Skill merely for an installation check. An empty list means installation may be valid but no authorized device is connected; explain phone-side setup instead of declaring a device test passed.
 4. **First task:** after the user connects and authorizes a phone, try `@opengui Open Settings, then return to the home screen. Stop after confirming the home screen is visible.` Verify the right-hand preview and the actual result. Do not launch a phone task merely to complete installation unless the user requested it.
 
 Keep trust, device authorization, and any account/model prompts visible to the user. Do not claim automatic phone authorization or complete business acceptance from an installer success message.
+
+## State-directory permission error
+
+If tools are discoverable but a call returns `WorkBuddy state directory must be private, owned by this user, and not a symlink`, check OpenGUI's state directory, normally `~/.workbuddy/opengui`. This is separate from a host file-policy refusal. The runtime requires an owner-only directory and rejects symlinks or a different owner.
+
+The pinned installer above now tightens an existing OpenGUI state directory to mode `0700` after checking ownership and redirected paths. Earlier installers used `umask 077` for new directories but did not repair an already-existing `0755` cache directory. The fix does not change `~/.workbuddy` permissions, weaken runtime checks, or recursively change dependency permissions. Follow the normal active-broker upgrade precautions before rerunning an installer; do not force an upgrade merely to repair permissions. An authorized local maintainer can inspect and tighten this one directory, then retry the read-only call without reinstalling. Never apply a blind recursive chmod or chmod a symlink target.
 
 ## Manual enablement help
 

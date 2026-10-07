@@ -81,7 +81,41 @@ Model availability, pricing, and policy behavior vary by version and region. Whi
 
 ## Use OpenGUI in WorkBuddy
 
-On **macOS**, open a new WorkBuddy chat and paste this complete request:
+**Known limitation with WorkBuddy 5.7.6 default permissions:** a short “Install OpenGUI: https://github.com/Core-Mate/OpenGUI” request can find the correct workflow but may not complete installation. In testing, configuration writes failed with `CODEBUDDY_BROKER_DENY` / `decision: prompt`, with no usable authorization channel in the current tools. A longer prompt cannot resolve that permission failure. The same official package was successfully installed through a user-authorized local terminal and verified by a WorkBuddy tool call.
+
+### Verified route: macOS Terminal
+
+Open the macOS **Terminal** app, outside WorkBuddy's command tools, and paste the complete block below. It downloads the pinned compatible installer, verifies SHA-256, and installs the official package. WorkBuddy can remain open; no manual Node.js setup is needed.
+
+```bash
+(
+  set -euo pipefail
+  install_dir=$(mktemp -d "${TMPDIR:-/tmp}/opengui-workbuddy.XXXXXXXX")
+  installer_commit='d6a5f5ce240cdd6ca393ea516206b8a329411ac0'
+  installer_sha='b3581c8d928068e7bf7a8a886f75c1c436efdb71ae2c5bf97b220b36bf9f0239'
+  installer='opengui-workbuddy-install.command'
+  cd "$install_dir"
+  curl --proto '=https' --proto-redir '=https' --tlsv1.2 --fail --location \
+    --connect-timeout 15 --max-time 240 --retry 2 \
+    "https://raw.githubusercontent.com/Core-Mate/OpenGUI/$installer_commit/workbuddy-plugin/scripts/install-macos.command" \
+    -o "$installer"
+  printf '%s  %s\n' "$installer_sha" "$installer" | shasum -a 256 -c -
+  bash "$installer" --check
+  bash "$installer"
+)
+```
+
+After `CONFIG_WRITTEN` and `LIVE_CONFIG_WRITTEN`, return to WorkBuddy and send:
+
+```text
+OpenGUI was installed through Terminal. Check and enable its Skill and MCP where supported, then call opengui_list_devices directly to verify tool loading without operating my phone. Only if I must enable a switch manually, show the relevant screenshot and navigation steps from https://github.com/Core-Mate/OpenGUI/blob/main/workbuddy-plugin/docs/enable-opengui.md.
+```
+
+If configuration was written but OpenGUI is absent from the connector manager, finish other work, quit/reopen WorkBuddy, and check once more. See the [illustrated switch guide](./workbuddy-plugin/docs/enable-opengui.md) if needed. A successful empty device list is a valid installation check when no phone is connected.
+
+### Ask the WorkBuddy assistant to install
+
+Use the short request above or the complete request below to clarify scope. If the current environment is already known to lack a file-authorization channel, provide the Terminal steps immediately. Stop retrying after the first matching refusal; do not switch permission modes, disable the sandbox, or remove host injection to continue writing. The user must run the separate Terminal step or explicitly authorize a local assistant to do so.
 
 ```text
 Install OpenGUI into my current WorkBuddy: https://github.com/Core-Mate/OpenGUI. Follow the recommended flow in workbuddy-plugin/INSTALL.md: use the commit-pinned, SHA-256-verified compatible installer to install the official WorkBuddy release package, MCP, opengui Skill, and lifecycle Hooks. Complete installation and verify tool discovery without operating my phone. Check and enable the OpenGUI Skill and MCP automatically where supported; continue if enabled, and show the guide’s relevant screenshot and navigation steps only if I must turn on a switch manually. Proceed with routine downloads, checks, preflight, and installation without asking me again whether to install or use the documented compatible installer. Pause if WorkBuddy or the OS actually requires authorization, or an error cannot be safely resolved.
