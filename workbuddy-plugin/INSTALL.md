@@ -14,11 +14,11 @@ Use the public **`opengui-workbuddy-v0.3.1`** prerelease below. Do not use GitHu
 
 A short request such as `帮我安装opengui插件：https://github.com/Core-Mate/OpenGUI` identifies this workflow. Do not require a longer prompt or ask the user to choose between the old release installer and its documented replacement.
 
-Use the **interactive installer ZIP 1.0.0**, containing the commit-pinned compatible installer, to install the unchanged official **plugin 0.3.1**. This ZIP is an installer entry point, not a signed/notarized app or a new runtime release. It checks the bundled payload again, waits for a human Return, and records a fresh result and log for each installation attempt.
+Use the **interactive installer ZIP 1.0.1**, containing the commit-pinned compatible installer, to install the unchanged official **plugin 0.3.1**. This ZIP is an installer entry point, not a signed/notarized app or a new runtime release. It checks the bundled payload again, waits for a human Return, and records a fresh result and log for each installation attempt.
 
-- ZIP: https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-installer-v1.0.0/opengui-workbuddy-installer-1.0.0.zip
-- SHA-256: `5c385cd387c09a48ccf7a853a033a7c50c5f508ca08854887f4f17318cc8fa34`
-- Checksum file: https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-installer-v1.0.0/opengui-workbuddy-installer-1.0.0.zip.sha256
+- ZIP: https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-installer-v1.0.1/opengui-workbuddy-installer-1.0.1.zip
+- SHA-256: `91e86badac1ea385d0ebf0353f456088b7a779978a1ad52ce7594ce3a6d7ac71`
+- Checksum file: https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-installer-v1.0.1/opengui-workbuddy-installer-1.0.1.zip.sha256
 - Bundled installer commit: `d6a5f5ce240cdd6ca393ea516206b8a329411ac0`
 - Bundled installer SHA-256: `b3581c8d928068e7bf7a8a886f75c1c436efdb71ae2c5bf97b220b36bf9f0239`
 
@@ -33,18 +33,20 @@ Download to a new directory and verify before extraction. The following block **
   set -euo pipefail
   handoff_dir=$(mktemp -d "$HOME/Downloads/OpenGUI-installer.XXXXXXXX")
   cd "$handoff_dir"
-  archive='opengui-workbuddy-installer-1.0.0.zip'
+  archive='opengui-workbuddy-installer-1.0.1.zip'
   curl --proto '=https' --proto-redir '=https' --tlsv1.2 --fail --location \
     --connect-timeout 15 --max-time 240 --retry 2 \
-    'https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-installer-v1.0.0/opengui-workbuddy-installer-1.0.0.zip' \
+    'https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-installer-v1.0.1/opengui-workbuddy-installer-1.0.1.zip' \
     -o "$archive"
-  printf '%s  %s\n' '5c385cd387c09a48ccf7a853a033a7c50c5f508ca08854887f4f17318cc8fa34' "$archive" | shasum -a 256 -c -
+  printf '%s  %s\n' '91e86badac1ea385d0ebf0353f456088b7a779978a1ad52ce7594ce3a6d7ac71' "$archive" | shasum -a 256 -c -
   /usr/bin/ditto -x -k "$archive" "$handoff_dir"
   printf 'Open in Finder: %s/OpenGUI-WorkBuddy-Installer/OpenGUI-Install.command\n' "$handoff_dir"
 )
 ```
 
 ### Open the installer and hand off
+
+The ZIP does not itself arrange automatic launching from WorkBuddy. The installing assistant may use an available, normally authorized open-file/app action to open it. Manual opening and the subsequent native MCP call have been verified; automatic window opening from WorkBuddy remains unverified. Human confirmation in the Terminal window is required in either case.
 
 1. If the host provides a supported, normally authorized way to open the extracted `.command` file in macOS Terminal, use it. Opening the window must not press Return or feed confirmation on the user's behalf. If that operation is unavailable or refused, stop attempting it and give the exact clickable local path. Tell the user to open Finder, press Command-Shift-G, paste the containing folder's absolute path, and double-click `OpenGUI-Install.command`. Keep `installer.sh` beside it. If preparation itself was blocked, provide the ZIP link and the same extraction/opening steps.
 2. The user reads the installation scope and presses Return in Terminal, or types `q` then Return to cancel. If macOS blocks opening, let the user handle the normal system prompt. Do not remove quarantine attributes or disable Gatekeeper. Before upgrading, finish phone tasks, quit WorkBuddy, and wait for the previous broker's normal idle exit. Never force-kill processes or remove active locks.
@@ -147,4 +149,4 @@ Current development behavior and data flow: [English](README.md) · [简体中�
 
 Maintainers can run `python3 workbuddy-plugin/scripts/test-installer-handoff.py` from the repository root; it runs isolated launcher tests and builds the ZIP with executable permissions. To build alone, use `python3 workbuddy-plugin/scripts/build-installer-handoff.py`. Outputs are in `workbuddy-plugin/dist/` with an adjacent SHA-256 file. The builder refuses a changed installer payload until its pinned digest is deliberately reviewed and updated.
 
-Publish the ZIP and checksum under a new installer-only prerelease tag, such as `opengui-workbuddy-installer-v1.0.0`, without marking it latest. Keep its version distinct from the plugin runtime, attach both files, and verify the downloaded asset against this guide. Never overwrite an existing release asset or the plugin's original 0.3.1 assets. When changing the launcher or payload, bump the installer version and update the download URL and digest together. Record real Terminal and WorkBuddy acceptance separately from automated fixture tests; see the [verification record](docs/install-prompt-verification.zh-CN.md).
+Publish the ZIP and checksum under a new installer-only prerelease tag, such as `opengui-workbuddy-installer-v1.0.1`, without marking it latest. Keep its version distinct from the plugin runtime, attach both files, and verify the downloaded asset against this guide. Never overwrite an existing release asset or the plugin's original 0.3.1 assets. When changing the launcher or payload, bump the installer version and update the download URL and digest together. Record real Terminal and WorkBuddy acceptance separately from automated fixture tests; see the [verification record](docs/install-prompt-verification.zh-CN.md).
