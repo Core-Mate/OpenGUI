@@ -54,9 +54,9 @@ class HandoffTests(unittest.TestCase):
                     if not part:
                         break
                     data += part
-                    if b'Press Return to install' in data and not sent:
+                    if '按回车开始安装'.encode() in data and not sent:
                         os.write(master, answer.encode()); sent = True
-                    if b'Press Return to finish' in data and not finished:
+                    if '按回车结束安装程序'.encode() in data and not finished:
                         os.write(master, b'\n'); finished = True
                 if child.poll() is not None:
                     break
@@ -83,8 +83,13 @@ class HandoffTests(unittest.TestCase):
         self.assertFalse(list(self.folder.glob('installation-result.*')))
 
     def test_success_requires_actual_configuration_marker(self):
+        self.prepare("#!/bin/bash\necho '[0s] Preflight: test host'\necho '[1s] Reusing verified package download'\necho '[2s] Installing configuration and checking runtime dependencies'\necho internal_diagnostic_details\necho CONFIG_WRITTEN\n")
         code, output = self.run_tty()
         self.assertEqual(code, 0, output)
+        self.assertIn('1/3', output)
+        self.assertIn('3/3', output)
+        self.assertNotIn('internal_diagnostic_details', output)
+        self.assertIn('internal_diagnostic_details', next(self.folder.glob('installation-result.*/install.log')).read_text())
         result = next(self.folder.glob('installation-result.*/result.txt')).read_text()
         self.assertIn('status=configuration_written', result)
         self.assertIn('hostLoaded=unverified', result)
@@ -96,6 +101,17 @@ class HandoffTests(unittest.TestCase):
         result = next(self.folder.glob('installation-result.*/result.txt'))
         self.assertIn('status=failed\nexitCode=42', result.read_text())
         self.assertIn('blocked', result.with_name('install.log').read_text())
+        self.assertIn('blocked', output)
+
+    def test_log_stream_failure_is_not_reported_as_success(self):
+        fake_bin = self.folder / 'bin'
+        fake_bin.mkdir()
+        tee = fake_bin / 'tee'
+        tee.write_text('#!/bin/bash\n/usr/bin/tee "$@"\nexit 9\n')
+        tee.chmod(0o755)
+        code, _ = self.run_tty(extra_env={'PATH': f'{fake_bin}:{self.env["PATH"]}'})
+        self.assertEqual(code, 9)
+        self.assertIn('status=failed\nexitCode=9', next(self.folder.glob('installation-result.*/result.txt')).read_text())
 
     def test_zero_exit_without_configuration_is_not_success(self):
         self.prepare('#!/bin/bash\necho download_only\n')
@@ -107,7 +123,7 @@ class HandoffTests(unittest.TestCase):
         (self.folder / 'installer.sh').write_text('echo tampered\n')
         code, output = self.run_tty()
         self.assertEqual(code, 1)
-        self.assertIn('Checksum mismatch', output)
+        self.assertIn('安装文件校验失败', output)
         self.assertFalse(list(self.folder.glob('installation-result.*')))
         (self.folder / 'installer.sh').unlink()
         real = self.folder / 'real.sh'; real.write_text(self.payload)
@@ -117,7 +133,7 @@ class HandoffTests(unittest.TestCase):
 
     def test_release_zip_preserves_executable_and_verified_payload(self):
         subprocess.run(['python3', str(ROOT / 'scripts/build-installer-handoff.py')], check=True, capture_output=True)
-        archive = ROOT / 'dist/opengui-workbuddy-installer-1.0.0.zip'
+        archive = ROOT / 'dist/opengui-workbuddy-installer-1.0.1.zip'
         with zipfile.ZipFile(archive) as z:
             self.assertEqual(len(z.namelist()), 3)
             launcher = z.getinfo('OpenGUI-WorkBuddy-Installer/OpenGUI-Install.command')

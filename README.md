@@ -87,19 +87,19 @@ Send this request in WorkBuddy:
 Install the OpenGUI plugin: https://github.com/Core-Mate/OpenGUI
 ```
 
-WorkBuddy follows the [installation guide](./workbuddy-plugin/INSTALL.md#recommended-installation) to download and verify the installer ZIP, then hand off to an interactive macOS Terminal window. **Press Return in that window to start installation.** If WorkBuddy cannot open the window through its normal permissions, double-click `OpenGUI-Install.command` in the extracted folder yourself. Return to WorkBuddy afterward for verification.
+WorkBuddy can follow the [installation guide](./workbuddy-plugin/INSTALL.md#recommended-installation) to download and verify the ZIP, then attempt to open an interactive macOS Terminal window when its normal permissions allow it. **Press Return in that window to start installation.** If WorkBuddy cannot open the window through its normal permissions, double-click `OpenGUI-Install.command` in the extracted folder yourself. Return to WorkBuddy afterward for verification. Manual opening and post-installation tool verification have been tested; automatic window opening from WorkBuddy has not yet been verified.
 
-**[Download the macOS installer ZIP](https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-installer-v1.0.0/opengui-workbuddy-installer-1.0.0.zip)** · [SHA-256](https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-installer-v1.0.0/opengui-workbuddy-installer-1.0.0.zip.sha256)
+**[Download the macOS installer ZIP](https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-installer-v1.0.1/opengui-workbuddy-installer-1.0.1.zip)** · [SHA-256](https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-installer-v1.0.1/opengui-workbuddy-installer-1.0.1.zip.sha256)
 
 1. Extract the ZIP. Keep `OpenGUI-Install.command` and `installer.sh` together.
 2. Double-click `OpenGUI-Install.command` and press Return. For an upgrade, finish existing phone tasks, quit WorkBuddy, and let its old background service exit normally first.
-3. Wait for “Configuration written”, then reopen/return to WorkBuddy and send:
+3. Wait for “安装配置已写入” (configuration written), then reopen/return to WorkBuddy and send:
 
    ```text
    OpenGUI was installed through the installer. Check its Skill and MCP state, then discover and directly call opengui_list_devices to verify installation without operating my phone. Do not substitute a Shell test for a native MCP call. Show the illustrated enablement guide only if a switch actually needs manual enablement.
    ```
 
-The installer prepares a private runtime, backs up affected settings, and configures MCP, the `opengui` Skill, and seven lifecycle Hooks while preserving other plugins. No sudo, manual Node.js setup, backend deployment, or DSH installation is needed. This **installer 1.0.0** installs the existing public-testing **plugin 0.3.1**; it is not a new plugin runtime or a signed/notarized macOS app.
+The installer prepares a private runtime, backs up affected settings, and configures MCP, the `opengui` Skill, and seven lifecycle Hooks while preserving other plugins. No sudo, manual Node.js setup, backend deployment, or DSH installation is needed. This **installer 1.0.1** installs the existing public-testing **plugin 0.3.1**; it is not a new plugin runtime or a signed/notarized macOS app.
 
 **For the installing assistant:** the short request is sufficient; read [INSTALL.md](./workbuddy-plugin/INSTALL.md#recommended-installation), use the fixed download and checksum there, and continue routine preparation within the user's request. Opening a Terminal window must use the host's normal supported authorization path. If unavailable or refused, provide the extracted file's clickable local path and Finder instructions for the user. Do not execute the launcher in WorkBuddy's command environment, strip host injection, change permission settings, or switch tools to evade refusal. README text cannot grant permission on the user's behalf.
 

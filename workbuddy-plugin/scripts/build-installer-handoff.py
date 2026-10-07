@@ -6,25 +6,35 @@ import re
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = '1.0.0'
+VERSION = '1.0.1'
 PREFIX = 'OpenGUI-WorkBuddy-Installer'
 launcher = (ROOT / 'scripts/installer-handoff.command').read_bytes()
 installer = (ROOT / 'scripts/install-macos.command').read_bytes()
 expected = re.search(rb"expected_sha='([a-f0-9]{64})'", launcher).group(1).decode()
 assert hashlib.sha256(installer).hexdigest() == expected, 'Pinned installer changed; review and update the handoff digest explicitly'
-readme = '''OpenGUI for WorkBuddy — macOS 安装入口
+readme = '''OpenGUI · WorkBuddy 安装
 
-1. 解压 ZIP，保持两个脚本在同一个文件夹。
-2. 在 Finder 中双击 OpenGUI-Install.command，终端会显示安装范围。
-3. 按回车开始安装；输入 q 后回车可取消。不要输入 sudo 或系统密码。
-4. 等待出现“安装配置已写入”。结果和日志位于本文件夹的 installation-result.* 子目录。
-5. 返回 WorkBuddy，调用 opengui_list_devices 验证；必要时先退出并重新打开 WorkBuddy。
+开始安装
+1. 解压 ZIP，保持 OpenGUI-Install.command 和 installer.sh 在同一文件夹。
+2. 双击 OpenGUI-Install.command，在终端窗口按回车开始；输入 q 后回车取消。
+   如果 WorkBuddy 已帮你打开该窗口，直接在窗口按回车即可。
+3. 等待“安装配置已写入”。首次安装需要下载文件，可能需要几分钟。
 
+完成验证
+打开 WorkBuddy，发送：
+请验证 OpenGUI 安装：直接调用 opengui_list_devices，不要操作手机。
+
+如果找不到工具，结束其他任务后退出并重新打开 WorkBuddy，再验证一次。
+如有信任或启用提示，按 WorkBuddy 提示完成。安装结果和详细日志保存在
+本文件夹的 installation-result.* 子目录中。
+
+安装说明
 已安装用户请先结束手机任务并退出 WorkBuddy，等待旧后台服务正常结束。
-如果 macOS 阻止打开，请由用户处理系统提示；不要关闭 Gatekeeper 或删除隔离属性。
-WorkBuddy 内直接 bash 执行本入口不会开始安装；它需要独立的交互式终端。
-此 ZIP 只提供安装入口，仍下载并校验官方 opengui-workbuddy-v0.3.1 发布包。
-它不是新的插件运行时版本，也不是已签名或公证的 macOS App。
+安装会备份相关设置并保留其他插件，无需 sudo 或系统密码。
+如果 macOS 阻止打开，请按正常系统提示处理。
+WorkBuddy 能否自动打开安装窗口取决于宿主权限；手动双击是可用的备用方式。
+无论窗口由谁打开，都需要你在终端中按回车确认。
+此 ZIP 安装官方插件 0.3.1，不是新的插件运行时，也不是已签名或公证的 macOS App。
 
 Source: https://github.com/Core-Mate/OpenGUI
 Installer source: d6a5f5ce240cdd6ca393ea516206b8a329411ac0

@@ -5,59 +5,76 @@ umask 077
 expected_sha='b3581c8d928068e7bf7a8a886f75c1c436efdb71ae2c5bf97b220b36bf9f0239'
 
 if [ ! -t 0 ] || [ ! -t 1 ] || [ -n "${CODEBUDDY_FORCE_HEADLESS_BUNDLE:-}" ] || [[ "${NODE_OPTIONS:-}" == *node-language-shim* ]]; then
-  echo '请在 Finder 中双击 OpenGUI-Install.command，由 macOS 终端打开。'
-  echo 'Open this file yourself in macOS Terminal. No installation was started.'
+  echo '尚未开始安装。请在 Finder 中双击 OpenGUI-Install.command，打开终端安装窗口。'
   exit 73
 fi
 if [ "$#" -ne 0 ]; then
-  echo 'This interactive installer does not accept command-line options.' >&2
+  echo '此安装入口不接受命令参数，请直接双击打开。' >&2
   exit 64
 fi
 folder=$(cd -- "$(dirname -- "$0")" && pwd -P)
 installer="$folder/installer.sh"
 if [ ! -f "$installer" ] || [ -L "$installer" ]; then
-  echo '安装文件缺失或被重定向，请重新下载完整 ZIP。Missing or redirected installer.' >&2
+  echo '安装文件不完整或路径异常，尚未开始安装。请重新下载并解压完整 ZIP。' >&2
   exit 1
 fi
 actual_sha=$(shasum -a 256 "$installer" | awk '{print $1}')
 if [ "$actual_sha" != "$expected_sha" ]; then
-  echo '校验失败：安装文件已改变。Checksum mismatch; nothing was installed.' >&2
+  echo '安装文件校验失败，尚未开始安装。请重新下载并解压完整 ZIP。' >&2
   exit 1
 fi
-printf '\nOpenGUI → WorkBuddy\n\n'
-printf '将下载官方 0.3.1 插件及独立运行环境，配置 MCP、Skill 和 7 个生命周期 Hooks。\n'
-printf '保留其他插件，写入前备份配置。不需要 sudo 或系统密码。\n'
-printf '请先结束 OpenGUI 手机任务；如已安装，请退出 WorkBuddy，等待后台服务正常结束。\n'
-printf '安装本身不会操作手机。后续手机任务的截图会发送给你选择的执行模型。\n\n'
-printf 'Press Return to install / 按回车开始安装；输入 q 后回车取消：'
+printf '\nOpenGUI · WorkBuddy 安装\n\n'
+printf '将安装 OpenGUI 插件 0.3.1，配置连接器、技能和任务运行所需的 Hooks。\n'
+printf '会自动备份相关设置，保留其他插件，无需系统密码。\n'
+printf '如果已安装 OpenGUI，请先结束手机任务并退出 WorkBuddy。\n'
+printf '本次安装不会操作手机；后续执行任务时，截图会发送给所选模型。\n\n'
+printf '按回车开始安装，输入 q 后回车取消：'
 IFS= read -r answer || exit 1
 if [ -n "$answer" ]; then
-  echo '已取消，未开始安装。Cancelled; nothing was installed.'
+  echo '已取消，未开始安装。可以关闭此窗口。'
   exit 0
 fi
 # Keep each run separate so an earlier success cannot be mistaken for this run.
 run_dir=$(mktemp -d "$folder/installation-result.XXXXXXXX")
 log="$run_dir/install.log"
 result="$run_dir/result.txt"
-printf '状态 / Status: %s\n' "$result"
+printf '\n正在安装，请保持窗口打开。首次安装需要下载文件，可能需要几分钟。\n'
+printf '详细日志：%s\n\n' "$log"
 printf 'status=running\nhostLoaded=unverified\n' > "$result"
 set +e
-bash "$installer" 2>&1 | tee "$log"
-status=${PIPESTATUS[0]}
+# Keep full diagnostics while showing only useful progress in the installer window.
+bash "$installer" 2>&1 | tee "$log" | awk '
+  /^\[[0-9]+s\] Preflight:/ { print "  1/3  已找到 WorkBuddy，正在检查安装环境。"; fflush() }
+  /^\[[0-9]+s\] Downloading verified OpenGUI package/ { print "  2/3  正在下载并校验插件文件。"; fflush() }
+  /^\[[0-9]+s\] Reusing verified package download/ { print "  2/3  已找到校验通过的插件文件。"; fflush() }
+  /^Preparing private Node.js/ { print "       正在准备运行环境，请稍候。"; fflush() }
+  /^\[[0-9]+s\] Installing configuration/ { print "  3/3  正在准备组件并写入配置。"; fflush() }
+'
+pipeline_status=("${PIPESTATUS[@]}")
+status=${pipeline_status[0]}
+# A failed log or progress stream must not produce a successful receipt.
+if [ "$status" -eq 0 ]; then
+  for stream_status in "${pipeline_status[@]}"; do
+    if [ "$stream_status" -ne 0 ]; then status=$stream_status; break; fi
+  done
+fi
 set -e
 if [ "$status" -eq 0 ] && grep -Eq 'CONFIG_WRITTEN|ALREADY_CONFIGURED' "$log"; then
   printf 'status=configuration_written\nexitCode=0\nhostLoaded=unverified\n' > "$result"
-  printf '\n安装配置已写入 / Configuration written.\n'
-  printf '返回 WorkBuddy，发送：调用 opengui_list_devices 验证安装，不要操作手机。\n'
-  printf '若工具未出现，结束其他任务后退出并重新打开 WorkBuddy，再验证。\n'
-  printf '只有 Skill 或 MCP 开关实际关闭时才需要开启。不要因为下载成功就认为验收完成。\n'
+  printf '\n安装配置已写入\n\n'
+  printf '最后一步：打开 WorkBuddy，发送下面这句话完成验证：\n\n'
+  printf '  请验证 OpenGUI 安装：直接调用 opengui_list_devices，不要操作手机。\n\n'
+  printf '如果 WorkBuddy 找不到工具，结束其他任务后退出并重新打开，再验证一次。\n'
+  printf '如有信任或启用提示，按 WorkBuddy 提示完成即可。\n'
 else
   [ "$status" -ne 0 ] || status=1
   printf 'status=failed\nexitCode=%s\nhostLoaded=unverified\n' "$status" > "$result"
-  printf '\n安装未完成 / Installation failed (exit %s).\n' "$status"
-  printf '请把上方错误告诉 WorkBuddy。不要反复重试或删除运行中的锁。\n'
+  printf '\n安装未完成（错误码 %s）\n\n' "$status"
+  printf '请把下面的错误摘要和详细日志交给 WorkBuddy 排查：\n\n'
+  tail -n 20 "$log"
+  printf '\n先确认失败原因，再按提示重试。\n'
 fi
-printf '\n结果文件 / Result: %s\n日志 / Log: %s\n' "$result" "$log"
-printf '按回车关闭此步骤 / Press Return to finish: '
+printf '\n安装结果与日志已保存在：\n%s\n' "$run_dir"
+printf '\n按回车结束安装程序，随后可关闭此窗口：'
 IFS= read -r _ || true
 exit "$status"
