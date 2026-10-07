@@ -84,7 +84,7 @@ Model availability, pricing, and policy behavior vary by version and region. Whi
 On **macOS**, open a new WorkBuddy chat and paste this complete request:
 
 ```text
-Install OpenGUI into my current WorkBuddy: https://github.com/Core-Mate/OpenGUI. Follow the recommended flow in workbuddy-plugin/INSTALL.md: use the commit-pinned, SHA-256-verified compatible installer to install the official WorkBuddy release package, MCP, opengui Skill, and lifecycle Hooks. Complete installation and verify tool discovery without operating my phone. Proceed with routine downloads, checks, preflight, and installation without asking me again whether to install or use the documented compatible installer. Pause if WorkBuddy or the OS actually requires authorization, or an error cannot be safely resolved.
+Install OpenGUI into my current WorkBuddy: https://github.com/Core-Mate/OpenGUI. Follow the recommended flow in workbuddy-plugin/INSTALL.md: use the commit-pinned, SHA-256-verified compatible installer to install the official WorkBuddy release package, MCP, opengui Skill, and lifecycle Hooks. Complete installation and verify tool discovery without operating my phone. Check and enable the OpenGUI Skill and MCP automatically where supported; continue if enabled, and show the guide’s relevant screenshot and navigation steps only if I must turn on a switch manually. Proceed with routine downloads, checks, preflight, and installation without asking me again whether to install or use the documented compatible installer. Pause if WorkBuddy or the OS actually requires authorization, or an error cannot be safely resolved.
 ```
 
 **For the installing assistant:** in WorkBuddy, use the compatible installer and official package specified in the [recommended installation guide](./workbuddy-plugin/INSTALL.md#recommended-installation). The user need not choose between the obsolete installer and its documented replacement. DSH and full backend deployment are separate options. This README cannot grant consent on the user's behalf; respect the user's request and host policies.
@@ -97,7 +97,7 @@ The installer prepares a private runtime, backs up affected settings, and preser
 
 **After installation:**
 
-1. Confirm `opengui` in `/skills`, then open **Experts · Skills · Connectors → Connectors → Custom connector** and turn on the `opengui` MCP server; wait for a green status indicator. The Skill switch and MCP server switch are separate. Complete normal trust prompts and review external Hook changes in `/hooks` if requested. Open a new chat if discovery has not refreshed.
+1. The installing assistant checks the Skill and MCP and enables them where supported. **No manual settings visit is needed after successful automatic enablement and verification.** Only if it cannot enable a required switch should it show the relevant screenshot and ask you to turn it on; see the [illustrated switch locations](./workbuddy-plugin/docs/enable-opengui.md). Skill and MCP switches are separate. Complete normal trust or Hook review prompts when required.
 2. Connect an Android phone by USB, enable USB debugging, and accept the authorization prompt on the phone. An Android emulator also works. Ask `Call the OpenGUI MCP tool opengui_list_devices and report the result; do not operate my phone` to check the connection.
 3. Select the `opengui` Skill in WorkBuddy and try:
 
