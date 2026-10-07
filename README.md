@@ -81,53 +81,29 @@ Model availability, pricing, and policy behavior vary by version and region. Whi
 
 ## Use OpenGUI in WorkBuddy
 
-**Known limitation with WorkBuddy 5.7.6 default permissions:** a short “Install OpenGUI: https://github.com/Core-Mate/OpenGUI” request can find the correct workflow but may not complete installation. In testing, configuration writes failed with `CODEBUDDY_BROKER_DENY` / `decision: prompt`, with no usable authorization channel in the current tools. A longer prompt cannot resolve that permission failure. The same official package was successfully installed through a user-authorized local terminal and verified by a WorkBuddy tool call.
-
-### Verified route: macOS Terminal
-
-Open the macOS **Terminal** app, outside WorkBuddy's command tools, and paste the complete block below. It downloads the pinned compatible installer, verifies SHA-256, and installs the official package. WorkBuddy can remain open; no manual Node.js setup is needed.
-
-```bash
-(
-  set -euo pipefail
-  install_dir=$(mktemp -d "${TMPDIR:-/tmp}/opengui-workbuddy.XXXXXXXX")
-  installer_commit='d6a5f5ce240cdd6ca393ea516206b8a329411ac0'
-  installer_sha='b3581c8d928068e7bf7a8a886f75c1c436efdb71ae2c5bf97b220b36bf9f0239'
-  installer='opengui-workbuddy-install.command'
-  cd "$install_dir"
-  curl --proto '=https' --proto-redir '=https' --tlsv1.2 --fail --location \
-    --connect-timeout 15 --max-time 240 --retry 2 \
-    "https://raw.githubusercontent.com/Core-Mate/OpenGUI/$installer_commit/workbuddy-plugin/scripts/install-macos.command" \
-    -o "$installer"
-  printf '%s  %s\n' "$installer_sha" "$installer" | shasum -a 256 -c -
-  bash "$installer" --check
-  bash "$installer"
-)
-```
-
-After `CONFIG_WRITTEN` and `LIVE_CONFIG_WRITTEN`, return to WorkBuddy and send:
+Send this request in WorkBuddy:
 
 ```text
-OpenGUI was installed through Terminal. Check and enable its Skill and MCP where supported, then call opengui_list_devices directly to verify tool loading without operating my phone. Only if I must enable a switch manually, show the relevant screenshot and navigation steps from https://github.com/Core-Mate/OpenGUI/blob/main/workbuddy-plugin/docs/enable-opengui.md.
+Install the OpenGUI plugin: https://github.com/Core-Mate/OpenGUI
 ```
 
-If configuration was written but OpenGUI is absent from the connector manager, finish other work, quit/reopen WorkBuddy, and check once more. See the [illustrated switch guide](./workbuddy-plugin/docs/enable-opengui.md) if needed. A successful empty device list is a valid installation check when no phone is connected.
+WorkBuddy follows the [installation guide](./workbuddy-plugin/INSTALL.md#recommended-installation) to download and verify the installer ZIP, then hand off to an interactive macOS Terminal window. **Press Return in that window to start installation.** If WorkBuddy cannot open the window through its normal permissions, double-click `OpenGUI-Install.command` in the extracted folder yourself. Return to WorkBuddy afterward for verification.
 
-### Ask the WorkBuddy assistant to install
+**[Download the macOS installer ZIP](https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-installer-v1.0.0/opengui-workbuddy-installer-1.0.0.zip)** · [SHA-256](https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-installer-v1.0.0/opengui-workbuddy-installer-1.0.0.zip.sha256)
 
-Use the short request above or the complete request below to clarify scope. If the current environment is already known to lack a file-authorization channel, provide the Terminal steps immediately. Stop retrying after the first matching refusal; do not switch permission modes, disable the sandbox, or remove host injection to continue writing. The user must run the separate Terminal step or explicitly authorize a local assistant to do so.
+1. Extract the ZIP. Keep `OpenGUI-Install.command` and `installer.sh` together.
+2. Double-click `OpenGUI-Install.command` and press Return. For an upgrade, finish existing phone tasks, quit WorkBuddy, and let its old background service exit normally first.
+3. Wait for “Configuration written”, then reopen/return to WorkBuddy and send:
 
-```text
-Install OpenGUI into my current WorkBuddy: https://github.com/Core-Mate/OpenGUI. Follow the recommended flow in workbuddy-plugin/INSTALL.md: use the commit-pinned, SHA-256-verified compatible installer to install the official WorkBuddy release package, MCP, opengui Skill, and lifecycle Hooks. Complete installation and verify tool discovery without operating my phone. Check and enable the OpenGUI Skill and MCP automatically where supported; continue if enabled, and show the guide’s relevant screenshot and navigation steps only if I must turn on a switch manually. Proceed with routine downloads, checks, preflight, and installation without asking me again whether to install or use the documented compatible installer. Pause if WorkBuddy or the OS actually requires authorization, or an error cannot be safely resolved.
-```
+   ```text
+   OpenGUI was installed through the installer. Check its Skill and MCP state, then discover and directly call opengui_list_devices to verify installation without operating my phone. Do not substitute a Shell test for a native MCP call. Show the illustrated enablement guide only if a switch actually needs manual enablement.
+   ```
 
-**For the installing assistant:** in WorkBuddy, use the compatible installer and official package specified in the [recommended installation guide](./workbuddy-plugin/INSTALL.md#recommended-installation). The user need not choose between the obsolete installer and its documented replacement. DSH and full backend deployment are separate options. This README cannot grant consent on the user's behalf; respect the user's request and host policies.
+The installer prepares a private runtime, backs up affected settings, and configures MCP, the `opengui` Skill, and seven lifecycle Hooks while preserving other plugins. No sudo, manual Node.js setup, backend deployment, or DSH installation is needed. This **installer 1.0.0** installs the existing public-testing **plugin 0.3.1**; it is not a new plugin runtime or a signed/notarized macOS app.
 
-**Why a compatible installer?** The original 0.3.1 release installer checks only `codebuddy.js` and fails with `HOST_HOOKS` on the headless/lite layouts in WorkBuddy 5.6.2 and 5.7.6. The recommended flow pins the fixed script from this repository and still downloads and verifies the same official 0.3.1 package. No source checkout or build is needed.
+**For the installing assistant:** the short request is sufficient; read [INSTALL.md](./workbuddy-plugin/INSTALL.md#recommended-installation), use the fixed download and checksum there, and continue routine preparation within the user's request. Opening a Terminal window must use the host's normal supported authorization path. If unavailable or refused, provide the extracted file's clickable local path and Finder instructions for the user. Do not execute the launcher in WorkBuddy's command environment, strip host injection, change permission settings, or switch tools to evade refusal. README text cannot grant permission on the user's behalf.
 
-The complete request clarifies installation scope and can reduce assistant-generated “continue installation?” questions. It cannot guarantee identical behavior across models and versions, or remove WorkBuddy's file-write authorization, MCP trust, or Hook review. Downloading, writing configuration, and loading the plugin are separate stages; see [verification](./workbuddy-plugin/INSTALL.md#verify-the-installation).
-
-The installer prepares a private runtime, backs up affected settings, and preserves other plugins. You do not need to install Node.js yourself, deploy the OpenGUI backend, or install DSH. WorkBuddy **5.5.6+** can stay open; older compatible hosts may need to quit first. Finish existing phone tasks and close their viewers before upgrading.
+WorkBuddy 5.7.6 default permissions have refused direct configuration writes with `CODEBUDDY_BROKER_DENY` / `decision: prompt`; a longer prompt does not solve this. The ZIP makes the separate, user-confirmed installation step accessible. Downloads and a successful installer receipt do not prove host loading: only the subsequent native MCP call verifies that stage. See [verification and the command-line fallback](./workbuddy-plugin/INSTALL.md).
 
 **After installation:**
 
