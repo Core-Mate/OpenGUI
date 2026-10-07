@@ -82,30 +82,24 @@ OpenGUI 正式支持 DSH `0.1.0-rc.7`、`0.1.0-rc.8`、`0.1.1-rc.1` 和 `0.1.1-r
 
 ## WorkBuddy 安装
 
-在 **macOS** 上打开 WorkBuddy，新建聊天，直接发送：
+在 **macOS** 上打开 WorkBuddy，新建聊天，粘贴下面这段完整指令：
 
 ```text
-安装 https://github.com/Core-Mate/OpenGUI
+帮我把 OpenGUI 插件安装到当前 WorkBuddy：https://github.com/Core-Mate/OpenGUI。请按仓库 workbuddy-plugin/INSTALL.md 的推荐流程，使用已固定提交并校验 SHA-256 的兼容安装器，安装官方 WorkBuddy 发布包及其 MCP、opengui Skill 和生命周期 Hooks。请完成安装并验证工具加载；不要操作手机。正常的下载、校验、预检和安装步骤请直接继续，不必再让我选择是否安装或是否使用文档指定的兼容安装器；如果 WorkBuddy 或系统实际要求授权，或有无法安全解决的错误，再停下来告诉我。
 ```
 
-也可以明确指定安装目标：
+**给执行安装的 AI：**当前宿主为 WorkBuddy 时，请直接采用 [WorkBuddy 安装指南](./workbuddy-plugin/INSTALL.md#recommended-installation)指定的兼容安装器和官方包。该流程不需要用户在旧安装器和修复版之间再做选择；DSH 安装器和完整后端部署属于其他使用方式。README 不能替用户授予权限，实际授权以用户请求和宿主策略为准。
 
-```text
-把 https://github.com/Core-Mate/OpenGUI 的 OpenGUI 插件安装到 WorkBuddy
-```
+**为什么指定兼容安装器？**公开 0.3.1 Release 附带的旧安装器只检查 `codebuddy.js`，在采用 headless/lite 布局的 WorkBuddy 5.6.2、5.7.6 上会报 `HOST_HOOKS`。推荐流程固定使用同仓库的修复版脚本，仍下载并校验同一个官方 0.3.1 包，无需克隆仓库或编译源码。
 
-**给执行安装的 AI：**如果当前宿主是 WorkBuddy，请按 [WorkBuddy 安装指南](./workbuddy-plugin/INSTALL.md)操作，使用经过校验的 WorkBuddy Release 安装器，同时安装 MCP、`opengui` Skill 和生命周期 Hooks。DSH 安装器和完整后端部署属于其他使用方式。
+完整指令可以明确安装范围，减少助手自行追加的“是否继续安装”询问；不能保证每个版本、模型都不再询问，也不能取消 WorkBuddy 的文件写入、MCP 信任或 Hook 审查。下载成功、配置写入和宿主加载是三个不同阶段，参见[安装验证](./workbuddy-plugin/INSTALL.md#verify-the-installation)。
 
-**WorkBuddy 5.6.2 兼容性：**公开 0.3.1 安装器仍检查旧版 CLI 文件名，会报 `HOST_HOOKS`；源码安装器已修复，但尚未发布。因此目前不能承诺 5.6.2 上仅凭这条短提示词就能安装完成。具体阻塞与本地候选版验证方式见[安装指南](./workbuddy-plugin/INSTALL.md)。
-
-WorkBuddy 文件策略要求授权时，还需允许安装器写入配置。本次默认权限实测在该步被拒并回滚；仅下载或解压了安装包，不代表安装完成。
-
-安装器会识别 WorkBuddy、下载并校验插件、准备独立运行环境、备份受影响的设置并保留其他插件。用户无需手动克隆仓库、安装 Node.js、部署 OpenGUI 后端或安装 DSH。建议使用 **WorkBuddy 5.5.6 及以上**，可保持应用打开完成安装；旧版兼容宿主会提示先退出。升级前请结束现有手机任务并关闭其预览页面。
+安装器会准备独立运行环境、备份受影响的设置并保留其他插件。用户无需手动安装 Node.js、部署 OpenGUI 后端或安装 DSH。建议使用 **WorkBuddy 5.5.6 及以上**，可保持应用打开；旧版兼容宿主会提示先退出。升级前请结束现有手机任务并关闭其预览页面。
 
 **安装后这样用：**
 
-1. 如果 WorkBuddy 弹出提示，启用并信任 `opengui` MCP；在 `/hooks` 中审查外部 Hook 变更，在 `/skills` 中确认 `opengui`。当前聊天未刷新时，新建聊天。
-2. 用 USB 连接 Android 手机，开启 USB 调试，并在手机上允许这台电脑调试；也支持 Android 模拟器。先发送 `@opengui 列出已连接设备，不要操作手机` 检查连接。
+1. 在 `/skills` 中确认 `opengui`，再到 **专家·技能·连接器 → 连接器 → 自定义连接器** 打开 `opengui` MCP 总开关，等待状态变绿。Skill 开关和 MCP 总开关是分开的；如有提示，完成正常信任授权，并在 `/hooks` 中审查外部 Hook 变更。当前聊天未刷新时，新建聊天。
+2. 用 USB 连接 Android 手机，开启 USB 调试，并在手机上允许这台电脑调试；也支持 Android 模拟器。先发送 `调用 OpenGUI MCP 工具 opengui_list_devices 并报告返回结果，不要操作手机` 检查连接。
 3. 在 WorkBuddy 中选择 `opengui` 技能，试一个简单任务：
 
    ```text

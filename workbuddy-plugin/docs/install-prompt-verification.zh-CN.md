@@ -62,3 +62,46 @@ rollbackComplete: true
 ## 公开流程验收前的必要步骤
 
 发布包含兼容修复的安装入口，并让 GitHub 首页指向该入口。若同时发布新版运行时，应使用新版本号和新 Release，保留 0.3.1 的不可变资产。然后在没有 OpenGUI 的 WorkBuddy 环境中重新测试短提示词，核实安装、宿主加载和只读设备发现。当前工作区候选包的成功不能替代该项验收。
+
+
+## 2026-10-07：WorkBuddy 5.7.6 与官方发布包
+
+本轮使用 macOS arm64、WorkBuddy 5.7.6、默认权限、快速模型（DeepSeek-V4.1-Flash）。开始前没有 `opengui` MCP 配置、生命周期 Hooks 或 Skill；不能把缓存目录当成已安装插件。
+
+用户实际发送：
+
+```text
+帮我安装opengui插件：https://github.com/Core-Mate/OpenGUI
+```
+
+助手先确认旧发布版安装器的 `HOST_HOOKS` 兼容问题，再询问是否使用仓库修复版。这个选择卡片是助手的问答，不是安装器或系统的授权窗口。继续后，它将脚本固定到仓库提交，校验后执行安装：
+
+- 安装器提交：`4e4c57f15811fabaecfe8f00a4af1400fb2b1b8c`。
+- 安装器 SHA-256：`6a8ce9087e761c7772711d1a5316669fccb6618bb342d017e364acc62af2e864`。
+- 官方 `opengui-mcp-0.3.1.tgz` SHA-256：`7246c9800de2afceebc06785c6dbd666be0b7d29c21839bf1811b7a19351d535`。
+- 预检通过，官方包、私有 Node 和视频依赖准备完成。
+- `install-local.mjs:94` 原子替换 `settings.json` 时被宿主拒绝；先前已切换的 `mcp.json` 完整回滚。
+
+```text
+Error: Brokered host rename source refused by file policy: prompt
+code: CODEBUDDY_BROKER_DENY
+decision: prompt
+installationFailed: true
+rollbackComplete: true
+```
+
+请求宿主使用正常一次性授权入口后，助手检查可用工具并报告没有该入口；未显示可确认的文件授权弹窗。没有关闭沙箱、修改全局权限或移除宿主注入。用户接受必要的真实授权弹窗；本轮阻塞是授权请求没有可响应的入口，而不是用户拒绝授权。
+
+用户随后明确允许本机终端完成同一安装。确认安装进程已结束后，移除失败清理遗留的两个空安装锁，再运行同一已校验脚本。终端约 4 秒返回 `CONFIG_WRITTEN` 与 `LIVE_CONFIG_WRITTEN`，配置指向上述官方包，7 个 Hooks 和 Skill 写入成功。核对确认其他 MCP 配置及非 Hook 设置（包括权限策略）保持不变。
+
+### 宿主加载与设备发现
+
+独立 MCP 客户端可以列出官方包的 14 个工具，调用 `opengui_list_devices` 返回 1 台已连接且已授权的 `sdk gphone64 arm64` 模拟器。此项先证明安装产物可启动，不单独作为 WorkBuddy 已加载的证据。
+
+WorkBuddy 技能页已显示启用的 `opengui`，但聊天最初检索不到 MCP 工具。进入 **专家·技能·连接器 → 连接器 → 自定义连接器** 后，MCP 服务管理中可见 `opengui`，虽然标注“14/14 个工具已启用”，服务总开关仍是灰色关闭状态。
+
+在原生界面打开 `opengui` 总开关后，状态指示由黄色变为绿色，本次没有额外信任弹窗。返回验证会话，重新发现并直接调用 `mcp__opengui__opengui_list_devices` 成功，返回上述模拟器，`state: "device"`、`connected: true`、`authorized: true`。未创建手机控制会话、读取手机屏幕或执行手机动作。
+
+因此，本轮 **配置写入、WorkBuddy MCP 加载、只读设备发现已通过**；Skill 存在或安装器退出成功都不足以独立证明这些阶段全部完成。
+
+本次 README 将推荐流程明确为“固定提交的兼容安装器 + 原始官方发布包”，并提供完整安装请求，减少无必要的安装器选择。完整新提示词尚未在全新环境独立验收；不能写成已证明所有版本、模型都不会询问。默认权限下 **WorkBuddy 内全自动安装仍未通过**，本机终端成功属于用户另行授权的备用流程。
