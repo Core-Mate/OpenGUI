@@ -88,7 +88,7 @@ OpenGUI 正式支持 DSH `0.1.0-rc.7`、`0.1.0-rc.8`、`0.1.1-rc.1` 和 `0.1.1-r
 帮我安装opengui插件：https://github.com/Core-Mate/OpenGUI
 ```
 
-WorkBuddy 可按[安装指南](./workbuddy-plugin/INSTALL.md#recommended-installation)下载并校验安装 ZIP；宿主权限允许时，可尝试自动打开独立的 macOS 终端安装窗口。**在安装窗口按回车，才开始安装。** 如果 WorkBuddy 无法通过正常权限打开窗口，手动双击解压后的 `OpenGUI-Install.command` 即可。配置写入后回到 WorkBuddy 验证。当前已实测通过手动打开和安装后的工具验证；WorkBuddy 自动打开窗口尚未实测通过。
+WorkBuddy 会按[安装指南](./workbuddy-plugin/INSTALL.md#recommended-installation)下载、校验并解压安装包，然后给出**安装文件的可点击链接**。请手动点击链接打开安装器，再在终端窗口**按回车开始安装**。如果链接只打开文件预览，请在 Finder 中双击同一个 `OpenGUI-Install.command`。配置写入后回到 WorkBuddy 验证。当前 WorkBuddy 5.7.6 的自动打开操作已被系统沙箱拒绝，因此此流程直接交给用户打开。
 
 **[下载 macOS 安装 ZIP](https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-installer-v1.0.1/opengui-workbuddy-installer-1.0.1.zip)** · [SHA-256 校验文件](https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-installer-v1.0.1/opengui-workbuddy-installer-1.0.1.zip.sha256)
 
@@ -102,7 +102,7 @@ WorkBuddy 可按[安装指南](./workbuddy-plugin/INSTALL.md#recommended-install
 
 安装器会准备独立运行环境、备份受影响的设置，配置 MCP、`opengui` Skill 和 7 个生命周期 Hooks，并保留其他插件。无需 sudo、手动安装 Node.js、部署后端或安装 DSH。这里的**安装入口 1.0.1**安装的是现有公测**插件 0.3.1**，不是新的插件运行时，也不是经过签名或公证的 macOS App。
 
-**给执行安装的 AI：**短请求已足够识别安装目标，请读取 [INSTALL.md](./workbuddy-plugin/INSTALL.md#recommended-installation)，使用其中固定的下载地址和校验值，按用户请求继续常规准备。打开终端只能走宿主正常支持的授权流程；没有该入口或被拒绝时，给出解压文件的可点击本地路径和 Finder 操作步骤，由用户打开。不要在 WorkBuddy 命令环境直接执行入口、移除宿主注入、改变权限设置或切换工具绕过拒绝。README 不能替用户授予权限。
+**给执行安装的 AI：**短请求已足够识别安装目标，请读取 [INSTALL.md](./workbuddy-plugin/INSTALL.md#recommended-installation)，使用其中固定的下载地址和校验值，按用户请求继续常规准备。准备好文件后，直接给出实际安装文件的可点击绝对路径，并提示用户点击打开、按回车确认；不要先尝试自动打开终端。若链接只显示预览，再给出 Finder 双击步骤。未观察到窗口时，不要声称“安装窗口已打开”。不要在 WorkBuddy 命令环境直接执行入口、移除宿主注入、改变权限设置或切换工具绕过拒绝。README 不能替用户授予权限。
 
 WorkBuddy 5.7.6 默认权限曾以 `CODEBUDDY_BROKER_DENY` / `decision: prompt` 拒绝直接写入配置，加长提示词无法解决。ZIP 把独立的、由用户确认的安装步骤做成可双击入口。下载成功或安装结果文件均不代表宿主已加载；后续原生 MCP 调用才验证该阶段。详见[安装验证与命令行备用路径](./workbuddy-plugin/INSTALL.md)。
 

@@ -46,9 +46,22 @@ Download to a new directory and verify before extraction. The following block **
 
 ### Open the installer and hand off
 
-The ZIP does not itself arrange automatic launching from WorkBuddy. The installing assistant may use an available, normally authorized open-file/app action to open it. Manual opening and the subsequent native MCP call have been verified; automatic window opening from WorkBuddy remains unverified. Human confirmation in the Terminal window is required in either case.
+Use a **user-clicked installer link** as the default handoff. The tested WorkBuddy 5.7.6 environment showed a system message refusing Sandbox permission to open the `.command` document in Terminal. Do not attempt automatic opening first or report an open window merely because an open-file request was submitted. Manual opening and the subsequent native MCP call have been verified; link-click behavior may vary with the host's file-link handling.
 
-1. If the host provides a supported, normally authorized way to open the extracted `.command` file in macOS Terminal, use it. Opening the window must not press Return or feed confirmation on the user's behalf. If that operation is unavailable or refused, stop attempting it and give the exact clickable local path. Tell the user to open Finder, press Command-Shift-G, paste the containing folder's absolute path, and double-click `OpenGUI-Install.command`. Keep `installer.sh` beside it. If preparation itself was blocked, provide the ZIP link and the same extraction/opening steps.
+1. Once the ZIP and extracted installer have been verified, render a clickable Markdown link whose target is the **actual absolute path** of `OpenGUI-Install.command` from this attempt. Ask the user to click it, then press Return in the Terminal window. Use the message below, replacing both placeholders with real local paths; do not show a bare filename or an invented path. If the link only displays source/preview or cannot launch Terminal, tell the user to open Finder, press Command-Shift-G, paste the containing folder's absolute path, and double-click `OpenGUI-Install.command`. Keep `installer.sh` beside it. If download or extraction was blocked, link the official ZIP for the user to download and extract in Finder; do not call the files ready until the expected files exist and match the verified archive.
+
+```markdown
+安装文件已下载并校验完成。下一步需要你手动打开：
+
+[点击打开 OpenGUI 安装文件](<ABSOLUTE_INSTALLER_PATH>)
+
+打开后，在终端窗口按回车开始安装；输入 q 后回车可取消。
+如果点击后只看到文件预览，请在 Finder 中打开以下文件夹，双击 OpenGUI-Install.command：
+ABSOLUTE_INSTALLER_FOLDER
+
+看到“安装配置已写入”后，回到这里告诉我，我会继续验证插件是否已加载。
+```
+
 2. The user reads the installation scope and presses Return in Terminal, or types `q` then Return to cancel. If macOS blocks opening, let the user handle the normal system prompt. Do not remove quarantine attributes or disable Gatekeeper. Before upgrading, finish phone tasks, quit WorkBuddy, and wait for the previous broker's normal idle exit. Never force-kill processes or remove active locks.
 3. Read the **current attempt's** `installation-result.*/result.txt` and `install.log` if accessible, or ask the user for the displayed result. `status=configuration_written` means configuration was written; `hostLoaded=unverified` is intentional. `status=running`, a missing receipt, cancellation, or a stale earlier receipt is not success. On failure, report the actual exit code and log, including any rollback diagnostics; do not claim a clean rollback without evidence.
 4. Return to WorkBuddy for [native verification](#verify-the-installation). Restart once if discovery has not refreshed. Enable only switches actually found off, using normal supported controls; provide the [illustrated guide](docs/enable-opengui.md) only where manual action is required.
