@@ -127,4 +127,8 @@ WorkBuddy 技能页已显示启用的 `opengui`，但聊天最初检索不到 MC
 
 8 项隔离自动测试通过，覆盖非交互与宿主注入拒绝、取消、失败退出码及日志、成功标记、仅下载不算成功、篡改/符号链接拒绝，以及 ZIP 中可执行权限和内含脚本校验。测试使用临时 HOME 和模拟安装载荷，不写入真实 WorkBuddy 配置；测试中自动输入仅用于模拟载荷，不代表用户确认流程已实机验收。
 
-本机使用 `ditto` 解压后，Finder 可以识别 `OpenGUI-Install.command` 为终端 shell 脚本。但桌面控制工具拒绝访问 macOS Terminal，无法继续观察安装窗口或代为确认。因此，本次新增入口的真实终端交互、带浏览器隔离属性的下载打开流程，以及新 README 短请求到最终原生 MCP 调用的完整链路，仍需人工验收。不能用前述旧终端路径的成功记录替代这一结论。
+本机使用 `ditto` 解压后，Finder 可以识别 `OpenGUI-Install.command` 为终端 shell 脚本。桌面控制工具拒绝访问 macOS Terminal，因此交给用户手动打开并确认。用户提供的终端截图显示“安装配置已写入”及进程完成；核对本次独立结果目录，`status=configuration_written`、`exitCode=0`、`hostLoaded=unverified`，日志显示约 5 秒完成并输出 `LIVE_CONFIG_WRITTEN`。这是已有运行时缓存的重装验证，不是全新机器冷安装。
+
+重新打开 WorkBuddy 5.7.6 后，在原安装对话中通过工具发现机制直接调用 `mcp__opengui__opengui_list_devices`。原生会话的 `DeferExecuteTool` 完成结果和 `mcpMeta.structuredContent` 均返回 1 台 `sdk gphone64 arm64` 模拟器，`state=device`、`connected=true`、`authorized=true`。没有使用 Shell 代替宿主工具验证，也没有执行手机操作。
+
+本次已验证“解压入口 → 用户终端确认 → 配置写入 → 重开 WorkBuddy → 原生只读 MCP 调用”。带浏览器隔离属性的下载打开流程，以及新 README 短请求自动准备安装包的前半段，仍未独立实测；不能据此承诺默认权限下无人值守安装。macOS/Linux 的入口 CI 均通过，插件打包与 485 项运行时测试通过；现有依赖审计仍因 MCP SDK 的 GHSA-6qxp-vccf-f47h 失败，本次未修改该运行时依赖。
