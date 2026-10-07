@@ -6,7 +6,7 @@ import re
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = '1.0.1'
+VERSION = '1.0.2'
 PREFIX = 'OpenGUI-WorkBuddy-Installer'
 launcher = (ROOT / 'scripts/installer-handoff.command').read_bytes()
 installer = (ROOT / 'scripts/install-macos.command').read_bytes()
@@ -17,7 +17,7 @@ readme = '''OpenGUI · WorkBuddy 安装
 开始安装
 1. 解压 ZIP，保持 OpenGUI-Install.command 和 installer.sh 在同一文件夹。
 2. 双击 OpenGUI-Install.command，在终端窗口按回车开始；输入 q 后回车取消。
-   如果 WorkBuddy 已帮你打开该窗口，直接在窗口按回车即可。
+   从 WorkBuddy 安装时，先点击“打开安装脚本目录”，再在 Finder 中双击该文件。
 3. 等待“安装配置已写入”。首次安装需要下载文件，可能需要几分钟。
 
 完成验证
@@ -32,12 +32,11 @@ readme = '''OpenGUI · WorkBuddy 安装
 已安装用户请先结束手机任务并退出 WorkBuddy，等待旧后台服务正常结束。
 安装会备份相关设置并保留其他插件，无需 sudo 或系统密码。
 如果 macOS 阻止打开，请按正常系统提示处理。
-WorkBuddy 能否自动打开安装窗口取决于宿主权限；手动双击是可用的备用方式。
-无论窗口由谁打开，都需要你在终端中按回车确认。
+目录链接用于打开 Finder；需要你双击脚本，并在终端中按回车确认。
 此 ZIP 安装官方插件 0.3.1，不是新的插件运行时，也不是已签名或公证的 macOS App。
 
 Source: https://github.com/Core-Mate/OpenGUI
-Installer source: d6a5f5ce240cdd6ca393ea516206b8a329411ac0
+Installer source: opengui-workbuddy-installer-v1.0.2 (workbuddy-plugin/scripts/install-macos.command)
 '''
 output = ROOT / 'dist' / f'opengui-workbuddy-installer-{VERSION}.zip'
 output.parent.mkdir(exist_ok=True)

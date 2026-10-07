@@ -144,7 +144,7 @@ trap 'exit 143' TERM
 temporary=$(mktemp -d "$root/.install.XXXXXXXX")
 fetch() {
   curl --proto '=https' --proto-redir '=https' --tlsv1.2 --fail --location \
-    --connect-timeout 15 --max-time 240 --retry 2 "$1" -o "$2"
+    --connect-timeout 15 --max-time 1800 --speed-limit 1024 --speed-time 60 --retry 2 "$1" -o "$2"
 }
 if [ -z "$archive" ]; then
   base="https://github.com/Core-Mate/OpenGUI/releases/download/opengui-$HOST-v$VERSION"

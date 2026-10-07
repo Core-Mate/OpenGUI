@@ -14,13 +14,13 @@ Use the public **`opengui-workbuddy-v0.3.1`** prerelease below. Do not use GitHu
 
 A short request such as `帮我安装opengui插件：https://github.com/Core-Mate/OpenGUI` identifies this workflow. Do not require a longer prompt or ask the user to choose between the old release installer and its documented replacement.
 
-Use the **interactive installer ZIP 1.0.1**, containing the commit-pinned compatible installer, to install the unchanged official **plugin 0.3.1**. This ZIP is an installer entry point, not a signed/notarized app or a new runtime release. It checks the bundled payload again, waits for a human Return, and records a fresh result and log for each installation attempt.
+Use the **interactive installer ZIP 1.0.2**, containing the SHA-256-pinned compatible installer, to install the unchanged official **plugin 0.3.1**. This ZIP is an installer entry point, not a signed/notarized app or a new runtime release. It checks the bundled payload again, waits for a human Return, and records a fresh result and log for each installation attempt.
 
-- ZIP: https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-installer-v1.0.1/opengui-workbuddy-installer-1.0.1.zip
-- SHA-256: `91e86badac1ea385d0ebf0353f456088b7a779978a1ad52ce7594ce3a6d7ac71`
-- Checksum file: https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-installer-v1.0.1/opengui-workbuddy-installer-1.0.1.zip.sha256
-- Bundled installer commit: `d6a5f5ce240cdd6ca393ea516206b8a329411ac0`
-- Bundled installer SHA-256: `b3581c8d928068e7bf7a8a886f75c1c436efdb71ae2c5bf97b220b36bf9f0239`
+- ZIP: https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-installer-v1.0.2/opengui-workbuddy-installer-1.0.2.zip
+- SHA-256: `30fbc06f6a8a1e591b72db0df77692458fe03ea63e650e79a33e8bcc128119a3`
+- Checksum file: https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-installer-v1.0.2/opengui-workbuddy-installer-1.0.2.zip.sha256
+- Bundled installer source: tag `opengui-workbuddy-installer-v1.0.2`, `workbuddy-plugin/scripts/install-macos.command`
+- Bundled installer SHA-256: `a6a84e19f2830a07514e99d5f23d3064b91a023704059f27381001f78539bebb`
 
 ### Prepare the download
 
@@ -33,30 +33,33 @@ Download to a new directory and verify before extraction. The following block **
   set -euo pipefail
   handoff_dir=$(mktemp -d "$HOME/Downloads/OpenGUI-installer.XXXXXXXX")
   cd "$handoff_dir"
-  archive='opengui-workbuddy-installer-1.0.1.zip'
+  archive='opengui-workbuddy-installer-1.0.2.zip'
   curl --proto '=https' --proto-redir '=https' --tlsv1.2 --fail --location \
     --connect-timeout 15 --max-time 240 --retry 2 \
-    'https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-installer-v1.0.1/opengui-workbuddy-installer-1.0.1.zip' \
+    'https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-installer-v1.0.2/opengui-workbuddy-installer-1.0.2.zip' \
     -o "$archive"
-  printf '%s  %s\n' '91e86badac1ea385d0ebf0353f456088b7a779978a1ad52ce7594ce3a6d7ac71' "$archive" | shasum -a 256 -c -
+  printf '%s  %s\n' '30fbc06f6a8a1e591b72db0df77692458fe03ea63e650e79a33e8bcc128119a3' "$archive" | shasum -a 256 -c -
   /usr/bin/ditto -x -k "$archive" "$handoff_dir"
-  printf 'Open in Finder: %s/OpenGUI-WorkBuddy-Installer/OpenGUI-Install.command\n' "$handoff_dir"
+  printf 'Installer folder: %s/OpenGUI-WorkBuddy-Installer/\n' "$handoff_dir"
 )
 ```
 
-### Open the installer and hand off
+### Open the installer folder and hand off
 
-Use a **user-clicked installer link** as the default handoff. The tested WorkBuddy 5.7.6 environment showed a system message refusing Sandbox permission to open the `.command` document in Terminal. Do not attempt automatic opening first or report an open window merely because an open-file request was submitted. Manual opening and the subsequent native MCP call have been verified; link-click behavior may vary with the host's file-link handling.
+The handoff action is **点击打开安装脚本目录 / Open installer folder**. Its target is the actual extracted **directory containing** `OpenGUI-Install.command`, not the executable itself. Opening Finder must not execute the script. The tested WorkBuddy 5.7.6 environment refused opening the `.command` document in Terminal automatically; keep the user’s Finder double-click and Terminal Return as separate steps.
 
-1. Once the ZIP and extracted installer have been verified, render a clickable Markdown link whose target is the **actual absolute path** of `OpenGUI-Install.command` from this attempt. Ask the user to click it, then press Return in the Terminal window. Use the message below, replacing both placeholders with real local paths; do not show a bare filename or an invented path. If the link only displays source/preview or cannot launch Terminal, tell the user to open Finder, press Command-Shift-G, paste the containing folder's absolute path, and double-click `OpenGUI-Install.command`. Keep `installer.sh` beside it. If download or extraction was blocked, link the official ZIP for the user to download and extract in Finder; do not call the files ready until the expected files exist and match the verified archive.
+1. Verify the ZIP and extracted files, then offer the host’s supported **Open folder / Show in Finder** action for the actual directory. If only Markdown links are available, link the absolute directory with a trailing slash as below. A Markdown label cannot force Finder: WorkBuddy may route local links to an internal preview. In that case use its native Open folder action, or show Command-Shift-G instructions. Do not invent a `workbuddy://` URL, embed executable shell links, or claim the one-click Finder behavior was tested when it was not. Keep `installer.sh` beside the launcher. If download or extraction was blocked, link the official ZIP for manual download; do not call files ready until they exist and match the verified archive.
 
 ```markdown
-安装文件已下载并校验完成。下一步需要你手动打开：
+安装文件已下载并校验完成。请打开安装脚本所在的文件夹：
 
-[点击打开 OpenGUI 安装文件](<ABSOLUTE_INSTALLER_PATH>)
+[点击打开安装脚本目录](<ABSOLUTE_INSTALLER_FOLDER/>)
 
-打开后，在终端窗口按回车开始安装；输入 q 后回车可取消。
-如果点击后只看到文件预览，请在 Finder 中打开以下文件夹，双击 OpenGUI-Install.command：
+在 Finder 中双击 OpenGUI-Install.command，然后在终端窗口按回车开始安装。
+输入 q 后回车可取消。
+
+如果链接没有打开 Finder，请使用文件预览中的“打开文件夹”，
+或打开 Finder，按 Command-Shift-G，粘贴以下目录后回车：
 ABSOLUTE_INSTALLER_FOLDER
 
 看到“安装配置已写入”后，回到这里告诉我，我会继续验证插件是否已加载。
@@ -80,13 +83,13 @@ Download this exact script, verify its pinned SHA-256, then run preflight and in
 (
   set -euo pipefail
   install_dir=$(mktemp -d "${TMPDIR:-/tmp}/opengui-workbuddy.XXXXXXXX")
-  installer_commit='d6a5f5ce240cdd6ca393ea516206b8a329411ac0'
-  installer_sha='b3581c8d928068e7bf7a8a886f75c1c436efdb71ae2c5bf97b220b36bf9f0239'
+  installer_ref='opengui-workbuddy-installer-v1.0.2'
+  installer_sha='a6a84e19f2830a07514e99d5f23d3064b91a023704059f27381001f78539bebb'
   installer='opengui-workbuddy-install.command'
   cd "$install_dir"
   curl --proto '=https' --proto-redir '=https' --tlsv1.2 --fail --location \
     --connect-timeout 15 --max-time 240 --retry 2 \
-    "https://raw.githubusercontent.com/Core-Mate/OpenGUI/$installer_commit/workbuddy-plugin/scripts/install-macos.command" \
+    "https://raw.githubusercontent.com/Core-Mate/OpenGUI/$installer_ref/workbuddy-plugin/scripts/install-macos.command" \
     -o "$installer"
   printf '%s  %s\n' "$installer_sha" "$installer" | shasum -a 256 -c -
   bash "$installer" --check
@@ -158,8 +161,14 @@ Maintainers may deliberately install a locally built archive using `scripts/inst
 
 Current development behavior and data flow: [English](README.md) · [简体中文](README.zh-CN.md).
 
+### Slow first-time downloads
+
+The first installation downloads a private Node.js runtime of about 50 MB. Installer 1.0.2 displays the actual curl download percentage, received/total size, current speed, remaining estimate, and retry errors in Terminal while preserving the complete log. Each download allows up to 30 minutes; a transfer below 1 KiB/s for 60 seconds still times out, with at most two retries. These limits do not replace checksum verification.
+
+Installer 1.0.1 hides download progress and limits each attempt to four minutes. A slow but active download may therefore time out and restart. Inspect the current log and process before calling it stuck. Do not start another installer while one is active, remove its locks, or overwrite its running scripts. Let the attempt finish or have the user cancel it in Terminal before retrying with the new ZIP.
+
 ### Rebuilding the installer ZIP
 
 Maintainers can run `python3 workbuddy-plugin/scripts/test-installer-handoff.py` from the repository root; it runs isolated launcher tests and builds the ZIP with executable permissions. To build alone, use `python3 workbuddy-plugin/scripts/build-installer-handoff.py`. Outputs are in `workbuddy-plugin/dist/` with an adjacent SHA-256 file. The builder refuses a changed installer payload until its pinned digest is deliberately reviewed and updated.
 
-Publish the ZIP and checksum under a new installer-only prerelease tag, such as `opengui-workbuddy-installer-v1.0.1`, without marking it latest. Keep its version distinct from the plugin runtime, attach both files, and verify the downloaded asset against this guide. Never overwrite an existing release asset or the plugin's original 0.3.1 assets. When changing the launcher or payload, bump the installer version and update the download URL and digest together. Record real Terminal and WorkBuddy acceptance separately from automated fixture tests; see the [verification record](docs/install-prompt-verification.zh-CN.md).
+Publish the ZIP and checksum under a new installer-only prerelease tag, such as `opengui-workbuddy-installer-v1.0.2`, without marking it latest. Keep its version distinct from the plugin runtime, attach both files, and verify the downloaded asset against this guide. Never overwrite an existing release asset or the plugin's original 0.3.1 assets. When changing the launcher or payload, bump the installer version and update the download URL and digest together. Record real Terminal and WorkBuddy acceptance separately from automated fixture tests; see the [verification record](docs/install-prompt-verification.zh-CN.md).

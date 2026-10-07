@@ -2,7 +2,7 @@
 # Interactive handoff to the verified public WorkBuddy installer.
 set -euo pipefail
 umask 077
-expected_sha='b3581c8d928068e7bf7a8a886f75c1c436efdb71ae2c5bf97b220b36bf9f0239'
+expected_sha='a6a84e19f2830a07514e99d5f23d3064b91a023704059f27381001f78539bebb'
 
 if [ ! -t 0 ] || [ ! -t 1 ] || [ -n "${CODEBUDDY_FORCE_HEADLESS_BUNDLE:-}" ] || [[ "${NODE_OPTIONS:-}" == *node-language-shim* ]]; then
   echo '尚未开始安装。请在 Finder 中双击 OpenGUI-Install.command，打开终端安装窗口。'
@@ -42,14 +42,33 @@ printf '\n正在安装，请保持窗口打开。首次安装需要下载文件�
 printf '详细日志：%s\n\n' "$log"
 printf 'status=running\nhostLoaded=unverified\n' > "$result"
 set +e
-# Keep full diagnostics while showing only useful progress in the installer window.
-bash "$installer" 2>&1 | tee "$log" | awk '
-  /^\[[0-9]+s\] Preflight:/ { print "  1/3  已找到 WorkBuddy，正在检查安装环境。"; fflush() }
-  /^\[[0-9]+s\] Downloading verified OpenGUI package/ { print "  2/3  正在下载并校验插件文件。"; fflush() }
-  /^\[[0-9]+s\] Reusing verified package download/ { print "  2/3  已找到校验通过的插件文件。"; fflush() }
-  /^Preparing private Node.js/ { print "       正在准备运行环境，请稍候。"; fflush() }
-  /^\[[0-9]+s\] Installing configuration/ { print "  3/3  正在准备组件并写入配置。"; fflush() }
-'
+# Read each record without buffering curl carriage-return progress until EOF.
+show_progress() {
+  local line='' char progress=false
+  local total_pct total received_pct received upload_pct uploaded speed upload_speed duration elapsed remaining current extra
+  while IFS= read -r -n 1 char || [ -n "$line" ]; do
+    if [ -n "$char" ] && [ "$char" != $'\r' ]; then line+="$char"; continue; fi
+    read -r total_pct total received_pct received upload_pct uploaded speed upload_speed duration elapsed remaining current extra <<< "$line"
+    if [[ "$total_pct" =~ ^[0-9]+$ ]] && [[ "$received_pct" =~ ^[0-9]+$ ]] && [ -n "$current" ] && [ -z "$extra" ]; then
+      printf '\r       下载 %s%% · %s / %s · %s B/s · 剩余 %s     ' "$received_pct" "$received" "$total" "$current" "$remaining"
+      progress=true
+    elif [ -n "$line" ]; then
+      if [ "$progress" = true ]; then printf '\n'; progress=false; fi
+      case "$line" in
+        *'] Preflight:'*) echo '  1/3  已找到 WorkBuddy，正在检查安装环境。' ;;
+        *'] Downloading verified OpenGUI package'*) echo '  2/3  正在下载并校验插件文件。' ;;
+        *'] Reusing verified package download'*) echo '  2/3  已找到校验通过的插件文件。' ;;
+        'Preparing private Node.js'*) echo '       正在下载运行环境（约 50 MB），下方显示实时进度。' ;;
+        *'] Installing configuration'*) echo '  3/3  正在准备组件并写入配置。' ;;
+        curl:*|Warning:*) printf '%s\n' "$line" ;;
+      esac
+    fi
+    line=''
+  done
+  if [ "$progress" = true ]; then printf '\n'; fi
+  return 0
+}
+bash "$installer" 2>&1 | tee "$log" | show_progress
 pipeline_status=("${PIPESTATUS[@]}")
 status=${pipeline_status[0]}
 # A failed log or progress stream must not produce a successful receipt.

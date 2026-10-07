@@ -13,7 +13,7 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = (ROOT / 'scripts/installer-handoff.command').read_text()
-PIN = 'b3581c8d928068e7bf7a8a886f75c1c436efdb71ae2c5bf97b220b36bf9f0239'
+PIN = 'a6a84e19f2830a07514e99d5f23d3064b91a023704059f27381001f78539bebb'
 
 
 class HandoffTests(unittest.TestCase):
@@ -35,7 +35,7 @@ class HandoffTests(unittest.TestCase):
         self.launcher = self.folder / 'OpenGUI-Install.command'
         self.launcher.write_text(SOURCE.replace(PIN, digest))
 
-    def run_tty(self, answer='\n', extra_env=None):
+    def run_tty(self, answer='\n', extra_env=None, on_output=None):
         master, slave = pty.openpty()
         child = subprocess.Popen(['bash', str(self.launcher)], stdin=slave, stdout=slave, stderr=slave,
                                  env={**self.env, **(extra_env or {})})
@@ -54,6 +54,8 @@ class HandoffTests(unittest.TestCase):
                     if not part:
                         break
                     data += part
+                    if on_output:
+                        on_output(data.decode(errors='replace'))
                     if '按回车开始安装'.encode() in data and not sent:
                         os.write(master, answer.encode()); sent = True
                     if '按回车结束安装程序'.encode() in data and not finished:
@@ -94,6 +96,42 @@ class HandoffTests(unittest.TestCase):
         self.assertIn('status=configuration_written', result)
         self.assertIn('hostLoaded=unverified', result)
 
+    def test_download_progress_is_visible_before_download_finishes(self):
+        self.prepare("""#!/bin/bash
+printf 'Preparing private Node.js\\n'
+printf '\\r 52 47.7M 52 25.2M 0 0 124k 0 0:06:34 0:03:28 0:03:06 103k\\r'
+for attempt in 1 2 3 4 5 6 7 8 9 10; do
+  [ ! -f "$HOME/progress-observed" ] || break
+  sleep 0.1
+done
+[ -f "$HOME/progress-observed" ] || exit 41
+echo 'curl: (28) transfer timed out'
+echo 'Warning: Retrying in 1 seconds. 2 retries left.'
+echo CONFIG_WRITTEN
+""")
+        def observe(output):
+            if '下载 52%' in output:
+                (self.folder / 'progress-observed').touch()
+        code, output = self.run_tty(on_output=observe)
+        self.assertEqual(code, 0, output)
+        self.assertIn('25.2M / 47.7M', output)
+        self.assertIn('curl: (28)', output)
+        self.assertIn('Retrying', output)
+
+    def test_fetch_allows_slow_downloads_but_bounds_stalls_and_failures(self):
+        source = (ROOT / 'scripts/install-macos.command').read_text()
+        fetch = source.split('fetch() {', 1)[1].split('\n}', 1)[0]
+        fake_bin = self.folder / 'bin'
+        fake_bin.mkdir()
+        curl = fake_bin / 'curl'
+        curl.write_text('#!/bin/bash\nprintf "%s\\n" "$@" > "$HOME/curl-args"\nexit 28\n')
+        curl.chmod(0o755)
+        result = subprocess.run(['bash', '-c', 'fetch() {' + fetch + '\n}\nfetch https://example.test/runtime runtime.tar.gz'], env={**self.env, 'PATH': f'{fake_bin}:{self.env["PATH"]}'})
+        self.assertEqual(result.returncode, 28)
+        args = (self.folder / 'curl-args').read_text().splitlines()
+        for flag, value in [('--max-time', '1800'), ('--speed-limit', '1024'), ('--speed-time', '60'), ('--connect-timeout', '15'), ('--retry', '2')]:
+            self.assertEqual(args[args.index(flag) + 1], value)
+
     def test_failure_keeps_exit_code_and_log(self):
         self.prepare('#!/bin/bash\necho blocked >&2\nexit 42\n')
         code, output = self.run_tty()
@@ -133,7 +171,7 @@ class HandoffTests(unittest.TestCase):
 
     def test_release_zip_preserves_executable_and_verified_payload(self):
         subprocess.run(['python3', str(ROOT / 'scripts/build-installer-handoff.py')], check=True, capture_output=True)
-        archive = ROOT / 'dist/opengui-workbuddy-installer-1.0.1.zip'
+        archive = ROOT / 'dist/opengui-workbuddy-installer-1.0.2.zip'
         with zipfile.ZipFile(archive) as z:
             self.assertEqual(len(z.namelist()), 3)
             launcher = z.getinfo('OpenGUI-WorkBuddy-Installer/OpenGUI-Install.command')
