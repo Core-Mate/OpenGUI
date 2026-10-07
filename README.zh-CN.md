@@ -85,7 +85,7 @@ OpenGUI 正式支持 DSH `0.1.0-rc.7`、`0.1.0-rc.8`、`0.1.1-rc.1` 和 `0.1.1-r
 在 **macOS** 上打开 WorkBuddy，新建聊天，粘贴下面这段完整指令：
 
 ```text
-帮我把 OpenGUI 插件安装到当前 WorkBuddy：https://github.com/Core-Mate/OpenGUI。请按仓库 workbuddy-plugin/INSTALL.md 的推荐流程，使用已固定提交并校验 SHA-256 的兼容安装器，安装官方 WorkBuddy 发布包及其 MCP、opengui Skill 和生命周期 Hooks。请完成安装并验证工具加载；不要操作手机。正常的下载、校验、预检和安装步骤请直接继续，不必再让我选择是否安装或是否使用文档指定的兼容安装器；如果 WorkBuddy 或系统实际要求授权，或有无法安全解决的错误，再停下来告诉我。
+帮我把 OpenGUI 插件安装到当前 WorkBuddy：https://github.com/Core-Mate/OpenGUI。请按仓库 workbuddy-plugin/INSTALL.md 的推荐流程，使用已固定提交并校验 SHA-256 的兼容安装器，安装官方 WorkBuddy 发布包及其 MCP、opengui Skill 和生命周期 Hooks。请完成安装并验证工具加载；不要操作手机。请先检查并尽可能自动启用 OpenGUI 的 Skill 和 MCP；已启用就直接继续，仅在确实需要我手动打开开关时，展示安装指南中的对应截图和入口步骤。正常的下载、校验、预检和安装步骤请直接继续，不必再让我选择是否安装或是否使用文档指定的兼容安装器；如果 WorkBuddy 或系统实际要求授权，或有无法安全解决的错误，再停下来告诉我。
 ```
 
 **给执行安装的 AI：**当前宿主为 WorkBuddy 时，请直接采用 [WorkBuddy 安装指南](./workbuddy-plugin/INSTALL.md#recommended-installation)指定的兼容安装器和官方包。该流程不需要用户在旧安装器和修复版之间再做选择；DSH 安装器和完整后端部署属于其他使用方式。README 不能替用户授予权限，实际授权以用户请求和宿主策略为准。
@@ -98,7 +98,7 @@ OpenGUI 正式支持 DSH `0.1.0-rc.7`、`0.1.0-rc.8`、`0.1.1-rc.1` 和 `0.1.1-r
 
 **安装后这样用：**
 
-1. 在 `/skills` 中确认 `opengui`，再到 **专家·技能·连接器 → 连接器 → 自定义连接器** 打开 `opengui` MCP 总开关，等待状态变绿。Skill 开关和 MCP 总开关是分开的；如有提示，完成正常信任授权，并在 `/hooks` 中审查外部 Hook 变更。当前聊天未刷新时，新建聊天。
+1. 安装助手会检查 Skill 与 MCP，能自动启用并验证成功时直接继续，**无需手动切换页面**。只有无法自动启用时，才会展示对应截图，提示打开尚未开启的开关；参见[开关位置图示](./workbuddy-plugin/docs/enable-opengui.md)。Skill 与 MCP 是两个独立开关。正常信任或 Hook 审查提示仍按需处理。
 2. 用 USB 连接 Android 手机，开启 USB 调试，并在手机上允许这台电脑调试；也支持 Android 模拟器。先发送 `调用 OpenGUI MCP 工具 opengui_list_devices 并报告返回结果，不要操作手机` 检查连接。
 3. 在 WorkBuddy 中选择 `opengui` 技能，试一个简单任务：
 

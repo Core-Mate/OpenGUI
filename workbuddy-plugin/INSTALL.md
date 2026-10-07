@@ -53,11 +53,48 @@ For upgrades, finish existing OpenGUI tasks and close their viewers first. If th
 Report each stage separately:
 
 1. **Configuration written:** the installer exits successfully and reports `CONFIG_WRITTEN`, `LIVE_CONFIG_WRITTEN`, or an already-configured result. This alone does not prove WorkBuddy loaded the plugin.
-2. **Host loaded:** confirm `opengui` in `/skills`, then open **Experts · Skills · Connectors → Connectors → Custom connector** (5.7.6 Chinese UI: **专家·技能·连接器 → 连接器 → 自定义连接器**). In MCP service management, enable the `opengui` server and wait for its status indicator to turn green. An enabled Skill or “14/14 tools enabled” label does not mean the server's master switch is on. Complete normal trust prompts and review external Hook changes in `/hooks` if requested. A new chat may be needed to refresh discovery.
+2. **Host loaded:** check that the `opengui` Skill and MCP server are enabled. If either is off, use the host's supported enable action or available UI control within the user's installation request, then verify the new state. If both are already enabled, or you enable them successfully, continue without asking the user to visit settings. Only when a required switch cannot be enabled by the assistant, show the relevant screenshot and directions from [manual enablement help](#manual-enablement-help). An enabled Skill or “14/14 tools enabled” label does not prove the MCP server's master switch is on. Complete normal trust prompts and review external Hook changes in `/hooks` if requested. A new chat may be needed to refresh discovery.
 3. **Device discovery:** discover and call the loaded `opengui_list_devices` MCP tool directly; WorkBuddy may expose its full name as `mcp__opengui__opengui_list_devices`. Read its actual result. Avoid invoking the phone-control Skill merely for an installation check. An empty list means installation may be valid but no authorized device is connected; explain phone-side setup instead of declaring a device test passed.
 4. **First task:** after the user connects and authorizes a phone, try `@opengui Open Settings, then return to the home screen. Stop after confirming the home screen is visible.` Verify the right-hand preview and the actual result. Do not launch a phone task merely to complete installation unless the user requested it.
 
 Keep trust, device authorization, and any account/model prompts visible to the user. Do not claim automatic phone authorization or complete business acceptance from an installer success message.
+
+## Manual enablement help
+
+This is a conditional fallback, not a checklist every user must perform. Installation output that mentions enablement is a reminder to verify state; do not forward it as an unconditional manual task. Do not edit undocumented host trust/permission storage to simulate enablement.
+
+When the host offers no usable enable action, or reserves the action for the user:
+
+- Identify the specific unresolved switch: **Skill** or **MCP server**. A tool discovery failure alone does not prove either switch is off. If state is unknown, say it is unverified and ask the user to check, turning it on only if it is off.
+- Open the relevant native page if your available tools support navigation. Give the exact path and **embed the relevant screenshot in the conversation**, not just a link to documentation. The ready-to-use messages below use public image URLs that work without a repository checkout.
+- Show only the unresolved step. If both switches are verified on but tools remain unavailable, investigate connection/discovery errors instead of asking the user to toggle them again.
+- After the user confirms the change, recheck discovery and call `opengui_list_devices`. Do not report success solely from the user's confirmation.
+
+### Skill switch fallback
+
+Use only if the Skill still needs manual enablement. Screenshot: WorkBuddy 5.7.6, Chinese UI, **already enabled** example. The switch is at the top-right of the `opengui` card. Clear the installed-skills search field if the card shows an installed checkmark instead of its switch.
+
+```markdown
+还需要在 WorkBuddy 中启用 OpenGUI 技能，我当前无法代你打开这个开关。请进入「专家·技能·连接器 → 技能 → 已安装」，找到 opengui，把卡片右上角的开关打开。下图绿色是已开启状态；如果你这里已经是绿色，请保持不变。完成后告诉我，我会继续验证。
+
+![OpenGUI 技能开关：位于 opengui 卡片右上角，绿色表示已启用](https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/docs/images/workbuddy-skill-enabled.jpg)
+```
+
+### MCP server switch fallback
+
+Use only if the MCP server still needs manual enablement. The Skill switch is separate. In the screenshot, the `opengui` row's far-right switch is on and the status dot beside its name is green.
+
+```markdown
+还需要在 WorkBuddy 中启用 OpenGUI 的 MCP 连接器，我当前无法代你打开这个开关。请进入「专家·技能·连接器 → 连接器」，点击右上角「自定义连接器」。
+
+![连接器入口：点击右上角的自定义连接器](https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/docs/images/workbuddy-connectors-entry.jpg)
+
+在「MCP 服务管理」中，把 opengui 行最右侧的开关打开，等待名称旁的状态点变绿。下图展示已开启状态；如果已经开启，请保持不变。完成后告诉我，我会继续验证工具调用。
+
+![OpenGUI MCP 总开关：位于 opengui 行最右侧，图中开关和连接状态均为绿色](https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/docs/images/workbuddy-mcp-enabled.jpg)
+```
+
+Adapt the message to the user's language and the observed blocker; do not claim the switch is off when you could not inspect it. If inline images cannot render, provide the [illustrated guide](https://github.com/Core-Mate/OpenGUI/blob/main/workbuddy-plugin/docs/enable-opengui.md) and the same exact navigation path. These are reference screenshots, not proof of the user's current state. See the [illustrated guide](docs/enable-opengui.md) for both switches.
 
 ## Development builds
 
