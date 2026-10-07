@@ -120,3 +120,15 @@ WorkBuddy 技能页已显示启用的 `opengui`，但聊天最初检索不到 MC
 最终在原生 WorkBuddy 原安装对话中再次直接调用 `mcp__opengui__opengui_list_devices` 成功，返回 1 台 `sdk gphone64 arm64` 模拟器，`connected: true`、`authorized: true`、`state: device`。本轮没有读取手机屏幕或执行手机动作。
 
 当前推荐安装器固定为提交 `d6a5f5ce240cdd6ca393ea516206b8a329411ac0`，SHA-256 为 `b3581c8d928068e7bf7a8a886f75c1c436efdb71ae2c5bf97b220b36bf9f0239`；官方 0.3.1 包及其哈希不变。README 把已验证的终端路径直接放在 WorkBuddy 安装入口，保留助手安装请求但明确权限边界。此次成功是终端恢复加原生只读验收，仍不能声称 WorkBuddy 默认权限的一句话全自动安装通过。
+
+## 2026-10-07：可双击安装入口 1.0.0
+
+新增 ZIP 将固定的兼容安装脚本与交互入口一起分发，仍安装原始官方插件 0.3.1。入口要求独立交互终端，先核对内含脚本 SHA-256，再等待用户按回车。每次实际尝试创建独立的结果目录；安装成功只记录 `configuration_written`，宿主加载始终保留 `unverified`，等待原生工具调用验收。
+
+8 项隔离自动测试通过，覆盖非交互与宿主注入拒绝、取消、失败退出码及日志、成功标记、仅下载不算成功、篡改/符号链接拒绝，以及 ZIP 中可执行权限和内含脚本校验。测试使用临时 HOME 和模拟安装载荷，不写入真实 WorkBuddy 配置；测试中自动输入仅用于模拟载荷，不代表用户确认流程已实机验收。
+
+本机使用 `ditto` 解压后，Finder 可以识别 `OpenGUI-Install.command` 为终端 shell 脚本。桌面控制工具拒绝访问 macOS Terminal，因此交给用户手动打开并确认。用户提供的终端截图显示“安装配置已写入”及进程完成；核对本次独立结果目录，`status=configuration_written`、`exitCode=0`、`hostLoaded=unverified`，日志显示约 5 秒完成并输出 `LIVE_CONFIG_WRITTEN`。这是已有运行时缓存的重装验证，不是全新机器冷安装。
+
+重新打开 WorkBuddy 5.7.6 后，在原安装对话中通过工具发现机制直接调用 `mcp__opengui__opengui_list_devices`。原生会话的 `DeferExecuteTool` 完成结果和 `mcpMeta.structuredContent` 均返回 1 台 `sdk gphone64 arm64` 模拟器，`state=device`、`connected=true`、`authorized=true`。没有使用 Shell 代替宿主工具验证，也没有执行手机操作。
+
+本次已验证“解压入口 → 用户终端确认 → 配置写入 → 重开 WorkBuddy → 原生只读 MCP 调用”。带浏览器隔离属性的下载打开流程，以及新 README 短请求自动准备安装包的前半段，仍未独立实测；不能据此承诺默认权限下无人值守安装。macOS/Linux 的入口 CI 均通过，插件打包与 485 项运行时测试通过；现有依赖审计仍因 MCP SDK 的 GHSA-6qxp-vccf-f47h 失败，本次未修改该运行时依赖。

@@ -1,0 +1,130 @@
+#!/usr/bin/env python3
+"""Exercise the interactive launcher without installing or changing host settings."""
+from pathlib import Path
+import hashlib
+import os
+import pty
+import select
+import subprocess
+import tempfile
+import time
+import unittest
+import zipfile
+
+ROOT = Path(__file__).resolve().parents[1]
+SOURCE = (ROOT / 'scripts/installer-handoff.command').read_text()
+PIN = 'b3581c8d928068e7bf7a8a886f75c1c436efdb71ae2c5bf97b220b36bf9f0239'
+
+
+class HandoffTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(prefix='opengui handoff ')
+        self.folder = Path(self.temp.name)
+        self.env = {**os.environ, 'HOME': str(self.folder)}
+        self.env.pop('CODEBUDDY_FORCE_HEADLESS_BUNDLE', None)
+        self.env.pop('NODE_OPTIONS', None)
+        self.payload = '#!/bin/bash\nprintf CONFIG_WRITTEN\\\\n\n'
+        self.prepare(self.payload)
+
+    def tearDown(self):
+        self.temp.cleanup()
+
+    def prepare(self, payload):
+        (self.folder / 'installer.sh').write_text(payload)
+        digest = hashlib.sha256(payload.encode()).hexdigest()
+        self.launcher = self.folder / 'OpenGUI-Install.command'
+        self.launcher.write_text(SOURCE.replace(PIN, digest))
+
+    def run_tty(self, answer='\n', extra_env=None):
+        master, slave = pty.openpty()
+        child = subprocess.Popen(['bash', str(self.launcher)], stdin=slave, stdout=slave, stderr=slave,
+                                 env={**self.env, **(extra_env or {})})
+        os.close(slave)
+        data = b''
+        sent = False
+        finished = False
+        deadline = time.monotonic() + 8
+        try:
+            while time.monotonic() < deadline:
+                if select.select([master], [], [], .1)[0]:
+                    try:
+                        part = os.read(master, 65536)
+                    except OSError:
+                        break
+                    if not part:
+                        break
+                    data += part
+                    if b'Press Return to install' in data and not sent:
+                        os.write(master, answer.encode()); sent = True
+                    if b'Press Return to finish' in data and not finished:
+                        os.write(master, b'\n'); finished = True
+                if child.poll() is not None:
+                    break
+            return child.wait(timeout=1), data.decode(errors='replace')
+        finally:
+            if child.poll() is None:
+                child.kill(); child.wait()
+            os.close(master)
+
+    def test_noninteractive_launch_does_not_install(self):
+        r = subprocess.run(['bash', str(self.launcher)], input='\n', capture_output=True, text=True, env=self.env)
+        self.assertEqual(r.returncode, 73)
+        self.assertFalse(list(self.folder.glob('installation-result.*')))
+
+    def test_host_injected_launch_does_not_install(self):
+        for env in [{'CODEBUDDY_FORCE_HEADLESS_BUNDLE': '1'}, {'NODE_OPTIONS': '--require /host/node-language-shim.cjs'}]:
+            code, _ = self.run_tty(extra_env=env)
+            self.assertEqual(code, 73)
+        self.assertFalse(list(self.folder.glob('installation-result.*')))
+
+    def test_cancel_does_not_write_a_result(self):
+        code, _ = self.run_tty('q\n')
+        self.assertEqual(code, 0)
+        self.assertFalse(list(self.folder.glob('installation-result.*')))
+
+    def test_success_requires_actual_configuration_marker(self):
+        code, output = self.run_tty()
+        self.assertEqual(code, 0, output)
+        result = next(self.folder.glob('installation-result.*/result.txt')).read_text()
+        self.assertIn('status=configuration_written', result)
+        self.assertIn('hostLoaded=unverified', result)
+
+    def test_failure_keeps_exit_code_and_log(self):
+        self.prepare('#!/bin/bash\necho blocked >&2\nexit 42\n')
+        code, output = self.run_tty()
+        self.assertEqual(code, 42, output)
+        result = next(self.folder.glob('installation-result.*/result.txt'))
+        self.assertIn('status=failed\nexitCode=42', result.read_text())
+        self.assertIn('blocked', result.with_name('install.log').read_text())
+
+    def test_zero_exit_without_configuration_is_not_success(self):
+        self.prepare('#!/bin/bash\necho download_only\n')
+        code, _ = self.run_tty()
+        self.assertEqual(code, 1)
+        self.assertIn('status=failed', next(self.folder.glob('installation-result.*/result.txt')).read_text())
+
+    def test_changed_or_redirected_payload_is_refused(self):
+        (self.folder / 'installer.sh').write_text('echo tampered\n')
+        code, output = self.run_tty()
+        self.assertEqual(code, 1)
+        self.assertIn('Checksum mismatch', output)
+        self.assertFalse(list(self.folder.glob('installation-result.*')))
+        (self.folder / 'installer.sh').unlink()
+        real = self.folder / 'real.sh'; real.write_text(self.payload)
+        (self.folder / 'installer.sh').symlink_to(real)
+        code, _ = self.run_tty()
+        self.assertEqual(code, 1)
+
+    def test_release_zip_preserves_executable_and_verified_payload(self):
+        subprocess.run(['python3', str(ROOT / 'scripts/build-installer-handoff.py')], check=True, capture_output=True)
+        archive = ROOT / 'dist/opengui-workbuddy-installer-1.0.0.zip'
+        with zipfile.ZipFile(archive) as z:
+            self.assertEqual(len(z.namelist()), 3)
+            launcher = z.getinfo('OpenGUI-WorkBuddy-Installer/OpenGUI-Install.command')
+            self.assertEqual((launcher.external_attr >> 16) & 0o777, 0o755)
+            self.assertEqual(hashlib.sha256(z.read('OpenGUI-WorkBuddy-Installer/installer.sh')).hexdigest(), PIN)
+        self.assertEqual(archive.with_suffix('.zip.sha256').read_text().split()[0], hashlib.sha256(archive.read_bytes()).hexdigest())
+
+
+if __name__ == '__main__':
+    unittest.main(verbosity=2)

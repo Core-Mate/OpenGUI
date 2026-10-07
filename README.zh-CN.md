@@ -82,53 +82,29 @@ OpenGUI 正式支持 DSH `0.1.0-rc.7`、`0.1.0-rc.8`、`0.1.1-rc.1` 和 `0.1.1-r
 
 ## WorkBuddy 安装
 
-**WorkBuddy 5.7.6 默认权限的已知限制：**“帮我安装opengui插件：https://github.com/Core-Mate/OpenGUI”可以让助手找到正确流程，但不能保证完成安装。实测配置写入被 `CODEBUDDY_BROKER_DENY` / `decision: prompt` 拒绝，当前工具又没有可响应的授权入口；加长提示词无法解决这个权限问题。相同官方包已通过用户授权的本机终端安装，并通过 WorkBuddy 工具调用验证。
-
-### 已验证的安装路径：macOS 终端
-
-打开 macOS 自带的「终端」（不是 WorkBuddy 内的命令执行工具），粘贴下面整段。它会下载固定版本的兼容安装器、核对 SHA-256，再安装官方包；无需关闭 WorkBuddy 或自行安装 Node.js。
-
-```bash
-(
-  set -euo pipefail
-  install_dir=$(mktemp -d "${TMPDIR:-/tmp}/opengui-workbuddy.XXXXXXXX")
-  installer_commit='d6a5f5ce240cdd6ca393ea516206b8a329411ac0'
-  installer_sha='b3581c8d928068e7bf7a8a886f75c1c436efdb71ae2c5bf97b220b36bf9f0239'
-  installer='opengui-workbuddy-install.command'
-  cd "$install_dir"
-  curl --proto '=https' --proto-redir '=https' --tlsv1.2 --fail --location \
-    --connect-timeout 15 --max-time 240 --retry 2 \
-    "https://raw.githubusercontent.com/Core-Mate/OpenGUI/$installer_commit/workbuddy-plugin/scripts/install-macos.command" \
-    -o "$installer"
-  printf '%s  %s\n' "$installer_sha" "$installer" | shasum -a 256 -c -
-  bash "$installer" --check
-  bash "$installer"
-)
-```
-
-看到 `CONFIG_WRITTEN` 和 `LIVE_CONFIG_WRITTEN` 后，回到 WorkBuddy，发送：
+在 WorkBuddy 中发送：
 
 ```text
-OpenGUI 已通过终端安装。请检查并尽可能启用 OpenGUI 的 Skill 和 MCP，直接调用 opengui_list_devices 验证工具加载，不要操作手机。仅在确实需要我手动开启时，展示 https://github.com/Core-Mate/OpenGUI/blob/main/workbuddy-plugin/docs/enable-opengui.md 中对应的截图和入口步骤。
+帮我安装opengui插件：https://github.com/Core-Mate/OpenGUI
 ```
 
-若配置已经写入，但连接器管理中还没有 OpenGUI，请先结束其他任务，再退出并重新打开 WorkBuddy 后检查一次。如需手动开启，参见[开关图示](./workbuddy-plugin/docs/enable-opengui.md)。没有连接手机时，工具返回空设备列表也是有效的安装验证结果。
+WorkBuddy 会按[安装指南](./workbuddy-plugin/INSTALL.md#recommended-installation)下载并校验安装 ZIP，再交接到独立的 macOS 终端窗口。**在安装窗口按回车，才开始安装。** 如果 WorkBuddy 无法通过正常权限打开窗口，手动双击解压后的 `OpenGUI-Install.command` 即可。安装完成后回到 WorkBuddy 验证。
 
-### 由 WorkBuddy 助手尝试安装
+**[下载 macOS 安装 ZIP](https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-installer-v1.0.0/opengui-workbuddy-installer-1.0.0.zip)** · [SHA-256 校验文件](https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-installer-v1.0.0/opengui-workbuddy-installer-1.0.0.zip.sha256)
 
-可发送上面的短请求，或在新聊天中使用下面的完整指令明确范围。如果当前环境已知没有文件授权入口，应直接给出终端安装步骤；首次遇到上述拒绝后停止重试，不要切换权限模式、关闭沙箱或移除宿主注入来继续写入。独立终端操作应由用户执行，或由用户明确授权本机助手执行。
+1. 解压 ZIP，保持 `OpenGUI-Install.command` 和 `installer.sh` 在同一文件夹。
+2. 双击 `OpenGUI-Install.command`，按回车开始。升级前先结束手机任务、退出 WorkBuddy，等待旧后台服务正常结束。
+3. 等待出现“安装配置已写入”，重新打开或回到 WorkBuddy，发送：
 
-```text
-帮我把 OpenGUI 插件安装到当前 WorkBuddy：https://github.com/Core-Mate/OpenGUI。请按仓库 workbuddy-plugin/INSTALL.md 的推荐流程，使用已固定提交并校验 SHA-256 的兼容安装器，安装官方 WorkBuddy 发布包及其 MCP、opengui Skill 和生命周期 Hooks。请完成安装并验证工具加载；不要操作手机。请先检查并尽可能自动启用 OpenGUI 的 Skill 和 MCP；已启用就直接继续，仅在确实需要我手动打开开关时，展示安装指南中的对应截图和入口步骤。正常的下载、校验、预检和安装步骤请直接继续，不必再让我选择是否安装或是否使用文档指定的兼容安装器；如果 WorkBuddy 或系统实际要求授权，或有无法安全解决的错误，再停下来告诉我。
-```
+   ```text
+   OpenGUI 已通过安装器安装。请检查 Skill 和 MCP 状态，通过工具发现机制直接调用 opengui_list_devices 验证安装，不要操作手机，也不要用 Shell 测试代替原生 MCP 调用。只有确实需要我手动开启开关时，才展示安装指南中的对应截图和入口步骤。
+   ```
 
-**给执行安装的 AI：**当前宿主为 WorkBuddy 时，请直接采用 [WorkBuddy 安装指南](./workbuddy-plugin/INSTALL.md#recommended-installation)指定的兼容安装器和官方包。该流程不需要用户在旧安装器和修复版之间再做选择；DSH 安装器和完整后端部署属于其他使用方式。README 不能替用户授予权限，实际授权以用户请求和宿主策略为准。
+安装器会准备独立运行环境、备份受影响的设置，配置 MCP、`opengui` Skill 和 7 个生命周期 Hooks，并保留其他插件。无需 sudo、手动安装 Node.js、部署后端或安装 DSH。这里的**安装入口 1.0.0**安装的是现有公测**插件 0.3.1**，不是新的插件运行时，也不是经过签名或公证的 macOS App。
 
-**为什么指定兼容安装器？**公开 0.3.1 Release 附带的旧安装器只检查 `codebuddy.js`，在采用 headless/lite 布局的 WorkBuddy 5.6.2、5.7.6 上会报 `HOST_HOOKS`。推荐流程固定使用同仓库的修复版脚本，仍下载并校验同一个官方 0.3.1 包，无需克隆仓库或编译源码。
+**给执行安装的 AI：**短请求已足够识别安装目标，请读取 [INSTALL.md](./workbuddy-plugin/INSTALL.md#recommended-installation)，使用其中固定的下载地址和校验值，按用户请求继续常规准备。打开终端只能走宿主正常支持的授权流程；没有该入口或被拒绝时，给出解压文件的可点击本地路径和 Finder 操作步骤，由用户打开。不要在 WorkBuddy 命令环境直接执行入口、移除宿主注入、改变权限设置或切换工具绕过拒绝。README 不能替用户授予权限。
 
-完整指令可以明确安装范围，减少助手自行追加的“是否继续安装”询问；不能保证每个版本、模型都不再询问，也不能取消 WorkBuddy 的文件写入、MCP 信任或 Hook 审查。下载成功、配置写入和宿主加载是三个不同阶段，参见[安装验证](./workbuddy-plugin/INSTALL.md#verify-the-installation)。
-
-安装器会准备独立运行环境、备份受影响的设置并保留其他插件。用户无需手动安装 Node.js、部署 OpenGUI 后端或安装 DSH。建议使用 **WorkBuddy 5.5.6 及以上**，可保持应用打开；旧版兼容宿主会提示先退出。升级前请结束现有手机任务并关闭其预览页面。
+WorkBuddy 5.7.6 默认权限曾以 `CODEBUDDY_BROKER_DENY` / `decision: prompt` 拒绝直接写入配置，加长提示词无法解决。ZIP 把独立的、由用户确认的安装步骤做成可双击入口。下载成功或安装结果文件均不代表宿主已加载；后续原生 MCP 调用才验证该阶段。详见[安装验证与命令行备用路径](./workbuddy-plugin/INSTALL.md)。
 
 **安装后这样用：**
 
