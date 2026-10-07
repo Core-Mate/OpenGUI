@@ -125,7 +125,10 @@ private_dir() {
 root="$HOME/.workbuddy/opengui"
 case "$root" in /*) ;; *) echo 'Installation home must be absolute.' >&2; exit 1 ;; esac
 private_dir "$config_root"
+# Cached state may predate this install and retain a permissive umask.
+# Only tighten OpenGUI state after the ownership and symlink checks above.
 private_dir "$root"
+chmod 700 "$root"
 lock="$root/installer.lock"
 mkdir "$lock" 2>/dev/null || { echo "Installation busy or interrupted: inspect $lock before retrying." >&2; exit 1; }
 temporary=

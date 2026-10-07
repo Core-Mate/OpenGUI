@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { mkdtemp, mkdir, writeFile, rm, access, realpath } from 'node:fs/promises'
+import { mkdtemp, mkdir, writeFile, rm, access, realpath, chmod, lstat, symlink } from 'node:fs/promises'
 import { spawnSync } from 'node:child_process'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
@@ -49,5 +49,26 @@ try {
     r=run(); assert.notEqual(r.status,0); assert.match(r.stderr,/HOST_HOOKS/)
     await rm(join(cli, 'dist', name))
   }
+  // Reused cache directories must satisfy the runtime's owner-only state contract.
+  await writeFile(join(cli, 'dist/codebuddy-headless.js'), 'UserPromptSubmit PreToolUse Stop SubagentStop FinalStop SessionEnd StopFailure')
+  const stateRoot = join(home, '.workbuddy/opengui')
+  await mkdir(stateRoot, {recursive:true})
+  await chmod(join(home, '.workbuddy'), 0o755)
+  await chmod(stateRoot, 0o755)
+  r=run(); assert.equal(r.status,0,r.stderr)
+  assert.equal((await lstat(stateRoot)).mode & 0o777, 0o755, 'Preflight must not change permissions')
+  const installUntilArchiveCheck = () => spawnSync('bash', [script, '--app', app, '--archive', join(temporary, 'absent.tgz')], {
+    encoding:'utf8', env:{...process.env,HOME:home,WORKBUDDY_CONFIG_DIR:'',CODEBUDDY_CONFIG_DIR:'',WORKBUDDY_INSTANCE_NUMBER:''},
+  })
+  r=installUntilArchiveCheck(); assert.notEqual(r.status,0); assert.match(r.stderr,/Archive and adjacent/)
+  assert.equal((await lstat(stateRoot)).mode & 0o777, 0o700, 'Installation must make reused OpenGUI state private')
+  assert.equal((await lstat(join(home, '.workbuddy'))).mode & 0o777, 0o755, 'Do not change host directory permissions')
+  await rm(stateRoot, {recursive:true})
+  const redirected = join(temporary, 'redirected-state')
+  await mkdir(redirected); await chmod(redirected, 0o755)
+  await symlink(redirected, stateRoot)
+  r=installUntilArchiveCheck(); assert.notEqual(r.status,0); assert.match(r.stderr,/Refusing symlink/)
+  assert.equal((await lstat(redirected)).mode & 0o777, 0o755, 'Do not chmod symlink targets')
+  console.log('PASS: reused state permissions repaired, host permissions preserved, symlink target untouched, preflight remains read-only.')
   console.log('PASS: product-specific paths, old version refusal, live preflight without process enumeration, 5.6.2 CLI names with all Hooks, fail-closed older-host process checks, custom root, instance suffix, unknown product, missing Hooks and zero-write preflight.')
 } finally { await rm(temporary,{recursive:true,force:true}) }
