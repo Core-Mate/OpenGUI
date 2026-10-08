@@ -42,43 +42,6 @@
 
 OpenGUI reads a real Android app UI, plans the next step, takes mobile actions, and returns structured results.
 
-## Use OpenGUI in DeepSeek Harness
-
-The shortest path on macOS is to let Codex run the stable installer Skill from `main`. Each run resolves the latest stable OpenGUI plugin release, while an explicit version remains available for rollback. It requires Node.js 22.19+ or 24+ and installs the compatible DSH version automatically. Paste this as one prompt:
-
-```text
-Install and run the OpenGUI installer Skill from https://github.com/Core-Mate/OpenGUI/tree/main/deepseek-harness-plugin/skills/opengui-coremate-install for my DSH web profile. Install the latest stable release. Proceed autonomously, and only pause when I need to authorize or select a phone, add or select a DSH workspace, or provide fallback visual-model credentials.
-```
-
-The Skill downloads the public release package and checksum, verifies SHA-256, installs only the OpenGUI plugin, starts DSH when needed, and opens DSH. It preserves unrelated DSH plugins and settings. The installer reports whether it reloaded a managed DSH or whether you need to quit an existing process and rerun it. For Linux or Windows, use the [manual package guide](./deepseek-harness-plugin/README.md#1-download-the-release-package).
-
-OpenGUI supports DSH `0.1.0-rc.7`, `0.1.0-rc.8`, `0.1.1-rc.1`, and `0.1.1-rc.2`; new installs default to `0.1.1-rc.2`. The macOS installer reuses a `PATH` runtime only when it exactly matches the selected version, otherwise it installs an isolated managed runtime under the OpenGUI DSH home. Use `--dsh-version VERSION` to select a supported version. DSH `0.1.2-alpha.4` is not supported. Existing DSH installations, workspaces, model settings, credentials, and phone authorizations are preserved. DSH `0.1.0` RCs cannot read the versioned credential store written by DSH `0.1.1` RCs, so the installer refuses that state downgrade before changing any files and recommends a separate DSH home.
-
-After installation, add or select a DSH workspace, connect and select an authorized Android phone, then send:
-
-```text
-@OpenGUI Open Settings and report the Android version
-```
-
-The plugin adds phone and browser operation to DSH without requiring the full OpenGUI backend stack. The current source implementation admits one OpenGUI task per DSH session and separate tabs on non-conflicting phone sets; the managed browser remains globally serial. This source behavior is not a release claim. See more [use cases](./deepseek-harness-plugin/docs/use-cases.md) or download the [v0.1.13 release package](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.13).
-
-Good fits include:
-
-- automated UI operation and regression testing on authorized devices
-- social media management and lead research, with human confirmation before publishing, messaging, or account changes
-- repetitive game testing and in-game workflows where the account owner and game rules permit automation
-
-For GUI execution, our current recommendation order is:
-
-| Priority | Model family | Guidance |
-|---|---|---|
-| 1 | Doubao VLM | Recommended first for visual GUI execution. |
-| 2 | Qwen VLM | A practical alternative, but some social media prompts may be more sensitive to model safety policies. |
-| 3 | OpenAI vision-capable models | Capable, but generally the higher-cost option for screenshot-heavy tasks. |
-| 4 | Grok vision-capable models | Experimental for this workflow; tool use and action reliability still need more validation. |
-
-Model availability, pricing, and policy behavior vary by version and region. Whichever provider you choose, the model must support both image input and tool calling.
-
 ## Use OpenGUI in WorkBuddy
 
 Supported on **macOS (Apple Silicon / Intel) with WorkBuddy 5.5.3 or later**. Download and run the installer on your Mac, then authorize OpenGUI in WorkBuddy.
@@ -122,6 +85,43 @@ Try it: Vibe Testing
 ```text
 /opengui Help me test [feature or workflow] in [app/page], focusing on [issues to check]. If you find any problems, record the steps and screenshots. Stop when [end condition] is reached.
 ```
+
+## Use OpenGUI in DeepSeek Harness
+
+The shortest path on macOS is to let Codex run the stable installer Skill from `main`. Each run resolves the latest stable OpenGUI plugin release, while an explicit version remains available for rollback. It requires Node.js 22.19+ or 24+ and installs the compatible DSH version automatically. Paste this as one prompt:
+
+```text
+Install and run the OpenGUI installer Skill from https://github.com/Core-Mate/OpenGUI/tree/main/deepseek-harness-plugin/skills/opengui-coremate-install for my DSH web profile. Install the latest stable release. Proceed autonomously, and only pause when I need to authorize or select a phone, add or select a DSH workspace, or provide fallback visual-model credentials.
+```
+
+The Skill downloads the public release package and checksum, verifies SHA-256, installs only the OpenGUI plugin, starts DSH when needed, and opens DSH. It preserves unrelated DSH plugins and settings. The installer reports whether it reloaded a managed DSH or whether you need to quit an existing process and rerun it. For Linux or Windows, use the [manual package guide](./deepseek-harness-plugin/README.md#1-download-the-release-package).
+
+OpenGUI supports DSH `0.1.0-rc.7`, `0.1.0-rc.8`, `0.1.1-rc.1`, and `0.1.1-rc.2`; new installs default to `0.1.1-rc.2`. The macOS installer reuses a `PATH` runtime only when it exactly matches the selected version, otherwise it installs an isolated managed runtime under the OpenGUI DSH home. Use `--dsh-version VERSION` to select a supported version. DSH `0.1.2-alpha.4` is not supported. Existing DSH installations, workspaces, model settings, credentials, and phone authorizations are preserved. DSH `0.1.0` RCs cannot read the versioned credential store written by DSH `0.1.1` RCs, so the installer refuses that state downgrade before changing any files and recommends a separate DSH home.
+
+After installation, add or select a DSH workspace, connect and select an authorized Android phone, then send:
+
+```text
+@OpenGUI Open Settings and report the Android version
+```
+
+The plugin adds phone and browser operation to DSH without requiring the full OpenGUI backend stack. The current source implementation admits one OpenGUI task per DSH session and separate tabs on non-conflicting phone sets; the managed browser remains globally serial. This source behavior is not a release claim. See more [use cases](./deepseek-harness-plugin/docs/use-cases.md) or download the [v0.1.13 release package](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.13).
+
+Good fits include:
+
+- automated UI operation and regression testing on authorized devices
+- social media management and lead research, with human confirmation before publishing, messaging, or account changes
+- repetitive game testing and in-game workflows where the account owner and game rules permit automation
+
+For GUI execution, our current recommendation order is:
+
+| Priority | Model family | Guidance |
+|---|---|---|
+| 1 | Doubao VLM | Recommended first for visual GUI execution. |
+| 2 | Qwen VLM | A practical alternative, but some social media prompts may be more sensitive to model safety policies. |
+| 3 | OpenAI vision-capable models | Capable, but generally the higher-cost option for screenshot-heavy tasks. |
+| 4 | Grok vision-capable models | Experimental for this workflow; tool use and action reliability still need more validation. |
+
+Model availability, pricing, and policy behavior vary by version and region. Whichever provider you choose, the model must support both image input and tool calling.
 
 ## Run the Full OpenGUI Stack
 

@@ -43,43 +43,6 @@ OpenGUI 会读取真实 Android App 界面，规划下一步操作，执行移�
 
 第一次使用 DSH 插件时，可先阅读 [OpenGUI × DeepSeek Harness 简明说明与 FAQ](./deepseek-harness-plugin/docs/quick-start-and-faq.zh.md)。
 
-## 在 DeepSeek Harness 中使用 OpenGUI
-
-macOS 上最短的路径，是让 Codex 运行 `main` 分支上的稳定安装 Skill。每次执行时，安装器都会解析并安装最新正式版 OpenGUI 插件，同时保留指定版本参数用于回滚。环境需要 Node.js 22.19+ 或 24+，兼容的 DSH 版本会自动安装。把下面整段作为一条消息发给 Codex：
-
-```text
-请安装并运行这个 OpenGUI 安装 Skill：https://github.com/Core-Mate/OpenGUI/tree/main/deepseek-harness-plugin/skills/opengui-coremate-install，把最新正式版插件安装到我的 DSH web profile。请自主完成安装，仅在需要我授权或选择手机、添加或选择 DSH workspace，或者提供备用视觉模型凭据时暂停并询问我。
-```
-
-Skill 会下载公开 Release 的插件包和校验文件，验证 SHA-256，只安装 OpenGUI 插件，在需要时启动并打开 DSH，同时保留其他 DSH 插件和设置。安装器会说明它是否已重启受管理的 DSH，或者是否需要先退出已有进程再重新运行。Linux 或 Windows 用户可按[手动安装说明](./deepseek-harness-plugin/README.zh.md#1-下载发布包)操作。
-
-OpenGUI 正式支持 DSH `0.1.0-rc.7`、`0.1.0-rc.8`、`0.1.1-rc.1` 和 `0.1.1-rc.2`，新安装默认使用 `0.1.1-rc.2`。macOS 安装器只会复用与所选版本完全一致的 `PATH` runtime，否则会在 OpenGUI 的 DSH home 下安装隔离的 managed runtime；可用 `--dsh-version VERSION` 选择受支持版本。DSH `0.1.2-alpha.4` 暂不支持。现有 DSH、工作区、模型设置、凭据和手机授权都不会被替换。DSH `0.1.0` RC 无法读取 DSH `0.1.1` RC 写入的新版凭据格式，因此安装器会在改动任何文件前拒绝这种状态降级，并提示改用独立的 DSH home。
-
-安装完成后，在 DSH 中添加或选择工作区，连接并选择已授权的 Android 手机，然后发送：
-
-```text
-@OpenGUI 打开设置并报告 Android 版本
-```
-
-插件可以直接为 DSH 增加手机与浏览器操作能力，不需要部署完整的 OpenGUI 后端。当前源码按 DSH Session 接纳根任务，允许不同 Tab 使用不冲突的手机集合；托管浏览器仍保持全局串行。这是源码行为说明，不代表已发布。你还可以查看更多[使用场景](./deepseek-harness-plugin/docs/use-cases.zh.md)，或下载 [v0.1.13 安装包](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.13)。
-
-适合的使用场景包括：
-
-- 在已授权设备上执行自动化操作测试和回归测试
-- 管理社媒账号和挖掘线索，在发布、私信或修改账号前由人工确认
-- 在账号所有者和游戏规则允许自动化的前提下，执行重复性游戏测试和游戏内流程
-
-针对 GUI 操作，我们目前的模型推荐顺序是：
-
-| 优先级 | 模型系列 | 使用建议 |
-|---|---|---|
-| 1 | 豆包 VLM | 视觉 GUI 操作的首选。 |
-| 2 | 千问 VLM | 可作为备选，但部分社媒任务更容易受到模型安全策略限制。 |
-| 3 | OpenAI 视觉模型 | 能力可用，但截图密集型任务的成本通常更高。 |
-| 4 | Grok 视觉模型 | 目前作为实验选项，工具调用和操作稳定性还需要更多验证。 |
-
-具体模型的可用性、价格和策略会随版本及地区变化。无论选择哪家模型，都需要同时支持图片输入和工具调用。
-
 ## WorkBuddy 安装
 
 支持 **macOS（Apple 芯片 / Intel）和 WorkBuddy 5.5.3 及以上版本**。在电脑上下载并运行安装脚本，安装后再进入 WorkBuddy 完成授权。
@@ -123,6 +86,43 @@ cd "$HOME" && curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/mai
 ```text
 /opengui 帮我测试【应用／页面】的【功能或操作流程】，重点检查【关注的问题】。如果发现异常，记录操作步骤和截图，当做到【结束条件】就停。
 ```
+
+## 在 DeepSeek Harness 中使用 OpenGUI
+
+macOS 上最短的路径，是让 Codex 运行 `main` 分支上的稳定安装 Skill。每次执行时，安装器都会解析并安装最新正式版 OpenGUI 插件，同时保留指定版本参数用于回滚。环境需要 Node.js 22.19+ 或 24+，兼容的 DSH 版本会自动安装。把下面整段作为一条消息发给 Codex：
+
+```text
+请安装并运行这个 OpenGUI 安装 Skill：https://github.com/Core-Mate/OpenGUI/tree/main/deepseek-harness-plugin/skills/opengui-coremate-install，把最新正式版插件安装到我的 DSH web profile。请自主完成安装，仅在需要我授权或选择手机、添加或选择 DSH workspace，或者提供备用视觉模型凭据时暂停并询问我。
+```
+
+Skill 会下载公开 Release 的插件包和校验文件，验证 SHA-256，只安装 OpenGUI 插件，在需要时启动并打开 DSH，同时保留其他 DSH 插件和设置。安装器会说明它是否已重启受管理的 DSH，或者是否需要先退出已有进程再重新运行。Linux 或 Windows 用户可按[手动安装说明](./deepseek-harness-plugin/README.zh.md#1-下载发布包)操作。
+
+OpenGUI 正式支持 DSH `0.1.0-rc.7`、`0.1.0-rc.8`、`0.1.1-rc.1` 和 `0.1.1-rc.2`，新安装默认使用 `0.1.1-rc.2`。macOS 安装器只会复用与所选版本完全一致的 `PATH` runtime，否则会在 OpenGUI 的 DSH home 下安装隔离的 managed runtime；可用 `--dsh-version VERSION` 选择受支持版本。DSH `0.1.2-alpha.4` 暂不支持。现有 DSH、工作区、模型设置、凭据和手机授权都不会被替换。DSH `0.1.0` RC 无法读取 DSH `0.1.1` RC 写入的新版凭据格式，因此安装器会在改动任何文件前拒绝这种状态降级，并提示改用独立的 DSH home。
+
+安装完成后，在 DSH 中添加或选择工作区，连接并选择已授权的 Android 手机，然后发送：
+
+```text
+@OpenGUI 打开设置并报告 Android 版本
+```
+
+插件可以直接为 DSH 增加手机与浏览器操作能力，不需要部署完整的 OpenGUI 后端。当前源码按 DSH Session 接纳根任务，允许不同 Tab 使用不冲突的手机集合；托管浏览器仍保持全局串行。这是源码行为说明，不代表已发布。你还可以查看更多[使用场景](./deepseek-harness-plugin/docs/use-cases.zh.md)，或下载 [v0.1.13 安装包](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.13)。
+
+适合的使用场景包括：
+
+- 在已授权设备上执行自动化操作测试和回归测试
+- 管理社媒账号和挖掘线索，在发布、私信或修改账号前由人工确认
+- 在账号所有者和游戏规则允许自动化的前提下，执行重复性游戏测试和游戏内流程
+
+针对 GUI 操作，我们目前的模型推荐顺序是：
+
+| 优先级 | 模型系列 | 使用建议 |
+|---|---|---|
+| 1 | 豆包 VLM | 视觉 GUI 操作的首选。 |
+| 2 | 千问 VLM | 可作为备选，但部分社媒任务更容易受到模型安全策略限制。 |
+| 3 | OpenAI 视觉模型 | 能力可用，但截图密集型任务的成本通常更高。 |
+| 4 | Grok 视觉模型 | 目前作为实验选项，工具调用和操作稳定性还需要更多验证。 |
+
+具体模型的可用性、价格和策略会随版本及地区变化。无论选择哪家模型，都需要同时支持图片输入和工具调用。
 
 ## 运行完整 OpenGUI 技术栈
 
