@@ -34,13 +34,28 @@
   Paste one prompt into Codex. It downloads the verified plugin, installs it into DSH, and opens DSH. No full backend deployment is required.
 </p>
 
-## Demo
+## Features at a Glance
 
-<p align="center">
-  <img src="./docs/assets/opengui-demo.gif" alt="OpenGUI mobile GUI agent demo" width="100%">
-</p>
+OpenGUI uses real screenshots to understand apps and carry out phone operations and testing tasks from natural-language instructions.
 
-OpenGUI reads a real Android app UI, plans the next step, takes mobile actions, and returns structured results.
+- **Phone operations**: open apps, tap, swipe, type, navigate back, and move between screens to complete multi-step workflows.
+- **App testing**: check features and workflows, record issues with reproduction steps and screenshots, and summarize results.
+- **Content and information**: read screen content, organize information, fill forms, and prepare social media drafts.
+- **Visible execution**: use the WorkBuddy workbench to view the phone screen, task steps, and reports, or take over and stop a task.
+- **Host integration**: use OpenGUI in WorkBuddy or DeepSeek Harness; the DSH plugin also supports managed browser operations.
+
+## Common Commands
+
+After installation and authorization, enter these instructions in the corresponding host's chat. Replace `[placeholders]` with your task details.
+
+| Purpose | Host | Example input |
+|---|---|---|
+| Open OpenGUI | WorkBuddy | `/opengui` |
+| Check connected devices | WorkBuddy | `/opengui List connected devices without operating a phone.` |
+| Operate a phone | WorkBuddy | `/opengui Open Settings, then return to the home screen. Stop after confirming it is visible.` |
+| Test an app | WorkBuddy | `/opengui Test [feature or workflow] in [app/page]. Record issues, steps, and screenshots. Stop at [end condition].` |
+| Prepare a Xiaohongshu draft | WorkBuddy | `/opengui Prepare a Xiaohongshu image-and-text draft about [topic]. Stop before publishing.` |
+| Run a task in DSH | DeepSeek Harness | `@OpenGUI Open Settings and report the Android version` |
 
 ## Use OpenGUI in WorkBuddy
 

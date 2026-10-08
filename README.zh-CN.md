@@ -33,15 +33,28 @@
   只需把一段话发给 Codex，它会下载并校验插件、安装到 DSH，再打开 DSH，不需要先部署完整后端。
 </p>
 
-## Demo
+## 功能简述
 
-<p align="center">
-  <img src="./docs/assets/opengui-demo.gif" alt="OpenGUI 移动端 GUI Agent Demo" width="100%">
-</p>
+OpenGUI 让 AI 根据真实屏幕截图理解 App，用自然语言完成手机操作和测试任务。
 
-OpenGUI 会读取真实 Android App 界面，规划下一步操作，执行移动端动作，并返回结构化结果。
+- **手机操作**：打开 App、点击、滑动、输入、返回和切换页面，执行多步骤流程。
+- **App 测试**：检查功能和操作流程，记录异常、复现步骤与截图，汇总测试结果。
+- **内容与信息处理**：读取页面信息、整理内容、填写表单，准备社媒图文草稿。
+- **可视化执行**：在 WorkBuddy 工作台查看手机画面、任务步骤和报告，按需接管或停止任务。
+- **宿主集成**：接入 WorkBuddy 或 DeepSeek Harness；DSH 插件还支持托管浏览器操作。
 
-第一次使用 DSH 插件时，可先阅读 [OpenGUI × DeepSeek Harness 简明说明与 FAQ](./deepseek-harness-plugin/docs/quick-start-and-faq.zh.md)。
+## 常用命令
+
+安装并授权后，在对应宿主的聊天中输入以下指令。将 `【占位内容】` 替换为实际任务信息。
+
+| 用途 | 宿主 | 输入示例 |
+|---|---|---|
+| 打开 OpenGUI | WorkBuddy | `/opengui` |
+| 检查设备连接 | WorkBuddy | `/opengui 查看已连接的设备，暂时不要操作手机。` |
+| 执行手机操作 | WorkBuddy | `/opengui 打开手机设置，再返回桌面，确认回到桌面后结束。` |
+| 测试 App | WorkBuddy | `/opengui 测试【应用／页面】的【功能或流程】，记录异常、操作步骤和截图，到【结束条件】时停止。` |
+| 准备小红书草稿 | WorkBuddy | `/opengui 在小红书中为【主题】准备图文草稿，停在发布前。` |
+| 在 DSH 中执行任务 | DeepSeek Harness | `@OpenGUI 打开设置并报告 Android 版本` |
 
 ## WorkBuddy 安装
 
@@ -88,6 +101,8 @@ cd "$HOME" && curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/mai
 ```
 
 ## 在 DeepSeek Harness 中使用 OpenGUI
+
+第一次使用 DSH 插件时，可先阅读 [OpenGUI × DeepSeek Harness 简明说明与 FAQ](./deepseek-harness-plugin/docs/quick-start-and-faq.zh.md)。
 
 macOS 上最短的路径，是让 Codex 运行 `main` 分支上的稳定安装 Skill。每次执行时，安装器都会解析并安装最新正式版 OpenGUI 插件，同时保留指定版本参数用于回滚。环境需要 Node.js 22.19+ 或 24+，兼容的 DSH 版本会自动安装。把下面整段作为一条消息发给 Codex：
 
