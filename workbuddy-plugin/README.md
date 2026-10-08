@@ -1,4 +1,4 @@
-# OpenGUI for WorkBuddy 0.3.1
+# OpenGUI for WorkBuddy 0.4.0
 
 [中文说明](README.zh-CN.md). macOS public-testing candidate, protocol 8. Marketplace approval and the remaining real-device gates are separate.
 
@@ -38,7 +38,7 @@ For the public GitHub package, follow [Install OpenGUI into WorkBuddy](INSTALL.m
 Use the supplied installer and matching archive with adjacent SHA-256 sidecars:
 
 ```sh
-bash scripts/install-macos.command --archive /absolute/path/opengui-mcp-0.3.1.tgz
+bash scripts/install-macos.command --archive /absolute/path/opengui-mcp-0.4.0.tgz
 ```
 
 The installer prepares private Node, verifies the package and scrcpy resources, and only then changes this host's configuration. On WorkBuddy 5.5.6+, the application may stay open: MCP configuration is watched live, while external Hook changes are reviewed in `/hooks` and the installed Skill is confirmed in `/skills`. Start a new task only if the current task does not refresh. Older compatible hosts use the Command-Q fallback reported by preflight.

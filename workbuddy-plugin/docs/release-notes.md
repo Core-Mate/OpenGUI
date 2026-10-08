@@ -1,15 +1,18 @@
-# WorkBuddy 0.3.1 candidate
+# OpenGUI for WorkBuddy 0.4.0 — public testing
 
-Adds live installation for WorkBuddy 5.5.6 and newer. The host may stay open while the verified installer atomically writes the MCP, Skill, and Hook configuration. WorkBuddy watches the MCP file; the user reviews the external Hook change in `/hooks` and confirms the Skill in `/skills`. Older compatible hosts retain the Command-Q fallback.
+This release ships the newer WorkBuddy runtime that was previously available only in source/local candidates. Installer 1.0.2 still installs plugin 0.3.1; use the 0.4.0 files below to get these features.
 
-Upgrades still stop if an old OpenGUI broker owns tasks or persistent displays. Finish those tasks, close their viewers or mirrors, disable the old OpenGUI MCP, and retry after the broker exits. The installer does not kill WorkBuddy or phone processes. Existing observation safety, host isolation, rollback receipts, and protocol 8 remain unchanged.
+- Editable task home opened with `@opengui`, account/model/device selection, and explicit start confirmation.
+- A workbench with task steps, progress events, execution limits, human takeover/resume, and content review.
+- Persistent task history and PDF, Word, Markdown, screenshot, and ZIP report export.
+- Android device discovery, emulator preparation, connection diagnostics, and supported local iOS simulators.
+- Installation completion chat includes Android USB debugging guidance and two editable WorkBuddy task-draft shortcuts; no automatic task submission.
+- Direct download of `OpenGUI-Install.command` and `installer.sh`: verify both, keep them in one folder, make the launcher executable, then double-click it and press Return in Terminal. No installer ZIP extraction is needed.
 
-This is a public-testing candidate. Stable publication still requires the gates in `release-readiness.json`.
+The launcher, payload, connector, and runtime use version 0.4.0. Downloads are immutable and have adjacent SHA-256 files. See [installation instructions](https://github.com/Core-Mate/OpenGUI/blob/main/workbuddy-plugin/INSTALL.md) for pinned checksums and the WorkBuddy handoff.
 
-The current candidate also includes the WorkBuddy feature optimization: a start confirmation page (sign-in, model and device choice with a live device view) before any phone action, the workbench with execution steps beside the phone, the run log and task reports, admin-configured phone models, explicit human takeover/resume controls and supported macOS iOS simulators. Accounts and configured models use the official CoreMate service bundled by default; `OPENGUI_ACCOUNT_SERVICE_URL` selects another service at build or run time. Configured models are listed from `/api/agent-config/runtime/desktop-text-models` and called through the backend proxy, so provider keys never reach the plugin.
+Before upgrading, finish phone tasks, close their viewers, quit WorkBuddy as the launcher requests, and allow the old broker to exit. The installer retains backups, unrelated MCP/Hook settings, and prior packages. After replying “已安装完成”, verify the current receipt, host loading, and a native `opengui_list_devices` call; configuration written alone is not host acceptance.
 
-Local verification covers the full unit suite, build and release validation, and Android emulator flows. Real devices, other desktop platforms and complete business acceptance still require verification.
+Accounts and configured models use the official CoreMate service at https://cm2backend.dmyh.tech by default. Sign-in uses its existing account endpoints; task screenshots and prompts go to the selected execution model. Local video is not uploaded frame by frame. `OPENGUI_ACCOUNT_SERVICE_URL` supports self-hosting. Do not include credentials in reports.
 
-The latest candidate fixes MCP error responses after tool discovery: error content is no longer validated against the successful output schema. A first-display timeout now ends control, records a blocked result, preserves the goal, and automatically archives PDF and Word reports; the workbench displays the blocked state and selects the report tab. The terminal first-frame guard remains in force. This revision passes 395 regression tests, build and release validation, and is installed on the local WorkBuddy 5.6.2 host with eight matching runtime modules. Desktop trust and complete device/business acceptance remain pending; actual Android emulator media and blocked-report checks are scoped in the verification documents.
-
-The login route fix removes the undeployed admin adapter dependency. The plugin accepts an existing Backend origin or `/api` URL and calls the existing user-auth endpoints directly. Published configuration metadata and inference reuse the existing runtime routes with eligible-role filtering and revision freezing. Missing authentication and model routes have distinct workbench messages. The revision passes 398 tests, build and release validation, and is installed/enabled on the local host. Real SMS/login and online configured-model acceptance remain unverified.
+This is a prerelease, not a stable or marketplace-approved release. Automated tests and isolated package/installer checks do not replace physical-device action, dual-device conflict, long-running video, overseas-host, or complete business acceptance. The unresolved gates remain in `release-readiness.json`.

@@ -2,7 +2,7 @@
 # Interactive handoff to the verified public WorkBuddy installer.
 set -euo pipefail
 umask 077
-expected_sha='a6a84e19f2830a07514e99d5f23d3064b91a023704059f27381001f78539bebb'
+expected_sha='cd54d28c78666f3fe31869b979e480c95450da74096c6b54d20fe433e43aba14'
 
 if [ ! -t 0 ] || [ ! -t 1 ] || [ -n "${CODEBUDDY_FORCE_HEADLESS_BUNDLE:-}" ] || [[ "${NODE_OPTIONS:-}" == *node-language-shim* ]]; then
   echo '尚未开始安装。请在 Finder 中双击 OpenGUI-Install.command，打开终端安装窗口。'
@@ -15,16 +15,16 @@ fi
 folder=$(cd -- "$(dirname -- "$0")" && pwd -P)
 installer="$folder/installer.sh"
 if [ ! -f "$installer" ] || [ -L "$installer" ]; then
-  echo '安装文件不完整或路径异常，尚未开始安装。请重新下载并解压完整 ZIP。' >&2
+  echo '安装文件不完整或路径异常，尚未开始安装。请重新下载完整安装文件，保持两个脚本在同一目录。' >&2
   exit 1
 fi
 actual_sha=$(shasum -a 256 "$installer" | awk '{print $1}')
 if [ "$actual_sha" != "$expected_sha" ]; then
-  echo '安装文件校验失败，尚未开始安装。请重新下载并解压完整 ZIP。' >&2
+  echo '安装文件校验失败，尚未开始安装。请重新下载完整安装文件，保持两个脚本在同一目录。' >&2
   exit 1
 fi
 printf '\nOpenGUI · WorkBuddy 安装\n\n'
-printf '将安装 OpenGUI 插件 0.3.1，配置连接器、技能和任务运行所需的 Hooks。\n'
+printf '将安装 OpenGUI 插件 0.4.0，配置连接器、技能和任务运行所需的 Hooks。\n'
 printf '会自动备份相关设置，保留其他插件，无需系统密码。\n'
 printf '如果已安装 OpenGUI，请先结束手机任务并退出 WorkBuddy。\n'
 printf '本次安装不会操作手机；后续执行任务时，截图会发送给所选模型。\n\n'
@@ -82,7 +82,7 @@ if [ "$status" -eq 0 ] && grep -Eq 'CONFIG_WRITTEN|ALREADY_CONFIGURED' "$log"; t
   printf 'status=configuration_written\nexitCode=0\nhostLoaded=unverified\n' > "$result"
   printf '\n安装配置已写入\n\n'
   printf '最后一步：打开 WorkBuddy，发送下面这句话完成验证：\n\n'
-  printf '  请验证 OpenGUI 安装：直接调用 opengui_list_devices，不要操作手机。\n\n'
+  printf '  已安装完成\n\n'
   printf '如果 WorkBuddy 找不到工具，结束其他任务后退出并重新打开，再验证一次。\n'
   printf '如有信任或启用提示，按 WorkBuddy 提示完成即可。\n'
 else

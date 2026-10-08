@@ -1,3 +1,10 @@
+# OpenGUI for WorkBuddy 0.4.0 public testing
+
+- Publish the task home, workbench, account/model selection, takeover, content review, and report runtime as a distinct plugin version.
+- Publish direct-download launcher and payload assets with checksums under the same runtime release.
+- Preserve the user's Finder double-click and Terminal confirmation, then verify installation after “已安装完成”.
+- Keep old releases immutable and require real-device acceptance before stable publication.
+
 # OpenGUI for WorkBuddy 0.3.1 candidate
 
 - Allow WorkBuddy 5.5.6+ to stay open during a verified first installation or idle reconfiguration.

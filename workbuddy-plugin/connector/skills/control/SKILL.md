@@ -6,7 +6,7 @@ description: Complete authorized Android tasks and supported macOS iOS simulator
 description_zh: 根据真实截图完成用户指定的 Android 手机任务和已支持的 macOS iOS 模拟器测试，自动恢复、核验结果并释放控制锁。
 description_en: Complete authorized Android tasks and supported iOS simulator tests through a screenshot-action loop, local displays, bounded recovery and automatic task cleanup.
 category: productivity
-version: 0.3.1
+version: 0.4.0
 author: OpenGUI
 ---
 
@@ -15,6 +15,16 @@ author: OpenGUI
 Complete the user-authorized phone task using actual returned screenshots. Do not ask again for already authorized steps. Do not guess image ability from a model name; if you cannot read the image, report that blocker.
 
 For a pre-submit endpoint pass `stopBeforeSubmit: true` to `opengui_open_session` and retain the exact endpoint in successCriteria and test definitions. Recognized native user-prompt wording also latches the restriction without retaining the prompt. Recovery cannot disable it. Every tap and swipe must explicitly declare externalSideEffect; omission is rejected before dispatch or progress changes. Use none only for preparation/navigation identified on the current image, never as a default for an unknown control. Declare final form submission with submit and every other final mutation with its matching marker. The runtime blocks marked submit/send/publish/purchase/delete and Enter, and uses clipboard-only text to avoid newline-as-Enter. If a control cannot be classified, hand off. Record final submission as not_checked by agreement, never passed. A none declaration does not independently verify the visual semantics or grant permission.
+
+### After verified installation
+
+When completing an installation request, first verify the current installer receipt and a native MCP discovery call; configuration writing or a user reply alone is not success. Then finish the chat with this setup message and the two links below. They prepare a new WorkBuddy task draft only. Do not submit it or start phone control. Preserve both supplied labels and prompts; if the host cannot open a native link, provide the decoded text for copying. Unfilled placeholders require user input before execution.
+
+把 Android 手机打开 USB 调试，连上电脑并在手机上允许 USB 调试授权。在 WorkBuddy 输入 `/opengui`，再输入需要给手机的执行指令，即可控制手机执行。
+
+[试一试：用小红书发帖](workbuddy://task?action=start&prompt=%E5%B8%AE%E6%88%91%E6%B5%8B%E8%AF%95%E3%80%90%E5%BA%94%E7%94%A8%EF%BC%8F%E9%A1%B5%E9%9D%A2%E3%80%91%E7%9A%84%E3%80%90%E5%8A%9F%E8%83%BD%E6%88%96%E6%93%8D%E4%BD%9C%E6%B5%81%E7%A8%8B%E3%80%91%EF%BC%8C%E9%87%8D%E7%82%B9%E6%A3%80%E6%9F%A5%E3%80%90%E5%85%B3%E6%B3%A8%E7%9A%84%E9%97%AE%E9%A2%98%E3%80%91%E3%80%82%E5%A6%82%E6%9E%9C%E5%8F%91%E7%8E%B0%E5%BC%82%E5%B8%B8%EF%BC%8C%E8%AE%B0%E5%BD%95%E6%93%8D%E4%BD%9C%E6%AD%A5%E9%AA%A4%E5%92%8C%E6%88%AA%E5%9B%BE%EF%BC%8C%E5%BD%93%E5%81%9A%E5%88%B0%E3%80%90%E7%BB%93%E6%9D%9F%E6%9D%A1%E4%BB%B6%E3%80%91%E5%B0%B1%E5%81%9C%E3%80%82)
+
+[试一试：Vibe Testing](workbuddy://task?action=start&prompt=%2Fopengui%20%E5%B8%AE%E6%88%91%E6%B5%8B%E8%AF%95%E3%80%90%E5%BA%94%E7%94%A8%EF%BC%8F%E9%A1%B5%E9%9D%A2%E3%80%91%E7%9A%84%E3%80%90%E5%8A%9F%E8%83%BD%E6%88%96%E6%93%8D%E4%BD%9C%E6%B5%81%E7%A8%8B%E3%80%91%EF%BC%8C%E9%87%8D%E7%82%B9%E6%A3%80%E6%9F%A5%E3%80%90%E5%85%B3%E6%B3%A8%E7%9A%84%E9%97%AE%E9%A2%98%E3%80%91%E3%80%82%E5%A6%82%E6%9E%9C%E5%8F%91%E7%8E%B0%E5%BC%82%E5%B8%B8%EF%BC%8C%E8%AE%B0%E5%BD%95%E6%93%8D%E4%BD%9C%E6%AD%A5%E9%AA%A4%E5%92%8C%E6%88%AA%E5%9B%BE%EF%BC%8C%E5%BD%93%E5%81%9A%E5%88%B0%E3%80%90%E7%BB%93%E6%9D%9F%E6%9D%A1%E4%BB%B6%E3%80%91%E5%B0%B1%E5%81%9C%E3%80%82)
 
 ### Chat updates and first use
 

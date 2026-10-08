@@ -7,7 +7,7 @@
   "description_en": "Let WorkBuddy operate a locally connected Android phone or emulator for GUI testing and reviewed comment operations, with a live workbench for the screen, task plan and run trace.",
   "source": "opengui",
   "type": "mcp",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "minWorkbuddyVersion": "5.5.3",
   "examples_zh": [
     "@opengui",

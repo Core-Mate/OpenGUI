@@ -26,7 +26,7 @@ const packagesRoot = await realpath(join(stateRoot, 'packages'))
 assert(!relative(packagesRoot, packageDir).startsWith('..') && relative(packagesRoot, packageDir), 'Install from an immutable WorkBuddy version directory')
 const pkg = JSON.parse(await readFile(join(packageDir, 'package.json'), 'utf8'))
 assert.equal(pkg.name, 'opengui-mcp')
-assert.equal(pkg.version, '0.3.1')
+assert.equal(pkg.version, '0.4.0')
 assert.match(execFileSync(node, ['--version'], { encoding: 'utf8' }).trim(), /^v(?:22\.(?:19|2\d|[3-9]\d)|2[4-9]\.|[3-9]\d\.)/)
 const quote = value => process.platform === 'win32' ? `'${value.replaceAll("'", "''")}'` : `'${value.replaceAll("'", `'"'"'`)}'`
 const command = `${quote(node)} ${quote(join(packageDir, 'lib', 'host-hook.js'))}`

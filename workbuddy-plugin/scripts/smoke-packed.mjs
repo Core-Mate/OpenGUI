@@ -79,8 +79,11 @@ try {
     const client = new Client({ name: 'packed-smoke', version: '1' }, { capabilities: {} })
     try {
       await client.connect(transport, { timeout: 120_000 })
+      assert.equal(client.getServerVersion()?.version, VERSION, 'Packed runtime version must match the release')
       const { tools } = await client.listTools()
       assert(tools.some(tool => tool.name === 'opengui_history'))
+      assert(tools.some(tool => tool.name === 'opengui_open_guide'), 'Packed runtime must include the task home')
+      assert(tools.some(tool => tool.name === 'opengui_test_case'), 'Packed runtime must include the newer task tools')
       await client.ping()
       const nativeSimulators = nativeSimulatorMetadata()
       const devices = await client.callTool({ name: 'opengui_list_devices', arguments: {} })

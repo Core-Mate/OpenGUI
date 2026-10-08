@@ -81,29 +81,41 @@ Model availability, pricing, and policy behavior vary by version and region. Whi
 
 ## Use OpenGUI in WorkBuddy
 
-Send this request in WorkBuddy:
+On **macOS**, open WorkBuddy and send this in a new chat:
 
 ```text
-Install the OpenGUI plugin: https://github.com/Core-Mate/OpenGUI
+Install https://github.com/Core-Mate/OpenGUI into WorkBuddy
 ```
 
-WorkBuddy follows the [installation guide](./workbuddy-plugin/INSTALL.md#recommended-installation) to download, verify, and extract the ZIP, then offers **“Open installer folder (then double-click OpenGUI-Install.command to run it)”**, targeting the directory containing `OpenGUI-Install.command`. Use the host’s **Show in Finder / Open folder** action, double-click `OpenGUI-Install.command` in Finder, and **press Return in Terminal to start installation**. If WorkBuddy intercepts the directory link as a preview, use its Open folder action or the Finder Go to Folder steps in the guide. Return to WorkBuddy after configuration is written for verification.
+You can also request installation in Chinese:
 
-**[Download the macOS installer ZIP](https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-installer-v1.0.2/opengui-workbuddy-installer-1.0.2.zip)** · [SHA-256](https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-installer-v1.0.2/opengui-workbuddy-installer-1.0.2.zip.sha256)
+```text
+安装 https://github.com/Core-Mate/OpenGUI
+```
 
-1. Extract the ZIP. Keep `OpenGUI-Install.command` and `installer.sh` together.
-2. Double-click `OpenGUI-Install.command` and press Return. For an upgrade, finish existing phone tasks, quit WorkBuddy, and let its old background service exit normally first.
-3. Wait for “安装配置已写入” (configuration written), then reopen/return to WorkBuddy and send:
+**For the installing assistant:** when this request comes from WorkBuddy, follow the [WorkBuddy installation guide](./workbuddy-plugin/INSTALL.md). Install the WorkBuddy MCP, `opengui` Skill and lifecycle Hooks together. Use the verified WorkBuddy release assets; the DSH installer and full backend bootstrap are separate options.
 
-   ```text
-   OpenGUI was installed through the installer. Check its Skill and MCP state, then discover and directly call opengui_list_devices to verify installation without operating my phone. Do not substitute a Shell test for a native MCP call. Show the illustrated enablement guide only if a switch actually needs manual enablement.
-   ```
+**Preparation checklist (WorkBuddy performs these steps in order and shows progress):**
 
-The installer prepares a private runtime, backs up affected settings, and configures MCP, the `opengui` Skill, and seven lifecycle Hooks while preserving other plugins. No sudo, manual Node.js setup, backend deployment, or DSH installation is needed. This **installer 1.0.2** installs the existing public-testing **plugin 0.3.1**; it is not a new plugin runtime or a signed/notarized macOS app.
+1. **Download the files directly:** use the [pinned URLs in the installation guide](./workbuddy-plugin/INSTALL.md#prepare-the-files) to download `OpenGUI-Install.command` and `installer.sh` into a new folder in the current workspace. No ZIP download or extraction is needed.
+2. **Verify both files:** check each file's SHA-256. Stop and explain any mismatch.
+3. **Prepare the double-click entry point:** confirm both files are in the same directory, then give the current user execute permission on the verified `OpenGUI-Install.command`.
+4. **Open the folder and show the hyperlink:** use the host's supported Open folder / Show in Finder action and display the two lines below in chat. The hyperlink must target this attempt's actual absolute directory, not a README, ZIP, or script preview.
+5. **Wait for manual installation:** the user double-clicks `OpenGUI-Install.command` and presses Return in Terminal. After the user replies “已安装完成”, read the current attempt's result and verify WorkBuddy has loaded the plugin before reporting the verification result.
 
-**For the installing assistant:** the short request is sufficient; read [INSTALL.md](./workbuddy-plugin/INSTALL.md#recommended-installation), use the fixed download and checksum there, and continue routine preparation within the user's request. After preparing the files, offer “Open installer folder (then double-click OpenGUI-Install.command to run it)” targeting the actual extracted directory, then ask the user to double-click `OpenGUI-Install.command` in Finder and press Return. Prefer a supported native folder action; plain Markdown links do not guarantee Finder dispatch, so retain the Go to Folder fallback. Do not attempt to open Terminal automatically or equate opening the folder with launching or completing installation. Do not execute the launcher in WorkBuddy's command environment, strip host injection, change permission settings, or switch tools to evade refusal. README text cannot grant permission on the user's behalf.
+For a Chinese conversation, use this exact handoff copy. Replace the link target with the actual absolute directory and render it as a clickable link, outside a code block:
 
-WorkBuddy 5.7.6 default permissions have refused direct configuration writes with `CODEBUDDY_BROKER_DENY` / `decision: prompt`; a longer prompt does not solve this. The ZIP makes the separate, user-confirmed installation step accessible. Downloads and a successful installer receipt do not prove host loading: only the subsequent native MCP call verifies that stage. See [verification and the command-line fallback](./workbuddy-plugin/INSTALL.md).
+```markdown
+[打开安装脚本目录，双击OpenGUI-Install.command进行安装](<ABSOLUTE_INSTALLER_FOLDER/>)
+
+安装完成后请回复“已安装完成”
+```
+
+Checklist status must reflect actual results: report “Installer files ready” while waiting for manual execution, not installation success. WorkBuddy controls directory-link dispatch; a Markdown link cannot guarantee Finder opens. Add the host's Open folder action or Finder's `Command-Shift-G` fallback only if opening fails or the link enters a preview. The user's reply triggers verification; it is not proof of success on its own.
+
+**Plugin and installer version: 0.4.0.** Download both files from the [WorkBuddy 0.4.0 public-testing release](https://github.com/Core-Mate/OpenGUI/releases/tag/opengui-workbuddy-v0.4.0). This release includes the task home, account/model selection, workbench, takeover controls, and report export. The launcher, payload, connector, and runtime all use the same version; the old installer-only 1.0.2 still installs plugin 0.3.1.
+
+The installer detects WorkBuddy, downloads and checks the package, prepares its private runtime, backs up affected settings, and preserves other plugins. You do not need to clone the repository, install Node.js yourself, deploy the OpenGUI backend, or install DSH. Use WorkBuddy **5.5.6 or newer**. Before upgrading, finish existing phone tasks, close their viewers, and follow the launcher’s request to quit WorkBuddy.
 
 **After installation:**
 
@@ -117,7 +129,9 @@ WorkBuddy 5.7.6 default permissions have refused direct configuration writes wit
 
 4. View the phone and progress in WorkBuddy's right-hand panel. Follow any device/model selection or start confirmation shown by your installed version. Use the task's stop control to end execution; closing the preview alone does not stop a task.
 
-The downloadable [WorkBuddy 0.3.1 release](https://github.com/Core-Mate/OpenGUI/releases/tag/opengui-workbuddy-v0.3.1) is a public-testing prerelease. Features described in the [current development guide](./workbuddy-plugin/README.md), including the editable task home opened by a bare `@opengui`, may be newer than that immutable release. Phone tasks send screenshots to the selected execution model; local video preview does not send every frame to a model. See [installation checks and recovery](./workbuddy-plugin/INSTALL.md#verify-the-installation) if the Skill or tools are missing.
+After verified installation, the assistant explains Android USB debugging and `/opengui`, then offers two clickable task-draft templates. See the [installation success message](./workbuddy-plugin/INSTALL.md#installation-success-message).
+
+[WorkBuddy 0.4.0](https://github.com/Core-Mate/OpenGUI/releases/tag/opengui-workbuddy-v0.4.0) is a public-testing prerelease. Send `@opengui` to open the task home, sign in, choose a model and device, and confirm your task. Accounts and configured models use the official CoreMate service by default; phone screenshots go to the selected execution model, while local preview video does not send every frame. Some real-device acceptance remains pending; see [release scope](./workbuddy-plugin/docs/release-notes.md) and [installation verification](./workbuddy-plugin/INSTALL.md#verify-the-installation).
 
 ## Run the Full OpenGUI Stack
 

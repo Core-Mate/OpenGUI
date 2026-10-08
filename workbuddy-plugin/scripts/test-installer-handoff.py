@@ -2,6 +2,8 @@
 """Exercise the interactive launcher without installing or changing host settings."""
 from pathlib import Path
 import hashlib
+import json
+import re
 import os
 import pty
 import select
@@ -13,7 +15,8 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = (ROOT / 'scripts/installer-handoff.command').read_text()
-PIN = 'a6a84e19f2830a07514e99d5f23d3064b91a023704059f27381001f78539bebb'
+PIN = re.search(r"expected_sha='([a-f0-9]{64})'", SOURCE).group(1)
+VERSION = json.loads((ROOT / 'package.json').read_text())['version']
 
 
 class HandoffTests(unittest.TestCase):
@@ -171,13 +174,56 @@ echo CONFIG_WRITTEN
 
     def test_release_zip_preserves_executable_and_verified_payload(self):
         subprocess.run(['python3', str(ROOT / 'scripts/build-installer-handoff.py')], check=True, capture_output=True)
-        archive = ROOT / 'dist/opengui-workbuddy-installer-1.0.2.zip'
+        archive = ROOT / f'dist/opengui-workbuddy-installer-{VERSION}.zip'
         with zipfile.ZipFile(archive) as z:
             self.assertEqual(len(z.namelist()), 3)
             launcher = z.getinfo('OpenGUI-WorkBuddy-Installer/OpenGUI-Install.command')
             self.assertEqual((launcher.external_attr >> 16) & 0o777, 0o755)
             self.assertEqual(hashlib.sha256(z.read('OpenGUI-WorkBuddy-Installer/installer.sh')).hexdigest(), PIN)
         self.assertEqual(archive.with_suffix('.zip.sha256').read_text().split()[0], hashlib.sha256(archive.read_bytes()).hexdigest())
+
+    def test_documented_direct_download_verifies_both_files_before_opening_folder(self):
+        guide = (ROOT / 'INSTALL.md').read_text()
+        block = re.search(r'```bash\n(.*?)\n```', guide, re.S).group(1)
+        fake_bin = self.folder / 'bin'
+        fake_bin.mkdir()
+        curl = fake_bin / 'curl'
+        curl.write_text('''#!/bin/bash
+set -eu
+while [ "$#" -gt 3 ]; do shift; done
+case "$1" in
+  */OpenGUI-Install.command) source=installer-handoff.command ;;
+  */installer.sh) source=install-macos.command ;;
+  *) exit 91 ;;
+esac
+[ "$1" = "https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-v$TEST_PLUGIN_VERSION/$3" ]
+[ "$2" = -o ]
+cp "$TEST_SCRIPT_ROOT/$source" "$3"
+if [ "${TEST_TAMPER:-}" = "$3" ]; then printf '\\n# changed\\n' >> "$3"; fi
+''')
+        curl.chmod(0o755)
+        opener = fake_bin / 'open'
+        opener.write_text('''#!/bin/bash
+set -eu
+[ "$1" = -a ] && [ "$2" = Finder ] && [ -d "$3" ]
+[ -x "$3/OpenGUI-Install.command" ] && [ -f "$3/installer.sh" ]
+printf '%s' "$3" > "$HOME/opened-folder"
+''')
+        opener.chmod(0o755)
+        env = {**self.env, 'PATH': f'{fake_bin}:{self.env["PATH"]}',
+               'TEST_SCRIPT_ROOT': str(ROOT / 'scripts'), 'TEST_PLUGIN_VERSION': VERSION}
+        result = subprocess.run(['bash'], input=block, cwd=self.folder, env=env, text=True, capture_output=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        folder = Path((self.folder / 'opened-folder').read_text())
+        self.assertEqual(sorted(p.name for p in folder.iterdir()), ['OpenGUI-Install.command', 'installer.sh'])
+        self.assertEqual((folder / 'OpenGUI-Install.command').read_text(), SOURCE)
+        self.assertFalse(list(folder.glob('installation-result.*')))
+        for target in ['OpenGUI-Install.command', 'installer.sh']:
+            (self.folder / 'opened-folder').unlink(missing_ok=True)
+            result = subprocess.run(['bash'], input=block, cwd=self.folder,
+                                    env={**env, 'TEST_TAMPER': target}, text=True, capture_output=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertFalse((self.folder / 'opened-folder').exists())
 
 
 if __name__ == '__main__':
