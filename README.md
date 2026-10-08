@@ -88,10 +88,12 @@ Supported on **macOS (Apple Silicon / Intel) with WorkBuddy 5.5.3 or later**. Do
 Open macOS Terminal, paste this command, and run it:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh | bash
+cd "$HOME" && curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh | bash
 ```
 
-This downloads and runs the installer without saving it manually first. The script verifies the subsequent installation files, prepares the runtime, configures OpenGUI, and opens the authorization guide. WorkBuddy may stay open during installation; no phone is required yet.
+This downloads and runs the installer without saving it manually first. The script verifies the subsequent installation files, prepares the runtime, and configures OpenGUI. WorkBuddy may stay open during installation; no phone is required yet.
+
+**After successful installation, the [authorization guide webpage](./workbuddy-plugin/resources/OpenGUI-授权指南.html) opens automatically in your browser. Follow its instructions to authorize the Skill and connector.**
 
 You can also [download install.sh separately](https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh) and run `bash /actual/path/install.sh` in Terminal.
 
