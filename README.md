@@ -108,8 +108,10 @@ For a Chinese conversation, use this exact handoff copy. Replace the link target
 ```markdown
 [打开安装脚本目录，双击OpenGUI-Install.command进行安装](<ABSOLUTE_INSTALLER_FOLDER/>)
 
-安装完成后请回复“已安装完成”
+安装完成后请回复 **“已安装完成”**
 ```
+
+For a successful preparation, make those two paragraphs the entire final reply and stop the turn immediately after the bold completion prompt. Do not use `present_files`, `open_result_view`, attachment delivery, or artifact-registration/display tools for these installation files. Do not show individual script cards, create an audit report/README deliverable, or append technical explanations about TTY, exit codes, or host permissions. Report actual failures when they occur; put any necessary folder-opening fallback before the final handoff. Resume verification only after the user replies.
 
 Checklist status must reflect actual results: report “Installer files ready” while waiting for manual execution, not installation success. WorkBuddy controls directory-link dispatch; a Markdown link cannot guarantee Finder opens. Add the host's Open folder action or Finder's `Command-Shift-G` fallback only if opening fails or the link enters a preview. The user's reply triggers verification; it is not proof of success on its own.
 

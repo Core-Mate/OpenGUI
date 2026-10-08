@@ -60,15 +60,19 @@ If the host provides a native directory action instead of the `open` command, us
 
 ### Handoff message
 
-Replace `ABSOLUTE_INSTALLER_FOLDER` with the actual directory reported above, retaining the trailing slash and angle brackets for paths with spaces. Send the following as rendered Markdown in chat, not a code block. Always include the hyperlink even if the directory was already opened. The next sentence must be exactly the completion prompt shown here:
+Replace `ABSOLUTE_INSTALLER_FOLDER` with the actual directory reported above, retaining the trailing slash and angle brackets for paths with spaces. Send the following as rendered Markdown in chat, not a code block. Always include the hyperlink even if the directory was already opened. The successful handoff final response must contain only these two paragraphs. The second paragraph is the end of the reply and of this turn:
 
 ```markdown
 [打开安装脚本目录，双击OpenGUI-Install.command进行安装](<ABSOLUTE_INSTALLER_FOLDER/>)
 
-安装完成后请回复“已安装完成”
+安装完成后请回复 **“已安装完成”**
 ```
 
-The link targets the **folder containing the scripts**. It does not run the launcher. WorkBuddy controls local-link handling and may open a preview; Markdown alone cannot guarantee Finder dispatch. Only if opening is unavailable, fails, or enters a preview, add its supported Open folder action or Finder's `Command-Shift-G` steps with the actual path. Do not invent executable links or claim the folder opened without evidence. An audit report or README attachment does not replace the handoff link.
+Do not call `present_files`, `open_result_view`, attachment delivery, or any artifact-registration/display tool for the installer scripts, their directory, logs, or verification output. Do not attach or link the individual scripts as chat deliverables, create a README/audit report to present, or add a generated-artifact summary. Downloaded installation inputs are not user-facing output artifacts. Use only the directory hyperlink above for this handoff.
+
+After the completion prompt, stop: no extra text, blockquotes, file cards, tool calls, checklists, or explanations about TTY, `exit 73`, `CODEBUDDY_BROKER_DENY`, permission design, or why the assistant did not execute the installer. Keep routine implementation details out of the successful reply. If preparation actually fails, report the concrete blocker instead of using the successful handoff. If folder-opening help is needed, give it before the final two paragraphs so the completion prompt remains last. Wait for the user's next message before verification or installation-success guidance. These instructions govern assistant output; they cannot remove file cards a host independently injects or already displayed in an earlier turn.
+
+The link targets the **folder containing the scripts**. It does not run the launcher. WorkBuddy controls local-link handling and may open a preview; Markdown alone cannot guarantee Finder dispatch. Only if opening is unavailable, fails, or enters a preview, add its supported Open folder action or Finder's `Command-Shift-G` steps with the actual path. Do not invent executable links or claim the folder opened without evidence. Do not generate an audit report or README attachment for this handoff.
 
 Report “Installer files ready; waiting for manual execution” until the user runs the launcher. In Terminal, Return starts installation; `q` followed by Return cancels. If macOS blocks opening, use the normal system prompt without removing quarantine attributes or disabling Gatekeeper.
 
