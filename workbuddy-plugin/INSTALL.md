@@ -77,3 +77,7 @@ These links open task drafts without sending them. Edit the placeholders before 
 ## State-directory permission error
 
 `WorkBuddy state directory must be private, owned by this user, and not a symlink` refers to OpenGUI's state directory, normally `~/.workbuddy/opengui`. The published installer checks ownership and redirected paths before setting this directory to mode `0700`. It does not change permissions on the WorkBuddy root directory. This error is separate from a host permission refusal; its actual cause should be checked before retrying installation.
+
+## npm reports `EPERM: operation not permitted, uv_cwd`
+
+This error occurs when npm cannot read the Terminal process's current directory. `npm --prefix` does not change that working directory. The current installer runs npm from its own verified private package directory, including when the launch directory is inaccessible or has been deleted. Download the current script and retry; for an older installer, first run `cd "$HOME"` in Terminal.
