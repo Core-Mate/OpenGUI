@@ -56,7 +56,9 @@ if (existingMcp) {
 const values = [
   JSON.stringify(mergeMcpConfig(JSON.parse(original[0] ?? '{}'), node, join(packageDir, 'lib', 'mcp.js')), null, 2) + '\n',
   JSON.stringify(mergeHostHooks(JSON.parse(original[1] ?? '{}'), command, previous.hookCommands ?? []), null, 2) + '\n',
-  (await readFile(join(packageDir, 'lib', 'opengui-SKILL.md'), 'utf8')).replaceAll('(references.md)', `(${join(packageDir, 'lib', 'opengui-reference.md')})`),
+  (await readFile(join(packageDir, 'lib', 'opengui-SKILL.md'), 'utf8')).replaceAll('(references.md)', `(${join(packageDir, 'lib', 'opengui-reference.md')})`)
+    .replaceAll('(installation.html)', `(<${join(packageDir, 'lib', 'opengui-installation.html')}>)`)
+    .replaceAll('(authorization.html)', `(<${join(packageDir, 'lib', 'opengui-authorization.html')}>)`),
 ]
 if (original.every((value, i) => value === values[i]) && previous.packageDir === packageDir && previous.configRoot === root) {
   console.log(JSON.stringify({ status: 'ALREADY_CONFIGURED', version: pkg.version, installState, configRoot: root, hostLoaded: 'unverified' }))

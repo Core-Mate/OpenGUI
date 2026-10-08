@@ -15,6 +15,8 @@ await writeFile(new URL('../lib/service-config.json', import.meta.url), JSON.str
 await chmod(new URL('../lib/mcp.js', import.meta.url), 0o755)
 await copyFile(new URL('../connector/skills/control/SKILL.md', import.meta.url), new URL('../lib/opengui-SKILL.md', import.meta.url))
 await copyFile(new URL('../connector/skills/control/references.md', import.meta.url), new URL('../lib/opengui-reference.md', import.meta.url))
+await copyFile(new URL('../resources/OpenGUI-安装指南.html', import.meta.url), new URL('../lib/opengui-installation.html', import.meta.url))
+await copyFile(new URL('../resources/OpenGUI-授权指南.html', import.meta.url), new URL('../lib/opengui-authorization.html', import.meta.url))
 for (const name of ['confirmation.js', 'confirmation.d.ts']) await rm(new URL(`../lib/${name}`, import.meta.url), { force: true })
 if (process.platform === 'darwin') {
   const dir = new URL('../lib/native/', import.meta.url)

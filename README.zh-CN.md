@@ -82,57 +82,47 @@ OpenGUI 正式支持 DSH `0.1.0-rc.7`、`0.1.0-rc.8`、`0.1.1-rc.1` 和 `0.1.1-r
 
 ## WorkBuddy 安装
 
-在 **macOS** 上打开 WorkBuddy，新建聊天，直接发送：
+支持 **macOS（Apple 芯片 / Intel）和 WorkBuddy 5.5.3 及以上版本**。在电脑上下载并运行安装脚本，安装后再进入 WorkBuddy 完成授权。
+
+**1. 一条命令下载安装**
+
+打开 macOS“终端”，粘贴并运行：
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh | bash
+```
+
+这条命令会下载并运行安装脚本，无需先手动保存文件。脚本会校验后续安装文件、准备运行环境、配置 OpenGUI，完成后自动打开授权说明。安装期间 WorkBuddy 可以保持打开，也不需要连接手机。
+
+也可以[单独下载安装脚本（install.sh）](https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh)，保存后在终端运行 `bash /实际路径/install.sh`。
+
+**2. 授权技能和连接器**
+
+打开 WorkBuddy 的“专家·技能·连接器 → 技能”，找到 OpenGUI，按提示完成授权；之后在连接器中，找到OpenGUI，再次授权。
+
+**注意：技能 和 连接器，都需要授权哦！**
+
+![OpenGUI Skill 和 MCP 授权演示](./workbuddy-plugin/resources/Skill和MCP授权.gif)
+
+若找不到连接器中的 OpenGUI，可打开“自定义连接器”检查 MCP 服务。只有 OpenGUI 未出现或新配置未生效时，再结束其他任务，用 ⌘Q 退出并重新打开 WorkBuddy。授权页面未自动打开时，可打开终端打印的 `AUTHORIZATION_GUIDE` 路径，无需重新安装。
+
+**3. 验证连接并开始使用**
+
+在 WorkBuddy 新建或打开聊天，发送：
 
 ```text
-安装 https://github.com/Core-Mate/OpenGUI
+我已安装并授权 OpenGUI。请检查连接并调用设备列表工具，暂时不要操作手机。
 ```
 
-也可以明确指定安装目标：
+设备列表工具调用成功即表示 MCP 连接可用；未连接手机时，列表可以为空。然后连接 Android 手机，开启并允许 USB 调试，再试一个任务：
 
 ```text
-把 https://github.com/Core-Mate/OpenGUI 的 OpenGUI 插件安装到 WorkBuddy
+@opengui 打开手机设置，再返回桌面，确认回到桌面后结束。
 ```
 
-**给执行安装的 AI：**如果当前宿主是 WorkBuddy，请按 [WorkBuddy 安装指南](./workbuddy-plugin/INSTALL.md)操作，使用经过校验的 WorkBuddy Release 安装器，同时安装 MCP、`opengui` Skill 和生命周期 Hooks。DSH 安装器和完整后端部署属于其他使用方式。
+按任务界面提示登录、选择执行模型和设备，确认后开始；需要中止时点击停止。
 
-**安装准备清单（由 WorkBuddy 按顺序执行，并向用户展示进度）：**
-
-1. **直接下载安装文件：**按[安装指南](./workbuddy-plugin/INSTALL.md#prepare-the-files)的固定地址，将 `OpenGUI-Install.command` 和 `installer.sh` 下载到当前工作目录下的新文件夹；无需下载或解压 ZIP。
-2. **校验文件：**分别核对两个文件的 SHA-256；任何一个校验失败都停止并说明原因。
-3. **准备双击入口：**确认两个文件位于同一目录，校验通过后为 `OpenGUI-Install.command` 设置当前用户的执行权限。
-4. **打开目录并展示超链接：**使用宿主支持的“打开文件夹 / 在 Finder 中显示”操作打开该目录，并在聊天中展示下方两行。超链接必须指向本次下载文件的实际绝对目录，不能指向 README、ZIP 或脚本预览页。
-5. **等待用户手动安装：**用户双击 `OpenGUI-Install.command`，在终端按回车开始安装。收到“已安装完成”后，读取本次安装结果并验证 WorkBuddy 是否加载插件，再报告验证结果。
-
-准备好文件后的聊天文案（将链接目标替换为实际绝对目录，展示为可点击链接，不要放进代码块）：
-
-```markdown
-[打开安装脚本目录，双击OpenGUI-Install.command进行安装](<ABSOLUTE_INSTALLER_FOLDER/>)
-
-安装完成后请回复“已安装完成”
-```
-
-清单状态必须对应实际结果：等待手动运行时标记为“安装文件已就绪”，不能标记为已安装。目录链接由 WorkBuddy 处理，不能保证直接打开 Finder；只有打开失败或链接进入预览时，才补充宿主“打开文件夹”或 Finder `Command-Shift-G` 的备用步骤。用户回复后仍需验证，不能仅凭回复判定安装成功。
-
-**插件与安装入口统一为 0.4.0。** 两个文件均来自 [WorkBuddy 0.4.0 公测发布](https://github.com/Core-Mate/OpenGUI/releases/tag/opengui-workbuddy-v0.4.0)，包含任务首页、账号与模型选择、工作台、人工接管和报告导出。入口、安装脚本、连接器与运行时统一版本；旧的安装入口 1.0.2 仍会安装插件 0.3.1。
-
-安装器会识别 WorkBuddy、下载并校验插件、准备独立运行环境、备份受影响的设置并保留其他插件。用户无需手动克隆仓库、安装 Node.js、部署 OpenGUI 后端或安装 DSH。建议使用 **WorkBuddy 5.5.6 及以上**。升级前请结束现有手机任务、关闭预览页面，并按安装入口提示退出 WorkBuddy。
-
-**安装后这样用：**
-
-1. 安装助手会检查 Skill 与 MCP，能自动启用并验证成功时直接继续，**无需手动切换页面**。只有无法自动启用时，才会展示对应截图，提示打开尚未开启的开关；参见[开关位置图示](./workbuddy-plugin/docs/enable-opengui.md)。Skill 与 MCP 是两个独立开关。正常信任或 Hook 审查提示仍按需处理。
-2. 用 USB 连接 Android 手机，开启 USB 调试，并在手机上允许这台电脑调试；也支持 Android 模拟器。先发送 `调用 OpenGUI MCP 工具 opengui_list_devices 并报告返回结果，不要操作手机` 检查连接。
-3. 在 WorkBuddy 中选择 `opengui` 技能，试一个简单任务：
-
-   ```text
-   @opengui 打开手机设置，再返回桌面，确认回到桌面后结束。
-   ```
-
-4. 在右侧面板查看手机画面和进度；如果所装版本展示设备、模型选择或开始确认，按页面提示完成。停止任务请使用任务的停止按钮，单纯关闭预览不会停止操作。
-
-安装验证成功后，助手会提示开启 Android USB 调试、连接电脑并使用 `/opengui`，并提供可填入任务草稿的「试一试：用小红书发帖」和「试一试：Vibe Testing」入口，见[安装完成消息](./workbuddy-plugin/INSTALL.md#installation-success-message)。
-
-[WorkBuddy 0.4.0](https://github.com/Core-Mate/OpenGUI/releases/tag/opengui-workbuddy-v0.4.0) 是公测预发布版。发送 `@opengui` 打开任务首页，登录、选择模型与设备并确认任务。账号和配置模型默认使用官方 CoreMate 服务；任务截图会发送给所选执行模型，本地视频预览不会逐帧发给模型。部分真机验收仍待完成，见[发布范围](./workbuddy-plugin/docs/release-notes.md)与[安装验证](./workbuddy-plugin/INSTALL.md#verify-the-installation)。
+安装会配置 MCP、Skill 和生命周期 Hooks，并备份受影响的设置；出现 Hooks 审核提示时按说明确认。账号和配置模型默认使用官方 CoreMate 服务，任务截图会发送给所选执行模型，本地预览视频不会逐帧上传。详见[插件说明](./workbuddy-plugin/README.zh-CN.md)与[安装验证及排障](./workbuddy-plugin/INSTALL.md)。当前公开版本为 [0.4.0 公测预发布版](https://github.com/Core-Mate/OpenGUI/releases/tag/opengui-workbuddy-v0.4.0)。
 
 ## 运行完整 OpenGUI 技术栈
 

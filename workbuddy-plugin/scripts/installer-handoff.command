@@ -2,10 +2,10 @@
 # Interactive handoff to the verified public WorkBuddy installer.
 set -euo pipefail
 umask 077
-expected_sha='cd54d28c78666f3fe31869b979e480c95450da74096c6b54d20fe433e43aba14'
+expected_sha='70420c3526ad32cb06f9bb9f31e4a4a3e43496fc2627345ecf986847f0cdf738'
 
 if [ ! -t 0 ] || [ ! -t 1 ] || [ -n "${CODEBUDDY_FORCE_HEADLESS_BUNDLE:-}" ] || [[ "${NODE_OPTIONS:-}" == *node-language-shim* ]]; then
-  echo '尚未开始安装。请在 Finder 中双击 OpenGUI-Install.command，打开终端安装窗口。'
+  echo '尚未开始安装。请在 Finder 中双击 OpenGUI-安装.command，打开终端安装窗口。'
   exit 73
 fi
 if [ "$#" -ne 0 ]; then
@@ -26,7 +26,7 @@ fi
 printf '\nOpenGUI · WorkBuddy 安装\n\n'
 printf '将安装 OpenGUI 插件 0.4.0，配置连接器、技能和任务运行所需的 Hooks。\n'
 printf '会自动备份相关设置，保留其他插件，无需系统密码。\n'
-printf '如果已安装 OpenGUI，请先结束手机任务并退出 WorkBuddy。\n'
+printf '安装时可以保持 WorkBuddy 打开。若正在升级，请先结束旧 OpenGUI 手机任务。\n'
 printf '本次安装不会操作手机；后续执行任务时，截图会发送给所选模型。\n\n'
 printf '按回车开始安装，输入 q 后回车取消：'
 IFS= read -r answer || exit 1
@@ -79,17 +79,24 @@ if [ "$status" -eq 0 ]; then
 fi
 set -e
 if [ "$status" -eq 0 ] && grep -Eq 'CONFIG_WRITTEN|ALREADY_CONFIGURED' "$log"; then
-  printf 'status=configuration_written\nexitCode=0\nhostLoaded=unverified\n' > "$result"
+  printf 'status=configuration_written\nexitCode=0\nhostLoaded=unverified\nnextAction=return_to_workbuddy_and_trust_mcp\n' > "$result"
   printf '\n安装配置已写入\n\n'
-  printf '最后一步：打开 WorkBuddy，发送下面这句话完成验证：\n\n'
+  printf '1. 返回 WorkBuddy，在「专家·技能·连接器 → 技能」中授权 OpenGUI。\n'
+  printf '2. 进入「连接器 → 自定义连接器」，找到 opengui，点击「信任」并完成首次授权。\n'
+  printf '   确认最右侧开关已开启、名称旁状态点变绿；已为绿色时保持不变。\n'
+  printf '   若找不到 OpenGUI 或新配置未生效，再结束其他任务，用 ⌘Q 退出并重新打开 WorkBuddy。\n'
+  printf '   图示见已打开的 OpenGUI-安装指南.html 第 2 步。\n'
+  printf '3. 在 WorkBuddy 新建或打开聊天，发送下面这句话，由助手验证工具是否加载：\n\n'
   printf '  已安装完成\n\n'
-  printf '如果 WorkBuddy 找不到工具，结束其他任务后退出并重新打开，再验证一次。\n'
-  printf '如有信任或启用提示，按 WorkBuddy 提示完成即可。\n'
+
 else
   [ "$status" -ne 0 ] || status=1
   printf 'status=failed\nexitCode=%s\nhostLoaded=unverified\n' "$status" > "$result"
   printf '\n安装未完成（错误码 %s）\n\n' "$status"
   printf '请把下面的错误摘要和详细日志交给 WorkBuddy 排查：\n\n'
+  if grep -q 'upgrade_blocked' "$log"; then
+    printf '旧 OpenGUI 服务仍在运行。请结束旧手机任务、关闭其展示，在 MCP 管理中停用旧 OpenGUI，等待服务退出后重试；WorkBuddy 可以保持打开。\n\n'
+  fi
   tail -n 20 "$log"
   printf '\n先确认失败原因，再按提示重试。\n'
 fi

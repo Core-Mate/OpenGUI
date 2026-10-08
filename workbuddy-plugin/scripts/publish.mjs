@@ -11,7 +11,7 @@ const tag = `opengui-workbuddy-v${version}`
 assert.equal(process.env.GITHUB_REF_NAME, tag, 'Only publish the exact independent WorkBuddy version tag')
 const prerelease = process.env.OPENGUI_PRERELEASE === 'true'
 execFileSync(process.execPath, [join(root, 'scripts/validate.mjs'), ...(prerelease ? [] : ['--release'])], { cwd: root, stdio: 'inherit' })
-const assets = [`opengui-mcp-${version}.tgz`, `opengui-workbuddy-connector-${version}.zip`, `opengui-workbuddy-${version}-install.command`, 'OpenGUI-Install.command', 'installer.sh'].flatMap(name => [name, `${name}.sha256`])
+const assets = [`opengui-mcp-${version}.tgz`, `opengui-workbuddy-connector-${version}.zip`, `opengui-workbuddy-${version}-install.command`, 'OpenGUI-安装.command', 'installer.sh', 'OpenGUI-安装指南.html', 'OpenGUI-授权指南.html', 'install.sh'].flatMap(name => [name, `${name}.sha256`])
 const gh = args => execFileSync('gh', args, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
 let exists = false
 try { gh(['release', 'view', tag, '--json', 'tagName']); exists = true } catch (error) {
