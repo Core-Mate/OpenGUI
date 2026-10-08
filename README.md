@@ -107,23 +107,21 @@ In WorkBuddy, open **Experts · Skills · Connectors → Skills**, find OpenGUI,
 
 If OpenGUI is not listed under Connectors, check **Custom connectors** for its MCP service. Only if OpenGUI is missing or the new configuration has not loaded, finish other tasks, quit WorkBuddy with ⌘Q, and reopen it. If the authorization page did not open automatically, open the `AUTHORIZATION_GUIDE` path printed in Terminal; no reinstallation is needed.
 
-**3. Verify the connection and try a task**
+**3. Verify the connection and start using OpenGUI**
 
-Start or open a WorkBuddy chat and send:
+Enable USB debugging on your Android phone and connect it to your computer. Enter /opengui, then enter the instructions you want the phone to execute to control it.
 
-```text
-I have installed and authorized OpenGUI. Check the connection and call the device list tool without operating a phone.
-```
-
-A successful device-list call confirms the MCP connection; the list may be empty before you connect a phone. Connect an Android phone, enable and authorize USB debugging, then try:
+Try it: Post on Xiaohongshu
 
 ```text
-@opengui Open Settings, then return to the home screen. Stop after confirming the home screen is visible.
+/opengui Help me test [feature or workflow] in [app/page], focusing on [issues to check]. If you find any problems, record the steps and screenshots. Stop when [end condition] is reached.
 ```
 
-Follow the task interface to sign in, choose the execution model and device, and confirm the task. Use its Stop button when needed.
+Try it: Vibe Testing
 
-Installation configures the MCP server, Skill and lifecycle Hooks and backs up affected settings. Review Hooks if prompted. Accounts and configured models use the official CoreMate service by default; task screenshots go to the selected execution model, while local preview video is not uploaded frame by frame. See the [plugin guide](./workbuddy-plugin/README.md) and [installation verification and troubleshooting](./workbuddy-plugin/INSTALL.md). The current public release is [0.4.0, a public-testing prerelease](https://github.com/Core-Mate/OpenGUI/releases/tag/opengui-workbuddy-v0.4.0).
+```text
+/opengui Help me test [feature or workflow] in [app/page], focusing on [issues to check]. If you find any problems, record the steps and screenshots. Stop when [end condition] is reached.
+```
 
 ## Run the Full OpenGUI Stack
 

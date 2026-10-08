@@ -110,21 +110,19 @@ cd "$HOME" && curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/mai
 
 **3. 验证连接并开始使用**
 
-在 WorkBuddy 新建或打开聊天，发送：
+把Android手机打开USB调试，连上电脑，输入/opengui，输入需要给手机的执行指令，即可控制手机执行。
+
+试一试：用小红书发帖
 
 ```text
-我已安装并授权 OpenGUI。请检查连接并调用设备列表工具，暂时不要操作手机。
+/opengui 帮我测试【应用／页面】的【功能或操作流程】，重点检查【关注的问题】。如果发现异常，记录操作步骤和截图，当做到【结束条件】就停。
 ```
 
-设备列表工具调用成功即表示 MCP 连接可用；未连接手机时，列表可以为空。然后连接 Android 手机，开启并允许 USB 调试，再试一个任务：
+试一试：Vibe Testing
 
 ```text
-@opengui 打开手机设置，再返回桌面，确认回到桌面后结束。
+/opengui 帮我测试【应用／页面】的【功能或操作流程】，重点检查【关注的问题】。如果发现异常，记录操作步骤和截图，当做到【结束条件】就停。
 ```
-
-按任务界面提示登录、选择执行模型和设备，确认后开始；需要中止时点击停止。
-
-安装会配置 MCP、Skill 和生命周期 Hooks，并备份受影响的设置；出现 Hooks 审核提示时按说明确认。账号和配置模型默认使用官方 CoreMate 服务，任务截图会发送给所选执行模型，本地预览视频不会逐帧上传。详见[插件说明](./workbuddy-plugin/README.zh-CN.md)与[安装验证及排障](./workbuddy-plugin/INSTALL.md)。当前公开版本为 [0.4.0 公测预发布版](https://github.com/Core-Mate/OpenGUI/releases/tag/opengui-workbuddy-v0.4.0)。
 
 ## 运行完整 OpenGUI 技术栈
 
