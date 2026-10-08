@@ -11,7 +11,9 @@ const tag = `opengui-workbuddy-v${version}`
 assert.equal(process.env.GITHUB_REF_NAME, tag, 'Only publish the exact independent WorkBuddy version tag')
 const prerelease = process.env.OPENGUI_PRERELEASE === 'true'
 execFileSync(process.execPath, [join(root, 'scripts/validate.mjs'), ...(prerelease ? [] : ['--release'])], { cwd: root, stdio: 'inherit' })
-const assets = [`opengui-mcp-${version}.tgz`, `opengui-workbuddy-connector-${version}.zip`, `opengui-workbuddy-${version}-install.command`, 'OpenGUI-安装.command', 'installer.sh', 'OpenGUI-安装指南.html', 'OpenGUI-授权指南.html', 'install.sh'].flatMap(name => [name, `${name}.sha256`])
+const assets = [`opengui-mcp-${version}.tgz`, `opengui-workbuddy-connector-${version}.zip`, `opengui-workbuddy-${version}-install.command`, 'OpenGUI-Install.command', 'installer.sh', 'OpenGUI-Installation.html', 'OpenGUI-Authorization.html', 'install.sh'].flatMap(name => [name, `${name}.sha256`])
+// GitHub normalizes non-ASCII asset names; localized guide names would collide.
+for (const name of assets) assert(/^[A-Za-z0-9._-]+$/u.test(name), `Unsafe GitHub asset name: ${name}`)
 const gh = args => execFileSync('gh', args, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
 let exists = false
 try { gh(['release', 'view', tag, '--json', 'tagName']); exists = true } catch (error) {
