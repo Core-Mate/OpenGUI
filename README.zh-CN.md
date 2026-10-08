@@ -89,10 +89,12 @@ OpenGUI 正式支持 DSH `0.1.0-rc.7`、`0.1.0-rc.8`、`0.1.1-rc.1` 和 `0.1.1-r
 打开 macOS“终端”，粘贴并运行：
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh | bash
+cd "$HOME" && curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh | bash
 ```
 
-这条命令会下载并运行安装脚本，无需先手动保存文件。脚本会校验后续安装文件、准备运行环境、配置 OpenGUI，完成后自动打开授权说明。安装期间 WorkBuddy 可以保持打开，也不需要连接手机。
+这条命令会下载并运行安装脚本，无需先手动保存文件。脚本会校验后续安装文件、准备运行环境并配置 OpenGUI。安装期间 WorkBuddy 可以保持打开，也不需要连接手机。
+
+**安装成功后，会自动在浏览器中打开[授权提示网页](./workbuddy-plugin/resources/OpenGUI-授权指南.html)，根据网页提示完成技能和连接器授权即可。**
 
 也可以[单独下载安装脚本（install.sh）](https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh)，保存后在终端运行 `bash /实际路径/install.sh`。
 
