@@ -49,7 +49,6 @@ interface Viewer {
   devicePreferenceError?: string | undefined
   /** A new task waits in the workbench until the person confirms model and device and starts it. */
   awaitingStart?: boolean
-  workbenchManaged?: boolean
   starting?: boolean
   nextTask?: Promise<{ viewerId: string; workbenchUrl: string }>
   suggestedDeviceId?: string | undefined
@@ -161,10 +160,8 @@ export class ViewerServer {
         previousComment: (account, target) => this.store!.previousComment(account, target, archived.id, archived.principal),
       } : undefined, this.now, () => this.taskChanged(archived.id))
       if (saved && !devices.length && !saved.board.result) { viewer.board.control = 'idle'; viewer.selectionRequested = Boolean(viewer.board.objective) }
-      if (!saved && this.account) {
-        try { viewer.board.modelConfig = await this.account.selectedModel(signal) }
-        catch { viewer.modelSelectionError = '模型目录不可用或原选择已移除，请重新选择执行模型'; viewer.principal = this.account.scope }
-      }
+      // Archived model metadata never restores execution authority or an online preference.
+      viewer.board.modelConfig = undefined
       if (saved) viewer.plan.restore(saved.todos)
       if (saved) {
         const previous = this.viewers.get(saved.id)
@@ -251,9 +248,6 @@ export class ViewerServer {
   requestDeviceSelection(id: string): void { this.require(id).selectionRequested = true }
   setStartHandler(handler: (id: string, deviceId: string, request?: string, comments?: { enabled: boolean; budget?: unknown }) => Promise<void>): void { this.startHandler = handler }
   setNewTaskHandler(handler: (id: string) => Promise<{ viewerId: string; workbenchUrl: string }>): void { this.newTaskHandler = handler }
-  manageInWorkbench(id: string, enabled = true): void { this.require(id).workbenchManaged = enabled }
-  isWorkbenchManaged(id: string): boolean { return this.require(id).workbenchManaged === true }
-  detachFromHost(id: string): string { const v = this.require(id); v.owner = `workbench:${id}`; this.persist(v); return v.owner }
   setEmulatorHandlers(status: (signal: AbortSignal) => Promise<EmulatorStatus>, action: (input: Record<string, unknown>) => void): void { this.emulatorStatusHandler = status; this.emulatorActionHandler = action }
   /** Resolve a selectable candidate for a start-page live view, as video or a single frame. */
   setPreviewHandlers(device: (id: string, deviceId: string, signal: AbortSignal) => Promise<VideoDevice>, frame: (id: string, deviceId: string, signal: AbortSignal) => Promise<Buffer>): void { this.previewDeviceHandler = device; this.previewFrameHandler = frame }
@@ -286,7 +280,7 @@ export class ViewerServer {
   awaitingDeviceTask(id: string): boolean {
     const v = this.require(id); this.update(v)
     // Before control starts, a device or model choice in the workbench is an intentional wait.
-    return Boolean((v.selectionRequested || v.modelSelectionError || v.awaitingStart) && v.board.objective && !v.ended && !v.error && v.phase !== 'closed' && v.board.control === 'idle')
+    return Boolean((v.awaitingStart || (v.selectionRequested && v.board.objective)) && !v.ended && !v.error && v.phase !== 'closed' && v.board.control === 'idle')
   }
   async bindDevices(id: string, devices: readonly ViewerDevice[], signal: AbortSignal): Promise<void> {
     const v = this.require(id)
@@ -309,13 +303,9 @@ export class ViewerServer {
     if (this.accountBusy) throw new Error('account_change_in_progress')
     if (v.principal !== (this.account?.scope ?? 'local')) throw new Error('foreign_account')
     if (v.board.control !== 'idle') throw new Error('model_locked: select before starting a task')
-    if (modelId === 'host') { this.account?.selectModel(); v.board.modelConfig = undefined }
-    else {
-      const selected = (await this.account?.models())?.find(model => model.id === modelId)
-      if (!selected) throw new Error('model_not_configured')
-      this.account?.selectModel(selected.id)
-      v.board.modelConfig = selected
-    }
+    if (modelId !== 'host') throw new Error('host_model_required: this release follows WorkBuddy')
+    this.account?.selectModel()
+    v.board.modelConfig = undefined
     v.modelSelectionError = undefined
     v.board.checkpoint()
   }
@@ -415,7 +405,7 @@ export class ViewerServer {
   pauseNodes(id: string): void { const v = this.require(id); v.plan.pause(); this.persist(v) }
   awaitUser(id: string, waiting: boolean): void { const v = this.require(id); v.plan.awaitUser(waiting); this.persist(v) }
   settleNode(id: string, stepId: string, status: 'failed' | 'skipped', reason: string): void { const v = this.require(id); v.plan.settle(stepId, status, reason); this.persist(v) }
-  endOwner(owner: string): void { for (const v of this.viewers.values()) if (v.owner === owner && !v.workbenchManaged) { v.ended = true; v.plan.pause(); this.closePreviews(v); this.persist(v) } }
+  endOwner(owner: string): void { for (const v of this.viewers.values()) if (v.owner === owner) { v.ended = true; v.plan.pause(); this.closePreviews(v); this.persist(v) } }
   endTask(id: string): void { const viewer = this.require(id); viewer.ended = true; viewer.plan.pause(); this.persist(viewer) }
   url(id: string): string { const v = this.require(id); return `${this.origin}/${v.token}/` }
   async dispose(): Promise<void> {
@@ -447,7 +437,7 @@ export class ViewerServer {
   private snapshot(v: Viewer) {
     this.update(v)
     return { viewerId: v.id, url: this.url(v.id), state: v.phase, firstDisplayEstablished: v.established, todos: v.plan.todos, progress: v.plan.progress(), board: v.board.snapshot(), reportExports: v.reportExports, reportFileName: reportFileName(v.board.createdAt),
-      selectionRequired: !v.devices.length, selectionRequested: Boolean(v.selectionRequested), startRequired: Boolean(v.awaitingStart), workbenchManaged: Boolean(v.workbenchManaged), ...(v.suggestedDeviceId ? { suggestedDeviceId: v.suggestedDeviceId } : {}), selectionBusy: Boolean(v.binding || v.starting), canSelectDevice: !v.binding && !v.starting && !v.devices.length && !v.ended && v.board.control === 'idle' && !v.error && v.phase !== 'closed', devicePreferenceError: v.devicePreferenceError,
+      selectionRequired: !v.devices.length, selectionRequested: Boolean(v.selectionRequested), startRequired: Boolean(v.awaitingStart), workbenchManaged: false, ...(v.suggestedDeviceId ? { suggestedDeviceId: v.suggestedDeviceId } : {}), selectionBusy: Boolean(v.binding || v.starting), canSelectDevice: !v.binding && !v.starting && !v.devices.length && !v.ended && v.board.control === 'idle' && !v.error && v.phase !== 'closed', devicePreferenceError: v.devicePreferenceError,
       account: { ...(this.account?.status() ?? { serviceUrl: '', user: null }), busy: this.accountBusy },
       ...(v.modelSelectionError ? { modelSelectionError: v.modelSelectionError } : {}),
       ...(this.store ? { archivePath: this.store.path(v.id) } : {}),
@@ -514,16 +504,7 @@ export class ViewerServer {
             res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(result)); return
           }
           if (req.method === 'GET' && route === 'models') {
-            try { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify({ models: await this.account?.models() ?? [] })) }
-            catch (error) {
-              const message = error instanceof Error ? error.message : ''
-              const loginRequired = message.startsWith('login_required')
-              const advice = loginRequired ? '登录已过期，请重新登录后读取模型配置；也可选择跟随 WorkBuddy'
-                : message === 'service_route_unavailable: models' ? '模型配置接口不存在（HTTP 404），请检查该服务是否已部署现有模型配置；可选择跟随 WorkBuddy'
-                : '模型目录暂时不可用，请检查服务连接与网络；可选择跟随 WorkBuddy'
-              res.writeHead(loginRequired ? 401 : 503).end(JSON.stringify({ error: advice }))
-            }
-            return
+            res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify({ models: [] })); return
           }
           if (req.method === 'GET' && route === 'evidence') {
             const id = url.searchParams.get('observationId') ?? '', name = v.board.snapshot().evidenceFiles[id]
@@ -601,11 +582,7 @@ export class ViewerServer {
                 v.principal = this.account.scope
                 if (['configure', 'login', 'logout', 'session'].includes(String(input.operation))) v.board.modelConfig = undefined
                 this.persist(v)
-                if (['login', 'session', 'configure'].includes(String(input.operation))) {
-                  try { v.board.modelConfig = await this.account.selectedModel(AbortSignal.timeout(10_000)); v.modelSelectionError = undefined }
-                  catch { v.modelSelectionError = '模型目录不可用或原选择已移除，请重新选择执行模型' }
-                  v.principal = this.account.scope; this.persist(v)
-                }
+                v.modelSelectionError = undefined
               }
               } finally { this.accountBusy = false }
             } else if (input.action === 'budget_extend' && this.budgetHandler) {
@@ -621,12 +598,11 @@ export class ViewerServer {
             } else if (input.action === 'start' && this.startHandler) {
               if (Object.keys(input).some(key => !['action', 'modelId', 'deviceId', 'contentReview', 'request', 'commentTask', 'commentBudget'].includes(key)) || typeof input.deviceId !== 'string' || !input.deviceId || typeof input.modelId !== 'string' || (input.contentReview !== undefined && typeof input.contentReview !== 'boolean') || (input.commentTask !== undefined && typeof input.commentTask !== 'boolean') || (input.commentBudget !== undefined && input.commentTask !== true)) throw new Error('start_input_invalid')
               if (input.request !== undefined && (typeof input.request !== 'string' || !input.request.trim() || input.request.length > 4000)) throw new Error('task_request_required')
-              if (v.workbenchManaged && (input.modelId === 'host' || !this.account)) throw new Error('workbench_model_required')
               if (!v.awaitingStart) throw new Error('task_already_started')
               if (this.account && !this.account.status().user) throw new Error('login_required: sign in before starting')
               v.starting = true
               try {
-              // The confirmed model becomes the cached default for the next task.
+              // Reject unsupported model IDs before binding a device.
               await this.chooseModel(v, input.modelId)
               // Content review is chosen by the person here only, never by the model.
               v.board.contentReview = input.contentReview === true ? true : undefined
@@ -690,7 +666,8 @@ export class ViewerServer {
             : message.startsWith('login_required') ? '登录已过期，请重新登录'
             : message.startsWith('task_already_started') ? '任务已经开始执行'
             : message.startsWith('task_request_required') ? '请填写要执行的任务（最多 4000 字）'
-            : message.startsWith('workbench_model_required') ? '请在上方选择执行模型，工作台新任务由所选模型直接执行'
+            : message.startsWith('host_model_required') ? '执行模型跟随当前 WorkBuddy 对话'
+            : message.startsWith('host_task_required') ? '请回到 WorkBuddy 发送 @opengui 开始新任务'
             : message.startsWith('model_not_configured') ? '所选模型已不可用，请重新选择'
             : message.startsWith('preview_unavailable') ? '该设备暂时无法预览'
             : message.startsWith('invalid_input_event') || message.startsWith('unsupported_key') ? '不支持的输入操作'

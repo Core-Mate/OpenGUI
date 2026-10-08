@@ -171,8 +171,8 @@ export const OPENGUI_WORKBUDDY_TOOLS: readonly WorkBuddyToolDefinition[] = [
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
   },
   {
-    name: 'opengui_execute', title: 'Execute With Configured Phone Model',
-    description: 'Run the model selected from the published admin catalog on this existing authorized session and plan. The runtime handles the scoped screenshot/action loop and human review waiting. The host remains conversational. Follow WorkBuddy mode uses normal observe/act instead. Use waitMs 600000. When the host requests MCP progress, keep this call open and receive status notifications until the run ends or the wait expires. Otherwise each changed step/review/control state returns once. Renew a timed-out wait silently; narrate only changed events. Repeated calls reuse the same runner. Never use browser screenshots, DOM, HTTP fetches, or timer-based status calls to monitor the workbench. While it runs, use status/cancel rather than parallel phone actions.',
+    name: 'opengui_execute', title: 'Legacy Configured Executor',
+    description: 'Legacy compatibility entry. This release only follows the current WorkBuddy model. Use opengui_observe and opengui_act after Start and first-display readiness; do not use this tool for current tasks.',
     inputSchema: { type: 'object', additionalProperties: false, properties: { sessionId, waitMs: eventWaitMs }, required: ['sessionId'] }, outputSchema: sessionSchema,
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
   },
@@ -184,7 +184,7 @@ export const OPENGUI_WORKBUDDY_TOOLS: readonly WorkBuddyToolDefinition[] = [
   },
   {
     name: 'opengui_open_guide', title: 'Open OpenGUI Task Home',
-    description: 'Open the task home with an editable request, fixed @opengui label, model/device selection, display-only device preview and connection help. Use for a bare @opengui mention or when no authorized device is available. Present workbenchUrl in the current host panel. Opening the home does not start execution or grant first-display readiness. The user can enter a new request, choose a configured model and click Start to run it directly from the workbench.',
+    description: 'Open the task home with an editable request, fixed @opengui label, model/device selection, display-only device preview and connection help. Use for a bare @opengui mention or when no authorized device is available. Present workbenchUrl in the current host panel. Opening the home does not start execution or grant first-display readiness. The user enters a request and clicks Start. Present the home, then await opengui_viewer_status with waitMs 600000; after Start and a visible first frame, execute through WorkBuddy observe/act using the confirmed board.objective. Renew expired waits silently.',
     inputSchema: { type: 'object', additionalProperties: false, properties: { objective: { type: 'string', minLength: 1, maxLength: 4000 }, successCriteria: { type: 'string', minLength: 1, maxLength: 4000 } } }, outputSchema: { type: 'object' },
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   },

@@ -28,6 +28,7 @@ async function fixture(protocol: ConfiguredModel['protocol'] = 'openai_chat', co
   resources.push(() => service.dispose())
   const signal = AbortSignal.timeout(10_000), task = createControlTask(), options = { owner: 'runner-task', task }
   const display = await service.openViewer(['phone-a'], signal, options), page = await connect(display.url, 'phone-a')
+  viewer.board(display.viewerId).modelConfig = model
   sinks.get('phone-a')!.sendBinary(Buffer.from([2])); await page.receipt()
   viewer.writeTodos(display.viewerId, 'runner-task', [{ content: 'Check the visible page', status: 'pending' }])
   const session = await service.openSession(['phone-a'], signal, 'control', { ...options, ...(commentBudget ? { commentBudget, scenario: 'comments' } : {}), viewerId: display.viewerId, objective: 'Check the visible page', successCriteria: 'Verify the requested result from the current screen' })

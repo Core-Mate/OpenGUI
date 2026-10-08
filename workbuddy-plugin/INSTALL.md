@@ -12,7 +12,7 @@ curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-pl
 
 Alternatively, [download install.sh](https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh) and run `bash /actual/path/install.sh`. Installation runs on the Mac; WorkBuddy is used afterward for authorization and connection verification.
 
-The repository entry and its pinned installer/authorization guide are published together. They install the existing public 0.4.0 runtime; immutable 0.4.0 release assets are unchanged. The [manual installation guide](resources/OpenGUI-安装指南.html) remains available as an alternative.
+The repository entry and its pinned installer/authorization guide are published together. The 0.4.0 public-testing assets were replaced with the refreshed installer, authorization guide and host-only execution runtime. Use the current downloads and their adjacent SHA-256 files. The [manual installation guide](resources/OpenGUI-安装指南.html) remains available as an alternative.
 
 The entry downloads the installer and a self-contained [authorization guide](resources/OpenGUI-授权指南.html), verifies their SHA-256 pins, and runs installation without a Terminal confirmation or Finder step. After successful configuration it opens the guide in the default browser and prints `AUTHORIZATION_GUIDE` and `INSTALLATION_RESULT` paths. WorkBuddy can display that same HTML if browser opening is unavailable. Browser failure does not mean installation failed; do not reinstall just to reopen the instructions.
 
@@ -22,7 +22,7 @@ The user completes both Skill and connector authorization, then starts or opens 
 
 Installation downloads a private Node runtime and the published OpenGUI package, adds the `opengui` MCP server and Skill, and registers seven lifecycle Hooks: `UserPromptSubmit`, `PreToolUse`, `Stop`, `SubagentStop`, `FinalStop`, `SessionEnd`, and `StopFailure`. These local commands bind tasks and handle stopping and cleanup; review them in `/hooks` when prompted. Affected settings are backed up and unrelated plugins are retained.
 
-No phone is required during installation. Later Android use requires USB debugging authorization. Accounts and configured models use the official CoreMate service; task screenshots go to the selected execution model. Local preview video is not sent frame by frame.
+No phone is required during installation. Later Android use requires USB debugging authorization. SMS login uses the official CoreMate account service; tasks and screenshots are handled by the current WorkBuddy model. No online model catalog is read. Local preview video is not sent frame by frame.
 
 ## Requirements
 

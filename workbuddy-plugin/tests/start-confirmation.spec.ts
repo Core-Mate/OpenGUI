@@ -49,18 +49,19 @@ describe('start confirmation before execution', () => {
     expect(await f.service.viewers.status(f.opened.viewerId, 'host-task', 0)).toMatchObject({ startRequired: true, firstDisplayEstablished: false })
   })
 
-  it('starts with the confirmed model and device, caches the model and then requires the first frame', async () => {
+  it('starts with WorkBuddy and the confirmed device, then requires the first frame', async () => {
     const f = await fixture()
-    expect((await f.action({ action: 'start', modelId: '63', deviceId: 'phone-a' })).status).toBe(200)
+    expect((await f.action({ action: 'start', modelId: '63', deviceId: 'phone-a' })).status).toBe(400)
+    expect((await f.action({ action: 'start', modelId: 'host', deviceId: 'phone-a' })).status).toBe(200)
     const status = await f.service.viewers.status(f.opened.viewerId, 'host-task', 0)
-    expect(status).toMatchObject({ startRequired: false, devices: [{ id: 'phone-a' }], state: 'waiting_for_frame', board: { model: 'Deepseek' } })
-    expect((await f.account.selectedModel(AbortSignal.timeout(1000)))?.id).toBe('63')
+    expect(status).toMatchObject({ startRequired: false, devices: [{ id: 'phone-a' }], state: 'waiting_for_frame', board: { model: '跟随 WorkBuddy' } })
+    expect(await f.account.selectedModel(AbortSignal.timeout(1000))).toBeUndefined()
     expect(f.account.preferredDeviceId).toBe('phone-a')
     expect((await f.action({ action: 'start', modelId: 'host', deviceId: 'phone-a' })).status).toBe(400)
     const page = await connect(f.opened.url, 'phone-a')
     f.sinks.get('phone-a')!.sendBinary(Buffer.from([2])); await page.receipt()
     const session = await f.service.openSession(['phone-a'], f.signal, 'control', { owner: 'host-task', viewerId: f.opened.viewerId })
-    expect(session.executor).toMatchObject({ mode: 'configured', model: 'Deepseek' })
+    expect(session.executor).toMatchObject({ mode: 'workbuddy' })
   })
 
   it('requires sign-in before starting and keeps the host turn waiting for the start', async () => {

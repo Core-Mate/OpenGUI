@@ -1,5 +1,5 @@
 import { createServer, type Server } from 'node:http'
-import { mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs'
+import { mkdtempSync, readFileSync, writeFileSync, rmSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -33,7 +33,7 @@ async function fixture() {
   return { client, calls, model, directory, publish: () => { published = true }, unpublish: () => { published = false }, expire: () => { valid = false }, switchUser: (id: number) => { userId = id } }
 }
 
-describe('unified account and configured models', () => {
+describe('unified account and host-only model selection', () => {
   it('uses the existing backend user authentication routes without an admin adapter', async () => {
     const directory = mkdtempSync(join(tmpdir(), 'opengui-existing-auth-')); resources.push(() => rmSync(directory, { recursive: true, force: true }))
     const paths: string[] = []
@@ -56,7 +56,7 @@ describe('unified account and configured models', () => {
         : { token: 'fixture-session', user: { id: 42 }, choices: [] }))
     }) as typeof fetch)
     client.configure('http://127.0.0.1:1'); await client.login('13800001234', '123456')
-    const [chat, responses] = await client.models()
+    const chat = { id: '63', name: 'Chat', model: 'fixture', protocol: 'openai_chat' as const, revision: '', reasoningEffort: 'low' as const }, responses = { id: '65', name: 'Responses', model: 'fixture', protocol: 'openai_responses' as const, revision: '', recommended: undefined }
     expect([chat?.id, responses?.id, responses?.protocol, responses?.recommended]).toEqual(['63', '65', 'openai_responses', undefined])
     await client.infer(chat!, { messages: [], stream: true }, AbortSignal.timeout(1000))
     expect(paths.at(-1)).toContain('/api/agent-config/runtime/proxy/63/v1/chat/completions')
@@ -78,44 +78,32 @@ describe('unified account and configured models', () => {
     await expect(client.infer(model, {}, AbortSignal.timeout(1000))).rejects.toThrow('model_upstream_error: HTTP 401')
     expect(client.status().user?.id).toBe('42')
   })
-  it('does not clear a newer login when an older catalog request returns unauthorized', async () => {
+  it('does not clear a newer login when an older session request returns unauthorized', async () => {
     const directory = mkdtempSync(join(tmpdir(), 'opengui-account-race-')); resources.push(() => rmSync(directory, { recursive: true, force: true }))
     let reply!: (response: Response) => void, userId = 1
-    const client = new CoreMateClient(directory, (async (url: string) => url.endsWith('/desktop-text-models') ? new Promise<Response>(resolve => { reply = resolve })
+    const client = new CoreMateClient(directory, (async (url: string) => url.endsWith('/session') ? new Promise<Response>(resolve => { reply = resolve })
       : new Response(JSON.stringify({ token: `fixture-token-${userId}`, user: { id: userId++ } }))) as typeof fetch)
     client.configure('http://127.0.0.1:1'); await client.login('13800001234', '123456')
-    const stale = client.models(), rejected = expect(stale).rejects.toThrow('login_required')
+    const stale = client.session(), rejected = expect(stale).rejects.toThrow('login_required')
     await client.login('13800001234', '123456'); reply(new Response('{"message":"Unauthorized","statusCode":401}', { status: 401 })); await rejected
     expect(client.status().user?.id).toBe('2')
   })
-  it('lists only usable phone text models from the admin Agent config and never projects provider secrets', async () => {
-    const directory = mkdtempSync(join(tmpdir(), 'opengui-runtime-catalog-')); resources.push(() => rmSync(directory, { recursive: true, force: true }))
-    let data: unknown[] = []
-    const client = new CoreMateClient(directory, (async (url: string) => url.endsWith('/desktop-text-models')
-      ? Response.json({ success: true, data }) : Response.json({ token: 'fixture-session', user: { id: 42 } })) as typeof fetch)
-    client.configure('https://backend.example.test'); await client.login('13800001234', '123456')
-    data = [
-      catalogEntry(),
-      catalogEntry({ id: 64, configName: '', modelName: 'qwen3.6-plus', isActive: false }),
-      catalogEntry({ id: 70, hasApiKey: false }),
-      catalogEntry({ id: 71, phoneModelKind: 'image' }),
-      catalogEntry({ id: 72, agentName: 'executor-vlm' }),
-      catalogEntry({ id: 73, baseUrl: '' }),
-      catalogEntry({ id: -1 }),
-    ]
-    const models = await client.models()
-    expect(models).toEqual([
-      { id: '63', name: 'Configured model', model: 'fixture-vlm', protocol: 'openai_chat', revision: '2026-09-16T11:53:56.433Z', recommended: true, reasoningEffort: 'low' },
-      { id: '64', name: 'qwen3.6-plus', model: 'qwen3.6-plus', protocol: 'openai_chat', revision: '2026-09-16T11:53:56.433Z', reasoningEffort: 'low' },
-    ])
-    expect(JSON.stringify(models)).not.toContain('never-project')
-    expect(JSON.stringify(models)).not.toContain('provider.example')
-    data = []; expect(await client.models()).toEqual([])
+  it('never requests the online catalog, including legacy model preferences', async () => {
+    const f = await fixture(); await f.client.login('13800001234', '123456')
+    const path = join(f.directory, 'account.json'), saved = JSON.parse(readFileSync(path, 'utf8'))
+    saved.preferredModel = 'Configured model'
+    saved.preferences = { [f.client.scope]: { model: '63', device: 'phone-a' }, another: { model: '64', device: 'phone-b' } }
+    writeFileSync(path, JSON.stringify(saved))
+    const client = new CoreMateClient(f.directory), before = f.calls.length
+    expect(await client.models()).toEqual([])
+    expect(await client.selectedModel(AbortSignal.timeout(1000))).toBeUndefined()
+    expect(client.preferredDeviceId).toBe('phone-a')
+    expect(f.calls).toHaveLength(before)
+    const migrated = JSON.parse(readFileSync(path, 'utf8'))
+    expect(migrated.preferredModel).toBeUndefined()
+    expect(migrated.preferences).toEqual({ [client.scope]: { device: 'phone-a' }, another: { device: 'phone-b' } })
   })
-  it('restores a preference saved by display name from older builds', async () => {
-    const f = await fixture(); await f.client.login('13800001234', '123456'); f.publish(); f.client.selectModel('Configured model')
-    expect(await f.client.selectedModel(AbortSignal.timeout(1000))).toEqual(f.model)
-  })
+
   it('distinguishes a missing authentication route from a wrong code without retaining a session', async () => {
     const directory = mkdtempSync(join(tmpdir(), 'opengui-auth-missing-')); resources.push(() => rmSync(directory, { recursive: true, force: true }))
     let status = 404
@@ -126,20 +114,17 @@ describe('unified account and configured models', () => {
     await expect(client.login('13800001234', '123456')).rejects.toThrow('invalid_login_code')
     expect(client.status().user).toBeNull()
   })
-  it('opens a usable workbench when the preferred model is removed and requires an explicit fallback decision', async () => {
-    const f = await fixture(); await f.client.login('13800001234', '123456'); f.publish(); f.client.selectModel(f.model.id); f.unpublish()
-    const { viewer } = setup(f.client), display = await viewer.open('task', [a], AbortSignal.timeout(1000))
-    expect(display.modelSelectionError).toBeDefined()
-    expect(() => viewer.find('task', [a])).toThrow('model_selection_required')
-    // The pending model choice is a deliberate wait: host stop hooks must keep the task.
-    viewer.board(display.viewerId).objective = 'Check the login page'
-    expect(viewer.awaitingDeviceTask(display.viewerId)).toBe(true)
-    const response = await fetch(`${display.url}board`, { method: 'POST', headers: { Origin: new URL(display.url).origin, 'Content-Type': 'application/json', 'X-OpenGUI-Board': new URL(display.workbenchUrl).hash.slice(7) }, body: JSON.stringify({ action: 'model', modelId: 'host' }) })
-    expect(response.status).toBe(200)
-    expect((await response.json()).modelSelectionError).toBeUndefined()
-    expect(viewer.awaitingDeviceTask(display.viewerId)).toBe(false)
+  it('opens and selects only the host model without contacting a model service', async () => {
+    const f = await fixture(); await f.client.login('13800001234', '123456')
+    const before = f.calls.length, { viewer } = setup(f.client), display = await viewer.open('task', [a], AbortSignal.timeout(1000))
+    expect(display.modelSelectionError).toBeUndefined()
     expect(viewer.find('task', [a])).toBe(display.viewerId)
-    expect(await f.client.selectedModel(AbortSignal.timeout(1000))).toBeUndefined()
+    const post = (modelId: string) => fetch(`${display.url}board`, { method: 'POST', headers: { Origin: new URL(display.url).origin, 'Content-Type': 'application/json', 'X-OpenGUI-Board': new URL(display.workbenchUrl).hash.slice(7) }, body: JSON.stringify({ action: 'model', modelId }) })
+    expect((await post('63')).status).toBe(400)
+    expect((await post('host')).status).toBe(200)
+    expect(await (await fetch(`${display.url}models`)).json()).toEqual({ models: [] })
+    expect(f.calls).toHaveLength(before)
+    expect(viewer.board(display.viewerId).modelConfig).toBeUndefined()
   })
   it('uses the existing user login, persists only a private session and projects configured model metadata', async () => {
     const f = await fixture()
@@ -148,9 +133,9 @@ describe('unified account and configured models', () => {
     expect(f.client.status().user?.phone).toBe('138****1234')
     expect(JSON.stringify(f.client.status())).not.toContain('fixture-user-session')
     expect(await f.client.models()).toEqual([])
-    f.publish(); expect(await f.client.models()).toEqual([f.model])
+    f.publish(); expect(await f.client.models()).toEqual([])
     f.client.selectModel(f.model.id)
-    expect(await f.client.selectedModel(AbortSignal.timeout(1000))).toEqual(f.model)
+    expect(await f.client.selectedModel(AbortSignal.timeout(1000))).toBeUndefined()
     expect((await f.client.infer(f.model, { messages: [], stream: true }, AbortSignal.timeout(1000))).choices[0].message.content).toBe('Observed result')
     expect(f.calls.at(-1)).toMatchObject({ path: '/api/agent-config/runtime/proxy/63/v1/chat/completions', authorization: 'Bearer fixture-user-session', body: { stream: false, reasoning_effort: 'low' } })
     const restarted = new CoreMateClient(f.directory)
@@ -160,11 +145,11 @@ describe('unified account and configured models', () => {
     await restarted.logout(); expect(restarted.status().user).toBeNull()
     expect(await restarted.selectedModel(AbortSignal.timeout(1000))).toBeUndefined()
     await restarted.login('13800001234', '123456')
-    expect(await restarted.selectedModel(AbortSignal.timeout(1000))).toEqual(f.model)
+    expect(await restarted.selectedModel(AbortSignal.timeout(1000))).toBeUndefined()
     await restarted.logout(); f.switchUser(43); await restarted.login('13800001234', '123456')
     expect(await restarted.selectedModel(AbortSignal.timeout(1000))).toBeUndefined()
     await restarted.logout(); f.switchUser(42); await restarted.login('13800001234', '123456')
-    expect(await restarted.selectedModel(AbortSignal.timeout(1000))).toEqual(f.model)
+    expect(await restarted.selectedModel(AbortSignal.timeout(1000))).toBeUndefined()
   })
   it('clears expired sessions and rejects unsafe service URLs before network requests', async () => {
     const f = await fixture()
@@ -172,7 +157,7 @@ describe('unified account and configured models', () => {
     expect(() => f.client.configure('http://remote.example.test')).toThrow('invalid_service_url')
     await expect(f.client.sendOtp('not-a-phone')).rejects.toThrow('invalid_phone_number')
     await f.client.login('13800001234', '123456'); f.expire()
-    await expect(f.client.models()).rejects.toThrow('login_required')
+    await expect(f.client.session()).rejects.toThrow('login_required')
     expect(f.client.status().user).toBeNull()
     expect(f.client.scope).toBe('local')
   })
