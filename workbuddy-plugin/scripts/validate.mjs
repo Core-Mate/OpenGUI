@@ -17,8 +17,8 @@ const launcher = await readFile(join(root, 'scripts/installer-handoff.command'),
 assert.equal(launcher.match(/expected_sha='([a-f0-9]{64})'/)?.[1], createHash('sha256').update(installer).digest('hex'), 'Interactive launcher must pin this release installer')
 assert(launcher.includes(`插件 ${pkg.version}`), 'Interactive launcher must display this plugin version')
 for (const expected of ['lib/workbench.js', 'lib/workbench-page.js', 'lib/coremate-client.js', 'lib/task-store.js', 'lib/report-export.js']) assert((await stat(join(root, expected))).size > 0, `Missing current runtime feature: ${expected}`)
-assert(installer.includes('LIVE_CONFIG_WRITTEN'), 'Release installer must report live configuration')
-assert(!installer.includes('ensure_stopped'), 'WorkBuddy 5.5.6+ must not require a stopped host')
+assert(installer.includes('CONFIG_WRITTEN'), 'Installer must report configuration writing separately from host loading')
+assert(!installer.includes('LIVE_CONFIG_WRITTEN'), 'A version number does not establish live MCP reload support')
 const meta = await json('connector/connector-meta.json')
 const config = await json('connector/mcp.json')
 assert.equal(pkg.name, 'opengui-mcp')
@@ -35,7 +35,7 @@ assert.equal(config.mcpServers.opengui.command, 'npx')
 assert.equal(config.mcpServers.opengui.runtime.type, 'node')
 assert(OPENGUI_WORKBUDDY_TOOLS.some(tool => tool.name === 'opengui_history'))
 assert.equal(new Set(OPENGUI_WORKBUDDY_TOOLS.map(tool => tool.name)).size, OPENGUI_WORKBUDDY_TOOLS.length)
-for (const path of ['lib/host-hook.js', 'lib/automation.js', 'lib/opengui-SKILL.md']) assert((await stat(join(root, path))).size > 0)
+for (const path of ['lib/host-hook.js', 'lib/automation.js', 'lib/opengui-SKILL.md', 'lib/opengui-installation.html']) assert((await stat(join(root, path))).size > 0)
 if (process.platform === 'darwin') for (const arch of ['arm64', 'x64']) for (const helper of ['window-helper', 'mirror-launcher']) assert((await stat(join(root, `lib/native/${helper}-${arch}`))).mode & 0o111)
 assert((await readFile(join(root, 'lib/mcp.js'), 'utf8')).startsWith('#!/usr/bin/env node'))
 // Released packages must sign in without user configuration.
@@ -45,6 +45,9 @@ const skill = await readFile(join(root, 'connector/skills/control/SKILL.md'), 'u
 for (const key of ['description', 'description_zh', 'description_en', 'author', 'version']) assert(new RegExp(`^${key}: .+`, 'm').test(skill))
 assert(skill.includes(`version: ${VERSION}`))
 const reference = await readFile(join(root, 'connector/skills/control/references.md'), 'utf8')
+assert.equal(await readFile(join(root, 'lib/opengui-SKILL.md'), 'utf8'), skill, 'Build must include the current Skill')
+assert.equal(await readFile(join(root, 'lib/opengui-reference.md'), 'utf8'), reference, 'Build must include current references')
+for (const path of ['lib/opengui-installation.html', 'connector/skills/control/installation.html']) assert((await readFile(join(root, path))).equals(await readFile(join(root, 'resources/OpenGUI-安装指南.html'))), `Stale installation guide: ${path}`)
 for (const tool of OPENGUI_WORKBUDDY_TOOLS) assert((skill + reference).includes(tool.name))
 
 const hashes = {
@@ -84,3 +87,11 @@ if (process.argv.includes('--release')) {
   }
 }
 console.log('WorkBuddy manifest, tool contract, production isolation, native helpers, and bundled ADB hashes verified.')
+
+// The curl entry must verify both inputs before executing the installer.
+const bootstrap = await readFile(join(root, 'install.sh'), 'utf8')
+for (const [field, path] of [['installer_sha', 'scripts/install-macos.command'], ['guide_sha', 'resources/OpenGUI-授权指南.html']]) {
+  assert.equal(bootstrap.match(new RegExp(`local ${field}='([a-f0-9]{64})'`))?.[1], createHash('sha256').update(await readFile(join(root, path))).digest('hex'), `Stale bootstrap pin: ${field}`)
+}
+for (const path of ['lib/opengui-authorization.html', 'connector/skills/control/authorization.html']) assert((await readFile(join(root, path))).equals(await readFile(join(root, 'resources/OpenGUI-授权指南.html'))), `Stale authorization guide: ${path}`)
+if (process.platform !== 'win32') execFileSync('bash', ['-n', join(root, 'install.sh')])

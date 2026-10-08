@@ -26,15 +26,18 @@ try {
   r=run(); assert.notEqual(r.status,0); assert.match(r.stderr,/HOST_CONFIG_UNKNOWN/)
   await product('.workbuddy')
   await version('5.5.2'); r=run(); assert.notEqual(r.status,0); assert.match(r.stderr,/HOST_TOO_OLD/)
-  await version('5.5.3'); r=run({TEST_PROCESS:join(app,'Contents/MacOS/Electron')}); assert.notEqual(r.status,0); assert.match(r.stderr,/HOST_RESTART_REQUIRED/)
-  r=run({TEST_PROCESS:join(app,'Contents/Frameworks/WorkBuddy Helper.app/Contents/MacOS/WorkBuddy Helper')}); assert.notEqual(r.status,0); assert.match(r.stderr,/HOST_RESTART_REQUIRED/)
-  await version('5.5.6'); r=run({TEST_PROCESS:join(app,'Contents/MacOS/Electron')}); assert.equal(r.status,0,r.stderr); assert.match(r.stdout,/LIVE_PREFLIGHT_OK/)
-  r=run({TEST_PROCESS:join(app,'Contents/Frameworks/WorkBuddy Helper.app/Contents/MacOS/WorkBuddy Helper')}); assert.equal(r.status,0,r.stderr); assert.match(r.stdout,/LIVE_PREFLIGHT_OK/)
-  await writeFile(join(bin, 'ps'), '#!/bin/sh\necho "Operation not permitted" >&2\nexit 1\n', {mode: 0o755})
-  r=run(); assert.equal(r.status,0,r.stderr); assert.match(r.stdout,/LIVE_PREFLIGHT_OK/)
-  await version('5.5.3'); r=run(); assert.notEqual(r.status,0); assert.match(r.stderr,/HOST_PROCESS_CHECK/)
-  await writeFile(join(bin, 'ps'), '#!/bin/sh\nprintf "%s\\n" "$TEST_PROCESS"\n', {mode: 0o755})
-  await version('5.5.3')
+  for (const hostVersion of ['5.5.3', '5.5.6', '5.7.6', '6.0.0']) {
+    await version(hostVersion)
+    for (const process of [join(app,'Contents/MacOS/Electron'), join(app,'Contents/MacOS/Electron')+' --some-option', join(app,'Contents/Frameworks/WorkBuddy Helper.app/Contents/MacOS/WorkBuddy Helper')]) {
+      r=run({TEST_PROCESS:process}); assert.equal(r.status,0,r.stderr)
+      assert.match(r.stdout,/PREFLIGHT_OK/)
+      assert.doesNotMatch(r.stdout,/supports live configuration|desktop is stopped/)
+      await assert.rejects(access(join(home,'.workbuddy')), 'Preflight must not write configuration while WorkBuddy is open')
+    }
+    await writeFile(join(bin, 'ps'), '#!/bin/sh\necho "Operation not permitted" >&2\nexit 1\n', {mode: 0o755})
+    r=run(); assert.equal(r.status,0,r.stderr)
+    await writeFile(join(bin, 'ps'), '#!/bin/sh\nprintf "%s\\n" "$TEST_PROCESS"\n', {mode: 0o755})
+  }
   r=run({TEST_PROCESS:'/Applications/Unrelated.app/Contents/MacOS/Electron'}); assert.equal(r.status,0,r.stderr)
   r=run({WORKBUDDY_CONFIG_DIR:join(home,'custom')}); assert.equal(r.status,0,r.stderr); assert(r.stdout.includes(join(home,'custom')))
   r=run({WORKBUDDY_INSTANCE_NUMBER:'2'}); assert.equal(r.status,0,r.stderr); assert(r.stdout.includes(join(home,'.workbuddy-2')))
@@ -70,5 +73,5 @@ try {
   r=installUntilArchiveCheck(); assert.notEqual(r.status,0); assert.match(r.stderr,/Refusing symlink/)
   assert.equal((await lstat(redirected)).mode & 0o777, 0o755, 'Do not chmod symlink targets')
   console.log('PASS: reused state permissions repaired, host permissions preserved, symlink target untouched, preflight remains read-only.')
-  console.log('PASS: product-specific paths, old version refusal, live preflight without process enumeration, 5.6.2 CLI names with all Hooks, fail-closed older-host process checks, custom root, instance suffix, unknown product, missing Hooks and zero-write preflight.')
+  console.log('PASS: product-specific paths, old version refusal, open-desktop compatibility on all supported versions, 5.6.2 CLI names with all Hooks, no process-enumeration permission required, custom root, instance suffix, unknown product, missing Hooks and zero-write preflight.')
 } finally { await rm(temporary,{recursive:true,force:true}) }

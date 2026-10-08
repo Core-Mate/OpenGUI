@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Exercise the interactive launcher without installing or changing host settings."""
 from pathlib import Path
+import base64
+import io
 import hashlib
 import json
 import re
@@ -12,6 +14,7 @@ import tempfile
 import time
 import unittest
 import zipfile
+from urllib.parse import quote
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = (ROOT / 'scripts/installer-handoff.command').read_text()
@@ -35,7 +38,7 @@ class HandoffTests(unittest.TestCase):
     def prepare(self, payload):
         (self.folder / 'installer.sh').write_text(payload)
         digest = hashlib.sha256(payload.encode()).hexdigest()
-        self.launcher = self.folder / 'OpenGUI-Install.command'
+        self.launcher = self.folder / 'OpenGUI-安装.command'
         self.launcher.write_text(SOURCE.replace(PIN, digest))
 
     def run_tty(self, answer='\n', extra_env=None, on_output=None):
@@ -98,6 +101,21 @@ class HandoffTests(unittest.TestCase):
         result = next(self.folder.glob('installation-result.*/result.txt')).read_text()
         self.assertIn('status=configuration_written', result)
         self.assertIn('hostLoaded=unverified', result)
+        self.assertIn('nextAction=return_to_workbuddy_and_trust_mcp', result)
+        self.assertIn('安装时可以保持 WorkBuddy 打开', output)
+        self.assertIn('若找不到 OpenGUI 或新配置未生效', output)
+        self.assertNotIn('请保持 WorkBuddy 关闭', output)
+        self.assertLess(output.index('安装配置已写入'), output.index('用 ⌘Q 退出'))
+        self.assertLess(output.index('点击「信任」'), output.index('已安装完成'))
+        self.assertIn('在 WorkBuddy 新建或打开聊天', output)
+
+    def test_active_upgrade_has_specific_recovery_instructions(self):
+        self.prepare("#!/bin/bash\necho 'upgrade_blocked: existing service' >&2\nexit 1\n")
+        code, output = self.run_tty()
+        self.assertNotEqual(code, 0)
+        self.assertIn('在 MCP 管理中停用旧 OpenGUI', output)
+        self.assertIn('WorkBuddy 可以保持打开', output)
+        self.assertIn('status=failed', next(self.folder.glob('installation-result.*/result.txt')).read_text())
 
     def test_download_progress_is_visible_before_download_finishes(self):
         self.prepare("""#!/bin/bash
@@ -172,58 +190,49 @@ echo CONFIG_WRITTEN
         code, _ = self.run_tty()
         self.assertEqual(code, 1)
 
+    def test_manual_guide_retains_matching_download(self):
+        guide = (ROOT / 'INSTALL.md').read_text()
+        self.assertIn('## Manual alternative', guide)
+        self.assertIn('## Download and run the installer', guide)
+        html = (ROOT / 'resources/OpenGUI-安装指南.html').read_text()
+        payload = base64.b64decode(re.search(r'id="download-installer"[^>]*href="data:application/zip;base64,([^"]+)"', html).group(1))
+        with zipfile.ZipFile(io.BytesIO(payload)) as archive:
+            prefix = 'OpenGUI-WorkBuddy-Installer/'
+            self.assertEqual(archive.read(prefix + 'OpenGUI-安装.command').decode(), SOURCE)
+            self.assertEqual(hashlib.sha256(archive.read(prefix + 'installer.sh')).hexdigest(), PIN)
+            self.assertEqual((archive.getinfo(prefix + 'OpenGUI-安装.command').external_attr >> 16) & 0o777, 0o755)
+
+        self.assertEqual(html.count('<section '), 2)
+        self.assertNotIn('<script', html)
+        self.assertNotRegex(html, r'href=[\"\'][^\"\']*\.(?:sh|command)[\"\']')
+        self.assertIn(quote('运行安装脚本.gif'), html)
+        animation = base64.b64decode(re.search(r'id="authorization-demo"[^>]*src="data:image/gif;base64,([^"]+)"', html).group(1))
+        self.assertEqual(animation, (ROOT / 'resources/Skill和MCP授权.gif').read_bytes())
+        self.assertNotIn('id="step-3"', html)
+        self.assertLess(html.index('授权 Skill 和 MCP'), html.index('已安装完成'))
+
     def test_release_zip_preserves_executable_and_verified_payload(self):
         subprocess.run(['python3', str(ROOT / 'scripts/build-installer-handoff.py')], check=True, capture_output=True)
         archive = ROOT / f'dist/opengui-workbuddy-installer-{VERSION}.zip'
         with zipfile.ZipFile(archive) as z:
             self.assertEqual(len(z.namelist()), 3)
-            launcher = z.getinfo('OpenGUI-WorkBuddy-Installer/OpenGUI-Install.command')
+            launcher = z.getinfo('OpenGUI-WorkBuddy-Installer/OpenGUI-安装.command')
             self.assertEqual((launcher.external_attr >> 16) & 0o777, 0o755)
             self.assertEqual(hashlib.sha256(z.read('OpenGUI-WorkBuddy-Installer/installer.sh')).hexdigest(), PIN)
         self.assertEqual(archive.with_suffix('.zip.sha256').read_text().split()[0], hashlib.sha256(archive.read_bytes()).hexdigest())
 
-    def test_documented_direct_download_verifies_both_files_before_opening_folder(self):
-        guide = (ROOT / 'INSTALL.md').read_text()
-        block = re.search(r'```bash\n(.*?)\n```', guide, re.S).group(1)
-        fake_bin = self.folder / 'bin'
-        fake_bin.mkdir()
-        curl = fake_bin / 'curl'
-        curl.write_text('''#!/bin/bash
-set -eu
-while [ "$#" -gt 3 ]; do shift; done
-case "$1" in
-  */OpenGUI-Install.command) source=installer-handoff.command ;;
-  */installer.sh) source=install-macos.command ;;
-  *) exit 91 ;;
-esac
-[ "$1" = "https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-v$TEST_PLUGIN_VERSION/$3" ]
-[ "$2" = -o ]
-cp "$TEST_SCRIPT_ROOT/$source" "$3"
-if [ "${TEST_TAMPER:-}" = "$3" ]; then printf '\\n# changed\\n' >> "$3"; fi
-''')
-        curl.chmod(0o755)
-        opener = fake_bin / 'open'
-        opener.write_text('''#!/bin/bash
-set -eu
-[ "$1" = -a ] && [ "$2" = Finder ] && [ -d "$3" ]
-[ -x "$3/OpenGUI-Install.command" ] && [ -f "$3/installer.sh" ]
-printf '%s' "$3" > "$HOME/opened-folder"
-''')
-        opener.chmod(0o755)
-        env = {**self.env, 'PATH': f'{fake_bin}:{self.env["PATH"]}',
-               'TEST_SCRIPT_ROOT': str(ROOT / 'scripts'), 'TEST_PLUGIN_VERSION': VERSION}
-        result = subprocess.run(['bash'], input=block, cwd=self.folder, env=env, text=True, capture_output=True)
+    def test_explicit_maintainer_preparation_keeps_reviewed_pins(self):
+        local_guide = (ROOT / 'docs/installer-development.md').read_text()
+        block = re.search(r'```bash\n(.*?)\n```', local_guide, re.S).group(1)
+        result = subprocess.run(['bash'], input=block, cwd=self.folder,
+                                env={**self.env, 'OPENGUI_INSTALLER_SOURCE': str(ROOT)},
+                                text=True, capture_output=True)
         self.assertEqual(result.returncode, 0, result.stderr)
-        folder = Path((self.folder / 'opened-folder').read_text())
-        self.assertEqual(sorted(p.name for p in folder.iterdir()), ['OpenGUI-Install.command', 'installer.sh'])
-        self.assertEqual((folder / 'OpenGUI-Install.command').read_text(), SOURCE)
+        folder = Path(re.search(r'INSTALLER_FILES_READY: (.+)', result.stdout).group(1))
+        self.assertEqual((folder / 'OpenGUI-安装.command').read_text(), SOURCE)
+        self.assertEqual(hashlib.sha256((folder / 'installer.sh').read_bytes()).hexdigest(), PIN)
+        self.assertEqual((folder / 'OpenGUI-安装指南.html').read_bytes(), (ROOT / 'resources/OpenGUI-安装指南.html').read_bytes())
         self.assertFalse(list(folder.glob('installation-result.*')))
-        for target in ['OpenGUI-Install.command', 'installer.sh']:
-            (self.folder / 'opened-folder').unlink(missing_ok=True)
-            result = subprocess.run(['bash'], input=block, cwd=self.folder,
-                                    env={**env, 'TEST_TAMPER': target}, text=True, capture_output=True)
-            self.assertNotEqual(result.returncode, 0)
-            self.assertFalse((self.folder / 'opened-folder').exists())
 
 
 if __name__ == '__main__':

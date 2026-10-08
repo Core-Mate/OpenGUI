@@ -34,7 +34,7 @@ WorkBuddy 使用内置 present_files，传入 URL 与当前工作目录。国内
 
 ## 安装
 
-安装公开 GitHub 发布包时，在 WorkBuddy 新聊天发送 `安装 https://github.com/Core-Mate/OpenGUI`，并按 [WorkBuddy 安装指南](INSTALL.md)下载、校验 Release 安装器，无需克隆源码。下面的归档安装方式也用于本地候选版；本文中的开发版功能可能晚于公开发布包。
+下载安装脚本，在 macOS 终端运行，完成后再进入 WorkBuddy 授权技能和连接器。下载地址和完整步骤已放入[根 README 的 WorkBuddy 安装部分](../README.zh-CN.md#workbuddy-安装)。验证及排障见 [INSTALL.md](INSTALL.md)，下面的归档命令用于维护和本地验证。
 
 核对安装器及归档旁的 SHA-256 文件，结束旧任务、关闭旧展示后运行：
 
@@ -42,11 +42,11 @@ WorkBuddy 使用内置 present_files，传入 URL 与当前工作目录。国内
 bash scripts/install-macos.command --archive /绝对路径/opengui-mcp-0.4.0.tgz
 ```
 
-安装器自动准备独立 Node 与 scrcpy 资源，缓存完整时复用；准备失败保留旧配置，并输出恢复步骤。WorkBuddy 5.5.6 及以上可以保持运行：MCP 配置由宿主实时监听，外部 Hook 变更在 `/hooks` 中审查应用，并在 `/skills` 中确认 `opengui`。当前任务没有刷新时再新建任务。旧版兼容宿主会由预检明确要求 Command-Q。可用 --check 做只读预检，用 --app 指定国内或海外应用。
+安装时可以保持 WorkBuddy 打开。安装器准备独立 Node 与 scrcpy 资源并写入配置后，返回 WorkBuddy，在技能中授权 OpenGUI，再进入「连接器 → 自定义连接器」点击 MCP 的「信任」，确认开关开启、状态点变绿。只有找不到 OpenGUI 或新配置未生效时，才结束其他任务，用 ⌘Q 退出并重新打开 WorkBuddy。安装配置完成后会打开授权说明和动图；授权完成后回复“已安装完成”，再验证工具。按宿主提示在 `/hooks` 审查外部变更。可用 `--check` 做只读预检，用 `--app` 指定国内或海外应用。维护者测试方法见 [本地安装器验证](docs/installer-development.md)。
 
 升级前仍需结束旧手机任务并关闭旧展示。如果旧 broker 仍在运行，先在 MCP 服务管理中停用旧 OpenGUI，等待其空闲退出后重试；安装器不会强杀 WorkBuddy 或手机进程。
 
-安装结果分别报告“热配置完成”“宿主已加载”“设备墙可用”，写入配置不是验收通过。安装后在实际宿主选择 OpenGUI Skill，先检查只读设备发现，再验收右侧视频与截图操作。
+安装结果分别报告“配置已写入”“宿主已加载”“设备墙可用”，写入配置不是验收通过。安装后在实际宿主选择 OpenGUI Skill，先检查只读设备发现，再验收右侧视频与截图操作。
 
 ## 回退和验收
 

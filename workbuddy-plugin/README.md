@@ -33,7 +33,7 @@ Configured execution waits on saved state events, without inspecting the workben
 
 ## Installation and migration
 
-For the public GitHub package, follow [Install OpenGUI into WorkBuddy](INSTALL.md). In a new WorkBuddy chat, send `Install https://github.com/Core-Mate/OpenGUI into WorkBuddy` (or `安装 https://github.com/Core-Mate/OpenGUI`). The guide downloads and verifies the release installer without a source checkout. The instructions below also cover local candidate archives; development features in this document may be newer than the published package.
+Download the installer and run it in macOS Terminal, then authorize the Skill and connector in WorkBuddy. The complete steps and download link are in the [root README](../README.md#use-opengui-in-workbuddy). See [installation verification and troubleshooting](INSTALL.md) for details; the archive command below is for maintenance and local verification.
 
 Use the supplied installer and matching archive with adjacent SHA-256 sidecars:
 
@@ -41,11 +41,11 @@ Use the supplied installer and matching archive with adjacent SHA-256 sidecars:
 bash scripts/install-macos.command --archive /absolute/path/opengui-mcp-0.4.0.tgz
 ```
 
-The installer prepares private Node, verifies the package and scrcpy resources, and only then changes this host's configuration. On WorkBuddy 5.5.6+, the application may stay open: MCP configuration is watched live, while external Hook changes are reviewed in `/hooks` and the installed Skill is confirmed in `/skills`. Start a new task only if the current task does not refresh. Older compatible hosts use the Command-Q fallback reported by preflight.
+WorkBuddy may stay open during installation. After the installer prepares private Node and scrcpy resources and writes configuration, return to WorkBuddy, authorize the Skill and complete the MCP **Trust** prompt under **Connectors → Custom connector**. Quit and reopen WorkBuddy only if OpenGUI is missing or the new configuration has not taken effect. The installer opens the authorization guide after configuration succeeds, before the completion reply. Review external Hook changes in `/hooks` when prompted, then verify native read-only device discovery. See [local installer testing](docs/installer-development.md) for maintainer checks.
 
 Complete old phone tasks and close old displays before upgrading. If an old broker remains, disable the old OpenGUI MCP and wait for its idle exit before retrying. No migration force-kills an old runtime. Repeated installation reuses verified caches; download failure reports its stage and leaves previous configuration available. Keep the old installer/archive and recovery record to reinstall the old version. The installer reports configuration, host loading and real-viewer acceptance separately.
 
-WorkBuddy 5.5.3 domestic and overseas configuration discovery, version-aware running-host preflight, per-configuration receipts, and native Hooks are retained. Use `--check` or `--app /absolute/WorkBuddy.app` for explicit preflight. Legacy `opengui_start` and native mirror tools are compatibility-only, on explicit request. They never substitute for browser first-frame authorization.
+WorkBuddy 5.5.3 domestic and overseas configuration discovery, running-desktop preflight, per-configuration receipts, and native Hooks are retained. Use `--check` or `--app /absolute/WorkBuddy.app` for explicit preflight. Legacy `opengui_start` and native mirror tools are compatibility-only, on explicit request. They never substitute for browser first-frame authorization.
 
 ## Content review before publishing
 
