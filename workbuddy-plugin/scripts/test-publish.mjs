@@ -17,9 +17,10 @@ const fs=require('fs');const a=process.argv.slice(2);if(a[1]==='view'){console.e
  result=spawnSync(process.execPath,[script],{env:{...env,OPENGUI_PRERELEASE:'true'},encoding:'utf8'})
  assert.equal(result.status,0,result.stderr)
  const args=JSON.parse(await readFile(output,'utf8'))
+ assert(args.filter(a=>a.includes('/dist/')).every(a=>/^[A-Za-z0-9._-]+$/u.test(a.split('/').at(-1))), 'GitHub must preserve every asset filename without normalization collisions')
  assert(args.includes('--prerelease'));assert(args.includes('--latest=false'))
  assert(args.some(a=>a.endsWith('opengui-workbuddy-0.4.0-install.command.sha256')))
- for (const name of ['OpenGUI-安装.command', 'installer.sh', 'OpenGUI-安装指南.html', 'OpenGUI-授权指南.html', 'install.sh']) {
+ for (const name of ['OpenGUI-Install.command', 'installer.sh', 'OpenGUI-Installation.html', 'OpenGUI-Authorization.html', 'install.sh']) {
   assert(args.some(a=>a.endsWith('/' + name)), `Missing direct-download asset: ${name}`)
   assert(args.some(a=>a.endsWith('/' + name + '.sha256')), `Missing direct-download checksum: ${name}`)
  }

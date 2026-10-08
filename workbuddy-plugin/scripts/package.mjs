@@ -40,8 +40,8 @@ await writeFile(join(destination, connector), zipSync(entries, { level: 9 }))
 const installer = `opengui-workbuddy-${version}-install.command`
 await copyFile(join(root, 'scripts/install-macos.command'), join(destination, installer))
 await copyFile(join(root, 'scripts/install-macos.command'), join(destination, 'installer.sh'))
-await copyFile(join(root, 'scripts/installer-handoff.command'), join(destination, 'OpenGUI-安装.command'))
-await chmod(join(destination, 'OpenGUI-安装.command'), 0o755)
+await copyFile(join(root, 'scripts/installer-handoff.command'), join(destination, 'OpenGUI-Install.command'))
+await chmod(join(destination, 'OpenGUI-Install.command'), 0o755)
 const guide = await readFile(join(root, 'resources/OpenGUI-安装指南.html'), 'utf8')
 const embeddedArchive = guide.match(/id="download-installer"[^>]*href="data:application\/zip;base64,([^"]+)"/)
 assert(embeddedArchive, 'Build the static installation guide before packaging')
@@ -49,10 +49,10 @@ const guideFiles = unzipSync(Buffer.from(embeddedArchive[1], 'base64'))
 for (const [name, source] of [['OpenGUI-安装.command', 'scripts/installer-handoff.command'], ['installer.sh', 'scripts/install-macos.command']]) {
   assert(Buffer.from(guideFiles[`OpenGUI-WorkBuddy-Installer/${name}`] ?? []).equals(await readFile(join(root, source))), 'Stale guide download: run python3 scripts/build-installer-handoff.py')
 }
-await copyFile(join(root, 'resources/OpenGUI-安装指南.html'), join(destination, 'OpenGUI-安装指南.html'))
-await copyFile(join(root, 'resources/OpenGUI-授权指南.html'), join(destination, 'OpenGUI-授权指南.html'))
+await copyFile(join(root, 'resources/OpenGUI-安装指南.html'), join(destination, 'OpenGUI-Installation.html'))
+await copyFile(join(root, 'resources/OpenGUI-授权指南.html'), join(destination, 'OpenGUI-Authorization.html'))
 await copyFile(join(root, 'install.sh'), join(destination, 'install.sh'))
-for (const name of [packed.filename, connector, installer, 'installer.sh', 'OpenGUI-安装.command', 'OpenGUI-安装指南.html', 'OpenGUI-授权指南.html', 'install.sh']) {
+for (const name of [packed.filename, connector, installer, 'installer.sh', 'OpenGUI-Install.command', 'OpenGUI-Installation.html', 'OpenGUI-Authorization.html', 'install.sh']) {
   const hash = createHash('sha256').update(await readFile(join(destination, name))).digest('hex')
   await writeFile(join(destination, `${name}.sha256`), `${hash}  ${name}\n`)
   console.log(`${name}  ${hash}`)

@@ -7,7 +7,7 @@ This update replaces the earlier 0.4.0 public-testing assets. Download the curre
 - One-command macOS installation, with a self-contained authorization guide and editable first-task examples.
 - Task steps, takeover/resume, content review, history and PDF/Word/Markdown/evidence reports remain available.
 
-Install with `curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh | bash`, then complete both Skill and connector authorization in WorkBuddy. See the [installation instructions](https://github.com/Core-Mate/OpenGUI/blob/main/workbuddy-plugin/INSTALL.md). `OpenGUI-安装.command` and `installer.sh` are also provided for manual installation; the earlier English launcher name remains a compatibility alias.
+Install with `curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh | bash`, then complete both Skill and connector authorization in WorkBuddy. See the [installation instructions](https://github.com/Core-Mate/OpenGUI/blob/main/workbuddy-plugin/INSTALL.md). `OpenGUI-Install.command` and `installer.sh` are also provided for manual installation. Release attachments use ASCII filenames (`OpenGUI-Installation.html` and `OpenGUI-Authorization.html`) to avoid GitHub filename normalization; the guides and their embedded installer keep Chinese content and local filenames.
 
 WorkBuddy may stay open during installation. Finish active OpenGUI tasks before upgrading; if an old service blocks replacement, disable its MCP and wait for it to exit. The installer preserves unrelated settings and keeps backups. Configuration written alone is not native host acceptance.
 
