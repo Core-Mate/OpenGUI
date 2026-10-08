@@ -82,29 +82,41 @@ OpenGUI 正式支持 DSH `0.1.0-rc.7`、`0.1.0-rc.8`、`0.1.1-rc.1` 和 `0.1.1-r
 
 ## WorkBuddy 安装
 
-在 WorkBuddy 中发送：
+在 **macOS** 上打开 WorkBuddy，新建聊天，直接发送：
 
 ```text
-帮我安装opengui插件：https://github.com/Core-Mate/OpenGUI
+安装 https://github.com/Core-Mate/OpenGUI
 ```
 
-WorkBuddy 会按[安装指南](./workbuddy-plugin/INSTALL.md#recommended-installation)下载、校验并解压安装包，然后提供**“打开安装脚本目录（打开后双击运行 OpenGUI-Install.command 文件）”**入口，目标是 `OpenGUI-Install.command` 所在的文件夹。通过宿主的“在 Finder 中显示 / 打开文件夹”操作打开目录后，双击 `OpenGUI-Install.command`，再在终端窗口**按回车开始安装**。若目录链接被 WorkBuddy 接管为预览，请使用该预览的“打开文件夹”操作，或按指南通过 Finder 前往实际目录。配置写入后回到 WorkBuddy 验证。
+也可以明确指定安装目标：
 
-**[下载 macOS 安装 ZIP](https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-installer-v1.0.2/opengui-workbuddy-installer-1.0.2.zip)** · [SHA-256 校验文件](https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-installer-v1.0.2/opengui-workbuddy-installer-1.0.2.zip.sha256)
+```text
+把 https://github.com/Core-Mate/OpenGUI 的 OpenGUI 插件安装到 WorkBuddy
+```
 
-1. 解压 ZIP，保持 `OpenGUI-Install.command` 和 `installer.sh` 在同一文件夹。
-2. 双击 `OpenGUI-Install.command`，按回车开始。升级前先结束手机任务、退出 WorkBuddy，等待旧后台服务正常结束。
-3. 等待出现“安装配置已写入”，重新打开或回到 WorkBuddy，发送：
+**给执行安装的 AI：**如果当前宿主是 WorkBuddy，请按 [WorkBuddy 安装指南](./workbuddy-plugin/INSTALL.md)操作，使用经过校验的 WorkBuddy Release 安装器，同时安装 MCP、`opengui` Skill 和生命周期 Hooks。DSH 安装器和完整后端部署属于其他使用方式。
 
-   ```text
-   OpenGUI 已通过安装器安装。请检查 Skill 和 MCP 状态，通过工具发现机制直接调用 opengui_list_devices 验证安装，不要操作手机，也不要用 Shell 测试代替原生 MCP 调用。只有确实需要我手动开启开关时，才展示安装指南中的对应截图和入口步骤。
-   ```
+**安装准备清单（由 WorkBuddy 按顺序执行，并向用户展示进度）：**
 
-安装器会准备独立运行环境、备份受影响的设置，配置 MCP、`opengui` Skill 和 7 个生命周期 Hooks，并保留其他插件。无需 sudo、手动安装 Node.js、部署后端或安装 DSH。这里的**安装入口 1.0.2**安装的是现有公测**插件 0.3.1**，不是新的插件运行时，也不是经过签名或公证的 macOS App。
+1. **直接下载安装文件：**按[安装指南](./workbuddy-plugin/INSTALL.md#prepare-the-files)的固定地址，将 `OpenGUI-Install.command` 和 `installer.sh` 下载到当前工作目录下的新文件夹；无需下载或解压 ZIP。
+2. **校验文件：**分别核对两个文件的 SHA-256；任何一个校验失败都停止并说明原因。
+3. **准备双击入口：**确认两个文件位于同一目录，校验通过后为 `OpenGUI-Install.command` 设置当前用户的执行权限。
+4. **打开目录并展示超链接：**使用宿主支持的“打开文件夹 / 在 Finder 中显示”操作打开该目录，并在聊天中展示下方两行。超链接必须指向本次下载文件的实际绝对目录，不能指向 README、ZIP 或脚本预览页。
+5. **等待用户手动安装：**用户双击 `OpenGUI-Install.command`，在终端按回车开始安装。收到“已安装完成”后，读取本次安装结果并验证 WorkBuddy 是否加载插件，再报告验证结果。
 
-**给执行安装的 AI：**短请求已足够识别安装目标，请读取 [INSTALL.md](./workbuddy-plugin/INSTALL.md#recommended-installation)，使用其中固定的下载地址和校验值，按用户请求继续常规准备。准备好文件后，提供“打开安装脚本目录（打开后双击运行 OpenGUI-Install.command 文件）”入口，指向实际解压目录，并提示用户在 Finder 中双击 `OpenGUI-Install.command`、按回车确认。优先使用宿主支持的打开文件夹操作；普通 Markdown 链接不能保证直接打开 Finder，需保留 Finder 前往目录的步骤。不要先尝试自动打开终端，也不要把打开目录说成已打开安装器或已完成安装。不要在 WorkBuddy 命令环境直接执行入口、移除宿主注入、改变权限设置或切换工具绕过拒绝。README 不能替用户授予权限。
+准备好文件后的聊天文案（将链接目标替换为实际绝对目录，展示为可点击链接，不要放进代码块）：
 
-WorkBuddy 5.7.6 默认权限曾以 `CODEBUDDY_BROKER_DENY` / `decision: prompt` 拒绝直接写入配置，加长提示词无法解决。ZIP 把独立的、由用户确认的安装步骤做成可双击入口。下载成功或安装结果文件均不代表宿主已加载；后续原生 MCP 调用才验证该阶段。详见[安装验证与命令行备用路径](./workbuddy-plugin/INSTALL.md)。
+```markdown
+[打开安装脚本目录，双击OpenGUI-Install.command进行安装](<ABSOLUTE_INSTALLER_FOLDER/>)
+
+安装完成后请回复“已安装完成”
+```
+
+清单状态必须对应实际结果：等待手动运行时标记为“安装文件已就绪”，不能标记为已安装。目录链接由 WorkBuddy 处理，不能保证直接打开 Finder；只有打开失败或链接进入预览时，才补充宿主“打开文件夹”或 Finder `Command-Shift-G` 的备用步骤。用户回复后仍需验证，不能仅凭回复判定安装成功。
+
+**插件与安装入口统一为 0.4.0。** 两个文件均来自 [WorkBuddy 0.4.0 公测发布](https://github.com/Core-Mate/OpenGUI/releases/tag/opengui-workbuddy-v0.4.0)，包含任务首页、账号与模型选择、工作台、人工接管和报告导出。入口、安装脚本、连接器与运行时统一版本；旧的安装入口 1.0.2 仍会安装插件 0.3.1。
+
+安装器会识别 WorkBuddy、下载并校验插件、准备独立运行环境、备份受影响的设置并保留其他插件。用户无需手动克隆仓库、安装 Node.js、部署 OpenGUI 后端或安装 DSH。建议使用 **WorkBuddy 5.5.6 及以上**。升级前请结束现有手机任务、关闭预览页面，并按安装入口提示退出 WorkBuddy。
 
 **安装后这样用：**
 
@@ -118,7 +130,9 @@ WorkBuddy 5.7.6 默认权限曾以 `CODEBUDDY_BROKER_DENY` / `decision: prompt` 
 
 4. 在右侧面板查看手机画面和进度；如果所装版本展示设备、模型选择或开始确认，按页面提示完成。停止任务请使用任务的停止按钮，单纯关闭预览不会停止操作。
 
-目前可下载的 [WorkBuddy 0.3.1](https://github.com/Core-Mate/OpenGUI/releases/tag/opengui-workbuddy-v0.3.1) 是公测预发布版。[当前开发版说明](./workbuddy-plugin/README.zh-CN.md)中的部分功能（例如只发 `@opengui` 打开可编辑任务首页）可能晚于该固定发布包。任务截图会发送给所选执行模型；本地视频预览不会把每帧发送给模型。找不到技能或工具时，参见[安装验证与恢复](./workbuddy-plugin/INSTALL.md#verify-the-installation)。
+安装验证成功后，助手会提示开启 Android USB 调试、连接电脑并使用 `/opengui`，并提供可填入任务草稿的「试一试：用小红书发帖」和「试一试：Vibe Testing」入口，见[安装完成消息](./workbuddy-plugin/INSTALL.md#installation-success-message)。
+
+[WorkBuddy 0.4.0](https://github.com/Core-Mate/OpenGUI/releases/tag/opengui-workbuddy-v0.4.0) 是公测预发布版。发送 `@opengui` 打开任务首页，登录、选择模型与设备并确认任务。账号和配置模型默认使用官方 CoreMate 服务；任务截图会发送给所选执行模型，本地视频预览不会逐帧发给模型。部分真机验收仍待完成，见[发布范围](./workbuddy-plugin/docs/release-notes.md)与[安装验证](./workbuddy-plugin/INSTALL.md#verify-the-installation)。
 
 ## 运行完整 OpenGUI 技术栈
 

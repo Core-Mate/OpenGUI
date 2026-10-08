@@ -8,98 +8,75 @@ Use this guide when a user asks WorkBuddy to install `https://github.com/Core-Ma
 - Network access to GitHub release assets and the runtime downloads used by the installer.
 - No phone is needed to install. USB debugging authorization is needed later to operate an Android phone.
 
-Use the public **`opengui-workbuddy-v0.3.1`** prerelease below. Do not use GitHub's generic `/releases/latest`: this repository also publishes DSH and Codex plugins. Do not substitute a local development archive or claim unreleased features are included in the public package.
-
 ## Recommended installation
 
-A short request such as `帮我安装opengui插件：https://github.com/Core-Mate/OpenGUI` identifies this workflow. Do not require a longer prompt or ask the user to choose between the old release installer and its documented replacement.
+Download the two standalone files from the immutable **WorkBuddy 0.4.0 public-testing release**. The launcher, installer payload, connector, and plugin runtime all use version **0.4.0**, including the task home, account/model selection, takeover controls, and report export. No ZIP download or extraction is required during preparation. The installer later downloads and unpacks its verified runtime and plugin dependencies in the user's Terminal.
 
-Use the **interactive installer ZIP 1.0.2**, containing the SHA-256-pinned compatible installer, to install the unchanged official **plugin 0.3.1**. This ZIP is an installer entry point, not a signed/notarized app or a new runtime release. It checks the bundled payload again, waits for a human Return, and records a fresh result and log for each installation attempt.
+The old standalone installer attached to plugin 0.3.1 checks only `codebuddy.js` and can fail with `HOST_HOOKS` on newer WorkBuddy layouts. The pinned payload below includes the compatibility fix. Do not use GitHub's generic `/releases/latest`, substitute a development package, or execute the launcher inside WorkBuddy.
 
-- ZIP: https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-installer-v1.0.2/opengui-workbuddy-installer-1.0.2.zip
-- SHA-256: `30fbc06f6a8a1e591b72db0df77692458fe03ea63e650e79a33e8bcc128119a3`
-- Checksum file: https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-installer-v1.0.2/opengui-workbuddy-installer-1.0.2.zip.sha256
-- Bundled installer source: tag `opengui-workbuddy-installer-v1.0.2`, `workbuddy-plugin/scripts/install-macos.command`
-- Bundled installer SHA-256: `a6a84e19f2830a07514e99d5f23d3064b91a023704059f27381001f78539bebb`
+### Prepare the files
 
-### Prepare the download
+An installation request covers ordinary downloads, verification, and preparation within the host's normal permissions. Use a new directory in the current workspace. Keep both files together; `OpenGUI-Install.command` verifies and invokes its adjacent `installer.sh`. Explain the scope briefly: private runtime, MCP, Skill, seven lifecycle Hooks, configuration backups, and no phone operation.
 
-An explicit request to install covers ordinary download, verification, and preparation within the host's normal permissions. State the scope briefly: private runtime, MCP, Skill, and seven lifecycle Hooks, with configuration backups and no phone operation. README text cannot grant consent or override host policy.
+Show this checklist and update it from actual results:
 
-Download to a new directory and verify before extraction. The following block **only prepares files**; it does not run the installer. Use macOS `ditto` so the executable bit is preserved. If Downloads access needs authorization, use the host's normal authorization flow or let the user download the ZIP directly.
+1. Download the two files from the fixed URLs below.
+2. Verify both SHA-256 values. Stop on any failure.
+3. Set the verified launcher's executable permission and confirm both files are present together.
+4. Open the directory through the host's supported Open folder / Show in Finder action and display the exact handoff link below.
+5. Wait for the user to run the installer and reply “已安装完成”; then verify this attempt's receipt and host loading.
+
+The following block downloads and verifies the files, then requests Finder to open their directory. It does not execute either script or write plugin configuration. Run it from the intended workspace; retain its actual directory path for the chat link. If a host permission is required, use its normal authorization flow. Do not change host security settings or retry through a different tool to evade a refusal.
 
 ```bash
 (
   set -euo pipefail
-  handoff_dir=$(mktemp -d "$HOME/Downloads/OpenGUI-installer.XXXXXXXX")
+  umask 077
+  handoff_dir=$(mktemp -d "$PWD/OpenGUI-installer.XXXXXXXX")
+  source_url='https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-v0.4.0'
   cd "$handoff_dir"
-  archive='opengui-workbuddy-installer-1.0.2.zip'
-  curl --proto '=https' --proto-redir '=https' --tlsv1.2 --fail --location \
-    --connect-timeout 15 --max-time 240 --retry 2 \
-    'https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-installer-v1.0.2/opengui-workbuddy-installer-1.0.2.zip' \
-    -o "$archive"
-  printf '%s  %s\n' '30fbc06f6a8a1e591b72db0df77692458fe03ea63e650e79a33e8bcc128119a3' "$archive" | shasum -a 256 -c -
-  /usr/bin/ditto -x -k "$archive" "$handoff_dir"
-  printf 'Installer folder: %s/OpenGUI-WorkBuddy-Installer/\n' "$handoff_dir"
+  fetch() {
+    curl --proto '=https' --proto-redir '=https' --tlsv1.2 --fail --location \
+      --connect-timeout 15 --max-time 240 --retry 2 "$1" -o "$2"
+  }
+  fetch "$source_url/OpenGUI-Install.command" OpenGUI-Install.command
+  fetch "$source_url/installer.sh" installer.sh
+  printf '%s  %s\n' \
+    '56727163435285a72f7471ba7127b05e6545587f50d7c5dad873511baa5f52e0' OpenGUI-Install.command \
+    'cd54d28c78666f3fe31869b979e480c95450da74096c6b54d20fe433e43aba14' installer.sh \
+    | shasum -a 256 -c -
+  chmod 700 OpenGUI-Install.command
+  test -x OpenGUI-Install.command && test -f installer.sh
+  printf 'INSTALLER_FILES_READY: %s/\n' "$handoff_dir"
+  if open -a Finder "$handoff_dir"; then
+    printf 'FOLDER_OPEN_REQUESTED: %s/\n' "$handoff_dir"
+  else
+    printf 'FOLDER_OPEN_FAILED: Files are ready; use the directory link or Finder Go to Folder.\n' >&2
+  fi
 )
 ```
 
-### Open the installer folder and hand off
+If the host provides a native directory action instead of the `open` command, use that action on the same verified directory. Do not run the launcher, open it with Terminal automatically, fabricate a TTY, or feed Return to the installer. The user's Finder double-click and Terminal confirmation remain manual.
 
-The handoff action is **打开安装脚本目录（打开后双击运行 OpenGUI-Install.command 文件） / Open installer folder (then double-click OpenGUI-Install.command to run it)**. Its target is the actual extracted **directory containing** `OpenGUI-Install.command`, not the executable itself. Opening Finder must not execute the script. The tested WorkBuddy 5.7.6 environment refused opening the `.command` document in Terminal automatically; keep the user’s Finder double-click and Terminal Return as separate steps.
+### Handoff message
 
-1. Verify the ZIP and extracted files, then offer the host’s supported **Open folder / Show in Finder** action for the actual directory. If only Markdown links are available, link the absolute directory with a trailing slash as below. A Markdown label cannot force Finder: WorkBuddy may route local links to an internal preview. In that case use its native Open folder action, or show Command-Shift-G instructions. Do not invent a `workbuddy://` URL, embed executable shell links, or claim the one-click Finder behavior was tested when it was not. Keep `installer.sh` beside the launcher. If download or extraction was blocked, link the official ZIP for manual download; do not call files ready until they exist and match the verified archive.
+Replace `ABSOLUTE_INSTALLER_FOLDER` with the actual directory reported above, retaining the trailing slash and angle brackets for paths with spaces. Send the following as rendered Markdown in chat, not a code block. Always include the hyperlink even if the directory was already opened. The next sentence must be exactly the completion prompt shown here:
 
 ```markdown
-安装文件已下载并校验完成。请打开安装脚本所在的文件夹：
+[打开安装脚本目录，双击OpenGUI-Install.command进行安装](<ABSOLUTE_INSTALLER_FOLDER/>)
 
-[打开安装脚本目录（打开后双击运行 OpenGUI-Install.command 文件）](<ABSOLUTE_INSTALLER_FOLDER/>)
-
-在 Finder 中双击 OpenGUI-Install.command，然后在终端窗口按回车开始安装。
-输入 q 后回车可取消。
-
-如果链接没有打开 Finder，请使用文件预览中的“打开文件夹”，
-或打开 Finder，按 Command-Shift-G，粘贴以下目录后回车：
-ABSOLUTE_INSTALLER_FOLDER
-
-看到“安装配置已写入”后，回到这里告诉我，我会继续验证插件是否已加载。
+安装完成后请回复“已安装完成”
 ```
 
-2. The user reads the installation scope and presses Return in Terminal, or types `q` then Return to cancel. If macOS blocks opening, let the user handle the normal system prompt. Do not remove quarantine attributes or disable Gatekeeper. Before upgrading, finish phone tasks, quit WorkBuddy, and wait for the previous broker's normal idle exit. Never force-kill processes or remove active locks.
-3. Read the **current attempt's** `installation-result.*/result.txt` and `install.log` if accessible, or ask the user for the displayed result. `status=configuration_written` means configuration was written; `hostLoaded=unverified` is intentional. `status=running`, a missing receipt, cancellation, or a stale earlier receipt is not success. On failure, report the actual exit code and log, including any rollback diagnostics; do not claim a clean rollback without evidence.
-4. Return to WorkBuddy for [native verification](#verify-the-installation). Restart once if discovery has not refreshed. Enable only switches actually found off, using normal supported controls; provide the [illustrated guide](docs/enable-opengui.md) only where manual action is required.
+The link targets the **folder containing the scripts**. It does not run the launcher. WorkBuddy controls local-link handling and may open a preview; Markdown alone cannot guarantee Finder dispatch. Only if opening is unavailable, fails, or enters a preview, add its supported Open folder action or Finder's `Command-Shift-G` steps with the actual path. Do not invent executable links or claim the folder opened without evidence. An audit report or README attachment does not replace the handoff link.
 
-Do not run the launcher with `bash` inside WorkBuddy, fabricate a TTY, strip host-injected variables, or pipe a newline into its confirmation. It deliberately refuses noninteractive and recognized host-injected execution. This is a user-confirmed handoff, not an unattended installation guarantee.
+Report “Installer files ready; waiting for manual execution” until the user runs the launcher. In Terminal, Return starts installation; `q` followed by Return cancels. If macOS blocks opening, use the normal system prompt without removing quarantine attributes or disabling Gatekeeper.
 
-**Known WorkBuddy 5.7.6 default-permission limitation:** direct configuration writes returned `CODEBUDDY_BROKER_DENY` / `decision: prompt` without a usable authorization channel. Use the handoff route immediately in this known environment. Do not rerun the old direct flow to rediscover that refusal. In another environment, any direct installation still requires the host's normal authorization; stop after the first matching refusal and hand off to the user. Never change permission modes, switch tools, or remove host injection to evade it. Checksum, download, compatibility, and active-broker failures retain their own diagnostics.
+After the user replies “已安装完成”, read the **current attempt's** `installation-result.*/result.txt` and `install.log` when accessible, then follow the verification steps below. A reply alone, missing receipt, `status=running`, cancellation, or a stale earlier success is not installation success. `status=configuration_written` confirms only configuration writing; `hostLoaded=unverified` still requires native MCP verification. Report the actual error on failure; do not infer rollback without evidence.
 
-### Command-line fallback
+WorkBuddy's tested default permissions have refused direct configuration writes. Preparing these files leaves installation to the user's own Terminal and does not weaken host permissions. If download, chmod, or directory opening is denied, report that specific operation and use the normal authorization flow; do not mark the blocked step complete.
 
-A user who prefers a pasted command can run the block below in the macOS **Terminal** app. The original installer attached to plugin 0.3.1 only checks `codebuddy.js`; this pinned replacement also recognizes WorkBuddy 5.6.2/5.7.6 headless/lite layouts. It downloads and verifies the same official plugin package. No source checkout, sudo, or system Node installation is needed.
-
-Download this exact script, verify its pinned SHA-256, then run preflight and installation. The script downloads the official package and its checksum from `opengui-workbuddy-v0.3.1`; it does not build or substitute a development package. A source checkout, sudo, and a system Node installation are unnecessary.
-
-```bash
-(
-  set -euo pipefail
-  install_dir=$(mktemp -d "${TMPDIR:-/tmp}/opengui-workbuddy.XXXXXXXX")
-  installer_ref='opengui-workbuddy-installer-v1.0.2'
-  installer_sha='a6a84e19f2830a07514e99d5f23d3064b91a023704059f27381001f78539bebb'
-  installer='opengui-workbuddy-install.command'
-  cd "$install_dir"
-  curl --proto '=https' --proto-redir '=https' --tlsv1.2 --fail --location \
-    --connect-timeout 15 --max-time 240 --retry 2 \
-    "https://raw.githubusercontent.com/Core-Mate/OpenGUI/$installer_ref/workbuddy-plugin/scripts/install-macos.command" \
-    -o "$installer"
-  printf '%s  %s\n' "$installer_sha" "$installer" | shasum -a 256 -c -
-  bash "$installer" --check
-  bash "$installer"
-)
-```
-
-The installer identifies the application and configuration directory, prepares private dependencies, and merges MCP/Skill/Hooks while preserving unrelated settings and backups. If multiple WorkBuddy applications are present, pass the intended absolute `.app` path with `--app` to both invocations. Do not guess another host's configuration directory.
-
-For upgrades, finish existing OpenGUI tasks and close their viewers first. If the old broker is still active, disable the old OpenGUI MCP in WorkBuddy and wait for its normal idle exit before retrying. Do not force-kill host or phone processes or delete runtime locks to bypass this check. If preflight requests Command-Q, let the user finish other work and quit before continuing. A download or checksum failure is an installation failure, not permission to skip verification.
+Before upgrading, finish existing phone tasks, close their viewers, and follow the launcher's request to quit WorkBuddy. Allow the old broker to exit normally. Do not force-kill host or phone processes or remove runtime locks. The underlying installer retains compatibility, ownership, checksum, and active-broker checks.
 
 ## Verify the installation
 
@@ -111,6 +88,18 @@ Report each stage separately:
 4. **First task:** after the user connects and authorizes a phone, try `@opengui Open Settings, then return to the home screen. Stop after confirming the home screen is visible.` Verify the right-hand preview and the actual result. Do not launch a phone task merely to complete installation unless the user requested it.
 
 Keep trust, device authorization, and any account/model prompts visible to the user. Do not claim automatic phone authorization or complete business acceptance from an installer success message.
+
+## Installation success message
+
+Only after the current installation receipt and a native MCP discovery call verify success, finish the chat with the following message and both clickable links. An empty device list does not block this setup guidance. If verification fails, report the blocker instead of claiming success.
+
+把 Android 手机打开 USB 调试，连上电脑并在手机上允许 USB 调试授权。在 WorkBuddy 输入 `/opengui`，再输入需要给手机的执行指令，即可控制手机执行。
+
+[试一试：用小红书发帖](workbuddy://task?action=start&prompt=%E5%B8%AE%E6%88%91%E6%B5%8B%E8%AF%95%E3%80%90%E5%BA%94%E7%94%A8%EF%BC%8F%E9%A1%B5%E9%9D%A2%E3%80%91%E7%9A%84%E3%80%90%E5%8A%9F%E8%83%BD%E6%88%96%E6%93%8D%E4%BD%9C%E6%B5%81%E7%A8%8B%E3%80%91%EF%BC%8C%E9%87%8D%E7%82%B9%E6%A3%80%E6%9F%A5%E3%80%90%E5%85%B3%E6%B3%A8%E7%9A%84%E9%97%AE%E9%A2%98%E3%80%91%E3%80%82%E5%A6%82%E6%9E%9C%E5%8F%91%E7%8E%B0%E5%BC%82%E5%B8%B8%EF%BC%8C%E8%AE%B0%E5%BD%95%E6%93%8D%E4%BD%9C%E6%AD%A5%E9%AA%A4%E5%92%8C%E6%88%AA%E5%9B%BE%EF%BC%8C%E5%BD%93%E5%81%9A%E5%88%B0%E3%80%90%E7%BB%93%E6%9D%9F%E6%9D%A1%E4%BB%B6%E3%80%91%E5%B0%B1%E5%81%9C%E3%80%82)
+
+[试一试：Vibe Testing](workbuddy://task?action=start&prompt=%2Fopengui%20%E5%B8%AE%E6%88%91%E6%B5%8B%E8%AF%95%E3%80%90%E5%BA%94%E7%94%A8%EF%BC%8F%E9%A1%B5%E9%9D%A2%E3%80%91%E7%9A%84%E3%80%90%E5%8A%9F%E8%83%BD%E6%88%96%E6%93%8D%E4%BD%9C%E6%B5%81%E7%A8%8B%E3%80%91%EF%BC%8C%E9%87%8D%E7%82%B9%E6%A3%80%E6%9F%A5%E3%80%90%E5%85%B3%E6%B3%A8%E7%9A%84%E9%97%AE%E9%A2%98%E3%80%91%E3%80%82%E5%A6%82%E6%9E%9C%E5%8F%91%E7%8E%B0%E5%BC%82%E5%B8%B8%EF%BC%8C%E8%AE%B0%E5%BD%95%E6%93%8D%E4%BD%9C%E6%AD%A5%E9%AA%A4%E5%92%8C%E6%88%AA%E5%9B%BE%EF%BC%8C%E5%BD%93%E5%81%9A%E5%88%B0%E3%80%90%E7%BB%93%E6%9D%9F%E6%9D%A1%E4%BB%B6%E3%80%91%E5%B0%B1%E5%81%9C%E3%80%82)
+
+These are WorkBuddy task draft links: they open a new task input with the URL-encoded prompt, without sending it. Preserve the supplied labels and prompt text exactly, including the first label's test template. Do not add auto-send, skills, permission-mode or execution parameters. The user edits the placeholders and sends the request; normal model/device confirmation still applies. If a host version cannot open the native link, show its decoded prompt for copying and report that automatic filling is unavailable.
 
 ## State-directory permission error
 
@@ -157,18 +146,12 @@ Adapt the message to the user's language and the observed blocker; do not claim 
 
 ## Development builds
 
-Maintainers may deliberately install a locally built archive using `scripts/install-macos.command --archive /absolute/path/opengui-mcp-0.3.1.tgz`; its adjacent `.sha256` is required. This is a separate test from installing the public GitHub release. Record the archive digest because local candidates currently share the `0.3.1` version label with the published release. Never overwrite immutable release assets to make these packages appear identical.
+Maintainers may deliberately install a locally built archive using `scripts/install-macos.command --archive /absolute/path/opengui-mcp-0.4.0.tgz`; its adjacent `.sha256` is required. This is a separate test from installing the public GitHub release. Record the archive digest; never identify a local candidate solely by its version label. Never overwrite immutable release assets to make these packages appear identical.
 
 Current development behavior and data flow: [English](README.md) · [简体中文](README.zh-CN.md).
 
-### Slow first-time downloads
+### Release artifacts
 
-The first installation downloads a private Node.js runtime of about 50 MB. Installer 1.0.2 displays the actual curl download percentage, received/total size, current speed, remaining estimate, and retry errors in Terminal while preserving the complete log. Each download allows up to 30 minutes; a transfer below 1 KiB/s for 60 seconds still times out, with at most two retries. These limits do not replace checksum verification.
+Run `npm run pack:release` to build and validate the runtime, connector, standalone payload, and `OpenGUI-Install.command`, with an adjacent SHA-256 file for each. `scripts/publish.mjs` publishes all ten assets under the same plugin version tag and refuses to replace existing bytes. `python3 scripts/test-installer-handoff.py` checks confirmation, cancellation, integrity failures, progress, and receipts without installing into the real host.
 
-Installer 1.0.1 hides download progress and limits each attempt to four minutes. A slow but active download may therefore time out and restart. Inspect the current log and process before calling it stuck. Do not start another installer while one is active, remove its locks, or overwrite its running scripts. Let the attempt finish or have the user cancel it in Terminal before retrying with the new ZIP.
-
-### Rebuilding the installer ZIP
-
-Maintainers can run `python3 workbuddy-plugin/scripts/test-installer-handoff.py` from the repository root; it runs isolated launcher tests and builds the ZIP with executable permissions. To build alone, use `python3 workbuddy-plugin/scripts/build-installer-handoff.py`. Outputs are in `workbuddy-plugin/dist/` with an adjacent SHA-256 file. The builder refuses a changed installer payload until its pinned digest is deliberately reviewed and updated.
-
-Publish the ZIP and checksum under a new installer-only prerelease tag, such as `opengui-workbuddy-installer-v1.0.2`, without marking it latest. Keep its version distinct from the plugin runtime, attach both files, and verify the downloaded asset against this guide. Never overwrite an existing release asset or the plugin's original 0.3.1 assets. When changing the launcher or payload, bump the installer version and update the download URL and digest together. Record real Terminal and WorkBuddy acceptance separately from automated fixture tests; see the [verification record](docs/install-prompt-verification.zh-CN.md).
+The optional `python3 scripts/build-installer-handoff.py` ZIP is a manual distribution fallback. The documented WorkBuddy flow downloads the two standalone files and never extracts this ZIP. Bump the plugin version, installer version string, launcher payload pin, manifest versions, and documentation download URLs/checksums together. Stable publication still requires the real-device gates in `release-readiness.json`; public-testing releases preserve the remaining acceptance gaps.

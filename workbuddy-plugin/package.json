@@ -1,6 +1,6 @@
 {
   "name": "opengui-mcp",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "Independent OpenGUI Android MCP runtime for WorkBuddy",
   "type": "module",
   "license": "SEE LICENSE IN LICENSE",
@@ -37,7 +37,7 @@
     "test:host": "npm run build && node scripts/test-workbuddy-host.mjs"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "1.29.0",
+    "@modelcontextprotocol/sdk": "1.32.1",
     "ajv": "8.20.0",
     "fontkit": "2.0.4",
     "pdfkit": "0.20.2",
