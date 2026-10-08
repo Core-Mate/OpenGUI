@@ -18,8 +18,8 @@ For a deliberate local test, set `OPENGUI_INSTALLER_SOURCE` to the absolute `wor
   cp "$OPENGUI_INSTALLER_SOURCE/scripts/install-macos.command" installer.sh
   cp "$OPENGUI_INSTALLER_SOURCE/resources/OpenGUI-安装指南.html" OpenGUI-安装指南.html
   printf '%s  %s\n' \
-    'c67d36d2ee322133cc44944b1454658d6652538f6938d9afcb1dd261d1b7dd2f' OpenGUI-安装.command \
-    '70420c3526ad32cb06f9bb9f31e4a4a3e43496fc2627345ecf986847f0cdf738' installer.sh \
+    '757052ae232df48c3e6de43e8f4a3152f153c20bd71012d29086ada00a998a87' OpenGUI-安装.command \
+    '941d139136bf8292db50a0879e8fa7cf32030ea2cfab83893994b17fb44d66c6' installer.sh \
     | shasum -a 256 -c -
   chmod 700 OpenGUI-安装.command
   printf 'INSTALLER_FILES_READY: %s/\n' "$handoff_dir"

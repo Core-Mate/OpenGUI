@@ -2,7 +2,7 @@
 # Interactive handoff to the verified public WorkBuddy installer.
 set -euo pipefail
 umask 077
-expected_sha='70420c3526ad32cb06f9bb9f31e4a4a3e43496fc2627345ecf986847f0cdf738'
+expected_sha='941d139136bf8292db50a0879e8fa7cf32030ea2cfab83893994b17fb44d66c6'
 
 if [ ! -t 0 ] || [ ! -t 1 ] || [ -n "${CODEBUDDY_FORCE_HEADLESS_BUNDLE:-}" ] || [[ "${NODE_OPTIONS:-}" == *node-language-shim* ]]; then
   echo '尚未开始安装。请在 Finder 中双击 OpenGUI-安装.command，打开终端安装窗口。'

@@ -5,7 +5,7 @@ set -euo pipefail
 main() (
   umask 077
   local source_base='https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin'
-  local installer_sha='70420c3526ad32cb06f9bb9f31e4a4a3e43496fc2627345ecf986847f0cdf738'
+  local installer_sha='941d139136bf8292db50a0879e8fa7cf32030ea2cfab83893994b17fb44d66c6'
   local guide_sha='ab1be4a7437e916a46610f66b526797527c6f858fbdbea51063d496065a652d3'
   local run_dir= status=failed check_only=false
   local state_root="$HOME/.workbuddy/opengui/installations"

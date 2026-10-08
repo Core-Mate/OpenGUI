@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url'
 if (process.platform !== 'darwin') { console.log('Release installer execution requires macOS.'); process.exit(0) }
 const root = fileURLToPath(new URL('..', import.meta.url))
 const testCurl = process.argv.includes('--curl')
+const deniedCwd = process.argv.includes('--denied-cwd')
 const temporary = await realpath(await mkdtemp(join(tmpdir(), 'opengui-workbuddy-installer-')))
 try {
  const home = join(temporary, 'home with spaces'), config = join(home, '.workbuddy-ai'), stateRoot = join(home, '.workbuddy/opengui'), bin = join(home, 'bin')
@@ -49,7 +50,10 @@ esac
 `, {mode:0o755})
   await writeFile(join(bin, 'open'), '#!/bin/bash\nprintf "%s\\n" "$1" >> "$TEST_OPEN_LOG"\n', {mode:0o755})
  }
- const run = (extra={}) => spawnSync('bash', [...(testCurl ? ['-s', '--'] : [installer]), '--archive', archive, ...(!testCurl && process.argv[2] ? [] : ['--app', app])], {encoding:'utf8',input:bootstrapSource,env:{...process.env,HOME:home,WORKBUDDY_CONFIG_DIR:'',CODEBUDDY_CONFIG_DIR:'',WORKBUDDY_INSTANCE_NUMBER:'',TEST_APP:app,TEST_SOURCE:root,TEST_OPEN_LOG:opened,PATH:bin+':'+process.env.PATH,...extra}})
+ const launchDirectory = join(temporary, 'restricted launch directory')
+ await mkdir(launchDirectory)
+ const sandboxProfile = `(version 1) (allow default) (deny file-read-metadata (subpath ${JSON.stringify(launchDirectory)}))`
+ const run = (extra={}) => spawnSync(deniedCwd ? '/usr/bin/sandbox-exec' : 'bash', [...(deniedCwd ? ['-p', sandboxProfile, 'bash'] : []), ...(testCurl ? ['-s', '--'] : [installer]), '--archive', archive, ...(!testCurl && process.argv[2] ? [] : ['--app', app])], {encoding:'utf8',cwd:launchDirectory,input:bootstrapSource,env:{...process.env,HOME:home,WORKBUDDY_CONFIG_DIR:'',CODEBUDDY_CONFIG_DIR:'',WORKBUDDY_INSTANCE_NUMBER:'',TEST_APP:app,TEST_SOURCE:root,TEST_OPEN_LOG:opened,PATH:bin+':'+process.env.PATH,...extra}})
  const originalMcp = await readFile(join(config,'mcp.json'),'utf8')
  assert.equal(JSON.parse(originalMcp).mcpServers.opengui, undefined)
  let result
@@ -98,6 +102,6 @@ esac
   if (testCurl) assert.equal((await readFile(opened, 'utf8')).trim().split('\n').length, 2, 'A blocked upgrade must not open the authorization guide')
  } finally { await new Promise(resolve => oldService.close(resolve)) }
 
- console.log(JSON.stringify({curlEntry:testCurl, firstInstallMs:timings[0], repeatInstallMs:timings[1]}))
+ console.log(JSON.stringify({curlEntry:testCurl, deniedCwd, firstInstallMs:timings[0], repeatInstallMs:timings[1]}))
  console.log('PASS: real release installer with a synthetic WorkBuddy bundle/process fixture, open desktop installation on 5.5.3 and 5.7.6, native dependency import, active service upgrade refusal, retained foreign MCP/Hooks, idempotency, paths with spaces and rollback receipts; real host loading remains unverified.')
 } finally { await rm(temporary,{recursive:true,force:true}) }

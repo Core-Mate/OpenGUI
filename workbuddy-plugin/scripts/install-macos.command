@@ -187,7 +187,8 @@ const reusable = fs.existsSync(path.join(cache, '.complete')) && fs.readFileSync
 if (!reusable) install = fs.mkdtempSync(path.join(packages, version + '-'));
 if (fs.existsSync(cache) && (!reusable || fs.lstatSync(cache).isSymbolicLink())) throw Error('CACHE_INVALID: retain existing files and inspect the package cache before retrying');
 const npm = path.resolve(process.execPath, '../../lib/node_modules/npm/bin/npm-cli.js');
-if (!reusable) execFileSync(process.execPath, [npm, 'install', '--prefix', install, '--ignore-scripts', '--no-audit', '--no-fund', archive], { stdio: 'inherit' });
+// npm reads process.cwd() before applying --prefix; use our verified private directory.
+if (!reusable) execFileSync(process.execPath, [npm, 'install', '--prefix', install, '--ignore-scripts', '--no-audit', '--no-fund', archive], { cwd: install, stdio: 'inherit' });
 let pkg = path.join(install, 'node_modules/opengui-mcp');
 const meta = JSON.parse(fs.readFileSync(path.join(pkg, 'package.json')));
 if (meta.name !== 'opengui-mcp' || meta.version !== version) throw Error('Archive package/version mismatch');
