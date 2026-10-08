@@ -6,7 +6,7 @@ main() (
   umask 077
   local source_base='https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin'
   local installer_sha='941d139136bf8292db50a0879e8fa7cf32030ea2cfab83893994b17fb44d66c6'
-  local guide_sha='ab1be4a7437e916a46610f66b526797527c6f858fbdbea51063d496065a652d3'
+  local guide_sha='f1384ef0e2b3bcec067c9664169341f5f4b178054ba963d9fba4a637efad4df5'
   local run_dir= status=failed check_only=false
   local state_root="$HOME/.workbuddy/opengui/installations"
 
