@@ -623,7 +623,6 @@ export class WorkBuddyOpenGuiService {
   private readonly sessions = new Map<string, SessionRecord>()
   private readonly locks = new Map<string, string>()
   private readonly viewerTasks = new Map<string, ControlTask>()
-  private readonly workbenchStarts = new Map<string, { controller: AbortController; done: Promise<void> }>()
   readonly viewers: ViewerServer
   readonly account: CoreMateClient | undefined
   readonly emulators: AndroidEmulatorManager | undefined
@@ -681,10 +680,7 @@ export class WorkBuddyOpenGuiService {
     this.viewers.setDeviceHandlers((signal, refresh, viewerId) => this.deviceChoices(signal, refresh, viewerId), (id, deviceId) => this.selectViewerDevice(id, deviceId))
     this.viewers.setStartHandler((id, deviceId, request, comments) => this.startViewerTask(id, deviceId, request, comments))
     this.viewers.setNewTaskHandler(async () => {
-      const opened = await this.openGuide(AbortSignal.timeout(15_000), { owner: `workbench-new:${randomUUID()}` })
-      this.viewers.manageInWorkbench(opened.viewerId)
-      this.viewers.requireStart(opened.viewerId)
-      return { viewerId: opened.viewerId, workbenchUrl: opened.workbenchUrl }
+      throw new Error('host_task_required')
     })
     this.viewers.setEmulatorHandlers(
       signal => this.emulators?.status(signal) ?? Promise.resolve({ supported: false, reason: '当前环境不支持一键安装模拟器', avds: [] }),
@@ -765,7 +761,6 @@ export class WorkBuddyOpenGuiService {
     if (task.objective) this.viewers.requestDeviceSelection(opened.viewerId)
     if (this.confirmStart && !task.startConfirmed) {
       this.viewers.requireStart(opened.viewerId, this.account?.preferredDeviceId, task.request)
-      this.viewers.manageInWorkbench(opened.viewerId, !task.objective)
     }
     return { ...await this.viewers.status(opened.viewerId, owner, 0, signal), workbenchUrl: opened.workbenchUrl }
   }
@@ -810,10 +805,10 @@ export class WorkBuddyOpenGuiService {
     if (task) task.selectedDeviceIds = [devices[0]!.id]
     this.rememberDevice(viewerId, devices[0]!.id, principal)
   }
-  /** Confirm the request before binding; standalone workbench runs wait for the same first-frame gate. */
+  /** Confirm the host-owned request before binding and waiting for the first visible frame. */
   private async startViewerTask(viewerId: string, deviceId: string, request?: string, comments?: { enabled: boolean; budget?: unknown }): Promise<void> {
     if (!this.viewers.awaitingStart(viewerId)) throw new Error('task_already_started')
-    const managed = this.viewers.isWorkbenchManaged(viewerId), board = this.viewers.board(viewerId)
+    const board = this.viewers.board(viewerId)
     const task = this.viewerTasks.get(viewerId)
     if (!task) throw new Error('task_unavailable')
     const clean = (value: string): string => value.replace(/^\s*@(?:skill:)?opengui\b\s*/iu, '').trim()
@@ -826,7 +821,6 @@ export class WorkBuddyOpenGuiService {
       try { createCommentBudget(commentBudget!, this.now()) }
       catch { throw new Error('请为评论任务设置有效的核验发送条数或运行时限') }
     }
-    if (managed && (!board.modelConfig || !this.account)) throw new Error('workbench_model_required')
     if (request !== undefined && objective !== clean(task.request || task.objective || '')) {
       // Only the person's initial confirmation can replace the pending request and its limits.
       // Never discard a restored run's history, consumed budget, prepared app or approvals.
@@ -852,37 +846,6 @@ export class WorkBuddyOpenGuiService {
     await this.selectViewerDevice(viewerId, deviceId)
     task.startConfirmed = true
     this.viewers.markStarted(viewerId)
-    if (managed) {
-      // The originating chat may finish or accept another prompt while this task is running.
-      const independent = { ...createControlTask(), objective: task.objective, request: objective, stopBeforeSubmit: task.stopBeforeSubmit, scenario: task.scenario, commentBudget: task.commentBudget,
-        selectedDeviceIds: [deviceId], startConfirmed: true, viewerOwner: this.viewers.detachFromHost(viewerId) }
-      this.viewerTasks.set(viewerId, independent)
-      board.control = 'agent'; board.checkpoint()
-      const controller = new AbortController()
-      const done = this.runWorkbenchTask(viewerId, independent, controller.signal).catch(() => undefined).finally(() => this.workbenchStarts.delete(viewerId))
-      this.workbenchStarts.set(viewerId, { controller, done })
-    }
-  }
-  private async runWorkbenchTask(viewerId: string, task: ControlTask, signal: AbortSignal): Promise<void> {
-    let sessionId: string | undefined
-    try {
-      const status = await this.viewers.status(viewerId, task.viewerOwner!, 31_000, AbortSignal.any([signal, AbortSignal.timeout(35_000)]))
-      signal.throwIfAborted()
-      if (!status.firstDisplayEstablished || status.taskState === 'ended' || status.state === 'closed') throw new Error('display_unavailable')
-      const session = await this.openSession(task.selectedDeviceIds, signal, 'control', { task, viewerId, owner: task.viewerOwner! })
-      sessionId = session.sessionId
-      signal.throwIfAborted()
-      await this.executeConfigured(sessionId, 0, signal)
-    } catch {
-      const result: SessionResult = { outcome: signal.aborted ? 'cancelled' : 'blocked', summary: signal.aborted ? '任务已停止。' : '任务未能开始执行，请检查设备画面与模型配置后新建任务。' }
-      if (sessionId) await this.closeSession(sessionId, result).catch(() => undefined)
-      else {
-        const board = this.viewers.board(viewerId)
-        board.control = 'ended'; board.result ??= result; board.checkpoint()
-        this.viewers.endTask(viewerId)
-        await this.viewers.archiveReports(viewerId).catch(() => undefined)
-      }
-    }
   }
   private async extendBudget(viewerId: string, additional: number, operationLimit: number, inferenceLimit: number): Promise<void> {
     const principal = this.account?.scope ?? 'local'
@@ -944,8 +907,8 @@ export class WorkBuddyOpenGuiService {
     return this.host.listDevices(signal)
   }
 
-  endViewerTask(owner: string): void { this.viewers.endOwner(owner); for (const [id, task] of this.viewerTasks) if (task.viewerOwner === owner && !this.viewers.isWorkbenchManaged(id)) this.viewerTasks.delete(id) }
-  awaitingTaskStart(task: ControlTask): boolean { return [...this.viewerTasks].some(([id, current]) => current === task && !this.viewers.isWorkbenchManaged(id) && this.viewers.awaitingStart(id)) }
+  endViewerTask(owner: string): void { this.viewers.endOwner(owner); for (const [id, task] of this.viewerTasks) if (task.viewerOwner === owner) this.viewerTasks.delete(id) }
+  awaitingTaskStart(task: ControlTask): boolean { return [...this.viewerTasks].some(([id, current]) => current === task && this.viewers.awaitingStart(id)) }
   awaitingDeviceTask(task: ControlTask): boolean { return [...this.viewerTasks].some(([id, current]) => current === task && this.viewers.awaitingDeviceTask(id)) }
 
   hasPersistentMirrors(): boolean { return this.viewers.active || (this.host.hasMirrors?.() ?? false) }
@@ -1389,7 +1352,7 @@ export class WorkBuddyOpenGuiService {
     signal.throwIfAborted()
     const record = this.requireSession(sessionId), model = record.viewerId ? this.viewers.board(record.viewerId).modelConfig : undefined
     if (record.state !== 'active') return this.snapshot(record)
-    if (!model || !this.account) throw new Error('configured_model_required: select a published model in the workbench; follow mode stays in WorkBuddy')
+    if (!model || !this.account) throw new Error('host_model_only: use WorkBuddy observe/act for this release')
     if (record.devices.length !== 1) throw new Error('configured_executor_requires_one_phone')
     this.viewers.assertReady(record.viewerId!)
     const board = this.viewers.board(record.viewerId!)
@@ -1570,8 +1533,6 @@ export class WorkBuddyOpenGuiService {
 
   async dispose(): Promise<void> {
     this.disposed = true
-    for (const start of this.workbenchStarts.values()) start.controller.abort()
-    await Promise.allSettled([...this.workbenchStarts.values()].map(start => start.done))
     await Promise.allSettled([...this.sessions.keys()].map(id => this.closeSession(id)))
     await this.viewers.dispose()
     await this.wall.close()
@@ -1673,9 +1634,15 @@ export class WorkBuddyOpenGuiService {
   }
 
   private async boardAction(viewerId: string, action: BoardAction): Promise<void> {
-    const starting = this.workbenchStarts.get(viewerId)
-    if (starting && action === 'disconnect') { starting.controller.abort(); await starting.done; return }
     const record = [...this.sessions.values()].find(r => r.viewerId === viewerId && r.state === 'active' && r.purpose === 'control')
+    if (!record && action === 'disconnect') {
+      const board = this.viewers.board(viewerId)
+      if (board.control !== 'idle') throw new Error('active_session_required')
+      board.control = 'ended'; board.result = { outcome: 'cancelled', summary: '任务已停止。' }; board.checkpoint()
+      this.viewers.endTask(viewerId)
+      await this.viewers.archiveReports(viewerId)
+      return
+    }
     if (!record) throw new Error('active_session_required')
     if (action === 'disconnect') { await this.cancel(record.id); return }
     this.enforceCommentBudget(record)

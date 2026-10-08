@@ -11,12 +11,10 @@
 </p>
 
 <p align="center">
+  <a href="#workbuddy-安装"><img src="https://img.shields.io/badge/INSTALL-WORKBUDDY_PLUGIN-168a70?style=for-the-badge" alt="安装 WorkBuddy 插件"></a>
   <a href="#在-deepseek-harness-中使用-opengui"><img src="https://img.shields.io/badge/INSTALL-DEEPSEEK_HARNESS_PLUGIN-6f42c1?style=for-the-badge" alt="安装 DeepSeek Harness 插件"></a>
-  <a href="#workbuddy-安装"><img src="https://img.shields.io/badge/INSTALL-WORKBUDDY_CANDIDATE-168a70?style=for-the-badge" alt="安装 WorkBuddy 候选版"></a>
   <a href="./skills/open-gui-bootstrap/SKILL.md"><img src="https://img.shields.io/badge/BOOTSTRAP-WITH_AI_AGENTS-ffb000?style=for-the-badge" alt="使用 Claude Code、Codex 或 OpenCode 启动"></a>
   <img src="https://img.shields.io/badge/SYSTEM-MULTI_ROLE_OPERATOR-1f6feb?style=for-the-badge" alt="Multi-role operator system">
-  <img src="https://img.shields.io/badge/TASKS-UP_TO_12_HOURS-cf222e?style=for-the-badge" alt="Tasks up to 12 hours">
-  <img src="https://img.shields.io/badge/MODELS-CLAUDE_OPUS_|_QWEN_|_DOUBAO_|_BYO_API-2f9e44?style=for-the-badge" alt="Recommended model profiles">
   <a href="./docs/get-started.zh-CN.md"><img src="https://img.shields.io/badge/MANUAL_SETUP-DOCS-4b4b4b?style=for-the-badge" alt="手动安装文档"></a>
 </p>
 
@@ -29,8 +27,8 @@
 </p>
 
 <p align="center">
-  <strong>推荐：直接在 DeepSeek Harness 中使用 OpenGUI。</strong><br>
-  只需把一段话发给 Codex，它会下载并校验插件、安装到 DSH，再打开 DSH，不需要先部署完整后端。
+  <strong>在 WorkBuddy 或 DeepSeek Harness 中使用 OpenGUI。</strong><br>
+  安装插件、连接手机，即可用自然语言下达任务，无需部署完整后端。
 </p>
 
 ## 功能简述
@@ -58,9 +56,9 @@ OpenGUI 让 AI 根据真实屏幕截图理解 App，用自然语言完成手机�
 
 ## WorkBuddy 安装
 
-支持 **macOS（Apple 芯片 / Intel）和 WorkBuddy 5.5.3 及以上版本**。在电脑上下载并运行安装脚本，安装后再进入 WorkBuddy 完成授权。
+支持 **macOS（Apple 芯片 / Intel）和 WorkBuddy 5.5.3 及以上版本**。当前公开版本为 [0.4.0 公测预发布版](https://github.com/Core-Mate/OpenGUI/releases/tag/opengui-workbuddy-v0.4.0)。在电脑上下载并运行安装脚本，安装后再进入 WorkBuddy 完成授权。
 
-**1. 一条命令下载安装**
+**步骤1.Terminal命令下载安装**
 
 打开 macOS“终端”，粘贴并运行：
 
@@ -70,11 +68,11 @@ cd "$HOME" && curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/mai
 
 这条命令会下载并运行安装脚本，无需先手动保存文件。脚本会校验后续安装文件、准备运行环境并配置 OpenGUI。安装期间 WorkBuddy 可以保持打开，也不需要连接手机。
 
-**安装成功后，会自动在浏览器中打开[授权提示网页](./workbuddy-plugin/resources/OpenGUI-授权指南.html)，根据网页提示完成技能和连接器授权即可。**
+**安装成功后，会自动在浏览器中打开授权提示网页，根据网页提示完成技能和连接器授权即可。** 如需手动打开，可从[授权指南文件页面](./workbuddy-plugin/resources/OpenGUI-授权指南.html)下载 HTML，再用浏览器打开。
 
 也可以[单独下载安装脚本（install.sh）](https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh)，保存后在终端运行 `bash /实际路径/install.sh`。
 
-**2. 授权技能和连接器**
+**步骤2.授权技能和连接器**
 
 打开 WorkBuddy 的“专家·技能·连接器 → 技能”，找到 OpenGUI，按提示完成授权；之后在连接器中，找到OpenGUI，再次授权。
 
@@ -84,14 +82,14 @@ cd "$HOME" && curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/mai
 
 若找不到连接器中的 OpenGUI，可打开“自定义连接器”检查 MCP 服务。只有 OpenGUI 未出现或新配置未生效时，再结束其他任务，用 ⌘Q 退出并重新打开 WorkBuddy。授权页面未自动打开时，可打开终端打印的 `AUTHORIZATION_GUIDE` 路径，无需重新安装。
 
-**3. 验证连接并开始使用**
+**步骤3.验证连接并开始使用**
 
-把Android手机打开USB调试，连上电脑，输入/opengui，输入需要给手机的执行指令，即可控制手机执行。
+把Android手机打开USB调试，连上电脑，输入/opengui，输入需要给手机的执行指令，即可控制手机执行。首次连接时，请在手机上允许 USB 调试授权。
 
 试一试：用小红书发帖
 
 ```text
-/opengui 帮我测试【应用／页面】的【功能或操作流程】，重点检查【关注的问题】。如果发现异常，记录操作步骤和截图，当做到【结束条件】就停。
+/opengui 在小红书中为【主题】准备图文草稿，使用【素材】，停在发布前。
 ```
 
 试一试：Vibe Testing
@@ -112,7 +110,7 @@ macOS 上最短的路径，是让 Codex 运行 `main` 分支上的稳定安装 S
 
 Skill 会下载公开 Release 的插件包和校验文件，验证 SHA-256，只安装 OpenGUI 插件，在需要时启动并打开 DSH，同时保留其他 DSH 插件和设置。安装器会说明它是否已重启受管理的 DSH，或者是否需要先退出已有进程再重新运行。Linux 或 Windows 用户可按[手动安装说明](./deepseek-harness-plugin/README.zh.md#1-下载发布包)操作。
 
-OpenGUI 正式支持 DSH `0.1.0-rc.7`、`0.1.0-rc.8`、`0.1.1-rc.1` 和 `0.1.1-rc.2`，新安装默认使用 `0.1.1-rc.2`。macOS 安装器只会复用与所选版本完全一致的 `PATH` runtime，否则会在 OpenGUI 的 DSH home 下安装隔离的 managed runtime；可用 `--dsh-version VERSION` 选择受支持版本。DSH `0.1.2-alpha.4` 暂不支持。现有 DSH、工作区、模型设置、凭据和手机授权都不会被替换。DSH `0.1.0` RC 无法读取 DSH `0.1.1` RC 写入的新版凭据格式，因此安装器会在改动任何文件前拒绝这种状态降级，并提示改用独立的 DSH home。
+DSH 版本以[安装器兼容清单](./deepseek-harness-plugin/skills/opengui-coremate-install/dsh-compatibility.json)为准，默认使用 `0.1.1-rc.2`；可用 `--dsh-version VERSION` 指定清单内的版本。安装器保留其他插件、工作区、模型设置和凭据。版本切换与回滚注意事项见[插件安装说明](./deepseek-harness-plugin/README.zh.md#支持范围与前置条件)。
 
 安装完成后，在 DSH 中添加或选择工作区，连接并选择已授权的 Android 手机，然后发送：
 
@@ -122,149 +120,56 @@ OpenGUI 正式支持 DSH `0.1.0-rc.7`、`0.1.0-rc.8`、`0.1.1-rc.1` 和 `0.1.1-r
 
 插件可以直接为 DSH 增加手机与浏览器操作能力，不需要部署完整的 OpenGUI 后端。当前源码按 DSH Session 接纳根任务，允许不同 Tab 使用不冲突的手机集合；托管浏览器仍保持全局串行。这是源码行为说明，不代表已发布。你还可以查看更多[使用场景](./deepseek-harness-plugin/docs/use-cases.zh.md)，或下载 [v0.1.13 安装包](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.13)。
 
-适合的使用场景包括：
-
-- 在已授权设备上执行自动化操作测试和回归测试
-- 管理社媒账号和挖掘线索，在发布、私信或修改账号前由人工确认
-- 在账号所有者和游戏规则允许自动化的前提下，执行重复性游戏测试和游戏内流程
-
-针对 GUI 操作，我们目前的模型推荐顺序是：
-
-| 优先级 | 模型系列 | 使用建议 |
-|---|---|---|
-| 1 | 豆包 VLM | 视觉 GUI 操作的首选。 |
-| 2 | 千问 VLM | 可作为备选，但部分社媒任务更容易受到模型安全策略限制。 |
-| 3 | OpenAI 视觉模型 | 能力可用，但截图密集型任务的成本通常更高。 |
-| 4 | Grok 视觉模型 | 目前作为实验选项，工具调用和操作稳定性还需要更多验证。 |
-
-具体模型的可用性、价格和策略会随版本及地区变化。无论选择哪家模型，都需要同时支持图片输入和工具调用。
+执行 GUI 任务的模型需要支持图片输入和工具调用。DSH 默认复用当前会话模型；不兼容时再配置备用视觉模型，详见[模型配置说明](./deepseek-harness-plugin/docs/quick-start-and-faq.zh.md#如何配置模型)。请按自己的任务验证执行效果、耗时和实际费用。
 
 ## 运行完整 OpenGUI 技术栈
 
-如果要运行完整的 OpenGUI 后端和 Android 客户端，可以让 Claude Code、Codex 或 OpenCode 帮你完成启动。
+需要自托管后端、Android 客户端，或通过飞书、Telegram、Discord、REST API 派发任务时，使用完整技术栈。WorkBuddy 和 DSH 插件无需完成本节部署。
+
+在仓库根目录打开 Claude Code、Codex 或 OpenCode，发送：
 
 ```text
 Read ./skills/open-gui-bootstrap/SKILL.md and help me run OpenGUI. Only ask me for phone-side actions.
 ```
 
-这段显式指定 Skill 路径的提示词同样适用于 OpenCode。当前仓库把 Skill 放在顶层 `skills/` 目录，因此 OpenCode 用户应像上面一样明确提供路径，而不是依赖自动发现。OpenCode 原生支持的 `.opencode/skills/` 和 `.agents/skills/` 目录可参考其 [Agent Skills 文档](https://opencode.ai/docs/skills/)。
+完整技术栈的 Android 客户端需要 Android 11（API 30）及以上、USB 调试、无障碍服务、悬浮窗权限和电池优化豁免。后端模型配置、手动启动和手机授权步骤见[完整部署指南](./docs/get-started.zh-CN.md)与[Android 权限说明](./docs/android-permissions.zh-CN.md)。
 
-无需 Root，也无需解锁 Bootloader。OpenGUI 使用 Android 标准的 `AccessibilityService` API 获取截图，并执行点击、滑动、输入、返回和主页等操作。ADB 仅用于在本地安装和启动 APK，以及通过 `adb reverse` 配置端口转发；它不会 Root 或修改设备系统。
-
-你需要准备：
-
-- 一台 Android 11（API 30）或更高版本的手机或模拟器
-- 已开启 USB 调试
-- 已开启无障碍服务（AccessibilityService）
-- 已开启悬浮窗权限，并允许 OpenGUI 忽略电池优化
-- 用于真实任务执行的模型 API Key
-
-不同 Android 品牌使用的权限名称和设置入口并不一致。运行第一个任务前，请完成
-[Android 权限配置指南](./docs/android-permissions.zh-CN.md)中的检查清单。
-
-OpenGUI 会使用仓库内脚本启动后端，并安装 Android 客户端：
+部署后，在 `server` 目录使用 CLI：
 
 ```bash
-cd server
-./start.sh
-```
-
-```bash
-cd client
-./start.sh
-```
-
-后端和 Android 客户端都跑起来后，发送第一个任务：
-
-```bash
-cd server
 pnpm opengui -- devices --json
 pnpm opengui -- do "观察当前手机屏幕，简要描述你看到了什么，然后结束" --json
-```
-
-`do` 会异步启动 execution，并在创建完成后返回；它不会持续输出进度，也不会等待任务结束。响应中会包含 `executionId`，使用它查询当前状态：
-
-```bash
 pnpm opengui -- status <executionId> --json
-```
-
-`status` 每次返回一个状态快照，需要更新时可以再次执行。请查看 `executionStatus`，以及返回结果中存在的 `statusMessage`、`currentStep`、`executionResult` 或 `errorMessage`。`PENDING` 表示 execution 正在等待手机端启动，`RUNNING` 表示正在执行，`FINISHED` 表示已经结束。细粒度字段不一定始终存在，因此 `RUNNING` 状态不一定能区分当前是在等待模型还是等待手机。如果 `do` 本身没有返回 `executionId`，应将其视为请求或启动异常，而不是正常的异步执行。需要停止正在执行的任务时，继续使用同一个 `executionId`：
-
-```bash
 pnpm opengui -- cancel <executionId> --json
 ```
 
-手动安装指南：[`docs/get-started.zh-CN.md`](./docs/get-started.zh-CN.md)。
+`do` 异步返回 `executionId`；将其填入 `status` 查询状态，或填入 `cancel` 停止任务。远程控制接入见[CLI 与 API 指南](./docs/codex-remote-control.zh-CN.md)，Discord 配置见[对应说明](./docs/DISCORD.zh-CN.md)。
 
 ## 近期更新
 
+- `[2026.10.8]` 发布 [WorkBuddy 插件 0.4.0 公测预发布版](https://github.com/Core-Mate/OpenGUI/releases/tag/opengui-workbuddy-v0.4.0)，提供终端安装脚本及安装后自动打开的授权指南。
+- `[2026.9.1]` 发布 [DSH 插件 0.1.13](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.13)。
 - `[2026.5.16]` 新增 [Codex / Claude Code 远程控制](./docs/codex-remote-control.zh-CN.md)，提供本地 REST API、`pnpm opengui -- ...` CLI，以及 [`open-gui-remote-control`](./skills/open-gui-remote-control/SKILL.md) Skill，可从编码 Agent 下发 Android App 任务。
 - `[2026.5.9]` 新增 [Discord IM 入口](./docs/DISCORD.zh-CN.md)，支持前缀命令、Slash 命令、安全白名单和 guild-scoped 命令注册，可从 Discord 频道远程下发 Android 任务。
 - `[2026.5.7]` 本地启动流程增强，Docker 方式启动后端时会避开常见的 PostgreSQL 和 Redis 端口冲突。
 - `[2026.5.1]` 后端上手流程补齐 `.env.example`、启动检查提示和 graph agent 的 VLM 环境变量配置。
 
-## 你可以用 OpenGUI 做什么
+## 使用要求与限制
 
-OpenGUI 让 AI 操作真实的 Android 手机。
-
-同一个仓库里，你可以直接做四类事情：
-
-- **操作主流 Android App**：让 AI 在真实手机上执行 X、Reddit、Hacker News、Telegram、微信、微博、小红书等移动任务。
-- **运行现成工作流**：仓库已经包含可直接启动的后端、Android 客户端、待命派发链路，以及部分预置任务能力。
-- **让 AI 编码 Agent 帮你跑起来**：把 [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md) 交给 Claude Code、Codex 或 OpenCode，直接用自然语言描述目标，让它处理安装、构建、安装 APK 和本地排障。
-- **让 AI 编码 Agent 控制 Android App**：OpenGUI 启动后，把 [`skills/open-gui-remote-control/SKILL.md`](./skills/open-gui-remote-control/SKILL.md) 交给 Claude Code、Codex 或 OpenCode，用本地 CLI 列设备、下发任务并查询 execution 状态。
-- **把手机当成远程 worker 使用**：通过飞书、Telegram、Discord 或 REST API 下发任务，让设备保持待命，并从后端拿回结构化结果。
-- [加入 Discord 社区](https://discord.gg/pqHHw7XgJ3)
-
-## 亮点
-
-- **适合长时任务**：OpenGUI 面向长时移动工作流，任务可以持续运行数小时，并在过程中继续推进、复核和恢复。
-- **先规划，再执行，最后总结**：在真正操作 App 前，OpenGUI 会先把目标拆成可执行步骤；任务结束后，会返回结构化总结，说明完成了什么、哪里失败、下一步该怎么处理。
-- **任务能持续跑下去**：`Plan Supervisor` 维护任务列表和继续执行状态，`Executor Graph` 围绕当前设备状态运行截图、视觉分析、动作执行和 call-user 循环，`Summarizer` 在任务结束时输出结构化结果。
-- **手机可以保持待命**：待命派发链路让设备可以通过飞书、Telegram、Discord 或 REST 入口接收远程任务。
-- **模型可以按角色分工**：模型路由把规划侧和 VLM 执行侧拆开，便于按角色选择 provider。
-- **整套系统围绕真实移动工作流组织**：graph、设备执行链路和模型分工已经在源码里落地。
-
-## 为什么 OpenGUI 不一样
-
-OpenGUI 采用的是一套分层清晰的移动 operator system。
-
-当前源码里可以直接看到这些关键部分：
-
-- `server/apps/backend/src/modules/graph-agent/graph/mobile-agent.graph.ts` 主图
-- `server/apps/backend/src/modules/graph-agent/graph/executor.graph.ts` 设备执行子图
-- `server/apps/backend/src/common/ws/standby.gateway.ts` 待命设备派发
-- `client/core_network/.../StandbySocketManager.kt` 设备待命连接
-- `client/core_accessibility/.../GestureService.kt` Android 侧动作执行
-
-| 维度 | 典型手机 Agent Demo | OpenGUI |
+| 使用方式 | 电脑与运行环境 | Android 设备准备 |
 |---|---|---|
-| **执行模型** | 短时交互循环 | 主图 + executor 子图 |
-| **任务状态** | 常常停留在本地会话里 | 任务状态由后端 graph 持有 |
-| **设备链路** | 常见是电脑侧驱动手机 | Android 客户端自带待命与执行连接 |
-| **模型使用** | 一个主模型承担大部分工作 | 规划和 VLM 执行可以拆给不同 provider |
-| **远程运行** | 往往是附加能力 | 飞书、Telegram、Discord、REST API、待命派发已经在后端里 |
+| WorkBuddy 插件 | macOS（Apple 芯片 / Intel），WorkBuddy 5.5.3 及以上；安装脚本准备私有运行环境。 | 开启并允许 USB 调试；使用电脑侧 ADB / scrcpy，无需部署完整后端或安装本仓库的 Android 客户端。 |
+| DSH 插件 | macOS、Linux x64 或 Windows x64；Node.js 与 DSH 版本要求见[插件说明](./deepseek-harness-plugin/README.zh.md#支持范围与前置条件)。 | 开启并允许 USB 调试，在 DSH 中选择设备；无需部署完整后端或安装本仓库的 Android 客户端。 |
+| 完整技术栈 | 本地后端及构建环境，见[部署指南](./docs/get-started.zh-CN.md)。 | Android 11 及以上，并授予客户端所需的无障碍、悬浮窗和电池权限。 |
 
-## 典型使用场景
-
-- 打开 X 并采集某个主题的近期内容
-- 在真实手机上阅读并总结 Reddit 或 Hacker News 帖子
-- 从飞书、Telegram、Discord 或 REST API 远程触发手机任务
-- 在 Android 设备上执行重复性的移动工作流
-- 运行需要状态管理、复核和恢复机制的长时移动工作流
-
-## 当前限制
-
-- 需要 Android 11（API 30）或更高版本的真机或模拟器。
-- 需要开启 USB 调试和 AccessibilityService 权限。
-- 执行质量会受到模型能力、App UI、网络状态和任务长度影响。
-- 目前还不是 OS 级常驻助手；任务需要手动触发，或通过已配置的派发入口触发。
-- 系统设计支持长时任务，但可靠性仍需要更多真实场景测试。
-- 还需要补充更多可直接运行的任务示例和 benchmark。
+- 部分手机需要额外开启厂商提供的 USB 输入控制权限；按连接诊断提示在手机上处理。
+- WorkBuddy 跟随当前对话模型；DSH 会话模型、完整后端的模型配置是不同入口，请按对应安装方式配置。
+- 执行效果与模型、App 界面、网络和任务长度有关。长时任务与不同设备的可靠性仍需要更多真实场景验证。
+- WorkBuddy 的短信登录默认使用官方 CoreMate 账号服务，不读取线上模型配置；任务截图会发送给当前 WorkBuddy 模型，本地预览视频不会逐帧上传。具体数据流见[WorkBuddy 插件说明](./workbuddy-plugin/README.zh-CN.md)与[DSH 插件说明](./deepseek-harness-plugin/README.zh.md)。
 
 ## Roadmap
 
-- 补充短 Demo 视频和更多真实 App 示例。
+- 补充更多真实 App 使用案例与测试报告。
 - 优化一键本地启动流程。
 - 增加更多可直接运行的 phone-use 任务模板。
 - 提升执行恢复和失败反馈能力。
@@ -272,111 +177,9 @@ OpenGUI 采用的是一套分层清晰的移动 operator system。
 - 完善模型配置和省钱混用方案文档。
 - 推出托管版 OpenGUI Agent 服务，让不想自行部署完整技术栈的团队也能使用 GUI 操作能力。
 
-## 怎么使用 OpenGUI
-
-### 1. 用 Claude Code、Codex 或 OpenCode 帮你跑起来
-
-优先从 [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md) 开始。
-
-推荐流程很简单：
-
-1. 把 Skill 交给 Claude Code、Codex 或 OpenCode
-2. 直接用自然语言描述目标
-3. 让模型处理后端 bootstrap、APK 构建、安装和本地排障
-
-模型只应该在这些事情上打断你：
-
-- 连接手机或启动模拟器
-- 允许 USB 调试
-- 开启 AccessibilityService
-- 授予悬浮窗或电池权限
-- 提供 API Key 或机器人密钥
-
-后端和 Android client 跑起来后，可以继续使用 [`skills/open-gui-remote-control/SKILL.md`](./skills/open-gui-remote-control/SKILL.md)，让 Claude Code、Codex 或 OpenCode 通过本地 CLI 控制手机：
-
-```bash
-cd server
-pnpm opengui -- devices --json
-pnpm opengui -- do "观察当前手机屏幕，简要描述你看到了什么，然后结束" --json
-pnpm opengui -- status <executionId> --json
-pnpm opengui -- cancel <executionId> --json
-```
-
-推荐配置：
-
-#### 高配版
-
-如果你优先要效果，可以把规划、监督、复核和视觉分析都放到最新的 Claude Opus 模型族上。
-
-这条路径最省心，整体质量也最高，同时成本最高。
-
-#### 省钱混用版
-
-如果你优先控制成本，建议把 **Planner**、**Supervisor** 这类文本角色放到 **千问 3.6 Plus**，把 **VLM** 这一侧放到 **豆包 Pro**。
-
-在很多任务里，这种混用方式还能保持整体系统结构，同时把模型成本大致降到全量 Opus 方案的 **1/10 到 1/15**，实际比例会受到任务时长、截图数量和 token 结构影响。
-
-推荐说法：
-
-#### 直接运行
-
-```text
-读一下 ./skills/open-gui-bootstrap/SKILL.md，然后帮我把 OpenGUI 跑起来，只在必须时告诉我手机上要做什么。
-```
-
-#### 全部使用 Claude Opus
-
-```text
-读一下 ./skills/open-gui-bootstrap/SKILL.md，然后用最新的 Claude Opus 模型族来配置 OpenGUI，把规划、监督、复核和视觉分析都放进去。
-```
-
-#### 用千问 + 豆包省钱
-
-```text
-读一下 ./skills/open-gui-bootstrap/SKILL.md，然后帮我把 OpenGUI 配成：Planner 和 Supervisor 用千问 3.6 Plus，VLM 执行侧用豆包 Pro。
-```
-
-#### 使用我自己的 API
-
-```text
-读一下 ./skills/open-gui-bootstrap/SKILL.md，然后用我现有的模型 API 把 OpenGUI 跑起来。
-```
-
-### 2. 手动安装
-
-直接使用仓库里的脚本：
-
-```bash
-cd server
-./start.sh
-```
-
-```bash
-cd client
-./start.sh
-```
-
-参考文档：
-
-- [docs/get-started.zh-CN.md](./docs/get-started.zh-CN.md)
-- [server/start.sh](./server/start.sh)
-- [client/start.sh](./client/start.sh)
-- [server/apps/backend/README.md](./server/apps/backend/README.md)
-- [docs/DISCORD.zh-CN.md](./docs/DISCORD.zh-CN.md)
-- [client/README.md](./client/README.md)
-
-### 3. 可选的 Discord 远程控制
-
-Discord 可以作为可选 IM 入口启用。Discord Bot 接收 `!opengui devices` 或
-`!opengui do ...` 这类命令，后端再把任务下发给待命 Android 手机，并把进度回传到
-同一个 Discord 频道。
-
-这不是本地运行的必选项。`DISCORD_BOT_TOKEN` 为空时，后端会正常启动并跳过
-Discord。
-
-完整配置说明见：[docs/DISCORD.zh-CN.md](./docs/DISCORD.zh-CN.md)。
-
 ## 系统结构
+
+下图仅描述完整后端与 Android 客户端的执行链路。WorkBuddy 与 DSH 使用各自的插件运行时。
 
 ```mermaid
 flowchart LR
@@ -411,6 +214,9 @@ flowchart LR
 
 ## 文档
 
+- [WorkBuddy 安装验证与排障](./workbuddy-plugin/INSTALL.md)
+- [WorkBuddy 插件说明](./workbuddy-plugin/README.zh-CN.md)
+- [DeepSeek Harness 插件说明](./deepseek-harness-plugin/README.zh.md)
 - [skills/open-gui-bootstrap/SKILL.md](./skills/open-gui-bootstrap/SKILL.md)
 - [docs/get-started.zh-CN.md](./docs/get-started.zh-CN.md)
 - [server/apps/backend/README.md](./server/apps/backend/README.md)

@@ -49,6 +49,7 @@ export class CoreMateClient {
       this.profile = JSON.parse(readFileSync(this.path, 'utf8')) as Profile
       if (this.profile.serviceUrl) this.url(this.profile.serviceUrl)
     }
+    this.clearModelPreferences()
     this.fixedServiceUrl = fixedServiceUrl ? this.url(fixedServiceUrl) : undefined
     // A session for any other service is not valid against the bundled one.
     if (this.fixedServiceUrl && this.profile.serviceUrl !== this.fixedServiceUrl) this.save(this.signedOut(this.fixedServiceUrl))
@@ -65,21 +66,18 @@ export class CoreMateClient {
     this.save({ ...this.profile, preferences: { ...this.profile.preferences, [this.scope]: { ...this.profile.preferences?.[this.scope], device: id } } })
   }
   private signedOut(serviceUrl = this.profile.serviceUrl): Profile { return { serviceUrl, ...(this.profile.preferences ? { preferences: this.profile.preferences } : {}) } }
-  selectModel(id?: string): void {
-    const { preferredModel: _previous, ...profile } = this.profile
-    if (!profile.user) { this.save(profile); return }
-    const { model: _oldModel, ...preference } = profile.preferences?.[this.scope] ?? {}
-    this.save({ ...profile, preferences: { ...profile.preferences, [this.scope]: { ...preference, ...(id ? { model: id } : {}) } } })
-  }
-  async selectedModel(signal: AbortSignal): Promise<ConfiguredModel | undefined> {
-    if (!this.profile.user) return undefined
-    const preferred = this.profile.preferences?.[this.scope]?.model ?? this.profile.preferredModel
-    if (!preferred) return undefined
-    // Older builds saved the display name; the configuration ID is the stable reference.
-    const models = await this.models(signal)
-    const model = models.find(model => model.id === preferred) ?? models.find(model => model.name === preferred)
-    if (!model) throw new Error('model_not_configured: choose an available model before starting')
-    return model
+  /** Compatibility for older local callers; this release only follows WorkBuddy. */
+  selectModel(_id?: string): void { this.clearModelPreferences() }
+  async selectedModel(_signal: AbortSignal): Promise<ConfiguredModel | undefined> { return undefined }
+  private clearModelPreferences(): void {
+    const { preferredModel: previous, ...profile } = this.profile
+    let changed = previous !== undefined
+    const preferences = Object.fromEntries(Object.entries(profile.preferences ?? {}).map(([scope, value]) => {
+      const { model, ...preference } = value
+      changed ||= model !== undefined
+      return [scope, preference]
+    }))
+    if (changed) this.save({ ...profile, preferences })
   }
   private url(value: string): string {
     const url = new URL(value)
@@ -142,33 +140,8 @@ export class CoreMateClient {
     if (this.profile.token) await this.api('user-auth/sign-out', {})
     this.save(this.signedOut())
   }
-  /** Phone models published in the admin Agent config; provider keys never leave the backend. */
-  async models(signal?: AbortSignal): Promise<ConfiguredModel[]> {
-    if (!this.profile.token) return []
-    const result = await this.api('agent-config/runtime/desktop-text-models', undefined, signal)
-    if (!Array.isArray(result)) throw new Error('invalid_model_catalog')
-    const models: ConfiguredModel[] = []
-    for (const config of result) {
-      if (!config || typeof config !== 'object' || config.agentName !== 'gui-agent-core' || config.phoneModelKind !== 'text') continue
-      if (!Number.isSafeInteger(config.id) || config.id <= 0 || config.hasApiKey !== true) continue
-      const model = typeof config.modelName === 'string' ? config.modelName.trim() : ''
-      if (!model || typeof config.baseUrl !== 'string' || !config.baseUrl.trim()) continue
-      const extra = config.extra && typeof config.extra === 'object' && !Array.isArray(config.extra) ? config.extra : {}
-      const effort = ['low', 'medium', 'high'].includes(extra.guiAgentCoreReasoningEffort) ? extra.guiAgentCoreReasoningEffort as 'low' | 'medium' | 'high' : undefined
-      const coordinates = ['screenshot_pixels', 'normalized_1000'].includes(extra.guiAgentCoreCoordinateSpace) ? extra.guiAgentCoreCoordinateSpace as CoordinateSpace : undefined
-      models.push({
-        id: String(config.id),
-        name: typeof config.configName === 'string' && config.configName.trim() ? config.configName.trim() : model,
-        model,
-        protocol: extra.guiAgentCoreApi === 'openai-responses' ? 'openai_responses' : 'openai_chat',
-        revision: typeof config.updatedAt === 'string' ? config.updatedAt : '',
-        ...(config.isActive === true ? { recommended: true } : {}),
-        ...(effort ? { reasoningEffort: effort } : {}),
-        ...(coordinates ? { coordinateSpace: coordinates } : {}),
-      })
-    }
-    return models
-  }
+  /** Legacy local route: no online model catalog is read in this release. */
+  async models(_signal?: AbortSignal): Promise<ConfiguredModel[]> { return [] }
   async infer(model: ConfiguredModel, body: Record<string, unknown>, signal: AbortSignal): Promise<Record<string, any>> {
     if (!/^[1-9][0-9]{0,15}$/u.test(model.id)) throw new Error('model_not_configured: select a model from the current admin configuration')
     const endpoint = model.protocol === 'openai_responses' ? 'responses' : 'chat/completions'
