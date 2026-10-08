@@ -31,7 +31,7 @@ import { SkillDTO, SkillNodeType } from "../../skill/skill.types";
 import { SupervisorTodosToolService } from "../../tools/supervisor-todos.tool";
 import { AgentState } from "../state/state.types";
 import { tool } from "@langchain/core/tools";
-import {createAgent, todoListMiddleware} from "langchain";
+import { createAgent, createMiddleware, ToolInvocationError } from "langchain";
 
 const logger = new Logger("SupervisorNode");
 
@@ -279,7 +279,24 @@ export function createSupervisorNode(
 			const agent = createAgent({
 				model: primaryModel,
 				tools,
-				// middleware: [todoListMiddleware()],
+				middleware: [createMiddleware({
+					name: "TodoWriteFailFast",
+					wrapToolCall: async (request, handler) => {
+						try {
+							return await handler(request);
+						} catch (error) {
+							// Storage failures must escape the agent's default tool-error retry loop.
+							if (request.toolCall.name === "write_todos" && !(error instanceof ToolInvocationError)) {
+								throw error;
+							}
+							return new ToolMessage({
+								content: error instanceof ToolInvocationError ? error.message : `${error}\n Please fix your mistakes.`,
+								tool_call_id: request.toolCall.id!,
+								name: request.toolCall.name,
+							});
+						}
+					},
+				})],
 				systemPrompt: enhancedSystemPrompt,
 			});
 

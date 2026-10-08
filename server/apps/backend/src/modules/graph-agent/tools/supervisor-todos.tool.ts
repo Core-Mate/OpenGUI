@@ -144,7 +144,7 @@ export class SupervisorTodosToolService {
 						this.logger.error(
 							`Failed to persist todos for thread ${threadId}: ${(error as Error).message}`,
 						);
-
+						throw error;
 					}
 				} else {
 					this.logger.warn(
