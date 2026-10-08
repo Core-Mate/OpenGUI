@@ -66,9 +66,7 @@ macOS の Terminal で次を実行します：
 cd "$HOME" && curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh | bash
 ```
 
-スクリプトは必要なファイルを検証し、ランタイムと OpenGUI を設定します。インストール中は WorkBuddy を開いたままで構いません。スマートフォンの接続は後で行えます。
-
-**インストールに成功すると、ブラウザで認証ガイドが自動的に開きます。案内に従って Skill とコネクターを認証してください。** 手動で開く場合は、[認証ガイドのファイル](./workbuddy-plugin/resources/OpenGUI-授权指南.html)をダウンロードし、HTML ファイルをブラウザで開いてください。
+スクリプトは必要なファイルを検証し、ランタイムと OpenGUI を設定します。
 
 [install.sh を個別にダウンロード](https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh)して `bash /実際のパス/install.sh` で実行することもできます。
 

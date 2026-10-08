@@ -67,9 +67,7 @@ Open macOS Terminal, paste this command, and run it:
 cd "$HOME" && curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh | bash
 ```
 
-This downloads and runs the installer without saving it manually first. The script verifies the subsequent installation files, prepares the runtime, and configures OpenGUI. WorkBuddy may stay open during installation; no phone is required yet.
-
-**After successful installation, the authorization guide opens automatically in your browser. Follow its instructions to authorize the Skill and connector.** To open it manually, download the HTML from the [authorization guide file page](./workbuddy-plugin/resources/OpenGUI-授权指南.html), then open the downloaded file in your browser.
+This downloads and runs the installer without saving it manually first. The script verifies the subsequent installation files, prepares the runtime, and configures OpenGUI.
 
 You can also [download install.sh separately](https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh) and run `bash /actual/path/install.sh` in Terminal.
 

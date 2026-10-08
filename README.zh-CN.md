@@ -66,9 +66,7 @@ OpenGUI 让 AI 根据真实屏幕截图理解 App，用自然语言完成手机�
 cd "$HOME" && curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh | bash
 ```
 
-这条命令会下载并运行安装脚本，无需先手动保存文件。脚本会校验后续安装文件、准备运行环境并配置 OpenGUI。安装期间 WorkBuddy 可以保持打开，也不需要连接手机。
-
-**安装成功后，会自动在浏览器中打开授权提示网页，根据网页提示完成技能和连接器授权即可。** 如需手动打开，可从[授权指南文件页面](./workbuddy-plugin/resources/OpenGUI-授权指南.html)下载 HTML，再用浏览器打开。
+这条命令会下载并运行安装脚本，无需先手动保存文件。脚本会校验后续安装文件、准备运行环境并配置 OpenGUI。
 
 也可以[单独下载安装脚本（install.sh）](https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh)，保存后在终端运行 `bash /实际路径/install.sh`。
 
