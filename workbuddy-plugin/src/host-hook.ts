@@ -6,6 +6,7 @@ import { BrokerClient, connectWorkBuddyBroker } from './broker-client.ts'
 import { brokerPort, VERSION, workbuddyStateDir } from './state.ts'
 import { OPENGUI_WORKBUDDY_TOOLS } from './tools.ts'
 import { errorInfo } from './errors.ts'
+import { requestsPreSubmitStop } from './stop-policy.ts'
 
 const names = new Set(OPENGUI_WORKBUDDY_TOOLS.map(tool => tool.name))
 type ObjectValue = Record<string, unknown>
@@ -48,12 +49,19 @@ export async function handleHostHook(
   if (kind === 'PreToolUse' && !tool) return {}
   if (!['PreToolUse', 'UserPromptSubmit', 'Stop', 'SubagentStop', 'FinalStop', 'SessionEnd', 'StopFailure'].includes(kind)) return {}
   if (typeof event.session_id !== 'string') return {}
-  const connection = await connect(kind === 'PreToolUse')
+  const stopBeforeSubmit = kind === 'UserPromptSubmit' && requestsPreSubmitStop(event.prompt)
+  // Only explicit skill invocations start a task. A repository installation URL
+  // must not start the old broker and thereby block its own upgrade.
+  const addressed = typeof event.prompt === 'string' && /(?:^\s*(?:@(?:skill:)?|\/)?opengui|(?:^|\s)@(?:skill:)?opengui)(?=$|\s|[，。,:：])/iu.test(event.prompt)
+  const prompt = kind === 'UserPromptSubmit' && addressed ? (event.prompt as string).trim().slice(0, 4000) : undefined
+  const connection = await connect(kind === 'PreToolUse' || stopBeforeSubmit || Boolean(prompt))
   if (!connection) return {}
   try {
     const result = object(await connection.hostEvent({
       hook_event_name: kind,
       session_id: event.session_id,
+      ...(stopBeforeSubmit ? { stop_before_submit: true } : {}),
+      ...(prompt ? { prompt } : {}),
       ...(typeof event.agent_id === 'string' ? { agent_id: event.agent_id } : {}),
       ...(typeof event.final_stop_reason === 'string' ? { final_stop_reason: event.final_stop_reason } : {}),
       ...(tool ? { tool_name: tool.name, tool_input: tool.args } : {}),

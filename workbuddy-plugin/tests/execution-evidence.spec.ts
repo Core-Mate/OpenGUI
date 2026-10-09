@@ -45,6 +45,17 @@ describe('task execution evidence', () => {
     expect(service.snapshotSession(session.sessionId).result?.outcome).toBe('blocked')
     expect(host.released).toEqual(['serial-a'])
   })
+  it('keeps the lease while a person handles the phone, then releases a resumed idle task', async () => {
+    const { host, service } = fixture(40)
+    const session = await service.openSession(['phone-a'], signal())
+    await service.requestHandoff(session.sessionId, 'otp', '请在手机上输入验证码', 0, signal())
+    await new Promise(resolve => setTimeout(resolve, 150))
+    expect(service.snapshotSession(session.sessionId).state).toBe('active')
+    expect(host.released).toEqual([])
+    await service.observe(session.sessionId, undefined, signal()).catch(() => undefined)
+    await service.cancel(session.sessionId)
+    expect(service.snapshotSession(session.sessionId).state).toBe('cancelled')
+  })
   it('retains the logical execution actor but revokes old observations on recovery', async () => {
     const { host, service } = fixture()
     const task = createControlTask()

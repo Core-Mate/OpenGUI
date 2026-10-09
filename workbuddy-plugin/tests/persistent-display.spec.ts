@@ -74,10 +74,10 @@ describe('persistent device displays', () => {
       const frame = await service.observe(session.sessionId, undefined, signal())
       host.onDeviceUnavailable?.('serial-a')
       expect((await service.status(session.sessionId, signal())).activity).toBe('paused')
-      await expect(service.act(session.sessionId, undefined, { action: 'key', key: 'Home', observationId: frame.observationId }, signal())).rejects.toThrow('observe again')
+      await expect(service.act(session.sessionId, undefined, { action: 'key', key: 'Home', observationId: frame.observationId }, signal())).rejects.toMatchObject({ code: 'task_paused' })
       expect(host.invalidate).toHaveBeenCalled()
-      await service.observe(session.sessionId, undefined, signal())
-      expect((await service.status(session.sessionId, signal())).activity).toBe('ready')
+      await expect(service.observe(session.sessionId, undefined, signal())).rejects.toMatchObject({ code: 'task_paused' })
+      expect(service.snapshotSession(session.sessionId).connectionRecovery?.status).toBe('waiting_recheck')
     } finally { await service.dispose() }
   })
 

@@ -7,8 +7,10 @@ VERSION=0.3.1
 ARCHIVE_NAME=opengui-mcp-$VERSION.tgz
 usage() {
   echo "OpenGUI for $HOST $VERSION (macOS arm64/x64)"
-  echo "Usage: bash $0 [--check] [--repair-legacy] [--app /path/WorkBuddy.app] [--config-root /verified/path] [--archive /absolute/path/$ARCHIVE_NAME]"
+  echo "Usage: bash $0 [--check] [--repair-legacy] [--download-source cn|official] [--video-mirror https://host/path] [--app /path/WorkBuddy.app] [--config-root /verified/path] [--archive /absolute/path/$ARCHIVE_NAME]"
   echo 'Downloads a verified prebuilt package and private Node. No sudo or source build.'
+  echo 'Node and npm default to npmmirror (cn), with official fallback. Video uses GitHub unless --video-mirror is supplied.'
+  echo 'Automatic discovery prefers WorkBuddy over WorkBuddy AI. Use --app to select a specific bundle.'
   echo 'Finish existing OpenGUI tasks before upgrading. WorkBuddy 5.5.6+ may stay open for live configuration.'
 }
 archive=
@@ -16,12 +18,14 @@ app=
 config_root=${WORKBUDDY_CONFIG_DIR:-${CODEBUDDY_CONFIG_DIR:-}}
 check_only=false
 repair_legacy=false
+download_source=${OPENGUI_DOWNLOAD_SOURCE:-cn}
+video_mirror=${OPENGUI_VIDEO_MIRROR:-}
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --help|-h) usage; exit 0 ;;
-    --archive|--app|--config-root)
+    --archive|--app|--config-root|--download-source|--video-mirror)
       [ "$#" -ge 2 ] || { usage; exit 1; }
-      case "$1" in --archive) archive=$2 ;; --app) app=$2 ;; --config-root) config_root=$2 ;; esac
+      case "$1" in --archive) archive=$2 ;; --app) app=$2 ;; --config-root) config_root=$2 ;; --download-source) download_source=$2 ;; --video-mirror) video_mirror=$2 ;; esac
       shift 2 ;;
     --check) check_only=true; shift ;;
     --repair-legacy) repair_legacy=true; shift ;;
@@ -31,29 +35,53 @@ done
 fail() { echo "[$1] $2" >&2; exit 1; }
 started=$SECONDS
 stage() { echo "[$((SECONDS-started))s] $*"; }
+case "$download_source" in
+  cn) node_base=https://npmmirror.com/mirrors/node; npm_registry=https://registry.npmmirror.com ;;
+  official) node_base=https://nodejs.org/dist; npm_registry=https://registry.npmjs.org ;;
+  *) fail DOWNLOAD_SOURCE 'Use --download-source cn or official.' ;;
+esac
+export OPENGUI_DOWNLOAD_SOURCE="$download_source"
+if [ -n "$video_mirror" ]; then
+  case "$video_mirror" in https://?*) ;; *) fail VIDEO_MIRROR 'The video mirror must be an HTTPS archive directory.' ;; esac
+  case "$video_mirror" in *[[:space:]]*|*\?*|*\#*|*@*) fail VIDEO_MIRROR 'The video mirror must not contain credentials, whitespace, query or fragment.' ;; esac
+fi
+export OPENGUI_VIDEO_MIRROR="$video_mirror"
 [ "$(uname -s)" = Darwin ] || { echo 'Only macOS is supported.' >&2; exit 1; }
 case "$(uname -m)" in
   arm64) arch=arm64; node_sha=61130f394c1630d211dd50aecc4353d379480f36d3ac913cd85dbba1aed585c6 ;;
   x86_64) arch=x64; node_sha=58e99022c2ff89395576cc7fd4d98cea24bb68081475d5f88b801ee8729fb026 ;;
   *) echo 'Unsupported architecture.' >&2; exit 1 ;;
 esac
-# Discover the actual bundle identity, including renamed and mounted applications.
-candidates=()
-for candidate in /Applications/*.app "$HOME"/Applications/*.app /Volumes/*/*.app; do
-  [ -f "$candidate/Contents/Info.plist" ] || continue
-  bundle_id=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$candidate/Contents/Info.plist" 2>/dev/null || true)
-  case "$bundle_id" in com.tencent.workbuddy.*) candidates+=("$candidate") ;; esac
-done
+is_workbuddy_bundle() {
+  case "$1" in
+    com.workbuddy.workbuddy|com.workbuddy.workbuddy-ai|com.tencent.workbuddy.*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
 if [ -z "$app" ]; then
+  # Prefer standard WorkBuddy, including its legacy identity, over WorkBuddy AI.
+  # Bundle identities also recognize renamed and mounted applications.
+  candidates=()
+  standard_candidates=()
+  for candidate in /Applications/*.app "$HOME"/Applications/*.app /Volumes/*/*.app; do
+    [ -f "$candidate/Contents/Info.plist" ] || continue
+    bundle_id=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$candidate/Contents/Info.plist" 2>/dev/null || true)
+    is_workbuddy_bundle "$bundle_id" || continue
+    case "$bundle_id" in
+      com.workbuddy.workbuddy-ai) candidates+=("$candidate") ;;
+      *) standard_candidates+=("$candidate") ;;
+    esac
+  done
+  if [ "${#standard_candidates[@]}" -gt 0 ]; then candidates=("${standard_candidates[@]}"); fi
   [ "${#candidates[@]}" -gt 0 ] || fail HOST_NOT_FOUND 'Install WorkBuddy first, or select its bundle with --app /path/WorkBuddy.app.'
-  [ "${#candidates[@]}" = 1 ] || fail HOST_AMBIGUOUS 'Multiple WorkBuddy bundles found. Select the intended one with --app /path/WorkBuddy.app.'
+  [ "${#candidates[@]}" = 1 ] || fail HOST_AMBIGUOUS 'Multiple WorkBuddy bundles at the preferred priority found. Select the intended one with --app /path/WorkBuddy.app.'
   app=${candidates[0]}
 fi
 case "$app" in /*.app) ;; *) fail HOST_PATH 'The --app path must be an absolute .app bundle path.' ;; esac
 [ -d "$app" ] || fail HOST_NOT_FOUND 'Selected application does not exist.'
 app=$(cd "$app" && pwd -P)
 bundle_id=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Contents/Info.plist" 2>/dev/null || true)
-case "$bundle_id" in com.tencent.workbuddy.*) ;; *) fail HOST_IDENTITY 'Selected bundle is not a recognized WorkBuddy application.' ;; esac
+is_workbuddy_bundle "$bundle_id" || fail HOST_IDENTITY 'Selected bundle is not a recognized WorkBuddy application.'
 host_version=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Contents/Info.plist")
 [[ "$host_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail HOST_VERSION 'Cannot determine a supported WorkBuddy version.'
 IFS=. read -r major minor patch <<< "$host_version"
@@ -71,10 +99,17 @@ if [ -z "$config_root" ]; then
   config_root="$HOME/$folder"
 fi
 case "$config_root" in /*) ;; *) fail HOST_CONFIG_PATH 'Configuration root must be absolute.' ;; esac
-cli="$app/Contents/Resources/app.asar.unpacked/cli/dist/codebuddy.js"
-for event in UserPromptSubmit PreToolUse Stop SubagentStop FinalStop SessionEnd StopFailure; do
-  grep -Fq "$event" "$cli" 2>/dev/null || fail HOST_HOOKS "The bundled CLI does not expose $event. Upgrade to a compatible WorkBuddy build."
+cli_compatible=false
+for cli_name in codebuddy.js codebuddy-headless.js codebuddy-lite-wb.mjs; do
+  cli="$app/Contents/Resources/app.asar.unpacked/cli/dist/$cli_name"
+  [ -f "$cli" ] || continue
+  all_hooks=true
+  for event in UserPromptSubmit PreToolUse Stop SubagentStop FinalStop SessionEnd StopFailure; do
+    if ! grep -Fq "$event" "$cli"; then all_hooks=false; break; fi
+  done
+  if [ "$all_hooks" = true ]; then cli_compatible=true; break; fi
 done
+[ "$cli_compatible" = true ] || fail HOST_HOOKS 'No recognized bundled CLI exposes all required lifecycle Hooks. Upgrade to a compatible WorkBuddy build.'
 host_is_running() {
   local processes executable
   processes=$(ps -axo comm=) || fail HOST_PROCESS_CHECK 'Cannot inspect running applications.'
@@ -87,15 +122,20 @@ host_running=false
 check_host_state() {
   local previous=$host_running
   host_running=false
+  # Live-compatible hosts do not need process enumeration, which WorkBuddy's
+  # command sandbox may deny. Keep the separate active-broker upgrade guard.
+  if (( 10#$major > 5 || (10#$major == 5 && 10#$minor > 5) || (10#$major == 5 && 10#$minor == 5 && 10#$patch >= 6) )); then
+    host_running=true
+    [ "$previous" = true ] || stage 'LIVE_PREFLIGHT_OK: WorkBuddy supports live configuration; process enumeration is not required. Finish any existing OpenGUI phone task before installation.'
+    return
+  fi
   if host_is_running; then
     host_running=true
-    if (( 10#$major < 5 || (10#$major == 5 && 10#$minor < 5) || (10#$major == 5 && 10#$minor == 5 && 10#$patch < 6) )); then
-      fail HOST_RESTART_REQUIRED "WorkBuddy $host_version does not expose the verified live configuration flow. Finish OpenGUI tasks, quit WorkBuddy with Command-Q, then rerun this installer. No configuration was changed."
-    fi
-    [ "$previous" = true ] || stage 'LIVE_PREFLIGHT_OK: WorkBuddy may stay open. Finish any existing OpenGUI phone task before installation.'
+    fail HOST_RESTART_REQUIRED "WorkBuddy $host_version does not expose the verified live configuration flow. Finish OpenGUI tasks, quit WorkBuddy with Command-Q, then rerun this installer. No configuration was changed."
   fi
 }
-stage "Preflight: WorkBuddy $host_version; configuration: $config_root"
+stage "Preflight: WorkBuddy $host_version; application: $app; configuration: $config_root"
+stage "Download source: $download_source; npm: $npm_registry; video: ${video_mirror:-official GitHub}"
 check_host_state
 if [ "$check_only" = true ]; then
   stage 'PREFLIGHT_OK: no files changed. MCP live reload and /hooks review still require host verification.'
@@ -130,7 +170,7 @@ trap 'exit 143' TERM
 temporary=$(mktemp -d "$root/.install.XXXXXXXX")
 fetch() {
   curl --proto '=https' --proto-redir '=https' --tlsv1.2 --fail --location \
-    --connect-timeout 15 --max-time 240 --retry 2 "$1" -o "$2"
+    --connect-timeout 15 --max-time "${3:-240}" --retry 2 "$1" -o "$2"
 }
 if [ -z "$archive" ]; then
   base="https://github.com/Core-Mate/OpenGUI/releases/download/opengui-$HOST-v$VERSION"
@@ -177,7 +217,11 @@ if ! valid_node; then
   runtime_lock_owned=true
   [ ! -e "$node_dir" ] && [ ! -L "$node_dir" ] || { echo "Invalid existing Node runtime: $node_dir. No running runtime was overwritten." >&2; exit 1; }
   echo 'Preparing private Node.js 22.23.2 (~50 MB); no system installation.'
-  fetch "https://nodejs.org/dist/v22.23.2/$node_name.tar.gz" "$temporary/node.tar.gz"
+  if ! fetch "$node_base/v22.23.2/$node_name.tar.gz" "$temporary/node.tar.gz" 90; then
+    [ "$download_source" = cn ] || fail NODE_DOWNLOAD 'Node download failed. Retry with --download-source cn.'
+    stage 'Node mirror unavailable; falling back to nodejs.org.'
+    fetch "https://nodejs.org/dist/v22.23.2/$node_name.tar.gz" "$temporary/node.tar.gz"
+  fi
   [ "$(shasum -a 256 "$temporary/node.tar.gz" | awk '{print $1}')" = "$node_sha" ] || { echo 'Node checksum mismatch.' >&2; exit 1; }
   tar -xzf "$temporary/node.tar.gz" -C "$temporary"
   printf '%s\n%s\n' "$node_sha" "$(shasum -a 256 "$temporary/$node_name/bin/node" | awk '{print $1}')" > "$temporary/$node_name/.verified"
@@ -185,11 +229,11 @@ if ! valid_node; then
 fi
 check_host_state
 stage "Installing configuration and checking runtime dependencies"
-"$node" - "$root" "$temporary/verified.tar.gz" "$VERSION" "$config_root" "$expected" "$0" "$app" "$repair_legacy" "$host_running" <<'INSTALL_JS'
+"$node" - "$root" "$temporary/verified.tar.gz" "$VERSION" "$config_root" "$expected" "$0" "$app" "$repair_legacy" "$host_running" "$npm_registry" <<'INSTALL_JS'
 const fs = require('node:fs');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
-const [root, archive, version, configRoot, archiveSha256, installer, app, repairLegacy, hostRunning] = process.argv.slice(2);
+const [root, archive, version, configRoot, archiveSha256, installer, app, repairLegacy, hostRunning, npmRegistry] = process.argv.slice(2);
 const packages = path.join(root, 'packages');
 fs.mkdirSync(packages, { recursive: true });
 if (fs.lstatSync(packages).isSymbolicLink()) throw Error('Redirected packages directory');
@@ -199,7 +243,18 @@ const reusable = fs.existsSync(path.join(cache, '.complete')) && fs.readFileSync
 if (!reusable) install = fs.mkdtempSync(path.join(packages, version + '-'));
 if (fs.existsSync(cache) && (!reusable || fs.lstatSync(cache).isSymbolicLink())) throw Error('CACHE_INVALID: retain existing files and inspect the package cache before retrying');
 const npm = path.resolve(process.execPath, '../../lib/node_modules/npm/bin/npm-cli.js');
-if (!reusable) execFileSync(process.execPath, [npm, 'install', '--prefix', install, '--ignore-scripts', '--no-audit', '--no-fund', archive], { stdio: 'inherit' });
+// npm reads process.cwd() before applying --prefix; use our verified private directory.
+if (!reusable) {
+  const installFrom = registry => execFileSync(process.execPath, [npm, 'install', '--prefix', install, '--registry', registry, '--ignore-scripts', '--no-audit', '--no-fund', archive], { cwd: install, stdio: 'inherit' });
+  try { installFrom(npmRegistry); } catch (error) {
+    if (npmRegistry !== 'https://registry.npmmirror.com') throw error;
+    console.error('npm mirror installation failed; retrying with registry.npmjs.org.');
+    // A partial lockfile can retain mirror tarball URLs during the official retry.
+    fs.rmSync(path.join(install, 'node_modules'), { recursive: true, force: true });
+    fs.rmSync(path.join(install, 'package-lock.json'), { force: true });
+    installFrom('https://registry.npmjs.org');
+  }
+}
 let pkg = path.join(install, 'node_modules/opengui-mcp');
 const meta = JSON.parse(fs.readFileSync(path.join(pkg, 'package.json')));
 if (meta.name !== 'opengui-mcp' || meta.version !== version) throw Error('Archive package/version mismatch');
@@ -211,20 +266,31 @@ if (!reusable) {
   pkg = path.join(cache, 'node_modules/opengui-mcp');
 }
 try {
+  if (process.env.OPENGUI_VIDEO_MIRROR && !fs.readFileSync(path.join(pkg, 'lib/prepare-video.js'), 'utf8').includes('OPENGUI_VIDEO_MIRROR')) {
+    throw Error('VIDEO_MIRROR_UNSUPPORTED: this package predates video mirror support. Upgrade the package or omit --video-mirror; the mirror was not silently ignored.');
+  }
   execFileSync(process.execPath, [path.join(pkg, 'lib/prepare-video.js')], { stdio: 'inherit', env: { ...process.env, OPENGUI_WORKBUDDY_HOME: root } });
 } catch (error) {
-  console.error('VIDEO_PREPARE_FAILED: old configuration retained. Restore network access and rerun this installer with the same --archive.');
+  console.error('VIDEO_PREPARE_FAILED: old configuration retained. Inspect the reported error and rerun this installer with the same --archive.');
   throw error;
 }
 execFileSync('bash', [installer, '--check', '--app', app, '--config-root', configRoot], {stdio: 'inherit'});
 execFileSync(process.execPath, [path.join(pkg, 'lib/check-upgrade.js')], { stdio: 'inherit', env: { ...process.env, OPENGUI_WORKBUDDY_HOME: root } });
 execFileSync(process.execPath, [path.join(pkg, 'scripts/install-local.mjs'), '--package-dir', pkg, '--node', process.execPath, '--config-root', configRoot, '--state-root', root, ...(repairLegacy === 'true' ? ['--repair-legacy'] : [])], { stdio: 'inherit' });
 if (hostRunning === 'true') {
-  console.log('LIVE_CONFIG_WRITTEN: MCP, Skill and lifecycle Hooks configured while WorkBuddy stayed open. In WorkBuddy, trust/enable the OpenGUI MCP, open /hooks to review and apply the external Hook change, then open /skills to confirm opengui. Start a new task only if the current task does not refresh. Verify by listing phones without operating them.');
+  console.log('LIVE_CONFIG_WRITTEN: MCP, Skill and lifecycle Hooks configured for a live-compatible WorkBuddy host. Open or return to WorkBuddy, trust/enable the OpenGUI MCP, open /hooks to review and apply the external Hook change, then open /skills to confirm opengui. Start a new task only if the current task does not refresh. Verify by listing phones without operating them.');
 } else {
   console.log('CONFIG_WRITTEN: MCP, Skill and lifecycle Hooks configured. Open WorkBuddy, trust/enable the OpenGUI MCP, open /hooks to review the Hooks, then verify read-only device discovery.');
 }
 console.log('Rollback receipt: see installState in the result above. Old packages and per-configuration receipts are retained.');
+console.log('下一步 / Next steps:');
+console.log('1. 打开 WorkBuddy，在 MCP 管理中确认 OpenGUI 已启用；如有首次信任提示，请核对后授权。');
+console.log('2. 检查 /hooks 和 /skills 中的 OpenGUI。当前聊天未刷新时，新建聊天。');
+console.log('3. 发送 @opengui，右侧会打开任务首页。先登录、选择执行模型，再连接 Android 手机或启动模拟器。');
+console.log('4. Try it / 先试一下：打开手机设置，再返回桌面，确认回到桌面后结束。');
+console.log('5. 在首页填写任务并点击「开始执行」。审核、接管和执行结果在右侧显示；结束后可查看报告或新建任务。');
+console.log('App 测试请准备：应用/页面、测试数据、预期结果、停止位置。评论任务另需账号/目标链接、范围和数量或时限。密码与验证码请自行在设备或登录面板输入。');
+
 
 INSTALL_JS
 

@@ -1,3 +1,8 @@
 
 # Keep executable macOS installers usable after Windows checkouts.
 *.command text eol=lf
+
+# Preserve the bytes verified by the WorkBuddy bootstrap on every platform.
+workbuddy-plugin/install.sh text eol=lf
+workbuddy-plugin/resources/*.html text eol=lf
+workbuddy-plugin/connector/skills/control/*.html text eol=lf

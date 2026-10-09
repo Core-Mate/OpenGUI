@@ -82,8 +82,11 @@ export class ScrcpyVideoPacketParser {
   }
 }
 
-/** Fixed read-only server options for the embedded low-latency stream. */
-export function buildScrcpyVideoServerArgs(scid: string, serverPath = SCRCPY_REMOTE_SERVER): string[] {
+/**
+ * Fixed server options for the embedded low-latency stream. With control, the same server also
+ * accepts person-driven takeover input; the clipboard is never synchronized in either direction.
+ */
+export function buildScrcpyVideoServerArgs(scid: string, serverPath = SCRCPY_REMOTE_SERVER, control = false): string[] {
   return [
     `CLASSPATH=${serverPath}`,
     'app_process', '/', 'com.genymobile.scrcpy.Server', SCRCPY_VERSION,
@@ -91,14 +94,16 @@ export function buildScrcpyVideoServerArgs(scid: string, serverPath = SCRCPY_REM
     'tunnel_forward=true',
     'video=true',
     'audio=false',
-    'control=false',
+    `control=${control}`,
+    ...(control ? ['clipboard_autosync=false'] : []),
     'cleanup=false',
     'video_codec=h264',
     'max_size=960',
     'max_fps=30',
     'video_bit_rate=2000000',
     'video_codec_options=i-frame-interval=1',
-    'send_dummy_byte=false',
+    // With control the dummy byte confirms the video socket before the control socket connects.
+    `send_dummy_byte=${control}`,
     'send_device_meta=false',
     'send_stream_meta=true',
     'send_frame_meta=true',
@@ -136,6 +141,10 @@ interface StreamEntry {
   readonly controller: AbortController
   operation: Promise<void>
   socket?: Socket
+  /** Takeover input socket; only open when the stream manager was created with control. */
+  control?: Socket
+  /** The current video frame size, the coordinate space of takeover input. */
+  frame?: { width: number; height: number }
   process?: ChildProcess
   port?: number
   forward?: OwnedForward
@@ -162,6 +171,8 @@ export interface ScrcpyVideoStreamsOptions {
   maxSources?: number
   onError?: (error: unknown) => void
   forwardRegistry: OwnedForwardRegistry
+  /** Also open scrcpy's control socket so a person can operate the phone during takeover. */
+  control?: boolean
 }
 
 /** Shares one scrcpy encoder per device across same-origin browser subscribers. */
@@ -191,6 +202,19 @@ export class ScrcpyVideoStreams {
     this.maxSources = options.maxSources ?? 4
     this.onError = options.onError ?? (() => {})
     this.forwardRegistry = options.forwardRegistry
+  }
+
+  /** Write one encoded control message to the device's live stream; false when none is open. */
+  inject(device: VideoDevice, message: Buffer): boolean {
+    const entry = this.entries.get(device.id)
+    if (!entry || entry.closed || !entry.control || entry.control.destroyed) return false
+    entry.control.write(message)
+    return true
+  }
+
+  frameSize(device: VideoDevice): { width: number; height: number } | undefined {
+    const entry = this.entries.get(device.id)
+    return entry && !entry.closed ? entry.frame : undefined
   }
 
   async prepare(signal: AbortSignal): Promise<void> {
@@ -318,7 +342,7 @@ export class ScrcpyVideoStreams {
     }
 
     const child = this.spawnImpl(this.options.adbPath(), [
-      '-s', entry.device.serial, 'shell', ...buildScrcpyVideoServerArgs(scid),
+      '-s', entry.device.serial, 'shell', ...buildScrcpyVideoServerArgs(scid, undefined, this.options.control === true),
     ], { shell: false, windowsHide: true, stdio: ['ignore', 'ignore', 'pipe'] })
     entry.process = child
     let stderr = ''
@@ -326,6 +350,15 @@ export class ScrcpyVideoStreams {
     await waitForSpawn(child, signal)
     const socket = await connectVideo(this.connectImpl, port, signal)
     entry.socket = socket
+    if (this.options.control === true) {
+      // Drop the dummy byte; scrcpy starts the video only after the control socket connects.
+      socket.read(1)
+      const control = await openSocket(this.connectImpl, port, signal)
+      entry.control = control
+      // Device messages (clipboard acknowledgements) are not used; drain them so the server never blocks.
+      control.on('data', () => {})
+      control.on('error', () => {})
+    }
     const parser = new ScrcpyVideoPacketParser()
     socket.on('data', chunk => {
       try {
@@ -395,6 +428,7 @@ export class ScrcpyVideoStreams {
     if (event.type === 'codec') entry.lastCodec = text
     else {
       entry.lastSession = text
+      entry.frame = { width: event.width, height: event.height }
       entry.replay = []
       entry.replayBytes = 0
     }
@@ -422,6 +456,7 @@ export class ScrcpyVideoStreams {
       if (entry.idleTimer !== undefined) clearTimeout(entry.idleTimer)
       entry.controller.abort(new Error('opengui-workbuddy: embedded stream stopped'))
       entry.socket?.destroy()
+      entry.control?.destroy()
       const child = entry.process
       if (child !== undefined && child.exitCode === null) await terminateChild(child)
       if (entry.forward !== undefined) await this.forwardRegistry.release(entry.forward, this.options.runAdb, 1_000)
@@ -481,25 +516,29 @@ async function waitForSpawn(child: ChildProcess, signal: AbortSignal): Promise<v
   })
 }
 
+function openSocket(connectImpl: typeof connect, port: number, signal: AbortSignal): Promise<Socket> {
+  return new Promise<Socket>((resolve, reject) => {
+    const socket = connectImpl({ host: '127.0.0.1', port })
+    const cleanup = (): void => {
+      socket.off('connect', onConnect)
+      socket.off('error', onError)
+      signal.removeEventListener('abort', onAbort)
+    }
+    const onConnect = (): void => { cleanup(); resolve(socket) }
+    const onError = (error: Error): void => { cleanup(); socket.destroy(); reject(error) }
+    const onAbort = (): void => { cleanup(); socket.destroy(); reject(signal.reason) }
+    socket.once('connect', onConnect)
+    socket.once('error', onError)
+    signal.addEventListener('abort', onAbort, { once: true })
+  })
+}
+
 async function connectVideo(connectImpl: typeof connect, port: number, signal: AbortSignal): Promise<Socket> {
   const deadline = Date.now() + 10_000
   while (true) {
     signal.throwIfAborted()
     try {
-      const socket = await new Promise<Socket>((resolve, reject) => {
-        const socket = connectImpl({ host: '127.0.0.1', port })
-        const cleanup = (): void => {
-          socket.off('connect', onConnect)
-          socket.off('error', onError)
-          signal.removeEventListener('abort', onAbort)
-        }
-        const onConnect = (): void => { cleanup(); resolve(socket) }
-        const onError = (error: Error): void => { cleanup(); socket.destroy(); reject(error) }
-        const onAbort = (): void => { cleanup(); socket.destroy(); reject(signal.reason) }
-        socket.once('connect', onConnect)
-        socket.once('error', onError)
-        signal.addEventListener('abort', onAbort, { once: true })
-      })
+      const socket = await openSocket(connectImpl, port, signal)
       try {
         await waitForVideoData(socket, signal, Math.max(1, deadline - Date.now()))
         return socket

@@ -2,7 +2,7 @@ import { randomBytes, randomUUID, timingSafeEqual } from 'node:crypto'
 import { createServer, type Socket } from 'node:net'
 import { WorkBuddyOpenGuiService } from './service.ts'
 import { callOpenGuiTool, validateToolArguments } from './tools.ts'
-import { BROKER_PROTOCOL, VERSION } from './state.ts'
+import { BROKER_PROTOCOL, callBudgetMs, VERSION } from './state.ts'
 import { readFrames, sendFrame, type Message } from './wire.ts'
 import { errorInfo, OpenGuiError } from './errors.ts'
 import { AutomationCoordinator, type HostEvent, type AutomationTask } from './automation.ts'
@@ -121,15 +121,18 @@ export async function startBroker(options: BrokerOptions): Promise<{ port: numbe
         }
         if (sessionId && !owned.has(sessionId)) throw new Error('opengui: session belongs to another WorkBuddy connection')
         const controller = new AbortController()
-        const lifecycleOnly = ['opengui_status', 'opengui_list_devices', 'opengui_cancel', 'opengui_close_session', 'opengui_close_mirror', 'opengui_viewer_status', 'opengui_close_viewer'].includes(message.name)
-        const signal = AbortSignal.any([lifetime.signal, controller.signal, AbortSignal.timeout(120_000), ...(!lifecycleOnly && task ? [task.controller.signal] : [])])
+        const lifecycleOnly = ['opengui_status', 'opengui_history', 'opengui_list_devices', 'opengui_cancel', 'opengui_close_session', 'opengui_close_mirror', 'opengui_viewer_status', 'opengui_close_viewer'].includes(message.name)
+        const signal = AbortSignal.any([lifetime.signal, controller.signal, AbortSignal.timeout(callBudgetMs(args)), ...(!lifecycleOnly && task ? [task.controller.signal] : [])])
         requests.set(id, { controller, ...(sessionId ? { sessionId } : {}) })
         try {
+          const onProgress = message.progress === true ? (message: string): void => {
+            if (!signal.aborted) sendFrame(socket, { id, type: 'progress', message })
+          } : undefined
           let result = message.name === 'opengui_start' && task?.started
             ? await service.displayStatus(signal)
             : !sessionId && (message.name === 'opengui_open_mirror' || message.name === 'opengui_close_mirror')
             ? await service.deviceMirror(String(args.deviceId), message.name === 'opengui_close_mirror', signal, automation.closeableSessions(owned, task))
-            : await callOpenGuiTool(service, message.name, args, signal, task ? { task: task.execution, owner: task.id, skipActivation: task.started } : { owner: connectionOwner })
+            : await callOpenGuiTool(service, message.name, args, signal, { ...(task ? { task: task.execution, owner: task.id, skipActivation: task.started } : { owner: connectionOwner }), onProgress })
           if (message.name === 'opengui_open_session') {
             const created = (result as { sessionId: string }).sessionId
             if (signal.aborted || socket.destroyed || (task && task.outcome !== 'active')) {

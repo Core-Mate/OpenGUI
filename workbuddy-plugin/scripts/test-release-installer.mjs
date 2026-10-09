@@ -12,11 +12,15 @@ try {
  const home = join(temporary, 'home with spaces'), config = join(home, '.workbuddy-ai'), stateRoot = join(home, '.workbuddy/opengui'), bin = join(home, 'bin')
  await mkdir(bin, { recursive: true })
  if (process.env.OPENGUI_TEST_VIDEO_CACHE) await cp(process.env.OPENGUI_TEST_VIDEO_CACHE, join(stateRoot, 'scrcpy'), {recursive:true})
+ if (process.env.OPENGUI_TEST_NODE_CACHE) {
+  const nodeCache = await realpath(process.env.OPENGUI_TEST_NODE_CACHE)
+  await cp(nodeCache, join(stateRoot, 'runtime', nodeCache.split('/').at(-1)), {recursive:true})
+ }
  // Only the isolated test host is considered stopped; never quit the real app.
  const app = join(temporary, 'WorkBuddy AI.app')
  const cli = join(app, 'Contents/Resources/app.asar.unpacked/cli')
  await mkdir(join(cli,'dist'), {recursive:true})
- await writeFile(join(app,'Contents/Info.plist'), '<?xml version="1.0"?><plist version="1.0"><dict><key>CFBundleIdentifier</key><string>com.tencent.workbuddy.mac</string><key>CFBundleShortVersionString</key><string>5.5.3</string></dict></plist>')
+ await writeFile(join(app,'Contents/Info.plist'), '<?xml version="1.0"?><plist version="1.0"><dict><key>CFBundleIdentifier</key><string>com.workbuddy.workbuddy-ai</string><key>CFBundleShortVersionString</key><string>5.5.3</string></dict></plist>')
  await writeFile(join(cli,'product.json'), JSON.stringify({dataFolderName:'.workbuddy-ai'}))
  await writeFile(join(cli,'dist/codebuddy.js'), 'UserPromptSubmit PreToolUse Stop SubagentStop FinalStop SessionEnd StopFailure')
  await writeFile(join(bin, 'ps'), '#!/bin/sh\nif [ "$TEST_HOST_RUNNING" = 0 ]; then printf "%s\\n" "$TEST_APP/Contents/MacOS/Electron"; fi\n', {mode:0o755})
@@ -28,7 +32,7 @@ try {
  const installer = process.argv[2] ?? join(root, 'scripts/install-macos.command')
  const run = (extra={}) => spawnSync('bash', [installer, '--archive', archive, ...(process.argv[2] ? [] : ['--app', app])], {encoding:'utf8',env:{...process.env,HOME:home,WORKBUDDY_CONFIG_DIR:'',CODEBUDDY_CONFIG_DIR:'',WORKBUDDY_INSTANCE_NUMBER:'',TEST_APP:app,PATH:bin+':'+process.env.PATH,...extra}})
  let result=run({TEST_HOST_RUNNING:'0'}); assert.notEqual(result.status,0); assert.match(result.stderr,/HOST_RESTART_REQUIRED/)
- await writeFile(join(app,'Contents/Info.plist'), '<?xml version="1.0"?><plist version="1.0"><dict><key>CFBundleIdentifier</key><string>com.tencent.workbuddy.mac</string><key>CFBundleShortVersionString</key><string>5.5.6</string></dict></plist>')
+ await writeFile(join(app,'Contents/Info.plist'), '<?xml version="1.0"?><plist version="1.0"><dict><key>CFBundleIdentifier</key><string>com.workbuddy.workbuddy-ai</string><key>CFBundleShortVersionString</key><string>5.5.6</string></dict></plist>')
  const timings = []
  for (let i=0;i<2;i++) {
   const started = Date.now()
@@ -46,5 +50,5 @@ try {
  }
  assert.equal((await readdir(join(stateRoot, 'packages'))).length, 1, 'Repeat installation must reuse the same package directory')
  console.log(JSON.stringify({firstInstallMs:timings[0], repeatInstallMs:timings[1]}))
- console.log('PASS: live WorkBuddy 5.5.6 install, older-host restart fallback, native dependency import, retained foreign MCP/Hooks, idempotency, paths with spaces and rollback receipts.')
+ console.log('PASS: real release installer with a synthetic WorkBuddy 5.5.6 bundle/process fixture, older-host restart fallback, native dependency import, retained foreign MCP/Hooks, idempotency, paths with spaces and rollback receipts; real host loading remains unverified.')
 } finally { await rm(temporary,{recursive:true,force:true}) }

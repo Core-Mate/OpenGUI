@@ -12,12 +12,10 @@
 </p>
 
 <p align="center">
+  <a href="#use-opengui-in-workbuddy"><img src="https://img.shields.io/badge/INSTALL-WORKBUDDY_PLUGIN-168a70?style=for-the-badge" alt="Install the WorkBuddy plugin"></a>
   <a href="#use-opengui-in-deepseek-harness"><img src="https://img.shields.io/badge/INSTALL-DEEPSEEK_HARNESS_PLUGIN-6f42c1?style=for-the-badge" alt="Install the DeepSeek Harness plugin"></a>
-  <a href="#use-opengui-in-workbuddy"><img src="https://img.shields.io/badge/INSTALL-WORKBUDDY_CANDIDATE-168a70?style=for-the-badge" alt="Install the WorkBuddy candidate"></a>
   <a href="./skills/open-gui-bootstrap/SKILL.md"><img src="https://img.shields.io/badge/BOOTSTRAP-WITH_AI_AGENTS-ffb000?style=for-the-badge" alt="Bootstrap with Claude Code, Codex, or OpenCode"></a>
   <img src="https://img.shields.io/badge/SYSTEM-MULTI_ROLE_OPERATOR-1f6feb?style=for-the-badge" alt="Multi-role operator system">
-  <img src="https://img.shields.io/badge/TASKS-UP_TO_12_HOURS-cf222e?style=for-the-badge" alt="Tasks up to 12 hours">
-  <img src="https://img.shields.io/badge/MODELS-CLAUDE_OPUS_|_QWEN_|_DOUBAO_|_BYO_API-2f9e44?style=for-the-badge" alt="Recommended model profiles">
   <a href="./docs/get-started.md"><img src="https://img.shields.io/badge/MANUAL_SETUP-DOCS-4b4b4b?style=for-the-badge" alt="Manual setup docs"></a>
 </p>
 
@@ -30,54 +28,32 @@
 </p>
 
 <p align="center">
-  <strong>Recommended: use OpenGUI directly in DeepSeek Harness.</strong><br>
-  Paste one prompt into Codex. It downloads the verified plugin, installs it into DSH, and opens DSH. No full backend deployment is required.
+  <strong>Use OpenGUI in WorkBuddy or DeepSeek Harness.</strong><br>
+  Install the plugin, connect your phone, and describe your task. No full backend deployment is required.
 </p>
 
-## Demo
+## Features at a Glance
 
-<p align="center">
-  <img src="./docs/assets/opengui-demo.gif" alt="OpenGUI mobile GUI agent demo" width="100%">
-</p>
+OpenGUI uses real screenshots to understand apps and carry out phone operations and testing tasks from natural-language instructions.
 
-OpenGUI reads a real Android app UI, plans the next step, takes mobile actions, and returns structured results.
+- **Phone operations**: open apps, tap, swipe, type, navigate back, and move between screens to complete multi-step workflows.
+- **App testing**: check features and workflows, record issues with reproduction steps and screenshots, and summarize results.
+- **Content and information**: read screen content, organize information, fill forms, and prepare social media drafts.
+- **Visible execution**: use the WorkBuddy workbench to view the phone screen, task steps, and reports, or take over and stop a task.
+- **Host integration**: use OpenGUI in WorkBuddy or DeepSeek Harness; the DSH plugin also supports managed browser operations.
 
-## Use OpenGUI in DeepSeek Harness
+## Common Commands
 
-The shortest path on macOS is to let Codex run the stable installer Skill from `main`. Each run resolves the latest stable OpenGUI plugin release, while an explicit version remains available for rollback. It requires Node.js 22.19+ or 24+ and installs the compatible DSH version automatically. Paste this as one prompt:
+After installation and authorization, enter these instructions in the corresponding host's chat. Replace `[placeholders]` with your task details.
 
-```text
-Install and run the OpenGUI installer Skill from https://github.com/Core-Mate/OpenGUI/tree/main/deepseek-harness-plugin/skills/opengui-coremate-install for my DSH web profile. Install the latest stable release. Proceed autonomously, and only pause when I need to authorize or select a phone, add or select a DSH workspace, or provide fallback visual-model credentials.
-```
-
-The Skill downloads the public release package and checksum, verifies SHA-256, installs only the OpenGUI plugin, starts DSH when needed, and opens DSH. It preserves unrelated DSH plugins and settings. The installer reports whether it reloaded a managed DSH or whether you need to quit an existing process and rerun it. For Linux or Windows, use the [manual package guide](./deepseek-harness-plugin/README.md#1-download-the-release-package).
-
-OpenGUI supports DSH `0.1.0-rc.7`, `0.1.0-rc.8`, `0.1.1-rc.1`, and `0.1.1-rc.2`; new installs default to `0.1.1-rc.2`. The macOS installer reuses a `PATH` runtime only when it exactly matches the selected version, otherwise it installs an isolated managed runtime under the OpenGUI DSH home. Use `--dsh-version VERSION` to select a supported version. DSH `0.1.2-alpha.4` is not supported. Existing DSH installations, workspaces, model settings, credentials, and phone authorizations are preserved. DSH `0.1.0` RCs cannot read the versioned credential store written by DSH `0.1.1` RCs, so the installer refuses that state downgrade before changing any files and recommends a separate DSH home.
-
-After installation, add or select a DSH workspace, connect and select an authorized Android phone, then send:
-
-```text
-@OpenGUI Open Settings and report the Android version
-```
-
-The plugin adds phone and browser operation to DSH without requiring the full OpenGUI backend stack. The current source implementation admits one OpenGUI task per DSH session and separate tabs on non-conflicting phone sets; the managed browser remains globally serial. This source behavior is not a release claim. See more [use cases](./deepseek-harness-plugin/docs/use-cases.md) or download the [v0.1.13 release package](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.13).
-
-Good fits include:
-
-- automated UI operation and regression testing on authorized devices
-- social media management and lead research, with human confirmation before publishing, messaging, or account changes
-- repetitive game testing and in-game workflows where the account owner and game rules permit automation
-
-For GUI execution, our current recommendation order is:
-
-| Priority | Model family | Guidance |
+| Purpose | Host | Example input |
 |---|---|---|
-| 1 | Doubao VLM | Recommended first for visual GUI execution. |
-| 2 | Qwen VLM | A practical alternative, but some social media prompts may be more sensitive to model safety policies. |
-| 3 | OpenAI vision-capable models | Capable, but generally the higher-cost option for screenshot-heavy tasks. |
-| 4 | Grok vision-capable models | Experimental for this workflow; tool use and action reliability still need more validation. |
-
-Model availability, pricing, and policy behavior vary by version and region. Whichever provider you choose, the model must support both image input and tool calling.
+| Open OpenGUI | WorkBuddy | `/opengui` |
+| Check connected devices | WorkBuddy | `/opengui List connected devices without operating a phone.` |
+| Operate a phone | WorkBuddy | `/opengui Open Settings, then return to the home screen. Stop after confirming it is visible.` |
+| Test an app | WorkBuddy | `/opengui Test [feature or workflow] in [app/page]. Record issues, steps, and screenshots. Stop at [end condition].` |
+| Prepare a Tiktok draft | WorkBuddy | `/opengui Prepare a Tiktok image-and-text draft about [topic]. Stop before publishing.` |
+| Run a task in DSH | DeepSeek Harness | `@OpenGUI Open Settings and report the Android version` |
 
 ## Use OpenGUI in WorkBuddy
 
@@ -130,155 +106,77 @@ Try it: Vibe Testing
 /opengui Help me test [feature or workflow] in [app/page], focusing on [issues to check]. If you find any problems, record the steps and screenshots. Stop when [end condition] is reached.
 ```
 
+## Use OpenGUI in DeepSeek Harness
+
+The shortest path on macOS is to let Codex run the stable installer Skill from `main`. Each run resolves the latest stable OpenGUI plugin release, while an explicit version remains available for rollback. It requires Node.js 22.19+ or 24+ and installs the compatible DSH version automatically. Paste this as one prompt:
+
+```text
+Install and run the OpenGUI installer Skill from https://github.com/Core-Mate/OpenGUI/tree/main/deepseek-harness-plugin/skills/opengui-coremate-install for my DSH web profile. Install the latest stable release. Proceed autonomously, and only pause when I need to authorize or select a phone, add or select a DSH workspace, or provide fallback visual-model credentials.
+```
+
+The Skill downloads the public release package and checksum, verifies SHA-256, installs only the OpenGUI plugin, starts DSH when needed, and opens DSH. It preserves unrelated DSH plugins and settings. The installer reports whether it reloaded a managed DSH or whether you need to quit an existing process and rerun it. For Linux or Windows, use the [manual package guide](./deepseek-harness-plugin/README.md#1-download-the-release-package).
+
+Supported DSH versions are defined in the [installer compatibility list](./deepseek-harness-plugin/skills/opengui-coremate-install/dsh-compatibility.json). The default is `0.1.1-rc.2`; use `--dsh-version VERSION` to select a listed version. The installer preserves other plugins, workspaces, model settings, and credentials. See the [plugin installation guide](./deepseek-harness-plugin/README.md#requirements-and-support) for version changes and rollback constraints.
+
+After installation, add or select a DSH workspace, connect and select an authorized Android phone, then send:
+
+```text
+@OpenGUI Open Settings and report the Android version
+```
+
+The plugin adds phone and browser operation to DSH without requiring the full OpenGUI backend stack. The current source implementation admits one OpenGUI task per DSH session and separate tabs on non-conflicting phone sets; the managed browser remains globally serial. This source behavior is not a release claim. See more [use cases](./deepseek-harness-plugin/docs/use-cases.md) or download the [v0.1.13 release package](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.13).
+
+GUI execution requires a model with image input and tool calling. DSH uses the current session model by default; configure a fallback visual model when needed, following the [plugin guide](./deepseek-harness-plugin/README.md). Evaluate execution quality, latency, and actual costs on your own tasks.
+
 ## Run the Full OpenGUI Stack
 
-To run the full OpenGUI backend and Android client, let Claude Code, Codex, or OpenCode bootstrap it for you.
+Use the full stack to self-host the backend and Android client or dispatch tasks through Feishu, Telegram, Discord, or REST APIs. WorkBuddy and DSH plugin users do not need this deployment.
 
-Open Claude Code, Codex, or OpenCode from the OpenGUI repository root and paste:
+Open Claude Code, Codex, or OpenCode in the repository root and send:
 
 ```text
 Read ./skills/open-gui-bootstrap/SKILL.md and help me run OpenGUI. Only ask me for phone-side actions.
 ```
 
-In this bootstrap flow, the coding agent reads the skill, starts the local backend, builds or installs the Android client, runs the required adb setup, and checks whether the phone is visible to OpenGUI.
+The full-stack Android client requires Android 11 (API 30) or later, USB debugging, AccessibilityService, overlay permission, and a battery optimization exemption. See the [deployment guide](./docs/get-started.md) and [Android permission guide](./docs/android-permissions.md) for model configuration, manual startup, and phone authorization.
 
-This explicit prompt also works in OpenCode. The repository keeps the Skill in
-`skills/`, so OpenCode users should include the path as shown instead of relying
-on automatic Skill discovery. See the [OpenCode Agent Skills documentation](https://opencode.ai/docs/skills/)
-for its native `.opencode/skills/` and `.agents/skills/` locations.
-
-Root access and an unlocked bootloader are not required. OpenGUI uses standard
-Android `AccessibilityService` APIs for screenshots and actions. ADB is used
-only to install and launch the APK and configure local port forwarding with
-`adb reverse`; it does not root the device or modify the Android system.
-
-You will need:
-
-- an Android 11 (API 30) or newer phone or emulator
-- USB debugging enabled
-- AccessibilityService enabled
-- overlay permission and battery optimization exemption enabled
-- model API keys for real task execution
-
-Permission names and menu locations vary across Android vendors. Complete the
-[Android permission setup guide](./docs/android-permissions.md) before running
-the first task.
-
-The bootstrap flow uses the repository scripts to start the backend and install the Android client:
+After deployment, run the CLI from the `server` directory:
 
 ```bash
-cd server
-./start.sh
-```
-
-```bash
-cd client
-./start.sh
-```
-
-After the backend and Android client are running, send a first task:
-
-```bash
-cd server
 pnpm opengui -- devices --json
-pnpm opengui -- do "Observe the current Android screen and summarize what you see" --json
-```
-
-`do` starts the execution asynchronously and returns after the execution is
-created; it does not stream progress or wait for completion. The response
-includes an `executionId`. Use it to check the current status:
-
-```bash
+pnpm opengui -- do "Observe the current Android screen, summarize what you see, and stop" --json
 pnpm opengui -- status <executionId> --json
-```
-
-`status` returns one snapshot, so run it again whenever you want an update.
-Check `executionStatus` and, when present, `statusMessage`, `currentStep`,
-`executionResult`, or `errorMessage`. `PENDING` means the execution is waiting
-to start on the phone, `RUNNING` means it is active, and `FINISHED` means it has
-completed. Fine-grained fields are not always present, so a `RUNNING` snapshot
-may not distinguish a model wait from a phone wait. If `do` itself does not
-return an `executionId`, treat that as a request or startup problem rather than
-normal asynchronous execution. Keep the same `executionId` if you need to stop
-the active task:
-
-```bash
 pnpm opengui -- cancel <executionId> --json
 ```
 
-Manual setup guide: [`docs/get-started.md`](./docs/get-started.md).
+`do` returns an `executionId` asynchronously. Use it with `status` to check progress or `cancel` to stop the task. See the [CLI and API guide](./docs/codex-remote-control.md) and [Discord setup](./docs/DISCORD.md) for remote integration.
 
 ## Recent Updates
 
+- `[2026.10.8]` Published the [WorkBuddy 0.4.0 public-testing prerelease](https://github.com/Core-Mate/OpenGUI/releases/tag/opengui-workbuddy-v0.4.0), with a Terminal installer and an authorization guide that opens after installation.
+- `[2026.9.1]` Published the [DSH 0.1.13 plugin release](https://github.com/Core-Mate/OpenGUI/releases/tag/dsh-coremate-mobile-v0.1.13).
 - `[2026.5.16]` Added [Codex / Claude Code remote control](./docs/codex-remote-control.md) with a local REST API, `pnpm opengui -- ...` CLI, and the [`open-gui-remote-control`](./skills/open-gui-remote-control/SKILL.md) Skill for dispatching Android app tasks from coding agents.
 - `[2026.5.12]` Added a troubleshooting guide for backend connection, Android permissions, model configuration, and local Redis/PostgreSQL conflicts.
 - `[2026.5.9]` Added a [Discord IM channel](./docs/DISCORD.md) for remote Android task dispatch, including prefix commands, slash commands, allowlists, and guild-scoped command registration.
 - `[2026.5.7]` Hardened local startup to avoid common PostgreSQL and Redis port conflicts during Docker-based backend setup.
 - `[2026.5.1]` Improved backend onboarding with `.env.example`, startup checks, and graph-agent VLM environment configuration.
 
-## What You Can Do with OpenGUI
+## Requirements and Limitations
 
-OpenGUI provides an Android GUI agent stack for screen understanding, task planning, action execution, review, and recovery.
-
-You can use the same repository in four practical ways:
-
-- **Operate mainstream Android apps**: let AI handle mobile tasks inside X, Reddit, Hacker News, Telegram, WeChat, Weibo, Xiaohongshu, and other Android apps on a real phone.
-- **Run shipped workflows**: the repository already includes a runnable backend, Android client, standby dispatch path, and a set of built-in task capabilities.
-- **Let an AI coding agent bootstrap it for you**: point Claude Code, Codex, or OpenCode at [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md), describe the goal in plain language, and let it handle setup, build, install, and local debugging.
-- **Let an AI coding agent control Android apps**: after OpenGUI is running, point Claude Code, Codex, or OpenCode at [`skills/open-gui-remote-control/SKILL.md`](./skills/open-gui-remote-control/SKILL.md) to list devices, dispatch tasks, and track executions through the local CLI.
-- **Operate phones as remote workers**: dispatch tasks through Feishu, Telegram, Discord, or REST API, keep devices on standby, and get structured results back from the backend.
-
-- [Join the Discord community](https://discord.gg/pqHHw7XgJ3)
-
-## Highlights
-
-- **Built for long-running tasks**: OpenGUI is shaped for mobile workflows that may run for hours, with progress, review, and recovery kept inside the system.
-- **Plan before action, summarize after execution**: before touching an app, OpenGUI breaks the goal into executable steps; after the run, it returns a structured summary of what happened, what worked, and what still needs attention.
-- **The task can keep moving**: `Plan Supervisor` maintains task state and continuation, `Executor Graph` runs screenshot, vision, action, and call-user loops on top of live device state, and `Summarizer` closes the run with a structured result.
-- **Phones can stay on standby**: the standby dispatch path lets devices receive remote work through Feishu, Telegram, Discord, or REST entry points.
-- **Models can be assigned by role**: model routing separates planning from VLM execution so teams can choose providers by job.
-- **The system is organized around real mobile workflows**: the graph, device execution path, and model split already exist in the source tree.
-
-## Why OpenGUI Is Different
-
-OpenGUI is built as a mobile operator system with explicit orchestration layers.
-
-The source code currently exposes these pieces:
-
-- `server/apps/backend/src/modules/graph-agent/graph/mobile-agent.graph.ts` for the main graph
-- `server/apps/backend/src/modules/graph-agent/graph/executor.graph.ts` for the device-side execution loop
-- `server/apps/backend/src/common/ws/standby.gateway.ts` for standby device dispatch
-- `client/core_network/.../StandbySocketManager.kt` for persistent device standby connections
-- `client/core_accessibility/.../GestureService.kt` for Android-side action execution
-
-| Dimension | Typical phone-agent demo | OpenGUI |
+| Setup | Computer and runtime | Android device preparation |
 |---|---|---|
-| **Execution model** | Short interactive loop | Main graph plus executor subgraph |
-| **Task state** | Usually local and session-bound | Task state managed in the backend graph |
-| **Device path** | Often laptop-driven control | Android client with standby and execution sockets |
-| **Model usage** | One model does most of the work | Planning and VLM paths can be split across providers |
-| **Remote operation** | Optional add-on | Feishu, Telegram, Discord, REST API, and standby dispatch are built into the backend |
+| WorkBuddy plugin | macOS (Apple Silicon / Intel), WorkBuddy 5.5.3 or later; the installer prepares a private runtime. | Enable and authorize USB debugging. Uses host-side ADB / scrcpy; no full backend or repository Android client is required. |
+| DSH plugin | macOS, Linux x64, or Windows x64; see the [plugin guide](./deepseek-harness-plugin/README.md#requirements-and-support) for Node.js and DSH requirements. | Enable and authorize USB debugging, then select the device in DSH. No full backend or repository Android client is required. |
+| Full stack | Local backend and build tools; see the [deployment guide](./docs/get-started.md). | Android 11 or later, with the client's accessibility, overlay, and battery permissions. |
 
-## Typical Use Cases
-
-- Open X and collect recent posts for a topic
-- Read and summarize Reddit or Hacker News threads on a live phone
-- Trigger Android tasks remotely from Feishu, Telegram, Discord, or REST API
-- Execute repetitive mobile workflows on Android devices
-- Run long mobile workflows that need state, review, and recovery over many hours
-
-## Current Limitations
-
-- Requires an Android 11 (API 30) or newer device or emulator.
-- Requires USB debugging and AccessibilityService permissions.
-- Execution quality depends on the model, app UI, network state, and task length.
-- Not an always-on OS-level assistant yet; tasks are currently triggered manually or through configured dispatch channels.
-- Long-running tasks are supported by the system design, but reliability still needs more real-world testing.
-- More ready-to-run task examples and benchmarks are still needed.
+- Some phones need an additional vendor-specific USB input permission. Follow the connection diagnostics on the phone.
+- WorkBuddy sign-in and model selection, the DSH session model, and backend model configuration are separate setup paths.
+- Results depend on the model, app UI, network, and task length. Long-running tasks and device compatibility still need more real-world verification.
+- WorkBuddy account and model configuration use the official CoreMate service by default. Task screenshots go to the selected execution model; local preview video is not uploaded frame by frame. See the [WorkBuddy guide](./workbuddy-plugin/README.md) and [DSH guide](./deepseek-harness-plugin/README.md) for their data flows.
 
 ## Roadmap
 
-- Add a short demo video and more real app examples.
+- Add more real app examples and test reports.
 - Improve one-command local setup.
 - Add more ready-to-run phone-use task templates.
 - Improve execution recovery and failure reporting.
@@ -286,115 +184,9 @@ The source code currently exposes these pieces:
 - Expand docs for model configuration and cost-saving profiles.
 - Launch a hosted OpenGUI Agent service for teams that want GUI operation without running the full stack themselves.
 
-## How to Use OpenGUI
-
-### 1. With Claude Code, Codex, or OpenCode
-
-Start with [`skills/open-gui-bootstrap/SKILL.md`](./skills/open-gui-bootstrap/SKILL.md).
-
-The intended flow is:
-
-1. clone OpenGUI locally
-2. open Claude Code, Codex, or OpenCode from the OpenGUI repo root
-3. ask it to read the bootstrap skill
-4. let it handle backend bootstrap, APK build, install, adb setup, and local debugging
-
-It should only stop for:
-
-- connecting a phone or starting an emulator
-- approving USB debugging
-- enabling AccessibilityService
-- granting overlay or battery permissions
-- providing API keys or bot credentials
-
-Under the hood, OpenGUI still needs both the local backend and Android client running. The bootstrap skill is the guided path for getting those pieces running without manually following every setup step.
-
-After the backend and Android client are running, use [`skills/open-gui-remote-control/SKILL.md`](./skills/open-gui-remote-control/SKILL.md) to let Claude Code, Codex, or OpenCode control the phone through the local CLI:
-
-```bash
-cd server
-pnpm opengui -- devices --json
-pnpm opengui -- do "Observe the current Android screen and summarize what you see" --json
-pnpm opengui -- status <executionId> --json
-pnpm opengui -- cancel <executionId> --json
-```
-
-Recommended profiles:
-
-#### High-performance profile
-
-Use the latest Claude Opus model family across planning, supervision, review, and vision when you want the strongest overall quality.
-
-This is the easiest way to get the best execution quality, and it is the most expensive path.
-
-#### Cost-saving mixed profile
-
-Use **Qwen 3.6 Plus** for text-side roles such as Planner and Supervisor, and use **Doubao Pro** for the VLM side.
-
-This usually preserves the overall system shape while lowering model cost by roughly **10x to 15x** compared with an all-Opus setup, depending on task length, screenshot volume, and token mix.
-
-Recommended prompts:
-
-#### Run it
-
-```text
-Read ./skills/open-gui-bootstrap/SKILL.md and help me run OpenGUI. Only ask me for phone-side actions.
-```
-
-#### Use Claude Opus everywhere
-
-```text
-Read ./skills/open-gui-bootstrap/SKILL.md and bootstrap OpenGUI with the latest Claude Opus model family for planning, supervision, review, and vision.
-```
-
-#### Use Qwen + Doubao to save cost
-
-```text
-Read ./skills/open-gui-bootstrap/SKILL.md and set up OpenGUI with Qwen 3.6 Plus for Planner and Supervisor, and Doubao Pro for VLM execution.
-```
-
-#### Use my own APIs
-
-```text
-Read ./skills/open-gui-bootstrap/SKILL.md and use my existing model APIs to get OpenGUI working.
-```
-
-### 2. Manual setup
-
-Use the repository scripts directly:
-
-```bash
-cd server
-./start.sh
-```
-
-```bash
-cd client
-./start.sh
-```
-
-Reference docs:
-
-- [docs/get-started.md](./docs/get-started.md)
-- [docs/troubleshooting.md](./docs/troubleshooting.md)
-- [server/start.sh](./server/start.sh)
-- [client/start.sh](./client/start.sh)
-- [server/apps/backend/README.md](./server/apps/backend/README.md)
-- [docs/DISCORD.md](./docs/DISCORD.md)
-- [client/README.md](./client/README.md)
-
-### 3. Optional Discord remote control
-
-Discord can be enabled as an optional IM channel. A Discord bot receives commands
-such as `!opengui devices` or `!opengui do ...`, then the backend dispatches the
-task to a standby Android phone and posts progress back to the same channel.
-
-This is not required for local use. If `DISCORD_BOT_TOKEN` is empty, the backend
-starts normally and skips Discord.
-
-Full setup guide: [docs/DISCORD.md](./docs/DISCORD.md).
-
 ## The System
+
+This diagram describes the full backend and Android client. WorkBuddy and DSH each use their own plugin runtime.
 
 ```mermaid
 flowchart LR
@@ -429,6 +221,9 @@ flowchart LR
 
 ## Documentation
 
+- [WorkBuddy installation verification and troubleshooting](./workbuddy-plugin/INSTALL.md)
+- [WorkBuddy plugin guide](./workbuddy-plugin/README.md)
+- [DeepSeek Harness plugin guide](./deepseek-harness-plugin/README.md)
 - [skills/open-gui-bootstrap/SKILL.md](./skills/open-gui-bootstrap/SKILL.md)
 - [docs/get-started.md](./docs/get-started.md)
 - [server/apps/backend/README.md](./server/apps/backend/README.md)

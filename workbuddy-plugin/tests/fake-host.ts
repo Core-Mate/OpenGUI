@@ -8,7 +8,7 @@ export class FakeHost implements WorkBuddyPhoneHost {
     { id: 'phone-b', name: 'Nubia', model: 'Nubia', serial: 'serial-b', state: 'device', connected: true, authorized: true },
     { id: 'locked', name: 'Locked', serial: 'serial-locked', state: 'unauthorized', connected: true, authorized: false },
   ]
-  readonly actors = new WeakMap<object, { serial: string; operations: number; sequence: number }>()
+  readonly actors = new WeakMap<object, { serial: string; operations: number; sequence: number; focusedText: string }>()
   readonly released: string[] = []
 
   async listDevices(): Promise<readonly WorkBuddyDeviceInfo[]> {
@@ -25,15 +25,19 @@ export class FakeHost implements WorkBuddyPhoneHost {
   }
 
   assignTarget(actor: object, serial: string): void {
-    this.actors.set(actor, { serial, operations: 0, sequence: 0 })
+    this.actors.set(actor, { serial, operations: 0, sequence: 0, focusedText: '' })
   }
 
   observe(actor: object, _signal?: AbortSignal): Promise<RawPhoneObservation> {
     return Promise.resolve(this.frame(actor))
   }
 
-  act(actor: object): Promise<RawPhoneObservation> {
-    return Promise.resolve(this.frame(actor))
+  act(actor: object, input: Record<string, unknown> = {}): Promise<RawPhoneObservation> {
+    const state = this.actors.get(actor)!
+    if (input.action === 'text') state.focusedText += String(input.text)
+    if (input.action === 'replace_text') state.focusedText = String(input.text)
+    const frame = this.frame(actor)
+    return Promise.resolve(input.action === 'read_text' ? { ...frame, inputRead: { source: 'device_clipboard', text: state.focusedText } } : frame)
   }
 
   status(actor: object): { operations: number; observationId?: string } {

@@ -1,0 +1,1 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.example" android:versionCode="42" android:versionName="2.3"><uses-sdk android:minSdkVersion="23" android:targetSdkVersion="35"/><uses-permission android:name="android.permission.CAMERA"/><application android:label="APK QA" android:testOnly="true"/></manifest>

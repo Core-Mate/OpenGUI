@@ -4,18 +4,22 @@ import {
   canUseAdbInputText,
   normalizePhoneAction,
   parseScreenSize,
+  launcherQueryCommand,
+  parseLauncherActivity,
   textInputCommands,
 } from './adb.ts'
-import type { ObservationId, PhoneCoordinateSpace } from './adb.ts'
+import type { ObservationId, PhoneCoordinateSpace, PhoneAction } from './adb.ts'
 import { AsyncSemaphore } from './concurrency.ts'
 import type { EncodedPhoneScreenshot } from './screenshot.ts'
 import { PhoneExecutionState, PhoneOperationQueue, waitForPhoneUi } from './phone-execution.ts'
 import type { PhoneExecutionSnapshot } from './phone-execution.ts'
 import { errorInfo, OpenGuiError, retryRead } from './errors.ts'
 import { frameChanged, sampleFrame } from './vision.ts'
+import { inputPermissionDenied, inputPermissionError } from './input-diagnostics.ts'
 
 /** Host-neutral phone observation used by the WorkBuddy runtime. */
 export interface RawPhoneObservation {
+  readonly inputRead?: { source: 'device_clipboard'; text?: string | undefined }
   readonly observationId: ObservationId
   readonly unchangedFromObservationId?: ObservationId
   readonly serial: string
@@ -40,6 +44,9 @@ interface StoredObservation {
 }
 
 export interface PhoneControllerOptions {
+  readonly captureDevice?: (serial: string, signal: AbortSignal) => Promise<{ source: Buffer; width: number; height: number; foregroundPackage: string }>
+  readonly dispatchAction?: (serial: string, action: PhoneAction, screen: PhoneCoordinateSpace, signal: AbortSignal) => Promise<void>
+  readonly validateAction?: (action: PhoneAction, screen: PhoneCoordinateSpace) => void
   readonly runAdb: (
     args: readonly string[],
     signal: AbortSignal,
@@ -48,6 +55,8 @@ export interface PhoneControllerOptions {
   readonly discoverTarget: (signal: AbortSignal) => Promise<string>
   readonly validateTarget?: (serial: string, signal: AbortSignal) => Promise<void>
   readonly pasteUnicode: (serial: string, text: string, signal: AbortSignal) => Promise<void>
+  readonly replaceUnicode?: (serial: string, text: string, signal: AbortSignal) => Promise<void>
+  readonly readFocusedText?: (serial: string, signal: AbortSignal) => Promise<string | undefined>
   readonly encodeScreenshot: (source: Buffer) => Promise<EncodedPhoneScreenshot>
   readonly maxOperations: () => number
   readonly mediaPermits?: AsyncSemaphore
@@ -135,7 +144,7 @@ export class PhoneController {
       // If it changed, the model must see a new observation, never reuse coordinates.
       const current = await this.capture(actor, serial, signal)
       const currentState = this.execution.current(actor, current.observationId)
-      const region = action.action === 'tap' ? {
+      const region = action.action === 'tap' || action.action === 'read_text' ? {
         left: action.targetBBox.left / stored.value.image.width,
         top: action.targetBBox.top / stored.value.image.height,
         right: action.targetBBox.right / stored.value.image.width,
@@ -147,8 +156,59 @@ export class PhoneController {
         throw new OpenGuiError('screen_changed', 'opengui: phone changed before dispatch; observe the new screen before acting', 'not_executed', 'observe')
       }
 
-      const scrcpyText = action.action === 'text' && !canUseAdbInputText(action.text)
-      const command = action.action === 'text' ? undefined : actionCommand(action, screen)
+      if (action.action === 'read_text') {
+        // Validate the caller's visible field bounds without clicking or extracting a UI tree.
+        actionCommand({ ...action, action: 'tap' }, screen)
+        if (!this.options.readFocusedText) throw new OpenGuiError('comment_input_unavailable', 'opengui: focused comment text cannot be read on this host')
+        this.execution.consumeObservation(actor); signal.throwIfAborted(); dispatched = true
+        const text = await this.options.readFocusedText(serial, signal)
+        const after = await this.captureSettled(actor, serial, signal)
+        return { ...after, inputRead: { source: 'device_clipboard', ...(text === undefined ? {} : { text }) } }
+      }
+      if (action.action === 'replace_text') {
+        if (!this.options.replaceUnicode) throw new OpenGuiError('comment_replace_unavailable', 'opengui: exact approved replacement is unavailable on this host')
+        if (typeof input.expectedOriginalText === 'string') {
+          const actual = await this.options.readFocusedText?.(serial, signal)
+          if (actual === undefined || actual !== input.expectedOriginalText) throw new OpenGuiError('comment_input_changed', 'opengui: phone original changed after the replacement decision; no replacement was dispatched', 'not_executed', 'observe')
+          const checked = await this.capture(actor, serial, signal), checkedState = this.execution.current(actor, checked.observationId)
+          if (checked.foregroundPackage !== current.foregroundPackage || checked.width !== current.width || checked.height !== current.height || currentState.visual && checkedState.visual && frameChanged(currentState.visual, checkedState.visual)) throw new OpenGuiError('screen_changed', 'opengui: destination changed during replacement readback; observe the current field', 'not_executed', 'observe')
+        }
+        const signature = JSON.stringify(['scrcpy-replace', action.text])
+        this.execution.assertActionAllowed(actor, signature, before); this.execution.consumeObservation(actor); signal.throwIfAborted(); dispatched = true
+        await this.options.replaceUnicode(serial, action.text, signal)
+        const after = await this.captureSettled(actor, serial, signal)
+        this.execution.recordActionResult(actor, signature, before, this.execution.current(actor, after.observationId))
+        return after
+      }
+
+      if (typeof input.expectedInputText === 'string') {
+        if (!this.options.readFocusedText) throw new OpenGuiError('comment_input_unavailable', 'opengui: sending requires exact focused comment input readback')
+        const actual = await this.options.readFocusedText(serial, signal)
+        if (actual === undefined || actual !== input.expectedInputText) throw new OpenGuiError('comment_input_changed', 'opengui: current focused input differs from the approved final text; no submit was dispatched', 'not_executed', 'observe')
+        const checked = await this.capture(actor, serial, signal), checkedState = this.execution.current(actor, checked.observationId)
+        if (checked.width !== current.width || checked.height !== current.height || checked.foregroundPackage !== current.foregroundPackage || currentState.visual && checkedState.visual && frameChanged(currentState.visual, checkedState.visual)) throw new OpenGuiError('screen_changed', 'opengui: destination changed during final input readback; no submit was dispatched', 'not_executed', 'observe')
+      }
+
+      const scrcpyText = action.action === 'text' && (!canUseAdbInputText(action.text) || input.forceClipboard === true)
+      if (this.options.dispatchAction) {
+        this.options.validateAction?.(action, screen)
+        // The adapter accepts the same closed action set after shared freshness checks.
+        const signature = JSON.stringify({ ...action, observationId: undefined })
+        this.execution.assertActionAllowed(actor, signature, before)
+        this.execution.consumeObservation(actor); signal.throwIfAborted(); dispatched = true
+        await this.options.dispatchAction(serial, action, screen, signal)
+        const after = await this.captureSettled(actor, serial, signal)
+        this.execution.recordActionResult(actor, signature, before, this.execution.current(actor, after.observationId))
+        return after
+      }
+      const launcherActivity = action.action === 'launch'
+        ? parseLauncherActivity(String(await this.options.runAdb(['-s', serial, ...launcherQueryCommand(action.packageName)], signal)), action.packageName)
+        : undefined
+      if (action.action === 'launch') {
+        const checked = await this.capture(actor, serial, signal), checkedState = this.execution.current(actor, checked.observationId)
+        if (checked.foregroundPackage !== current.foregroundPackage || checked.width !== current.width || checked.height !== current.height || currentState.visual && checkedState.visual && frameChanged(currentState.visual, checkedState.visual)) throw new OpenGuiError('screen_changed', 'opengui: phone changed during launcher resolution; observe the current screen before launching', 'not_executed', 'observe')
+      }
+      const command = action.action === 'text' ? undefined : actionCommand(action, screen, launcherActivity)
       const commands = action.action === 'text'
         ? scrcpyText ? [] : textInputCommands(action.text)
         : command === undefined ? [] : [command]
@@ -161,8 +221,16 @@ export class PhoneController {
       this.execution.consumeObservation(actor)
       signal.throwIfAborted()
       dispatched = true
-      if (scrcpyText) await this.options.pasteUnicode(serial, action.text, signal)
-      else for (const candidate of commands) await this.options.runAdb(['-s', serial, ...candidate], signal)
+      try {
+        if (scrcpyText) await this.options.pasteUnicode(serial, action.text, signal)
+        else for (const candidate of commands) {
+          const receipt = await this.options.runAdb(['-s', serial, ...candidate], signal)
+          if (candidate[0] === 'shell' && candidate[1] === 'input' && inputPermissionDenied(receipt)) throw inputPermissionError()
+        }
+      } catch (error) {
+        if (inputPermissionDenied(error)) throw inputPermissionError()
+        throw error
+      }
 
       const after = await this.captureSettled(actor, serial, signal)
       const afterState = this.execution.current(actor, after.observationId)
@@ -171,7 +239,7 @@ export class PhoneController {
       } catch (error) {
         this.execution.consumeObservation(actor)
         const info = errorInfo(error)
-        throw new OpenGuiError(info.code, info.message, dispatched ? 'outcome_unknown' : info.executionState, dispatched ? 'observe' : info.recovery)
+        throw new OpenGuiError(info.code, info.message, dispatched ? 'outcome_unknown' : info.executionState, info.code === 'input_permission_denied' ? 'wait' : dispatched ? 'observe' : info.recovery)
       }
     })
   }
@@ -200,12 +268,13 @@ export class PhoneController {
     this.execution.consumeObservation(actor)
     const releaseMedia = await this.mediaPermits.acquire(signal)
     try {
-      const [sizeRaw, focusRaw, pngRaw] = await retryRead(() => Promise.all([
+      const captured = this.options.captureDevice ? await retryRead(() => this.options.captureDevice!(serial, signal), signal) : undefined
+      const [sizeRaw, focusRaw, pngRaw] = captured ? ['', '', captured.source] : await retryRead(() => Promise.all([
         this.options.runAdb(['-s', serial, 'shell', 'wm', 'size'], signal),
-        this.options.runAdb(['-s', serial, 'shell', 'dumpsys', 'window', 'windows'], signal),
+        this.options.runAdb(['-s', serial, 'shell', 'dumpsys', 'window'], signal),
         this.options.runAdb(['-s', serial, 'exec-out', 'screencap', '-p'], signal, true),
       ]), signal)
-      const screen = parseScreenSize(String(sizeRaw))
+      const screen = captured ?? parseScreenSize(String(sizeRaw))
       const png = Buffer.isBuffer(pngRaw) ? pngRaw : Buffer.from(pngRaw)
       const encoded = await this.options.encodeScreenshot(png)
       signal.throwIfAborted()
@@ -217,9 +286,9 @@ export class PhoneController {
         observationId,
         ...(unchanged === undefined ? {} : { unchangedFromObservationId: unchanged.value.observationId }),
         serial,
-        width: encoded.sourceWidth ?? screen.width,
-        height: encoded.sourceHeight ?? screen.height,
-        foregroundPackage: currentPackage(String(focusRaw)),
+        width: captured ? screen.width : encoded.sourceWidth ?? screen.width,
+        height: captured ? screen.height : encoded.sourceHeight ?? screen.height,
+        foregroundPackage: captured?.foregroundPackage ?? currentPackage(String(focusRaw)),
         capturedAt: new Date(this.now()).toISOString(),
         settled: false,
         image: unchanged?.value.image ?? {

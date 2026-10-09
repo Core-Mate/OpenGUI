@@ -2,13 +2,21 @@
   "name": "OpenGUI",
   "name_zh": "OpenGUI 手机助手",
   "name_en": "OpenGUI Android Assistant",
-  "description": "Control locally connected Android phones and monitor a private device wall from WorkBuddy.",
-  "description_zh": "通过 WorkBuddy 操作本机连接的 Android 手机，并在只读设备墙中查看最多四台手机的画面。",
-  "description_en": "Control locally connected Android phones from WorkBuddy and monitor up to four phones in a read-only device wall.",
+  "description": "Let WorkBuddy operate a locally connected Android phone or emulator for GUI testing and reviewed comment operations, with a live workbench for the screen, task plan and run trace.",
+  "description_zh": "连接手机，在右侧确认任务后开始。支持真实截图操作、App 测试和发布内容审核；执行进度自动更新，结束后生成报告。",
+  "description_en": "Let WorkBuddy operate a locally connected Android phone or emulator for GUI testing and reviewed comment operations, with a live workbench for the screen, task plan and run trace.",
   "source": "opengui",
   "type": "mcp",
   "version": "0.3.1",
   "minWorkbuddyVersion": "5.5.3",
-  "examples_zh": ["看看手机上的 Android 版本", "在设备墙里查看这两台手机的画面"],
-  "examples_en": ["Check the Android version on my phone", "Show these two phones in the device wall"]
+  "examples_zh": [
+    "@opengui",
+    "@opengui 打开手机设置，再返回桌面，确认回到桌面后结束。",
+    "@opengui 帮我测试【应用／页面】的【功能】，输入【测试数据】，预期【结果】，做到【停止位置】就停。"
+  ],
+  "examples_en": [
+    "@opengui",
+    "@opengui Open phone Settings, then return to the home screen. Verify the home screen and finish.",
+    "@opengui Test [feature] in [app/page] using [test data], expect [result], and stop at [endpoint]."
+  ]
 }

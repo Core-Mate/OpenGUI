@@ -3,7 +3,7 @@ import { resolveScrcpyAsset, ScrcpyInstaller } from './scrcpy.ts'
 import { workbuddyStateDir } from './state.ts'
 const asset = resolveScrcpyAsset()
 if (!asset) throw new Error('video_unsupported_platform')
-const installer = new ScrcpyInstaller({ cacheDir: join(workbuddyStateDir(), 'scrcpy') })
+const installer = new ScrcpyInstaller({ cacheDir: join(workbuddyStateDir(), 'scrcpy'), ...(process.env.OPENGUI_VIDEO_MIRROR ? { mirrorBaseUrl: process.env.OPENGUI_VIDEO_MIRROR } : {}) })
 const cached = await installer.isInstalled(asset)
 const started = Date.now()
     let lastProgress = 0
