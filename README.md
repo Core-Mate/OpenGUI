@@ -52,7 +52,7 @@ After installation and authorization, enter these instructions in the correspond
 | Check connected devices | WorkBuddy | `/opengui List connected devices without operating a phone.` |
 | Operate a phone | WorkBuddy | `/opengui Open Settings, then return to the home screen. Stop after confirming it is visible.` |
 | Test an app | WorkBuddy | `/opengui Test [feature or workflow] in [app/page]. Record issues, steps, and screenshots. Stop at [end condition].` |
-| Prepare a Xiaohongshu draft | WorkBuddy | `/opengui Prepare a Xiaohongshu image-and-text draft about [topic]. Stop before publishing.` |
+| Prepare a Tiktok draft | WorkBuddy | `/opengui Prepare a Tiktok image-and-text draft about [topic]. Stop before publishing.` |
 | Run a task in DSH | DeepSeek Harness | `@OpenGUI Open Settings and report the Android version` |
 
 ## Use OpenGUI in WorkBuddy
@@ -85,10 +85,10 @@ If OpenGUI is not listed under Connectors, check **Custom connectors** for its M
 
 Enable USB debugging on your Android phone, connect it to your computer, and approve USB debugging on the phone. Enter /opengui, then enter the instructions you want the phone to execute to control it.
 
-Try it: Post on Xiaohongshu
+Try it: Post on Tiktok
 
 ```text
-/opengui Prepare a Xiaohongshu image-and-text draft about [topic] using [materials]. Stop before publishing.
+/opengui Prepare a Tiktok image-and-text draft about [topic] using [materials]. Stop before publishing.
 ```
 
 Try it: Vibe Testing

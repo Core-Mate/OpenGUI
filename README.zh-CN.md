@@ -51,7 +51,7 @@ OpenGUI 让 AI 根据真实屏幕截图理解 App，用自然语言完成手机�
 | 检查设备连接 | WorkBuddy | `/opengui 查看已连接的设备，暂时不要操作手机。` |
 | 执行手机操作 | WorkBuddy | `/opengui 打开手机设置，再返回桌面，确认回到桌面后结束。` |
 | 测试 App | WorkBuddy | `/opengui 测试【应用／页面】的【功能或流程】，记录异常、操作步骤和截图，到【结束条件】时停止。` |
-| 准备小红书草稿 | WorkBuddy | `/opengui 在小红书中为【主题】准备图文草稿，停在发布前。` |
+| 准备小红书草稿 | WorkBuddy | `/opengui 在小红书中为【xxx主题】准备图文草稿，使用【xxx、xxx素材】，停止在点击发布按钮前。` |
 | 在 DSH 中执行任务 | DeepSeek Harness | `@OpenGUI 打开设置并报告 Android 版本` |
 
 ## WorkBuddy 安装
@@ -87,7 +87,7 @@ cd "$HOME" && curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/mai
 试一试：用小红书发帖
 
 ```text
-/opengui 在小红书中为【主题】准备图文草稿，使用【素材】，停在发布前。
+/opengui 在小红书中为【xxx主题】准备图文草稿，使用【xxx、xxx素材】，停止在点击发布按钮前。
 ```
 
 试一试：Vibe Testing
