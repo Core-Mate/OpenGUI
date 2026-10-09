@@ -11,7 +11,9 @@ afterEach(() => { for (const directory of directories.splice(0)) rmSync(director
 async function catalog(status: number | 'network') {
   const directory = mkdtempSync(join(tmpdir(), 'opengui-viewer-account-'))
   directories.push(directory)
+  const paths: string[] = []
   const client = new CoreMateClient(directory, (async (url: string) => {
+    paths.push(url)
     if (url.endsWith('/verify-otp')) return Response.json({ token: 'fixture-session', user: { id: 42 } })
     if (status === 'network') throw new Error('private-provider-detail-and-token')
     return new Response('{}', { status })
@@ -21,30 +23,15 @@ async function catalog(status: number | 'network') {
   const { viewer } = setup(client)
   const opened = await viewer.open('catalog-check', [], AbortSignal.timeout(1000))
   const response = await fetch(`${opened.url}models`)
-  return { response, body: await response.json(), client }
+  return { response, body: await response.json(), client, paths }
 }
 
-describe('model catalog failure guidance', () => {
-  it('distinguishes a missing model route from a valid login session', async () => {
-    const result = await catalog(404)
-    expect(result.response.status).toBe(503)
-    expect(result.body.error).toContain('模型配置接口不存在（HTTP 404）')
-    expect(result.body.error).toContain('跟随 WorkBuddy')
-    expect(result.client.status().user).not.toBeNull()
-  })
-
-  it('requests login again only when the service rejects the session', async () => {
-    const result = await catalog(401)
-    expect(result.response.status).toBe(401)
-    expect(result.body.error).toContain('登录已过期')
-    expect(result.client.status().user).toBeNull()
-  })
-
-  it('keeps unknown network details out of the rendered error', async () => {
-    const result = await catalog('network')
-    expect(result.response.status).toBe(503)
-    expect(result.body.error).toContain('网络')
-    expect(JSON.stringify(result.body)).not.toContain('private-provider-detail')
-    expect(result.client.status().user).not.toBeNull()
+describe('retired model catalog route', () => {
+  it.each([404, 401, 'network'] as const)('stays local and preserves login when the old model service is unavailable (%s)', async status => {
+    const result = await catalog(status)
+    expect(result.response.status).toBe(200)
+    expect(result.body).toEqual({ models: [] })
+    expect(result.client.status().user?.id).toBe('42')
+    expect(result.paths).toEqual(['https://backend.example.test/api/user-auth/verify-otp'])
   })
 })

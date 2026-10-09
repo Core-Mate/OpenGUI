@@ -170,9 +170,9 @@ pnpm opengui -- cancel <executionId> --json
 | Full stack | Local backend and build tools; see the [deployment guide](./docs/get-started.md). | Android 11 or later, with the client's accessibility, overlay, and battery permissions. |
 
 - Some phones need an additional vendor-specific USB input permission. Follow the connection diagnostics on the phone.
-- WorkBuddy sign-in and model selection, the DSH session model, and backend model configuration are separate setup paths.
+- WorkBuddy uses its current conversation model; DSH session models and full-backend model settings are separate setup paths.
 - Results depend on the model, app UI, network, and task length. Long-running tasks and device compatibility still need more real-world verification.
-- WorkBuddy account and model configuration use the official CoreMate service by default. Task screenshots go to the selected execution model; local preview video is not uploaded frame by frame. See the [WorkBuddy guide](./workbuddy-plugin/README.md) and [DSH guide](./deepseek-harness-plugin/README.md) for their data flows.
+- WorkBuddy SMS sign-in uses the official CoreMate account service by default. No online model catalog is read. Task screenshots go to the current WorkBuddy model; local preview video is not uploaded frame by frame. See the [WorkBuddy guide](./workbuddy-plugin/README.md) and [DSH guide](./deepseek-harness-plugin/README.md) for their data flows.
 
 ## Roadmap
 

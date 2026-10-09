@@ -14,6 +14,7 @@ import type { BillingService } from "../../../../credits/billing.service";
 import type { TosService } from "../../../../tos/tos.service";
 import type { PrismaService } from "../../../../../prisma/prisma.service";
 import type { AgentConfigProvider } from "../../../config/agent-config.provider";
+import { ModelConfigurationError } from "../../../config/model-configuration.error";
 import { AgentName } from "../../../config/types";
 import { createCallUserTool, CALL_USER_TOOL_NAME, buildCallUserPrediction } from "../../../tools/call-user.tool";
 import type { ContentCreationToolService } from "../../../tools/content-creation.tool";
@@ -486,6 +487,10 @@ export function createVisionModelNode(
 			} as Partial<AgentState>;
 		} catch (error: unknown) {
 			const err = error as Error;
+
+			if (err instanceof ModelConfigurationError) {
+				throw err;
+			}
 
 			if (err.name === "GraphInterrupt") {
 				throw err;

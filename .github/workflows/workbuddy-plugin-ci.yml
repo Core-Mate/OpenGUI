@@ -14,6 +14,22 @@ permissions:
   contents: read
 
 jobs:
+  installer-handoff:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: bash -n workbuddy-plugin/scripts/installer-handoff.command
+      - run: python3 workbuddy-plugin/scripts/test-installer-handoff.py
+      - run: bash -n workbuddy-plugin/install.sh
+      - if: runner.os == 'macOS'
+        run: python3 workbuddy-plugin/scripts/test-curl-installer.py
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -49,7 +65,8 @@ jobs:
       - run: npm ci
       - run: npm run pack:release
       - run: node scripts/test-publish.mjs
-      - run: node scripts/test-release-installer.mjs
+      - run: python3 scripts/test-installer-cwd.py
+      - run: node scripts/test-release-installer.mjs --curl --denied-cwd
       - run: npm run test:native
       - uses: actions/upload-artifact@v4
         with:

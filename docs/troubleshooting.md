@@ -4,6 +4,67 @@ Use this guide when the backend starts but the Android client cannot run a task,
 
 ## Backend connection
 
+### Device list is empty although adb sees the phone
+
+`adb devices` lists USB-debugging connections. `pnpm opengui -- devices --json`
+lists devices registered over the Android app's `/standby` Socket.IO connection.
+Opening the app or reaching an HTTP endpoint alone does not prove registration.
+
+Follow these checks in order:
+
+1. Confirm the backend is running and query the intended instance explicitly:
+
+   ```bash
+   cd server
+   pnpm opengui -- devices --base-url http://127.0.0.1:7777 --json
+   ```
+
+   `OPENGUI_BASE_URL` or `--base-url` can point the CLI to a different backend.
+   The app and CLI must target the same backend instance; device registrations
+   are held in memory in that process.
+
+2. For USB access with the app's default `http://127.0.0.1:7777`, configure
+   reverse forwarding for the specific phone. Replace `<serial>` with its
+   serial from `adb devices`:
+
+   ```bash
+   adb -s <serial> reverse tcp:7777 tcp:7777
+   adb -s <serial> reverse --list
+   ```
+
+   Confirm the mapping is present. Repeat after reconnecting the phone if the
+   mapping is missing. If the backend uses another port, update both the mapping
+   and the app URL. Without forwarding, `127.0.0.1` refers to the phone itself.
+
+3. Check the server URL in the app Settings page. Both Debug and Release builds
+   honor the saved address. For LAN access use `http://<host-lan-ip>:7777`, allow
+   inbound traffic, and keep both devices on a reachable network. Fully restart
+   the app after saving; an existing standby socket retains its old address.
+
+4. Open the app's home screen and inspect its standby logs:
+
+   ```bash
+   adb -s <serial> logcat -s StandbySocketMgr StandbyFgService
+   ```
+
+   - No `Standby service started`: check service startup failures in Android logs.
+   - `Standby connect error`: check the URL, port mapping, firewall, and Socket.IO
+     access through any proxy; an HTTP health check does not verify `/standby`.
+   - `Connected to standby`: check backend logs for `Device registered:`.
+     A socket connection alone is not a successful registration.
+   - `Standby device disconnected`: check whether Android stopped the service or
+     the network connection was lost; review battery/background restrictions.
+
+5. Run the device-list command again after `Device registered:` appears. If it
+   is still empty, verify that the CLI reaches the same backend process and that
+   no disconnect followed registration.
+
+Accessibility and overlay permissions are required for task operation, but the
+standby registration path does not check them. Diagnose connection/registration
+first for an empty list, then follow the permission checks below before running
+a task. If reporting this problem, include the APK build type, the first failed
+check, and phone/backend logs with secrets removed.
+
 ### Android client cannot reach the backend
 
 Likely causes:

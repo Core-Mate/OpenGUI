@@ -170,9 +170,9 @@ pnpm opengui -- cancel <executionId> --json
 | 完整技术栈 | 本地后端及构建环境，见[部署指南](./docs/get-started.zh-CN.md)。 | Android 11 及以上，并授予客户端所需的无障碍、悬浮窗和电池权限。 |
 
 - 部分手机需要额外开启厂商提供的 USB 输入控制权限；按连接诊断提示在手机上处理。
-- WorkBuddy 登录与模型选择、DSH 会话模型、完整后端的模型配置是不同入口，请按对应安装方式配置。
+- WorkBuddy 跟随当前对话模型；DSH 会话模型、完整后端的模型配置是不同入口，请按对应安装方式配置。
 - 执行效果与模型、App 界面、网络和任务长度有关。长时任务与不同设备的可靠性仍需要更多真实场景验证。
-- WorkBuddy 的账号和配置模型默认使用官方 CoreMate 服务；任务截图会发送给所选执行模型，本地预览视频不会逐帧上传。具体数据流见[WorkBuddy 插件说明](./workbuddy-plugin/README.zh-CN.md)与[DSH 插件说明](./deepseek-harness-plugin/README.zh.md)。
+- WorkBuddy 的短信登录默认使用官方 CoreMate 账号服务，不读取线上模型配置；任务截图会发送给当前 WorkBuddy 模型，本地预览视频不会逐帧上传。具体数据流见[WorkBuddy 插件说明](./workbuddy-plugin/README.zh-CN.md)与[DSH 插件说明](./deepseek-harness-plugin/README.zh.md)。
 
 ## Roadmap
 

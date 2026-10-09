@@ -15,7 +15,7 @@ curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-pl
 
 Alternatively, [download install.sh](https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh) and run `bash /actual/path/install.sh`. Installation runs on the Mac; restart WorkBuddy once afterward, then authorize OpenGUI and verify the connection.
 
-The repository entry and its pinned installer/authorization guide are published together. They install the existing public 0.4.0 runtime; immutable 0.4.0 release assets are unchanged. The [manual installation guide](resources/OpenGUI-安装指南.html) remains available as an alternative.
+The repository entry and its pinned installer/authorization guide are published together. They install the refreshed public-testing 0.4.0 runtime. This maintainer-requested replacement updates the release assets and their adjacent SHA-256 sidecars; previously downloaded files have different checksums. The [manual installation guide](resources/OpenGUI-安装指南.html) remains available as an alternative.
 
 The entry downloads the installer and a self-contained [authorization guide](resources/OpenGUI-授权指南.html), verifies their SHA-256 pins, and runs installation without a Terminal confirmation or Finder step. After successful configuration it opens the guide in the default browser and prints `AUTHORIZATION_GUIDE` and `INSTALLATION_RESULT` paths. WorkBuddy can display that same HTML if browser opening is unavailable. Browser failure does not mean installation failed; do not reinstall just to reopen the instructions.
 

@@ -13,7 +13,7 @@ const app = process.argv[2] ?? '/Applications/WorkBuddy.app'
 assert(isAbsolute(app), 'The WorkBuddy bundle path must be absolute')
 const plist = join(app, 'Contents/Info.plist')
 const bundle = execFileSync('/usr/libexec/PlistBuddy', ['-c', 'Print :CFBundleIdentifier', plist], { encoding: 'utf8' }).trim()
-assert.match(bundle, /^(?:com\.tencent\.workbuddy\..+|com\.workbuddy\.workbuddy(?:-ai)?)$/u, 'Use an actual WorkBuddy bundle')
+assert.match(bundle, /^com\.tencent\.workbuddy\./u, 'Use an actual WorkBuddy bundle')
 const version = execFileSync('/usr/libexec/PlistBuddy', ['-c', 'Print :CFBundleShortVersionString', plist], { encoding: 'utf8' }).trim()
 const cli = join(app, 'Contents/Resources/app.asar.unpacked/cli/bin/codebuddy')
 const entry = fileURLToPath(new URL('../lib/mcp.js', import.meta.url))

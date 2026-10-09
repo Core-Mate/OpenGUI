@@ -73,9 +73,9 @@ Determine whether the request is judgment only, draft only, fill only, or review
 
 The durable local archive deduplicates stable account/target pairs across runs for the same signed-in principal, including sent, submitted and unknown submissions. Corrupt or unreadable history blocks sending. This is local archive deduplication, not an independent scan of the platform or cross-machine synchronization. Stable platform target/account identification, field focus/full-selection support and sent-comment verification still require actual image interpretation; native copied-input comparison alone does not establish the destination or business success. Approval is specific to this task, account, target and text. A new task requires its own review.
 
-## Configured phone execution
+## WorkBuddy execution
 
-Read executor.mode from opengui_open_session. With configured mode, opengui_execute starts one scoped loop using the chosen admin model configuration through the backend proxy; WorkBuddy remains the conversational agent. Use status or another bounded execute call for progress and cancel for stopping. Parallel host observe/act is rejected while the runner owns execution. Pause/takeover aborts in-flight inference and phone dispatch; handback forces fresh observation. Human reviews stop new model requests until a saved decision exists. Host connection loss, session end and lease expiry still stop control; a board event does not wake an ended WorkBuddy chat turn. Check runtime state rather than assuming background continuation.
+Execution follows the current WorkBuddy conversation model. The model menu has only 跟随 WorkBuddy. No online model catalog is loaded. Use observe/act after the person's Start and the verified first frame; opengui_execute is retained only as a legacy entry and is unavailable for current tasks. The workbench cannot wake an ended host turn: keep one owned event wait pending while waiting for Start or human handback.
 
 ## Structured test contract
 

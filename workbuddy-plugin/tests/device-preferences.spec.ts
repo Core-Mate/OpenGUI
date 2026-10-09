@@ -62,14 +62,14 @@ describe('account-scoped original device preferences', () => {
     if (process.platform !== 'win32') expect(statSync(join(f.directory, 'account.json')).mode & 0o077).toBe(0)
   })
 
-  it('preserves device and model preferences independently across account logout and service changes', async () => {
+  it('preserves device preferences while ignoring retired model choices across account logout and service changes', async () => {
     const f = await fixture()
     f.client.selectModel('Published fixture'); f.client.selectDevice('phone-b'); f.client.selectModel()
     expect(f.client.preferredDeviceId).toBe('phone-b'); f.client.selectModel('Other fixture')
     await f.client.logout(); expect(f.client.preferredDeviceId).toBeUndefined()
     await f.client.login('13800001234', '123456'); expect(f.client.preferredDeviceId).toBe('phone-b')
     const saved = JSON.parse(readFileSync(join(f.directory, 'account.json'), 'utf8'))
-    expect(saved.preferences[f.client.scope]).toEqual({ device: 'phone-b', model: 'Other fixture' })
+    expect(saved.preferences[f.client.scope]).toEqual({ device: 'phone-b' })
     await f.client.logout(); f.switchUser(43); await f.client.login('13800001234', '123456')
     expect(f.client.preferredDeviceId).toBeUndefined(); f.client.selectDevice('phone-a')
     f.client.configure('http://127.0.0.1:2'); await f.client.login('13800001234', '123456'); expect(f.client.preferredDeviceId).toBeUndefined()

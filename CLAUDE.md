@@ -121,8 +121,8 @@ Do not reintroduce UMeng, Bugly, Aliyun SLS, or any other commercial/mobile trac
 
 ### WorkBuddy plugin official service (approved exception)
 
-- `workbuddy-plugin/` connects by default to the official CoreMate account and model service `https://cm2backend.dmyh.tech`, defined in `workbuddy-plugin/src/service-config.ts` and bundled into every build by `scripts/finalize.mjs`
-- This is a deliberate maintainer decision: it uses that service's existing `/api/user-auth/*` (SMS sign-in, auto-registration) and `/api/agent-config/runtime/*` routes, which the public `server/` does not provide
+- `workbuddy-plugin/` connects by default to the official CoreMate account service `https://cm2backend.dmyh.tech`, defined in `workbuddy-plugin/src/service-config.ts` and bundled into every build by `scripts/finalize.mjs`
+- This is a deliberate maintainer decision: it uses that service's existing `/api/user-auth/*` (SMS sign-in, auto-registration) routes; execution follows WorkBuddy and does not read the online model catalog. The public `server/` does not provide these account routes. Previously supported model routes are inactive in this release.
 - Do not remove the default or treat it as a leaked private endpoint; `OPENGUI_ACCOUNT_SERVICE_URL` overrides it for self-hosting or development
 - Keep the data-flow disclosure in the plugin READMEs accurate when this integration changes
 

@@ -60,7 +60,7 @@ VLM_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 VLM_MODEL=qwen3.6-plus
 ```
 
-没有 `VLM_API_KEY` 时后端仍可启动，但 graph 需要调用模型时，真实任务将执行失败。首次运行不需要配置 LangSmith tracing 和 IM channel 凭据。
+执行任务前，`VLM_API_KEY`、`VLM_BASE_URL` 和 `VLM_MODEL` 三个变量均须非空；示例文件已提供地址和模型名的默认值。缺少模型配置时，后端及 API/文档仍可启动。任务在模型调用前失败，提示会列出所有缺失或仅含空白的变量，并指向 `server/apps/backend/.env`。首次运行不需要配置 LangSmith tracing 和 IM channel 凭据。
 
 启动后可使用以下地址：
 

@@ -14,8 +14,8 @@ object ServerConstant {
     fun getURL(): String {
         val mmkv = MMKV.mmkvWithID("BaseUrl")
         val baseUrl = mmkv.getString("BaseUrl", null)
-        return if (BuildConfig.DEBUG) {
-            baseUrl ?: BASE_URL_DEBUG
+        return baseUrl ?: if (BuildConfig.DEBUG) {
+            BASE_URL_DEBUG
         } else {
             BASE_URL_RELEASE
         }

@@ -4,7 +4,7 @@ import { lstatSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 
-export const VERSION = '0.3.1'
+export const VERSION = '0.4.0'
 export const BROKER_PROTOCOL = 8
 /** Longest single wait for the person to hand control back; nothing is captured and no model runs meanwhile. */
 export const HUMAN_CONTROL_WAIT_MS = 600_000

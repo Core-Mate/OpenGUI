@@ -10,14 +10,19 @@ try {
  await writeFile(join(temp, 'gh'), `#!${process.execPath}
 const fs=require('fs');const a=process.argv.slice(2);if(a[1]==='view'){console.error('release not found');process.exit(1)}fs.writeFileSync(process.env.PUBLISH_TEST_OUTPUT,JSON.stringify(a));
 `, {mode:0o755})
- const env={...process.env,PATH:temp+':'+process.env.PATH,PUBLISH_TEST_OUTPUT:output,GITHUB_REF_NAME:'opengui-workbuddy-v0.3.1'}
+ const env={...process.env,PATH:temp+':'+process.env.PATH,PUBLISH_TEST_OUTPUT:output,GITHUB_REF_NAME:'opengui-workbuddy-v0.4.0'}
  const script=fileURLToPath(new URL('./publish.mjs', import.meta.url))
  let result=spawnSync(process.execPath,[script],{env:{...env,OPENGUI_PRERELEASE:'false'},encoding:'utf8'})
  assert.notEqual(result.status,0);assert.match(result.stderr,/Unverified release gate/)
  result=spawnSync(process.execPath,[script],{env:{...env,OPENGUI_PRERELEASE:'true'},encoding:'utf8'})
  assert.equal(result.status,0,result.stderr)
  const args=JSON.parse(await readFile(output,'utf8'))
+ assert(args.filter(a=>a.includes('/dist/')).every(a=>/^[A-Za-z0-9._-]+$/u.test(a.split('/').at(-1))), 'GitHub must preserve every asset filename without normalization collisions')
  assert(args.includes('--prerelease'));assert(args.includes('--latest=false'))
- assert(args.some(a=>a.endsWith('opengui-workbuddy-0.3.1-install.command.sha256')))
+ assert(args.some(a=>a.endsWith('opengui-workbuddy-0.4.0-install.command.sha256')))
+ for (const name of ['OpenGUI-Install.command', 'installer.sh', 'OpenGUI-Installation.html', 'OpenGUI-Authorization.html', 'install.sh']) {
+  assert(args.some(a=>a.endsWith('/' + name)), `Missing direct-download asset: ${name}`)
+  assert(args.some(a=>a.endsWith('/' + name + '.sha256')), `Missing direct-download checksum: ${name}`)
+ }
  console.log('PASS: stable publication remains blocked by missing acceptance; public testing uses prerelease and installer assets.')
 } finally { await rm(temp,{recursive:true,force:true}) }
