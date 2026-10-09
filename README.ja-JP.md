@@ -40,6 +40,55 @@
 
 OpenGUI は実際の Android アプリ UI を読み取り、次のステップを計画し、モバイル操作を実行して、構造化された結果を返します。
 
+## WorkBuddyへのインストール
+
+**macOS（Apple Silicon / Intel）、WorkBuddy 5.5.3 以降**に対応しています。現在の公開版は [0.4.0 公開テスト版](https://github.com/Core-Mate/OpenGUI/releases/tag/opengui-workbuddy-v0.4.0)です。
+
+> [!IMPORTANT]
+> **インストール後は WorkBuddy を一度再起動してください。** 他のタスクを終了し、**⌘Q で完全に終了**してから開き直し、OpenGUI を認証してください。ウィンドウを閉じるだけでは終了しません。
+
+**手順1.Terminalコマンドでインストール**
+
+macOS の Terminal で次を実行します：
+
+```sh
+cd "$HOME" && curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh | bash
+```
+
+スクリプトは必要なファイルを検証し、ランタイムと OpenGUI を設定します。
+
+Node と npm の依存関係は既定で中国の npmmirror を使い、失敗時は公式ソースへ切り替えます。この設定は今回のインストールにのみ適用されます。公式ソースを使う場合は、末尾の `bash` を `bash -s -- --download-source official` に変更してください。動画コンポーネントは別途 GitHub から取得します。[ダウンロード元の選択](workbuddy-plugin/INSTALL.md#download-sources)も参照してください。
+
+[install.sh を個別にダウンロード](https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh)して `bash /実際のパス/install.sh` で実行することもできます。
+
+**手順2.WorkBuddyを一度再起動**
+
+インストール完了後、WorkBuddy の他のタスクを終了し、**⌘Q** で完全に終了してから開き直します。新しくインストールした MCP 設定を読み込むために必要です。
+
+**手順3.Skillとコネクターを認証**
+
+WorkBuddy の「专家·技能·连接器 → 技能」で OpenGUI を選び、認証します。続いて「连接器」で OpenGUI を認証してください。**Skill とコネクターの両方に認証が必要です。**
+
+![OpenGUI Skill と MCP の認証手順](./workbuddy-plugin/resources/Skill和MCP授权.gif)
+
+OpenGUI が見つからない場合は「自定义连接器」の MCP サービスも確認してください。認証ページが自動で開かない場合は、Terminal の `AUTHORIZATION_GUIDE` に表示されたファイルを開いてください。
+
+**手順4.接続を確認して使い始める**
+
+Android スマートフォンの USB デバッグを有効にして PC に接続し、端末上で USB デバッグを承認します。WorkBuddy で `/opengui` に続けて実行したい指示を入力してください。
+
+試してみる：小紅書の投稿を準備
+
+```text
+/opengui 小紅書で【テーマ】の画像付き投稿の下書きを作成してください。【素材】を使い、公開前に停止してください。
+```
+
+試してみる：Vibe Testing
+
+```text
+/opengui 【アプリ／画面】の【機能や操作フロー】をテストし、特に【確認する点】を確認してください。問題があれば手順とスクリーンショットを記録し、【終了条件】に達したら停止してください。
+```
+
 ## DeepSeek HarnessでOpenGUIを使う
 
 macOSでは、`main` ブランチの安定したインストーラーSkillをCodexに実行させる方法が最短です。実行するたびに最新の安定版OpenGUIプラグインを解決してインストールし、ロールバック用に明示的なバージョン指定も利用できます。Node.js 22.19以降または24以降が必要で、互換性のあるDSHバージョンは自動的にインストールされます。次の内容を1つのプロンプトとして送信します：

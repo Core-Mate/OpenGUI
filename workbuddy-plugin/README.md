@@ -15,17 +15,28 @@ After first display authorization, video failure or page closure does not cancel
 
 ## Installation and migration
 
+Download the installer and run it in macOS Terminal, restart WorkBuddy once, then authorize the Skill and connector.
+
+> [!IMPORTANT]
+> **Restart WorkBuddy once after installation.** Finish other tasks, **fully quit with ⌘Q**, and reopen WorkBuddy before authorizing OpenGUI. Closing its window is not enough.
+
+The complete steps and download link are in the [root README](../README.md#use-opengui-in-workbuddy). See [installation verification and troubleshooting](INSTALL.md) for details; the archive command below is for maintenance and local verification.
+
 Use the supplied installer and matching archive with adjacent SHA-256 sidecars:
 
 ```sh
 bash scripts/install-macos.command --archive /absolute/path/opengui-mcp-0.3.1.tgz
 ```
 
-The installer prepares private Node, verifies the package and scrcpy resources, and only then changes this host's configuration. On WorkBuddy 5.5.6+, the application may stay open: MCP configuration is watched live, while external Hook changes are reviewed in `/hooks` and the installed Skill is confirmed in `/skills`. Start a new task only if the current task does not refresh. Older compatible hosts use the Command-Q fallback reported by preflight.
+The installer prepares private Node, verifies the package and scrcpy resources, and only then changes this host's configuration. After installation, restart WorkBuddy once to load the new MCP configuration, review external Hook changes in `/hooks`, and confirm the installed Skill in `/skills`.
 
 Complete old phone tasks and close old displays before upgrading. If an old broker remains, disable the old OpenGUI MCP and wait for its idle exit before retrying. No migration force-kills an old runtime. Repeated installation reuses verified caches; download failure reports its stage and leaves previous configuration available. Keep the old installer/archive and recovery record to reinstall the old version. The installer reports configuration, host loading and real-viewer acceptance separately.
 
 WorkBuddy 5.5.3 domestic and overseas configuration discovery, version-aware running-host preflight, per-configuration receipts, and native Hooks are retained. Use `--check` or `--app /absolute/WorkBuddy.app` for explicit preflight. Legacy `opengui_start` and native mirror tools are compatibility-only, on explicit request. They never substitute for browser first-frame authorization.
+
+Automatic discovery accepts `com.workbuddy.workbuddy`, `com.workbuddy.workbuddy-ai`, and legacy `com.tencent.workbuddy.*` identities. It prefers WorkBuddy (including legacy bundles) over WorkBuddy AI; multiple bundles in the preferred group require `--app`. An explicit `--app` overrides this preference. Configuration paths come from the selected application's product metadata, including `.workbuddy` and `.workbuddy-ai`.
+
+Node and npm default to npmmirror with official fallback for this installation only. Use `--download-source official` to select official sources. Video archives remain separate GitHub downloads; `--video-mirror https://host/archive-directory` optionally selects an identical archive mirror with size/checksum verification and official fallback. See [download sources](INSTALL.md#download-sources); older packages cannot honor the new video option.
 
 ## Runtime and privacy
 

@@ -82,19 +82,54 @@ OpenGUI 正式支持 DSH `0.1.0-rc.7`、`0.1.0-rc.8`、`0.1.1-rc.1` 和 `0.1.1-r
 
 ## WorkBuddy 安装
 
-WorkBuddy 使用独立的 [MCP + Skill + Hooks 插件](./workbuddy-plugin/README.zh-CN.md#macos-安装)，由当前视觉模型看图操作 Android 手机，默认打开只读 scrcpy 投屏窗口。不需要安装 DSH、部署完整 OpenGUI 后端或额外配置模型 API Key。
+支持 **macOS（Apple 芯片 / Intel）和 WorkBuddy 5.5.3 及以上版本**。当前公开版本为 [0.4.0 公测预发布版](https://github.com/Core-Mate/OpenGUI/releases/tag/opengui-workbuddy-v0.4.0)。在电脑上下载并运行安装脚本，安装后重启一次 WorkBuddy，再完成授权。
 
-当前 `0.3.1` 是 macOS 公测预发布版，不代表已经上架市场或完成全部真机验收。安装会把 MCP、`opengui` Skill 和生命周期 Hooks 一起配置，备份相关 WorkBuddy 配置并保留其他插件。WorkBuddy 5.5.6 及以上支持运行中安装；旧版兼容宿主会由预检明确要求 Command-Q。
+> [!IMPORTANT]
+> **安装后需要重启一次 WorkBuddy。** 请先结束其他任务，用 **⌘Q 完全退出** WorkBuddy，再重新打开，然后授权 OpenGUI。只关闭窗口不算退出。
 
-安装后按宿主提示启用并信任 `opengui` MCP，在 `/hooks` 中审查外部 Hook 变更，并在 `/skills` 中确认 `opengui`。连接已授权 USB 调试的 Android 手机，在输入框选择 `/opengui`，发送：
+**步骤1.Terminal命令下载安装**
 
-```text
-打开手机设置，查看并告诉我 Android 版本。
+打开 macOS“终端”，粘贴并运行：
+
+```sh
+cd "$HOME" && curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh | bash
 ```
 
-手机任务会把截图发送给当前模型。只想看投屏时，可以说“展示手机投屏，不截图给模型，也不要操作手机”。任务结束后投屏保留；关闭投屏窗口不会取消正在执行的任务，停止操作请使用 WorkBuddy 的停止按钮。
+这条命令会下载并运行安装脚本，无需先手动保存文件。脚本会校验后续安装文件、准备运行环境并配置 OpenGUI。
 
-找不到 `/opengui` 或任务不能自动续跑时，查看 [安装验证与排查](./workbuddy-plugin/README.zh-CN.md#安装验证与排查)。只添加 MCP 不会自动安装技能和 Hooks。
+Node 和 npm 依赖默认使用国内 npmmirror，下载失败时回退官方源，只影响本次安装。需要官方源时，将命令末尾的 `bash` 改为 `bash -s -- --download-source official`。视频组件来自 GitHub，换 npm 源不会加速它；有自己的视频镜像时，可加 `--video-mirror https://镜像地址/归档目录`，详见[下载源选项](workbuddy-plugin/INSTALL.md#download-sources)。
+
+也可以[单独下载安装脚本（install.sh）](https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh)，保存后在终端运行 `bash /实际路径/install.sh`。
+
+**步骤2.重启一次 WorkBuddy**
+
+安装脚本完成后，先结束 WorkBuddy 中的其他任务，按 **⌘Q** 完全退出，再重新打开 WorkBuddy，使新安装的 MCP 配置加载生效。
+
+**步骤3.授权技能和连接器**
+
+打开 WorkBuddy 的“专家·技能·连接器 → 技能”，找到 OpenGUI，按提示完成授权；之后在连接器中，找到OpenGUI，再次授权。
+
+**注意：技能 和 连接器，都需要授权哦！**
+
+![OpenGUI Skill 和 MCP 授权演示](./workbuddy-plugin/resources/Skill和MCP授权.gif)
+
+若找不到连接器中的 OpenGUI，可打开“自定义连接器”检查 MCP 服务。授权页面未自动打开时，可打开终端打印的 `AUTHORIZATION_GUIDE` 路径，无需重新安装。
+
+**步骤4.验证连接并开始使用**
+
+把Android手机打开USB调试，连上电脑，输入/opengui，输入需要给手机的执行指令，即可控制手机执行。首次连接时，请在手机上允许 USB 调试授权。
+
+试一试：用小红书发帖
+
+```text
+/opengui 在小红书中为【xxx主题】准备图文草稿，使用【xxx、xxx素材】，停止在点击发布按钮前。
+```
+
+试一试：Vibe Testing
+
+```text
+/opengui 帮我测试【应用／页面】的【功能或操作流程】，重点检查【关注的问题】。如果发现异常，记录操作步骤和截图，当做到【结束条件】就停。
+```
 
 ## 运行完整 OpenGUI 技术栈
 

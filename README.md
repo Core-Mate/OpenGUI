@@ -81,19 +81,54 @@ Model availability, pricing, and policy behavior vary by version and region. Whi
 
 ## Use OpenGUI in WorkBuddy
 
-WorkBuddy has a separate [MCP + Skill + Hooks connector](./workbuddy-plugin/README.md#install-on-macos). It uses WorkBuddy's current visual model to operate Android phones and opens read-only scrcpy windows by default. No DSH installation, full OpenGUI backend, or extra model API key is required.
+Supported on **macOS (Apple Silicon / Intel) with WorkBuddy 5.5.3 or later**. The current public release is [0.4.0, a public-testing prerelease](https://github.com/Core-Mate/OpenGUI/releases/tag/opengui-workbuddy-v0.4.0). Download and run the installer on your Mac, restart WorkBuddy once, then authorize OpenGUI.
 
-Version `0.3.1` is a macOS public-testing prerelease, not marketplace approval or complete real-device acceptance. It installs the MCP, `opengui` Skill and lifecycle Hooks together, preserves other plugins, and backs up the affected WorkBuddy configuration. WorkBuddy 5.5.6+ supports the live installation flow; older compatible versions use the Command-Q fallback reported by preflight.
+> [!IMPORTANT]
+> **Restart WorkBuddy once after installation.** Finish other tasks, **fully quit with ⌘Q**, then reopen WorkBuddy before authorizing OpenGUI. Closing its window is not enough.
 
-After installation, enable/trust the `opengui` MCP if prompted, review the external Hook change in `/hooks`, confirm `opengui` in `/skills`, connect a USB-debugging-authorized Android phone, select `/opengui`, and send:
+**Step 1. Install with a Terminal command**
 
-```text
-Open Settings and report the Android version on my phone.
+Open macOS Terminal, paste this command, and run it:
+
+```sh
+cd "$HOME" && curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh | bash
 ```
 
-Phone tasks send screenshots to the selected model. For local viewing only, ask “Show my phone screens without taking screenshots for the model or operating the phones.” Task completion leaves the mirrors open. Closing a mirror does not cancel a running task; use WorkBuddy's stop control to stop execution.
+This downloads and runs the installer without saving it manually first. The script verifies the subsequent installation files, prepares the runtime, and configures OpenGUI.
 
-If `/opengui` is missing or tasks do not continue automatically, see [installation checks and troubleshooting](./workbuddy-plugin/README.md#verify-the-installation). MCP alone does not install the Skill or Hooks.
+Node and npm dependencies default to the China npmmirror service with official fallback, scoped to this installation. To use official sources, replace the final `bash` with `bash -s -- --download-source official`. Video assets use GitHub separately; an npm mirror does not accelerate them. See [download source options](workbuddy-plugin/INSTALL.md#download-sources) for a custom video mirror.
+
+You can also [download install.sh separately](https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh) and run `bash /actual/path/install.sh` in Terminal.
+
+**Step 2. Restart WorkBuddy once**
+
+After the installer finishes, complete other WorkBuddy tasks, fully quit with **⌘Q**, and reopen WorkBuddy to load the newly installed MCP configuration.
+
+**Step 3. Authorize the Skill and connector**
+
+In WorkBuddy, open **Experts · Skills · Connectors → Skills**, find OpenGUI, and complete authorization. Then open **Connectors**, find OpenGUI, and authorize it as well.
+
+**Both the Skill and connector require authorization.**
+
+![Authorize the OpenGUI Skill and MCP connector](./workbuddy-plugin/resources/Skill和MCP授权.gif)
+
+If OpenGUI is not listed under Connectors, check **Custom connectors** for its MCP service. If the authorization page did not open automatically, open the `AUTHORIZATION_GUIDE` path printed in Terminal; no reinstallation is needed.
+
+**Step 4. Verify the connection and start using OpenGUI**
+
+Enable USB debugging on your Android phone, connect it to your computer, and approve USB debugging on the phone. Enter /opengui, then enter the instructions you want the phone to execute to control it.
+
+Try it: Post on Tiktok
+
+```text
+/opengui Prepare a Tiktok image-and-text draft about [topic] using [materials]. Stop before publishing.
+```
+
+Try it: Vibe Testing
+
+```text
+/opengui Help me test [feature or workflow] in [app/page], focusing on [issues to check]. If you find any problems, record the steps and screenshots. Stop when [end condition] is reached.
+```
 
 ## Run the Full OpenGUI Stack
 
