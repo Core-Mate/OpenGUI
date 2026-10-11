@@ -1,4 +1,4 @@
-# OpenGUI for WorkBuddy 0.4.0
+# OpenGUI for WorkBuddy 0.4.1
 
 [中文说明](README.zh-CN.md). macOS public-testing candidate, protocol 8. Marketplace approval and the remaining real-device gates are separate.
 
@@ -43,7 +43,7 @@ The complete steps and download link are in the [root README](../README.md#use-o
 Use the supplied installer and matching archive with adjacent SHA-256 sidecars:
 
 ```sh
-bash scripts/install-macos.command --archive /absolute/path/opengui-mcp-0.4.0.tgz
+bash scripts/install-macos.command --archive /absolute/path/opengui-mcp-0.4.1.tgz
 ```
 
 The installer prepares private Node, verifies the package and scrcpy resources, and only then changes this host's configuration. After installation, restart WorkBuddy once to load the new MCP configuration, review external Hook changes in `/hooks`, and confirm the installed Skill in `/skills`.

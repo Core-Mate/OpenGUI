@@ -1,4 +1,4 @@
-# OpenGUI for WorkBuddy 0.4.0 候选版
+# OpenGUI for WorkBuddy 0.4.1 候选版
 
 新任务默认手机操作／插件内推理预算各 1000 次；可在执行前声明 1–10000 次，旧任务恢复不扩大原上限。2／3 次只用于特定回归测试，不是产品默认值。用户明确约定总操作次数时，在首次观察／动作前向 `opengui_open_session` 传 `executionBudget: {operationLimit?, inferenceLimit?}`（1–10000）。观察和动作共用操作上限；推理上限只统计插件内调用，不能统计宿主模型调用。须核对工具返回的硬上限；目标／结束条件中的部分阿拉伯数字中文／英文总次数句式也会收紧上限，其他表述需用结构化字段声明。初始预算、已用次数随原任务恢复，模型不能调大或重置。工作台和报告展示实际限制；追加仍须原工作台用户授权。
 
@@ -44,7 +44,7 @@ WorkBuddy 使用内置 present_files，传入 URL 与当前工作目录。国内
 核对安装器及归档旁的 SHA-256 文件，结束旧任务、关闭旧展示后运行：
 
 ```sh
-bash scripts/install-macos.command --archive /绝对路径/opengui-mcp-0.4.0.tgz
+bash scripts/install-macos.command --archive /绝对路径/opengui-mcp-0.4.1.tgz
 ```
 
 安装器自动准备独立 Node 与 scrcpy 资源，缓存完整时复用；准备失败保留旧配置，并输出恢复步骤。安装完成后重启一次 WorkBuddy，使新 MCP 配置加载生效；外部 Hook 变更在 `/hooks` 中审查应用，并在 `/skills` 中确认 `opengui`。可用 --check 做只读预检，用 --app 指定国内或海外应用。

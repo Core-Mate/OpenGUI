@@ -2,7 +2,7 @@
 # Interactive handoff to the verified public WorkBuddy installer.
 set -euo pipefail
 umask 077
-expected_sha='b9958b29226c8bd1631f84cc272833ee49094b4bb95c22bcead06c76903c7d59'
+expected_sha='6df60779059deedb5a60bb9f5b481637912eddc332bacad04591c05898f2d17a'
 
 if [ ! -t 0 ] || [ ! -t 1 ] || [ -n "${CODEBUDDY_FORCE_HEADLESS_BUNDLE:-}" ] || [[ "${NODE_OPTIONS:-}" == *node-language-shim* ]]; then
   echo '尚未开始安装。请在 Finder 中双击 OpenGUI-安装.command，打开终端安装窗口。'
@@ -24,7 +24,7 @@ if [ "$actual_sha" != "$expected_sha" ]; then
   exit 1
 fi
 printf '\nOpenGUI · WorkBuddy 安装\n\n'
-printf '将安装 OpenGUI 插件 0.4.0，配置连接器、技能和任务运行所需的 Hooks。\n'
+printf '将安装 OpenGUI 插件 0.4.1，配置连接器、技能和任务运行所需的 Hooks。\n'
 printf '会自动备份相关设置，保留其他插件，无需系统密码。\n'
 printf '安装时可以保持 WorkBuddy 打开。若正在升级，请先结束旧 OpenGUI 手机任务。\n'
 printf '本次安装不会操作手机；后续执行任务时，截图会发送给所选模型。\n\n'

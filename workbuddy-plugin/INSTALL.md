@@ -1,6 +1,6 @@
 # Install OpenGUI into WorkBuddy
 
-This guide installs the published OpenGUI 0.4.0 WorkBuddy connector on macOS. It uses the [official public-testing release](https://github.com/Core-Mate/OpenGUI/releases/tag/opengui-workbuddy-v0.4.0); no source checkout, system Node installation, full backend deployment, or DSH installation is needed.
+This guide installs the published OpenGUI 0.4.1 WorkBuddy connector on macOS. It uses the [official public-testing release](https://github.com/Core-Mate/OpenGUI/releases/tag/opengui-workbuddy-v0.4.1); no source checkout, system Node installation, full backend deployment, or DSH installation is needed.
 
 > [!IMPORTANT]
 > **Restart WorkBuddy once after installation.** Finish other tasks, **fully quit with ⌘Q**, then reopen WorkBuddy before authorizing the Skill and connector. Closing its window is not enough.
@@ -15,7 +15,7 @@ curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-pl
 
 Alternatively, [download install.sh](https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh) and run `bash /actual/path/install.sh`. Installation runs on the Mac; restart WorkBuddy once afterward, then authorize OpenGUI and verify the connection.
 
-The repository entry and its pinned installer/authorization guide are published together. They install the refreshed public-testing 0.4.0 runtime. This maintainer-requested replacement updates the release assets and their adjacent SHA-256 sidecars; previously downloaded files have different checksums. The [manual installation guide](resources/OpenGUI-安装指南.html) remains available as an alternative.
+The repository entry and its pinned installer/authorization guide are published together. They install the refreshed public-testing 0.4.1 runtime. This release uses new versioned assets and adjacent SHA-256 sidecars; earlier releases remain unchanged. The [manual installation guide](resources/OpenGUI-安装指南.html) remains available as an alternative.
 
 The entry downloads the installer and a self-contained [authorization guide](resources/OpenGUI-授权指南.html), verifies their SHA-256 pins, and runs installation without a Terminal confirmation or Finder step. After successful configuration it opens the guide in the default browser and prints `AUTHORIZATION_GUIDE` and `INSTALLATION_RESULT` paths. WorkBuddy can display that same HTML if browser opening is unavailable. Browser failure does not mean installation failed; do not reinstall just to reopen the instructions.
 
@@ -79,7 +79,7 @@ If Skill or connector authorization remains incomplete, reopen the authorization
 
 ## MCP missing after installation
 
-The published 0.4.0 installer can write configuration while newer WorkBuddy versions are running, but that does not establish live reload. A local WorkBuddy 5.7.6 comparison found that neither external in-place writing nor atomic replacement updated the custom MCP list. Saving the same configuration through WorkBuddy's built-in MCP editor updated the list without restarting. See the [local verification record](docs/mcp-config-reload-verification.zh-CN.md).
+The published 0.4.1 installer can write configuration while newer WorkBuddy versions are running, but that does not establish live reload. A local WorkBuddy 5.7.6 comparison found that neither external in-place writing nor atomic replacement updated the custom MCP list. Saving the same configuration through WorkBuddy's built-in MCP editor updated the list without restarting. See the [local verification record](docs/mcp-config-reload-verification.zh-CN.md).
 
 The standard installation flow requires one restart: finish other tasks, fully quit WorkBuddy with Command-Q, reopen it, then continue Skill authorization and MCP trust. If OpenGUI is still missing after that, open **Experts · Skills · Connectors → Connectors → Custom connectors → Add MCP** and check for the `opengui` entry in the expected configuration file. If it is absent, inspect the installer receipt and configuration path. The built-in editor's **Save** action is a verified manual refresh option; it is not the default onboarding step. If configuration is already loaded but a connection fails, inspect the actual error before restarting again.
 

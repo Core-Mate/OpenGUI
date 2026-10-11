@@ -31,7 +31,7 @@ try {
  await mkdir(config, {recursive:true})
  await writeFile(join(config, 'mcp.json'), JSON.stringify({mcpServers:{other:{command:'keep-me'}}}))
  await writeFile(join(config, 'settings.json'), JSON.stringify({custom:true,hooks:{Stop:[{hooks:[{type:'command',command:'other-hook'}]}]}}))
- const archive = join(root, 'dist/opengui-mcp-0.4.0.tgz')
+ const archive = join(root, 'dist/opengui-mcp-0.4.1.tgz')
  const installer = testCurl ? join(root, 'install.sh') : process.argv[2] ?? join(root, 'scripts/install-macos.command')
  const bootstrapSource = testCurl ? await readFile(installer, 'utf8') : undefined
  const opened = join(temporary, 'opened-guides.txt')
@@ -75,7 +75,7 @@ esac
   if (i === 0) assert.match(result.stdout, /CONFIG_WRITTEN/)
   else assert.match(result.stdout, /ALREADY_CONFIGURED/)
   const state=JSON.parse(await readFile(join(stateRoot,`local-install-${createHash('sha256').update(config).digest('hex').slice(0,16)}.json`)))
-  assert.equal(state.version,'0.4.0'); assert.equal(state.configRoot, config); assert(state.backups.every(b=>b.backup===null || b.backup.includes('before-opengui')))
+  assert.equal(state.version,'0.4.1'); assert.equal(state.configRoot, config); assert(state.backups.every(b=>b.backup===null || b.backup.includes('before-opengui')))
   if (testCurl) {
    const receiptPath = result.stdout.match(/INSTALLATION_RESULT: (.+)/)?.[1]
    assert(receiptPath, result.stdout)
