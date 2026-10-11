@@ -50,8 +50,18 @@ for (const path of targets) await assertOwnedPath(path)
 const existingMcp = JSON.parse(original[0] ?? '{}').mcpServers?.opengui
 if (existingMcp) {
   const knownEntrypoints = [packageDir, previous.packageDir].filter(Boolean).map(path => join(path, 'lib', 'mcp.js'))
-  assert(Array.isArray(existingMcp.args) && existingMcp.args.length === 1 && knownEntrypoints.includes(existingMcp.args[0]),
-    'MCP_CONFLICT: an unrecognized opengui server already exists; preserve it and resolve the conflict explicitly')
+  const ownedStdio = (!existingMcp.type || existingMcp.type === 'stdio') && Array.isArray(existingMcp.args)
+    && existingMcp.args.length === 1 && knownEntrypoints.includes(existingMcp.args[0])
+  // Native installations record the exact server, including its authorization.
+  // A matching URL alone cannot establish ownership of a third-party entry.
+  const ownedHttp = previous.configRoot === root && previous.transport === 'http' && existingMcp.type === 'http'
+    && previous.nativeServerSha256 === createHash('sha256').update(JSON.stringify(existingMcp)).digest('hex')
+  assert(ownedStdio || ownedHttp,
+    `MCP_CONFLICT: unrecognized or edited opengui server in ${targets[0]}. No configuration files changed.\n`
+    + `Back up and inspect the configuration before retrying:\ncp ${quote(targets[0])} ${quote(`${targets[0]}.before-opengui-conflict-${Date.now()}`)}\n`
+    + `\${EDITOR:-vi} ${quote(targets[0])}\n`
+    + 'To keep the existing server, rename its mcpServers key from opengui to an unused name (for example opengui-existing); '
+    + 'or explicitly remove only that entry if it is no longer needed. Save, then rerun the installation command.')
 }
 const values = [
   JSON.stringify(mergeMcpConfig(JSON.parse(original[0] ?? '{}'), node, join(packageDir, 'lib', 'mcp.js')), null, 2) + '\n',
