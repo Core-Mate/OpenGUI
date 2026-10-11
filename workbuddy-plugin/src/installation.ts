@@ -18,8 +18,9 @@ export function mergeHostHooks(settings: Record<string, unknown>, command: strin
 
 export function mergeMcpConfig(config: Record<string, unknown>, node: string, entrypoint: string): Record<string, unknown> {
   const servers = (config.mcpServers ?? {}) as Record<string, unknown>
+  const { url: _url, headers: _headers, ...retained } = (servers.opengui ?? {}) as Record<string, unknown>
   return { ...config, mcpServers: { ...servers, opengui: {
-    ...((servers.opengui ?? {}) as Record<string, unknown>), type: 'stdio', command: node,
+    ...retained, type: 'stdio', command: node,
     args: [entrypoint], timeout: 120000, disabled: false,
   } } }
 }
