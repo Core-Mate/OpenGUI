@@ -1,3 +1,8 @@
+## 0.4.1
+
+- Recognize receipt-owned HTTP MCP installations during upgrades to the public stdio runtime.
+- Preserve unknown or edited MCP entries and provide explicit backup/edit/retry instructions.
+
 # OpenGUI for WorkBuddy 0.4.0 public testing
 
 - Publish the task home, workbench, account/model selection, takeover, content review, and report runtime as a distinct plugin version.

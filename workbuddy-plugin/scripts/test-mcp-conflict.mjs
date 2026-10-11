@@ -14,7 +14,7 @@ try {
   const state = join(root, 'opengui')
   const pkg = join(state, 'packages/new/node_modules/opengui-mcp')
   await mkdir(join(pkg, 'lib'), { recursive: true })
-  await writeFile(join(pkg, 'package.json'), JSON.stringify({ name: 'opengui-mcp', version: '0.4.0' }))
+  await writeFile(join(pkg, 'package.json'), JSON.stringify({ name: 'opengui-mcp', version: '0.4.1' }))
   await writeFile(join(pkg, 'lib/host-hook.js'), '// Fixture only\n')
   await writeFile(join(pkg, 'lib/opengui-SKILL.md'), 'fixture skill\n')
   const receiptPath = join(state, `local-install-${hash(root).slice(0, 16)}.json`)
