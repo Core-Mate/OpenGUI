@@ -57,24 +57,36 @@ After installation and authorization, enter these instructions in the correspond
 
 ## Use OpenGUI in WorkBuddy
 
-Supported on **macOS (Apple Silicon / Intel) with WorkBuddy 5.5.3 or later**. The current public release is [0.4.0, a public-testing prerelease](https://github.com/Core-Mate/OpenGUI/releases/tag/opengui-workbuddy-v0.4.0). Download and run the installer on your Mac, restart WorkBuddy once, then authorize OpenGUI.
+Supported on **macOS (Apple Silicon / Intel) with WorkBuddy 5.5.3 or later**. The current public release is [0.4.1, a public-testing prerelease](https://github.com/Core-Mate/OpenGUI/releases/tag/opengui-workbuddy-v0.4.1). China and international WorkBuddy use the same OpenGUI package and version. Custom MCP installation is available without a connector marketplace listing.
+
+OpenGUI and WorkBuddy accounts are separate. OpenGUI SMS sign-in currently requires a **mainland-China phone number**; signing into international WorkBuddy with Google/GitHub does not sign you into OpenGUI.
 
 > [!IMPORTANT]
 > **Restart WorkBuddy once after installation.** Finish other tasks, **fully quit with ⌘Q**, then reopen WorkBuddy before authorizing OpenGUI. Closing its window is not enough.
 
 **Step 1. Install with a Terminal command**
 
-Open macOS Terminal, paste this command, and run it:
+Open macOS Terminal and run the command for your WorkBuddy edition. If you use both editions, install into each one separately. Complete the remaining steps in the edition selected here.
+
+**China edition — WorkBuddy.app**
 
 ```sh
-cd "$HOME" && curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh | bash
+cd "$HOME" && curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh | bash -s -- --app "/Applications/WorkBuddy.app" --download-source cn
 ```
 
-This downloads and runs the installer without saving it manually first. The script verifies the subsequent installation files, prepares the runtime, and configures OpenGUI.
+**International edition — WorkBuddy AI.app**
 
-Node and npm dependencies default to the China npmmirror service with official fallback, scoped to this installation. To use official sources, replace the final `bash` with `bash -s -- --download-source official`. Video assets use GitHub separately; an npm mirror does not accelerate them. See [download source options](workbuddy-plugin/INSTALL.md#download-sources) for a custom video mirror.
+```sh
+cd "$HOME" && curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh | bash -s -- --app "/Applications/WorkBuddy AI.app" --download-source official
+```
 
-You can also [download install.sh separately](https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh) and run `bash /actual/path/install.sh` in Terminal.
+These commands explicitly select the target application, so having both editions installed will not cause OpenGUI to be installed into the wrong one. If your application is elsewhere or has been renamed, replace the path after `--app` with its actual path. The script downloads and verifies the installation files, prepares the runtime, and configures OpenGUI.
+
+The China command uses npmmirror for Node and npm dependencies with official fallback; the international command uses official sources. To use official sources with China WorkBuddy, change `--download-source cn` to `--download-source official`. This setting applies only to this installation. Video assets use GitHub separately; an npm mirror does not accelerate them. See [download source options](workbuddy-plugin/INSTALL.md#download-sources) for a custom video mirror.
+
+You can also [download install.sh separately](https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh) and run `bash /actual/path/install.sh` with the same `--app` and `--download-source` arguments shown above.
+
+See [international installation and account limitations](workbuddy-plugin/INSTALL.md#international-workbuddy), or the [GitHub installation flow (Chinese)](workbuddy-plugin/docs/install-from-github.zh-CN.md) for a copyable WorkBuddy prompt, native authorization and connection verification.
 
 **Step 2. Restart WorkBuddy once**
 
@@ -82,7 +94,10 @@ After the installer finishes, complete other WorkBuddy tasks, fully quit with **
 
 **Step 3. Authorize the Skill and connector**
 
-In WorkBuddy, open **Experts · Skills · Connectors → Skills**, find OpenGUI, and complete authorization. Then open **Connectors**, find OpenGUI, and authorize it as well.
+- **China edition**: authorize and enable OpenGUI under **专家·技能·连接器 → 技能**. Then open **连接器 → 自定义连接器**, find `opengui`, complete the trust prompt, and enable it.
+- **International edition**: authorize and enable OpenGUI under **Experts · Skills · Connectors → Skills**. Then open **Connectors → Custom connectors**, click **Trust** for `opengui`, and enable it.
+
+If an update triggers another Trust prompt, review and confirm it yourself.
 
 **Both the Skill and connector require authorization.**
 
@@ -92,7 +107,13 @@ If OpenGUI is not listed under Connectors, check **Custom connectors** for its M
 
 **Step 4. Verify the connection and start using OpenGUI**
 
-Enable USB debugging on your Android phone, connect it to your computer, and approve USB debugging on the phone. Enter /opengui, then enter the instructions you want the phone to execute to control it.
+You can first ask WorkBuddy: “Call `opengui_list_devices` once to verify the connection, report the device count, and do not operate a phone.” A successful call returning zero devices also confirms the plugin connection.
+
+To start a phone task:
+
+1. Enable USB debugging on your Android phone, connect it to your computer, and allow debugging on the phone. You can also start a local Android emulator from the workbench.
+2. Enter `/opengui` in WorkBuddy to open the task home on the right, then sign into OpenGUI as prompted.
+3. Describe your goal, confirm the device, and click **开始执行** (Start task). Execution follows the current WorkBuddy conversation model.
 
 Try it: Post on Tiktok
 
@@ -105,6 +126,8 @@ Try it: Vibe Testing
 ```text
 /opengui Help me test [feature or workflow] in [app/page], focusing on [issues to check]. If you find any problems, record the steps and screenshots. Stop when [end condition] is reached.
 ```
+
+**UI language (not yet released)**: Chinese/English switching, following WorkBuddy’s display language, and emulator-picker improvements are being tested. They are not yet included in the public source or 0.4.1 package. The language option translates interface labels; task descriptions, TODO content, and review drafts retain their original text.
 
 ## Use OpenGUI in DeepSeek Harness
 

@@ -56,24 +56,36 @@ OpenGUI 让 AI 根据真实屏幕截图理解 App，用自然语言完成手机�
 
 ## WorkBuddy 安装
 
-支持 **macOS（Apple 芯片 / Intel）和 WorkBuddy 5.5.3 及以上版本**。当前公开版本为 [0.4.0 公测预发布版](https://github.com/Core-Mate/OpenGUI/releases/tag/opengui-workbuddy-v0.4.0)。在电脑上下载并运行安装脚本，安装后重启一次 WorkBuddy，再完成授权。
+支持 **macOS（Apple 芯片 / Intel）和 WorkBuddy 5.5.3 及以上版本**。当前公开版本为 [0.4.1 公测预发布版](https://github.com/Core-Mate/OpenGUI/releases/tag/opengui-workbuddy-v0.4.1)，国内版和国际版使用同一个 OpenGUI 安装包和版本号。通过自定义 MCP 安装，无需等待连接器市场上架。
+
+OpenGUI 账号与 WorkBuddy 账号独立，当前 OpenGUI 短信登录仍需要**中国大陆手机号**；国际版 WorkBuddy 的 Google/GitHub 登录不会自动登录 OpenGUI。
 
 > [!IMPORTANT]
 > **安装后需要重启一次 WorkBuddy。** 请先结束其他任务，用 **⌘Q 完全退出** WorkBuddy，再重新打开，然后授权 OpenGUI。只关闭窗口不算退出。
 
 **步骤1.Terminal命令下载安装**
 
-打开 macOS“终端”，粘贴并运行：
+打开 macOS“终端”，根据使用的 WorkBuddy 版本选择对应命令。两版都需要使用时，分别执行各自的安装命令；后续步骤均在这里选择的版本中完成。
+
+**国内版 — WorkBuddy.app**
 
 ```sh
-cd "$HOME" && curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh | bash
+cd "$HOME" && curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh | bash -s -- --app "/Applications/WorkBuddy.app" --download-source cn
 ```
 
-这条命令会下载并运行安装脚本，无需先手动保存文件。脚本会校验后续安装文件、准备运行环境并配置 OpenGUI。
+**国际版 — WorkBuddy AI.app**
 
-Node 和 npm 依赖默认使用国内 npmmirror，下载失败时回退官方源，只影响本次安装。需要官方源时，将命令末尾的 `bash` 改为 `bash -s -- --download-source official`。视频组件来自 GitHub，换 npm 源不会加速它；有自己的视频镜像时，可加 `--video-mirror https://镜像地址/归档目录`，详见[下载源选项](workbuddy-plugin/INSTALL.md#download-sources)。
+```sh
+cd "$HOME" && curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh | bash -s -- --app "/Applications/WorkBuddy AI.app" --download-source official
+```
 
-也可以[单独下载安装脚本（install.sh）](https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh)，保存后在终端运行 `bash /实际路径/install.sh`。
+上述命令明确指定目标应用，两版同时安装时也不会装错。如果应用不在默认位置或已重命名，请将 `--app` 后的路径替换为实际应用路径。脚本会下载安装文件并校验、准备运行环境，然后配置 OpenGUI。
+
+国内版命令使用 npmmirror 下载 Node 和 npm 依赖，失败时回退官方源；国际版命令使用官方源。国内版需要使用官方源时，将 `--download-source cn` 改为 `--download-source official`。下载源设置只影响本次安装。视频组件来自 GitHub，换 npm 源不会加速它；有自己的视频镜像时，可加 `--video-mirror https://镜像地址/归档目录`，详见[下载源选项](workbuddy-plugin/INSTALL.md#download-sources)。
+
+也可以[单独下载安装脚本（install.sh）](https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh)，保存后使用 `bash /实际路径/install.sh`，并附上对应命令中的 `--app` 和 `--download-source` 参数。
+
+国际版现有账号限制见[国际版安装说明](workbuddy-plugin/INSTALL.md#international-workbuddy)。可复制的 WorkBuddy 安装提示词、授权和验证步骤见[从 GitHub 安装 OpenGUI](workbuddy-plugin/docs/install-from-github.zh-CN.md)。
 
 **步骤2.重启一次 WorkBuddy**
 
@@ -81,7 +93,10 @@ Node 和 npm 依赖默认使用国内 npmmirror，下载失败时回退官方源
 
 **步骤3.授权技能和连接器**
 
-打开 WorkBuddy 的“专家·技能·连接器 → 技能”，找到 OpenGUI，按提示完成授权；之后在连接器中，找到OpenGUI，再次授权。
+- **国内版**：“专家·技能·连接器 → 技能”中授权并启用 OpenGUI；再到“连接器 → 自定义连接器”，找到 `opengui`，按提示完成信任并开启开关。
+- **国际版**：在 **Experts · Skills · Connectors → Skills** 中授权并启用 OpenGUI；再到 **Connectors → Custom connectors**，为 `opengui` 点击 **Trust** 并开启开关。
+
+更新后若再次出现 Trust 提示，请检查后由本人确认。
 
 **注意：技能 和 连接器，都需要授权哦！**
 
@@ -91,7 +106,13 @@ Node 和 npm 依赖默认使用国内 npmmirror，下载失败时回退官方源
 
 **步骤4.验证连接并开始使用**
 
-把Android手机打开USB调试，连上电脑，输入/opengui，输入需要给手机的执行指令，即可控制手机执行。首次连接时，请在手机上允许 USB 调试授权。
+可先在 WorkBuddy 聊天中发送：“仅调用一次 `opengui_list_devices` 验证连接，报告设备数量，不操作手机。”调用成功且返回 0 台设备，也可以确认插件连接成功。
+
+开始手机任务：
+
+1. Android 手机开启 USB 调试并连接电脑，在手机上允许调试授权；没有手机时，可从工作台启动本地 Android 模拟器。
+2. 在 WorkBuddy 输入 `/opengui`，打开右侧任务首页，按提示登录 OpenGUI。
+3. 填写任务目标、确认设备，然后点击 **开始执行**。执行模型跟随当前 WorkBuddy 对话。
 
 试一试：用小红书发帖
 
@@ -104,6 +125,8 @@ Node 和 npm 依赖默认使用国内 npmmirror，下载失败时回退官方源
 ```text
 /opengui 帮我测试【应用／页面】的【功能或操作流程】，重点检查【关注的问题】。如果发现异常，记录操作步骤和截图，当做到【结束条件】就停。
 ```
+
+**界面语言（尚未发布）**：中英文切换、默认跟随 WorkBuddy 语言和模拟器下拉框改进正在测试，尚未合入公开源码或 0.4.1 安装包。后续语言选项只翻译界面，任务描述、TODO 内容和审核草稿保留原文。
 
 ## 在 DeepSeek Harness 中使用 OpenGUI
 
