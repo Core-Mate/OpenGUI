@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import { devicePlatform } from './platform.ts'
+import { createHdcRunner, hdcPath, parseHdcDevices } from './hdc.ts'
 import { execFile } from 'node:child_process'
 import { realpathSync } from 'node:fs'
 import { access } from 'node:fs/promises'
@@ -12,14 +14,16 @@ import { confirmLocalSetup } from './confirmation.ts'
 import { OPENGUI_CODEX_TOOLS, validateToolArguments } from './codex/tools.ts'
 import { ensureDaemon, ping, request, sendRequest, startDaemon } from './daemon.ts'
 import { VERSION, daemonEndpoint, dataDirectory } from './state.ts'
+import { compactOutput } from './compact-output.ts'
 
 export async function runCli(argv: readonly string[], signal = new AbortController().signal): Promise<unknown> {
-  const [name, raw] = argv
+  const compact = argv[0] === '--compact'
+  const [name, raw] = compact ? argv.slice(1) : argv
   if (!name || name === '--help' || name === '-h') {
     return {
-      name: 'OpenGUI for Codex', version: VERSION,
-      usage: 'opengui <interface> [json] (JSON can also be read from stdin)',
-      commands: ['--help', '--version', '--interfaces', '--doctor', '--prepare-video', '--setup-adb-server', '--shutdown-daemon'],
+      name: 'OpenGUI for Codex', version: VERSION, devicePlatform: devicePlatform(),
+      usage: 'opengui [--compact] <interface> [json] (JSON can also be read from stdin)',
+      commands: ['--help', '--version', '--interfaces', '--doctor', '--prepare-video', '--check-upgrade', '--setup-adb-server', '--shutdown-daemon', '--compact'],
       interfaces: OPENGUI_CODEX_TOOLS.map(tool => tool.name),
       platform: 'Local macOS arm64/x64 only. Use a dedicated non-production device environment.',
     }
@@ -27,7 +31,17 @@ export async function runCli(argv: readonly string[], signal = new AbortControll
   if (name === '--version') return { version: VERSION }
   if (name === '--interfaces') return { interfaces: OPENGUI_CODEX_TOOLS }
   if (process.platform !== 'darwin' || !['arm64', 'x64'].includes(process.arch)) {
-    throw new Error('opengui: local Android control is supported only on macOS arm64/x64')
+    throw new Error('opengui: local phone control is supported only on macOS arm64/x64')
+  }
+  const platform = devicePlatform()
+  if (name === '--doctor' && platform === 'harmonyos') {
+    const path = await hdcPath()
+    const run = createHdcRunner(path)
+    return { version: VERSION, devicePlatform: platform, hdcPath: path,
+      hdcVersion: (await run(['-v'], signal)).trim(),
+      hdcServer: (await run(['checkserver'], signal)).trim(),
+      connectedDevices: parseHdcDevices(await run(['list', 'targets', '-v'], signal)).filter(device => device.state === 'device').length,
+      setup: 'Enable USB debugging on the phone and authorize this Mac. HDC is provided by your local SDK; no ADB or scrcpy is used.' }
   }
   if (name === '--check-upgrade') {
     const hello = await ping(daemonEndpoint())
@@ -39,6 +53,7 @@ export async function runCli(argv: readonly string[], signal = new AbortControll
     return { upgrade: 'ready', forcedTermination: false }
   }
   if (name === '--prepare-video') {
+    if (platform === 'harmonyos') throw new Error('video_unavailable_for_harmonyos: scrcpy preparation is Android-only')
     const asset = resolveScrcpyAsset()
     if (!asset) throw new Error('video_unsupported_platform')
     const installer = new ScrcpyInstaller({ cacheDir: join(dataDirectory(), 'scrcpy') })
@@ -62,6 +77,7 @@ export async function runCli(argv: readonly string[], signal = new AbortControll
     }
   }
   if (name === '--setup-adb-server') {
+    if (platform === 'harmonyos') throw new Error('opengui: HarmonyOS uses HDC; ADB setup does not apply')
     // A running but incompatible server must never be replaced.
     try { await assertCompatibleAdbServer(signal); return { adbServer: 'already compatible' } }
     catch (error) {
@@ -85,7 +101,7 @@ export async function runCli(argv: readonly string[], signal = new AbortControll
   if (name === '--shutdown-daemon') {
     const result = await sendRequest(daemonEndpoint(), request('__shutdown__'), signal)
     if (!result.ok) throw new Error(result.error)
-    return result.result
+    return compact ? compactOutput(result.result) : result.result
   }
   const source = raw ?? (process.stdin.isTTY ? '{}' : await readStdin())
   const args: unknown = JSON.parse(source.trim() || '{}')
@@ -94,7 +110,7 @@ export async function runCli(argv: readonly string[], signal = new AbortControll
   const endpoint = await ensureDaemon(fileURLToPath(import.meta.url), dataDirectory(), AbortSignal.any([signal, AbortSignal.timeout(15_000)]))
   const result = await sendRequest(endpoint, request(name, args as Record<string, unknown>), signal)
   if (!result.ok) throw new Error(result.error)
-  return result.result
+  return compact ? compactOutput(result.result) : result.result
 }
 
 async function readStdin(): Promise<string> {

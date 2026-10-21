@@ -48,11 +48,11 @@ export interface TargetBoundingBox {
 /** The closed set of operations exposed to the phone subagent. */
 export type PhoneAction =
   | { action: 'observe' }
-  | { action: 'tap'; observationId: ObservationId; targetBBox: TargetBoundingBox }
+  | { action: 'tap' | 'long_press'; observationId: ObservationId; targetBBox: TargetBoundingBox }
   | { action: 'swipe'; observationId: ObservationId; x1: number; y1: number; x2: number; y2: number; durationMs?: number }
   | { action: 'text'; observationId: ObservationId; text: string }
   | { action: 'key'; observationId: ObservationId; key: 'Back' | 'Home' | 'Enter' | 'AppSwitch' }
-  | { action: 'launch'; observationId: ObservationId; packageName: string }
+  | { action: 'launch'; observationId: ObservationId; packageName: string; abilityName?: string }
   | { action: 'wait'; observationId: ObservationId; waitMs: number }
 
 const KEY_CODES = {
@@ -109,8 +109,9 @@ export function normalizePhoneAction(input: Record<string, unknown>): PhoneActio
   switch (input.action) {
     case 'observe': return { action: 'observe' }
     case 'tap':
+    case 'long_press':
       return {
-        action: 'tap',
+        action: input.action,
         observationId: requiredObservationId(input.observationId, 'tap'),
         targetBBox: requiredTargetBBox(input.targetBBox),
       }
@@ -138,7 +139,8 @@ export function normalizePhoneAction(input: Record<string, unknown>): PhoneActio
       return { action: 'key', observationId: requiredObservationId(input.observationId, 'key'), key: input.key }
     case 'launch':
       if (typeof input.packageName !== 'string') throw new Error('opengui: launch requires packageName as a string')
-      return { action: 'launch', observationId: requiredObservationId(input.observationId, 'launch'), packageName: input.packageName }
+      if (input.abilityName !== undefined && (typeof input.abilityName !== 'string' || !/^[A-Za-z_][A-Za-z0-9_.]*$/u.test(input.abilityName))) throw new Error('opengui: invalid abilityName')
+      return { action: 'launch', observationId: requiredObservationId(input.observationId, 'launch'), packageName: input.packageName, ...(input.abilityName === undefined ? {} : { abilityName: input.abilityName as string }) }
     case 'wait':
       return {
         action: 'wait',
@@ -205,14 +207,14 @@ export function parseScreenSize(output: string): ScreenSize {
   return { width, height }
 }
 
-function screenshotCoordinate(value: number, modelTotal: number, inputTotal: number, name: string): string {
+export function screenshotCoordinate(value: number, modelTotal: number, inputTotal: number, name: string): string {
   if (!Number.isFinite(value) || value < 0 || value > modelTotal) {
     throw new Error(`opengui: ${name} must be inside the current screenshot's ${modelTotal}px axis`)
   }
-  return String(Math.round((value * inputTotal) / modelTotal))
+  return String(Math.min(inputTotal - 1, Math.round((value * inputTotal) / modelTotal)))
 }
 
-function targetCenter(box: TargetBoundingBox, screen: PhoneCoordinateSpace): { x: string; y: string } {
+export function targetCenter(box: TargetBoundingBox, screen: PhoneCoordinateSpace): { x: string; y: string } {
   if (!(box.right > box.left) || !(box.bottom > box.top)) {
     throw new Error('opengui: targetBBox must have positive width and height')
   }
@@ -234,9 +236,11 @@ function targetCenter(box: TargetBoundingBox, screen: PhoneCoordinateSpace): { x
 export function actionCommand(action: PhoneAction, screen: PhoneCoordinateSpace): string[] | undefined {
   switch (action.action) {
     case 'observe': return undefined
-    case 'tap': {
+    case 'tap':
+    case 'long_press': {
       const center = targetCenter(action.targetBBox, screen)
-      return ['shell', 'input', 'tap', center.x, center.y]
+      return action.action === 'tap' ? ['shell', 'input', 'tap', center.x, center.y]
+        : ['shell', 'input', 'swipe', center.x, center.y, center.x, center.y, '800']
     }
     case 'swipe': {
       const duration = action.durationMs ?? 300
@@ -260,6 +264,7 @@ export function actionCommand(action: PhoneAction, screen: PhoneCoordinateSpace)
     }
     case 'key': return ['shell', 'input', 'keyevent', KEY_CODES[action.key]]
     case 'launch':
+      if (action.abilityName !== undefined) throw new Error('opengui: abilityName is only supported by HarmonyOS')
       if (!/^[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]+)+$/u.test(action.packageName)) {
         throw new Error('opengui: packageName must be a valid Android application id')
       }

@@ -2,7 +2,7 @@
   "name": "opengui-codex",
   "version": "0.2.0",
   "private": true,
-  "description": "Standalone local Android control for Codex on macOS",
+  "description": "Standalone local Android and HarmonyOS control for Codex on macOS",
   "type": "module",
   "license": "MIT",
   "engines": { "node": ">=22.19.0" },

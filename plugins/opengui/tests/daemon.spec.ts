@@ -1,16 +1,17 @@
 import { ReadyViewer } from './ready-viewer.ts'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { mkdtemp, readdir, rm, stat } from 'node:fs/promises'
+import { mkdtemp, readFile, readdir, rm, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createConnection } from 'node:net'
 import { CodexOpenGuiService } from '../src/codex/service.ts'
 import { assertVersion, request as makeRequest, sendRequest, startDaemon } from '../src/daemon.ts'
 import { FakeHost } from './fixtures.ts'
+import { runCli } from '../src/cli.ts'
 
 const cleanup: (() => Promise<void>)[] = []
 const request = (name: string, args: Record<string, unknown> = {}) => makeRequest(name, args, 'task-a')
-afterEach(async () => { for (const close of cleanup.splice(0).reverse()) await close() })
+afterEach(async () => { for (const close of cleanup.splice(0).reverse()) await close(); vi.unstubAllEnvs() })
 async function daemon(confirm = vi.fn(async () => false)) {
   const root = await mkdtemp(join(tmpdir(), 'opengui-daemon-test-'))
   cleanup.push(() => rm(root, { recursive: true, force: true }))
@@ -27,6 +28,27 @@ async function open(endpoint: string): Promise<string> {
 }
 
 describe('standalone daemon transport', () => {
+  it.runIf(process.platform === 'darwin')('supports compact output through the CLI while retaining the full observation file', async () => {
+    const server = await daemon(), sessionId = await open(server.endpoint)
+    const observe = server.host.observe.bind(server.host)
+    server.host.observe = async (actor, signal) => ({ ...await observe(actor, signal), layout: {
+      stable: true, truncated: false, warnings: [],
+      nodes: Array.from({ length: 100 }, (_, index) => ({ text: 'background '.repeat(30), hint: '',
+        type: 'Text', focused: false, clickable: true, windowId: '1', bundleName: 'com.example',
+        bounds: { left: 1, right: 20, top: index, bottom: index + 1 } })),
+    } })
+    vi.stubEnv('OPENGUI_CODEX_DATA_DIR', server.root)
+    vi.stubEnv('CODEX_THREAD_ID', 'task-a')
+    const result = await runCli(['--compact', 'opengui_observe', JSON.stringify({ sessionId })]) as {
+      observationPath: string; layout: { nodes: unknown[]; truncated: boolean }
+    }
+    expect(result.layout.nodes).toEqual([])
+    expect(result.layout.truncated).toBe(true)
+    expect(JSON.stringify(result).length).toBeLessThan(2000)
+    expect(JSON.parse(await readFile(result.observationPath, 'utf8')).layout.nodes).toHaveLength(100)
+    await runCli(['opengui_close_session', JSON.stringify({ sessionId })])
+    await expect(stat(result.observationPath)).rejects.toThrow()
+  })
   it('scopes discovery and every session operation to the originating task', async () => {
     const server = await daemon(), sessionId = await open(server.endpoint)
     const other = (name: string, args: Record<string, unknown> = {}) => sendRequest(server.endpoint, makeRequest(name, args, 'task-b'))
@@ -47,15 +69,19 @@ describe('standalone daemon transport', () => {
     expect(response).toMatchObject({ ok: false, error: expect.stringContaining('incompatible') })
   })
 
-  it('materializes private screenshots and deletes them on close', async () => {
+  it('materializes private screenshots and complete JSON evidence and deletes both on close', async () => {
     const server = await daemon(), sessionId = await open(server.endpoint)
     const response = await sendRequest(server.endpoint, request('opengui_observe', { sessionId }))
     const screenshot = (response.result as { screenshot: { path: string; data?: string } }).screenshot
+    const observationPath = (response.result as { observationPath: string }).observationPath
     expect(screenshot.data).toBeUndefined()
     expect((await stat(screenshot.path)).mode & 0o777).toBe(0o600)
+    expect((await stat(observationPath)).mode & 0o777).toBe(0o600)
+    expect(JSON.parse(await readFile(observationPath, 'utf8'))).toEqual(response.result)
     expect((await stat(server.endpoint)).mode & 0o777).toBe(0o600)
     await sendRequest(server.endpoint, request('opengui_close_session', { sessionId }))
     await expect(stat(screenshot.path)).rejects.toThrow()
+    await expect(stat(observationPath)).rejects.toThrow()
   })
 
   it('does not accept a caller-supplied approval boolean', async () => {
