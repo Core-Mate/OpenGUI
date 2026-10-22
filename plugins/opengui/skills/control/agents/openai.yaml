@@ -1,6 +1,6 @@
 interface:
-  display_name: "OpenGUI Android Control"
-  short_description: "Local Android screenshots, actions, and device wall"
-  default_prompt: "Use $control to inspect my authorized Android test phone."
+  display_name: "OpenGUI Phone Control"
+  short_description: "Local Android / HarmonyOS screenshots, actions, and device wall"
+  default_prompt: "Use $control to inspect my authorized test phone."
 policy:
   allow_implicit_invocation: true

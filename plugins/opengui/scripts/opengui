@@ -5,7 +5,7 @@ umask 077
 plugin_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd -P)
 case "${1:---help}" in
   --help|-h)
-    printf '%s\n' 'OpenGUI for Codex — local Android control on macOS' \
+    printf '%s\n' 'OpenGUI for Codex — local Android / HarmonyOS control on macOS' \
       'Usage: sh scripts/opengui --setup | --doctor | --interfaces | <opengui_interface> [json]' \
       'First use downloads a pinned Node runtime after a native confirmation.' \
       'Use dedicated test devices. Never share a phone with production automation.'

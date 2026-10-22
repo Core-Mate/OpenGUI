@@ -1,10 +1,9 @@
 import { createHash } from 'node:crypto'
-import {
-  actionCommand,
-  canUseAdbInputText,
-  normalizePhoneAction,
-  textInputCommands,
-} from './adb.ts'
+import { actionCommand, normalizePhoneAction } from './adb.ts'
+import { AndroidPhoneDriver } from './android-driver.ts'
+import type { AndroidDriverOptions } from './android-driver.ts'
+import { scaleLayout } from './device-driver.ts'
+import type { ActionAssessment, DeviceFrame, PhoneDriver, UiLayout } from './device-driver.ts'
 import type { ObservationId, PhoneCoordinateSpace } from './adb.ts'
 import { AsyncSemaphore } from './concurrency.ts'
 import type { EncodedPhoneScreenshot } from './image.ts'
@@ -20,6 +19,8 @@ export interface RawPhoneObservation {
   readonly width: number
   readonly height: number
   readonly foregroundPackage: string
+  readonly layout?: UiLayout
+  readonly actionAssessment?: ActionAssessment
   readonly image: {
     readonly data: Buffer
     readonly mediaType: 'image/jpeg'
@@ -33,42 +34,38 @@ export interface RawPhoneObservation {
 interface StoredObservation {
   readonly value: RawPhoneObservation
   readonly fingerprint: string
+  readonly frame: DeviceFrame
 }
 
-export interface PhoneControllerOptions {
-  readonly runAdb: (
-    args: readonly string[],
-    signal: AbortSignal,
-    buffer?: boolean,
-  ) => Promise<string | Buffer>
+interface BaseControllerOptions {
   readonly discoverTarget: (signal: AbortSignal) => Promise<string>
   readonly validateTarget?: (serial: string, signal: AbortSignal) => Promise<void>
-  readonly pasteUnicode: (serial: string, text: string, signal: AbortSignal) => Promise<void>
   readonly encodeScreenshot: (source: Buffer) => Promise<EncodedPhoneScreenshot>
   readonly maxOperations: () => number
   readonly mediaPermits?: AsyncSemaphore
   readonly now?: () => number
 }
 
-function currentPackage(output: string): string {
-  return output.match(/(?:mCurrentFocus|mFocusedApp)=[^\n]*?\bu\d+\s+([A-Za-z0-9._]+)\//u)?.[1]
-    ?? output.match(/(?:topResumedActivity|mResumedActivity)[^\n]*?\bu\d+\s+([A-Za-z0-9._]+)\//u)?.[1]
-    ?? ''
-}
+export type PhoneControllerOptions = BaseControllerOptions & (
+  | { readonly driver: PhoneDriver; readonly runAdb?: never; readonly pasteUnicode?: never }
+  | (AndroidDriverOptions & { readonly driver?: never })
+)
 
 /**
  * The standalone Codex phone execution kernel.
- * Host adapters provide only target discovery, process execution, and Unicode
- * clipboard transport; safety and observation semantics live here.
+ * Platform drivers provide device frames and actions. Observation consumption,
+ * operation budgets and repeated-no-progress enforcement live here.
  */
 export class PhoneController {
   private readonly observations = new WeakMap<object, StoredObservation>()
   private readonly execution = new PhoneExecutionState()
   private readonly queue = new PhoneOperationQueue()
   private readonly mediaPermits: AsyncSemaphore
+  private readonly driver: PhoneDriver
   private readonly now: () => number
 
   constructor(private readonly options: PhoneControllerOptions) {
+    this.driver = options.driver ?? new AndroidPhoneDriver(options as AndroidDriverOptions)
     this.mediaPermits = options.mediaPermits ?? new AsyncSemaphore(2)
     this.now = options.now ?? Date.now
   }
@@ -95,51 +92,48 @@ export class PhoneController {
     signal: AbortSignal,
   ): Promise<RawPhoneObservation> {
     return this.queue.run(actor, async () => {
-      signal.throwIfAborted()
-      this.execution.beginOperation(actor, this.options.maxOperations())
-      const action = normalizePhoneAction(input)
-      const serial = await this.targetFor(actor, signal)
-      await this.options.validateTarget?.(serial, signal)
-      if (action.action === 'observe') return this.capture(actor, serial, signal)
+      try {
+        signal.throwIfAborted()
+        this.execution.beginOperation(actor, this.options.maxOperations())
+        const action = normalizePhoneAction(input)
+        const serial = await this.targetFor(actor, signal)
+        await this.options.validateTarget?.(serial, signal)
+        if (action.action === 'observe') return await this.capture(actor, serial, signal)
 
-      const before = this.execution.current(actor, action.observationId)
-      const stored = this.observations.get(actor)
-      if (stored === undefined || stored.value.observationId !== action.observationId) {
-        throw new Error('opengui: current phone observation is unavailable')
-      }
-      const screen: PhoneCoordinateSpace = {
-        width: stored.value.width,
-        height: stored.value.height,
-        screenshotWidth: stored.value.image.width,
-        screenshotHeight: stored.value.image.height,
-      }
-      if (action.action === 'wait') {
-        actionCommand(action, screen)
+        const before = this.execution.current(actor, action.observationId)
+        const stored = this.observations.get(actor)
+        if (stored === undefined || stored.value.observationId !== action.observationId) {
+          throw new Error('opengui: current phone observation is unavailable')
+        }
+        const screen: PhoneCoordinateSpace = {
+          width: stored.value.width,
+          height: stored.value.height,
+          screenshotWidth: stored.value.image.width,
+          screenshotHeight: stored.value.image.height,
+        }
+        if (action.action === 'wait') {
+          actionCommand(action, screen)
+          this.execution.consumeObservation(actor)
+          await waitForPhoneUi(action.waitMs, signal)
+          return await this.capture(actor, serial, signal)
+        }
+
+        const prepared = this.driver.prepare(action, screen, stored.frame)
+        this.execution.assertActionAllowed(actor, prepared.signature)
         this.execution.consumeObservation(actor)
-        await waitForPhoneUi(action.waitMs, signal)
-        return this.capture(actor, serial, signal)
+        signal.throwIfAborted()
+        await prepared.execute(serial, signal)
+
+        const after = await this.capture(actor, serial, signal)
+        const afterState = this.execution.current(actor, after.observationId)
+        this.execution.recordActionResult(actor, prepared.signature, before.screenshotFingerprint, afterState.screenshotFingerprint)
+        const assessment = this.driver.assess?.(action, this.observations.get(actor)!.frame)
+        return assessment === undefined ? after : { ...after, actionAssessment: assessment }
+      } catch (error) {
+        this.execution.consumeObservation(actor)
+        this.observations.delete(actor)
+        throw error
       }
-
-      const scrcpyText = action.action === 'text' && !canUseAdbInputText(action.text)
-      const command = action.action === 'text' ? undefined : actionCommand(action, screen)
-      const commands = action.action === 'text'
-        ? scrcpyText ? [] : textInputCommands(action.text)
-        : command === undefined ? [] : [command]
-      if (commands.length === 0 && !scrcpyText) {
-        throw new Error('opengui: action did not resolve to a device command')
-      }
-
-      const signature = JSON.stringify(scrcpyText ? ['scrcpy-text', action.text] : commands)
-      this.execution.assertActionAllowed(actor, signature)
-      this.execution.consumeObservation(actor)
-      signal.throwIfAborted()
-      if (scrcpyText) await this.options.pasteUnicode(serial, action.text, signal)
-      else for (const candidate of commands) await this.options.runAdb(['-s', serial, ...candidate], signal)
-
-      const after = await this.capture(actor, serial, signal)
-      const afterState = this.execution.current(actor, after.observationId)
-      this.execution.recordActionResult(actor, signature, before.screenshotFingerprint, afterState.screenshotFingerprint)
-      return after
     })
   }
 
@@ -150,11 +144,8 @@ export class PhoneController {
   private async capture(actor: object, serial: string, signal: AbortSignal): Promise<RawPhoneObservation> {
     const releaseMedia = await this.mediaPermits.acquire(signal)
     try {
-      const [focusRaw, pngRaw] = await Promise.all([
-        this.options.runAdb(['-s', serial, 'shell', 'dumpsys', 'window', 'windows'], signal),
-        this.options.runAdb(['-s', serial, 'exec-out', 'screencap', '-p'], signal, true),
-      ])
-      const png = Buffer.isBuffer(pngRaw) ? pngRaw : Buffer.from(pngRaw)
+      const frame = await this.driver.capture(serial, signal)
+      const png = frame.png
       const screen = pngDimensions(png)
       const encoded = await this.options.encodeScreenshot(png)
       signal.throwIfAborted()
@@ -168,7 +159,8 @@ export class PhoneController {
         serial,
         width: screen.width,
         height: screen.height,
-        foregroundPackage: currentPackage(String(focusRaw)),
+        foregroundPackage: frame.foregroundPackage,
+        ...(frame.layout === undefined ? {} : { layout: scaleLayout(frame.layout, { ...screen, screenshotWidth: encoded.width, screenshotHeight: encoded.height }) }),
         image: unchanged?.value.image ?? {
           data: encoded.data,
           mediaType: 'image/jpeg',
@@ -178,7 +170,7 @@ export class PhoneController {
           name: `opengui-phone-${this.now()}.jpg`,
         },
       }
-      this.observations.set(actor, { value, fingerprint })
+      this.observations.set(actor, { value, fingerprint, frame })
       this.execution.recordObservation(actor, { observationId, screenshotFingerprint: fingerprint })
       return value
     } finally {
