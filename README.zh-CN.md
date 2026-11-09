@@ -56,7 +56,7 @@ OpenGUI 让 AI 根据真实屏幕截图理解 App，用自然语言完成手机�
 
 ## WorkBuddy 安装
 
-支持 **macOS（Apple 芯片 / Intel）和 WorkBuddy 5.5.3 及以上版本**。当前公开版本为 [0.4.1 公测预发布版](https://github.com/Core-Mate/OpenGUI/releases/tag/opengui-workbuddy-v0.4.1)，国内版和国际版使用同一个 OpenGUI 安装包和版本号。通过自定义 MCP 安装，无需等待连接器市场上架。
+支持 **macOS（Apple 芯片 / Intel）和 WorkBuddy 5.5.3 及以上版本**。当前公开版本为 [0.4.2 公测预发布版](https://github.com/Core-Mate/OpenGUI/releases/tag/opengui-workbuddy-v0.4.2)，国内版和国际版使用同一个 OpenGUI 安装包和版本号。通过自定义 MCP 安装，无需等待连接器市场上架。
 
 OpenGUI 账号与 WorkBuddy 账号独立，当前 OpenGUI 短信登录仍需要**中国大陆手机号**；国际版 WorkBuddy 的 Google/GitHub 登录不会自动登录 OpenGUI。
 
@@ -70,20 +70,20 @@ OpenGUI 账号与 WorkBuddy 账号独立，当前 OpenGUI 短信登录仍需要*
 **国内版 — WorkBuddy.app**
 
 ```sh
-cd "$HOME" && curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh | bash -s -- --app "/Applications/WorkBuddy.app" --download-source cn
+cd "$HOME" && curl -fsSL https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-v0.4.2/install.sh | bash -s -- --app "/Applications/WorkBuddy.app" --download-source cn
 ```
 
 **国际版 — WorkBuddy AI.app**
 
 ```sh
-cd "$HOME" && curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh | bash -s -- --app "/Applications/WorkBuddy AI.app" --download-source official
+cd "$HOME" && curl -fsSL https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-v0.4.2/install.sh | bash -s -- --app "/Applications/WorkBuddy AI.app" --download-source official
 ```
 
 上述命令明确指定目标应用，两版同时安装时也不会装错。如果应用不在默认位置或已重命名，请将 `--app` 后的路径替换为实际应用路径。脚本会下载安装文件并校验、准备运行环境，然后配置 OpenGUI。
 
 国内版命令使用 npmmirror 下载 Node 和 npm 依赖，失败时回退官方源；国际版命令使用官方源。国内版需要使用官方源时，将 `--download-source cn` 改为 `--download-source official`。下载源设置只影响本次安装。视频组件来自 GitHub，换 npm 源不会加速它；有自己的视频镜像时，可加 `--video-mirror https://镜像地址/归档目录`，详见[下载源选项](workbuddy-plugin/INSTALL.md#download-sources)。
 
-也可以[单独下载安装脚本（install.sh）](https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh)，保存后使用 `bash /实际路径/install.sh`，并附上对应命令中的 `--app` 和 `--download-source` 参数。
+也可以[单独下载安装脚本（install.sh）](https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-v0.4.2/install.sh)，保存后使用 `bash /实际路径/install.sh`，并附上对应命令中的 `--app` 和 `--download-source` 参数。
 
 国际版现有账号限制见[国际版安装说明](workbuddy-plugin/INSTALL.md#international-workbuddy)。可复制的 WorkBuddy 安装提示词、授权和验证步骤见[从 GitHub 安装 OpenGUI](workbuddy-plugin/docs/install-from-github.zh-CN.md)。
 
@@ -126,7 +126,7 @@ cd "$HOME" && curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/mai
 /opengui 帮我测试【应用／页面】的【功能或操作流程】，重点检查【关注的问题】。如果发现异常，记录操作步骤和截图，当做到【结束条件】就停。
 ```
 
-**界面语言（尚未发布）**：中英文切换、默认跟随 WorkBuddy 语言和模拟器下拉框改进正在测试，尚未合入公开源码或 0.4.1 安装包。后续语言选项只翻译界面，任务描述、TODO 内容和审核草稿保留原文。
+**界面语言（0.4.2）**：已支持中英文切换、默认跟随 WorkBuddy 语言，并改进了模拟器下拉框。语言选项只翻译界面，任务描述、TODO 内容和审核草稿保留原文。
 
 ## 在 DeepSeek Harness 中使用 OpenGUI
 

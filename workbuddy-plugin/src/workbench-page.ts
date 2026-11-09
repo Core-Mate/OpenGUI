@@ -1,3 +1,5 @@
+import { browserI18nScript, type UiLocale } from './ui-i18n.ts'
+import { createEmulatorPicker } from './emulator-picker.ts'
 import { connectionHint } from './connection-status.ts'
 import { VERSION } from './state.ts'
 import { BASE_EXECUTION_BUDGET } from './execution-budget.ts'
@@ -17,8 +19,8 @@ const icon = (name: string): string => `<svg class="ui-icon icon-${name}" viewBo
 const GITHUB_ICON = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>'
 
 /** Presentation for the local workbench, independent of the host chat and phone controller. */
-export function workbenchShell(): string {
-  return String.raw`<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OpenGUI · 手机任务工作台</title>
+export function workbenchShell(hostLocale?: UiLocale): string {
+  return String.raw`<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title data-i18n="OpenGUI · 手机任务工作台">OpenGUI · 手机任务工作台</title>
 <style>
 :root {
 	color-scheme: light;
@@ -81,6 +83,10 @@ svg.ui-icon { width: 14px; height: 14px; flex: none; }
 .opengui-name { font-size: 15px; font-weight: 600; letter-spacing: -0.35px; }
 .version-tag { font-size: 10px; color: var(--faint); }
 .pluginlinks { display: flex; align-items: center; gap: 10px; }
+.language-picker { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 11px; }
+.language-picker select { max-width: 150px; padding: 5px 7px; border: 1px solid var(--line-strong); border-radius: 6px; color: var(--ink); background: #fff; font: inherit; cursor: pointer; }
+.language-picker select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (max-width: 480px) { .language-label { display: none; } .pluginlinks { gap: 6px; } .version-tag { display: none; } }
 .plugin-account { font-size: 11px; color: #81817a; border: 0; background: transparent; padding: 3px 6px; }
 .icon-link { width: 27px; height: 27px; display: grid; place-items: center; border-radius: 5px; color: #181717; }
 .icon-link:hover { background: #f2f4f2; }
@@ -190,7 +196,7 @@ svg.ui-icon { width: 14px; height: 14px; flex: none; }
 @keyframes device-action-fade { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes device-action-ring { from { opacity: 1; transform: scale(0.3); } to { opacity: 0; transform: scale(1.5); } }
 @media (prefers-reduced-motion: reduce) { .device-pointer, .device-pointer-arrow { transition: none !important; } .device-action-ring { animation: none; opacity: 0.9; } }
-/* 接管设备: the live picture takes mouse, wheel and keyboard input. */
+/* Manual control: the live picture takes mouse, wheel and keyboard input. */
 .phone.takeover canvas { cursor: pointer; touch-action: none; user-select: none; }
 .phone.takeover .screen:focus-within { outline-color: var(--accent); }
 .takeover-keys { position: absolute; left: 50%; top: 50%; width: 1px; height: 1px; padding: 0; border: 0; opacity: 0; resize: none; pointer-events: none; }
@@ -245,10 +251,10 @@ svg.ui-icon { width: 14px; height: 14px; flex: none; }
 .start-group-title small { font-size: 10px; font-weight: 400; color: var(--faint); }
 .start-placeholder { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 11px; border: 1px dashed var(--line-strong); border-radius: 8px; background: #fbfbf9; font-size: 11px; color: var(--muted); }
 .start-placeholder .soon { flex: none; font-size: 10px; color: var(--soft-ink); background: var(--soft); border-radius: 10px; padding: 1px 8px; }
-/* 高级选项: opt-in content review before publishing. */
+/* Advanced options: opt-in content review before publishing. */
 .review-kind { margin-right: 6px; padding: 0 6px; border-radius: 8px; background: var(--soft); color: var(--soft-ink); font-style: normal; font-size: 10px; }
 .review-title { margin-top: 8px; font-size: 12px; font-weight: 600; overflow-wrap: anywhere; }
-.start-advanced-row { display: flex; align-items: center; gap: 8px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+.start-advanced-row { position: relative; display: flex; align-items: center; gap: 8px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
 .start-switch { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; cursor: pointer; }
 .start-switch input { position: absolute; opacity: 0; pointer-events: none; }
 .start-switch-track { position: relative; flex: none; width: 28px; height: 16px; border-radius: 8px; background: #d9dbd4; transition: background 0.15s; }
@@ -256,20 +262,37 @@ svg.ui-icon { width: 14px; height: 14px; flex: none; }
 .start-switch input:checked + .start-switch-track { background: var(--accent); }
 .start-switch input:checked + .start-switch-track::after { transform: translateX(12px); }
 .start-switch input:focus-visible + .start-switch-track { outline: 2px solid #2f6fd6; outline-offset: 2px; }
-.content-review-help { position: relative; display: inline-flex; }
+.content-review-help { display: inline-flex; }
 .content-review-help .help-icon { display: grid; place-items: center; width: 16px; height: 16px; padding: 0; border: 1px solid #b9bdb2; border-radius: 50%; background: #fff; color: #7c8276; font-size: 10px; line-height: 1; cursor: help; }
-.content-review-help [role="tooltip"] { position: absolute; left: -120px; bottom: 24px; z-index: 20; width: 300px; padding: 9px 11px; background: #2f322d; color: #f4f4ef; border-radius: 7px; font-size: 11px; line-height: 1.7; opacity: 0; pointer-events: none; transition: opacity 0.12s; }
-.content-review-help:hover [role="tooltip"], .content-review-help:focus-within [role="tooltip"] { opacity: 1; }
+.content-review-help [role="tooltip"] { position: absolute; left: 11px; bottom: calc(100% + 8px); z-index: 20; width: 300px; max-width: calc(100% - 22px); padding: 9px 11px; background: #2f322d; color: #f4f4ef; border-radius: 7px; font-size: 11px; line-height: 1.7; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 0.12s; }
+.content-review-help:hover [role="tooltip"], .content-review-help:focus-within [role="tooltip"] { opacity: 1; visibility: visible; }
 @media (prefers-reduced-motion: reduce) { .start-switch-track, .start-switch-track::after { transition: none; } }
 /* One-click Android emulator in the device pickers. */
 .emulator-box { margin-top: 6px; padding: 10px 11px; border: 1px solid var(--line); border-radius: 8px; background: #fff; font-size: 11px; text-align: left; }
 .emulator-box[hidden] { display: none; }
-.emulator-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.emulator-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.emulator-copy { flex: 1 1 160px; min-width: 0; overflow-wrap: anywhere; }
 .emulator-row b { display: block; font-weight: 500; }
 .emulator-row p { margin-top: 2px; font-size: 10px; color: var(--muted); overflow-wrap: anywhere; }
 .emulator-row .actions { display: flex; flex: none; gap: 6px; }
 .emulator-row button { font-size: 11px; padding: 5px 12px; }
-.emulator-row select { font-size: 11px; max-width: 160px; }
+.emulator-choice { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.emulator-choice .actions { width: 100%; min-width: 0; flex-wrap: wrap; align-items: stretch; gap: 8px; }
+.emulator-picker { position: relative; flex: 1 1 240px; min-width: 0; max-width: 100%; }
+.emulator-picker .emulator-trigger { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 36px; padding: 7px 10px; border: 1px solid var(--line-strong); border-radius: 6px; background: #fff; color: var(--ink); text-align: left; font-size: 11px; line-height: 1.5; }
+.emulator-trigger:hover { background: #fafbf8; }
+.emulator-trigger:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.emulator-value { flex: 1; min-width: 0; }
+.emulator-name { display: block; white-space: normal; overflow-wrap: anywhere; }
+.emulator-origin { display: block; margin-top: 1px; font-size: 10px; line-height: 1.4; color: #64695f; }
+.emulator-chevron, .emulator-option-check { display: grid; flex: none; place-items: center; width: 16px; color: var(--soft-ink); }
+.emulator-options { position: absolute; left: 0; right: 0; z-index: 40; overflow-y: auto; padding: 4px; border-radius: 8px; background: #fff; box-shadow: 0 8px 24px #1c22182b; overscroll-behavior: contain; }
+.emulator-options[hidden] { display: none; }
+.emulator-picker .emulator-option { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px; border: 0; border-radius: 5px; background: transparent; color: var(--ink); font-size: 11px; line-height: 1.5; text-align: left; }
+.emulator-option:hover, .emulator-option.active { background: var(--soft); }
+.emulator-option-check { visibility: hidden; }
+.emulator-option[aria-selected="true"] .emulator-option-check { visibility: visible; }
+.emulator-choice .emulator-start { flex: 1 0 110px; min-height: 36px; }
 .emulator-error p { color: var(--danger); }
 .emulator-progress { margin-top: 8px; height: 4px; border-radius: 2px; background: var(--soft); overflow: hidden; }
 .emulator-progress span { display: block; height: 100%; width: 0; background: var(--accent); transition: width 0.4s ease; }
@@ -538,6 +561,7 @@ dialog.wide { width: min(640px, calc(100vw - 32px)); }
 	.canvas.task-canvas .plan-body .task-list { max-height: 280px; }
 }
 @media (max-width: 560px) {
+	.start-group-title { flex-wrap: wrap; row-gap: 2px; }
 	.start-device-layout { grid-template-columns: minmax(0, 1fr) 92px; gap: 12px; }
 	.start-preview-frame { width: 92px; border-radius: 14px; padding: 3px; }
 	.start-preview-screen { border-radius: 11px; }
@@ -555,34 +579,36 @@ dialog.wide { width: min(640px, calc(100vw - 32px)); }
 	.run-detail { padding-left: 0; }
 	.screen canvas { max-height: 380px; }
 }
-</style></head><body>
-<header class="panel-header"><div class="brand"><h1 class="opengui-name">OpenGUI</h1><span class="version-tag">${VERSION}</span></div><div class="pluginlinks"><button class="plugin-account" id="account-button" aria-haspopup="dialog">登录</button><a class="icon-link" href="https://github.com/Core-Mate/OpenGUI" target="_blank" rel="noopener noreferrer" title="OpenGUI GitHub" aria-label="OpenGUI GitHub">${GITHUB_ICON}</a></div></header>
-<div class="devicebar"><div class="device-info"><span class="environment-help"><button class="status-dot" id="connection-dot-button" aria-describedby="connection-tip" aria-label="设备连接状态"><span class="dot" id="connection-dot"></span></button><span role="tooltip" id="connection-tip">等待设备画面</span></span><button class="device-selector" id="device-name" aria-haspopup="dialog"><span id="device-label">选择设备</span>${icon('chevron')}</button><button class="model-selector" id="model" aria-haspopup="dialog" aria-controls="model-info" aria-expanded="false"><span id="model-label">跟随 WorkBuddy</span>${icon('chevron')}</button></div><div class="device-actions"><button class="scenario-button" id="examples">场景示例</button><button class="takeover" id="takeover" hidden>${icon('hand')}<span>接管设备</span></button><div class="more"><button id="more" aria-label="更多设备操作" aria-haspopup="menu" aria-expanded="false">${icon('more')}</button></div></div></div>
-<div class="alerts" id="alerts" aria-live="polite"><div class="alert" id="handoff-notice" hidden><div><strong id="handoff-title">需要你在手机上处理</strong><p id="handoff-reason"></p><p id="handoff-instruction"></p></div></div><div class="alert" id="input-notice" hidden><div><strong id="input-title">手机拒绝了模拟点击</strong><p id="input-guidance"></p><p id="input-state"></p></div><div class="alert-actions"><button id="input-details">查看处理方法</button></div></div><div class="alert" id="connection-alert" hidden><div><strong id="connection-alert-title"></strong><p id="connection-alert-detail"></p></div><div class="alert-actions"><button id="recheck">重新检测</button></div></div><div class="alert" id="apk-alert" hidden></div><div class="alert info" id="device-preference-notice" hidden></div><div class="alert" id="execution-budget" hidden></div></div>
-<div class="canvas" id="stage"><div class="environment-status"><details class="environment" id="environment-details"><summary id="health-label">正在连接设备画面…</summary><div class="environment-panel"><p id="health-detail">正在等待第一帧画面。</p><div id="environment"></div></div></details><span class="environment-help" id="environment-help"><button id="health-info" aria-label="连接诊断" aria-describedby="environment-tip">${icon('info')}</button><span role="tooltip" id="environment-tip">遇到连接或操作问题，点击查看解决办法。</span></span><button class="access-link" id="access-link">连接帮助</button></div><button class="quiet zoom" id="zoom" aria-label="放大设备画面" aria-pressed="false" hidden>${icon('expand')}</button><section class="start-panel" id="start-panel" hidden aria-labelledby="start-title"><div class="start-head"><h2 id="start-title">新建任务</h2></div><p class="start-hint">先登录，再连接设备、填写任务。执行模型跟随当前 WorkBuddy 对话。点击「开始执行」后才会操作手机；首次使用可从「场景示例」选一个简单任务。</p><div class="start-field"><label class="start-label" for="start-request">你的任务</label><span class="start-prefix" id="start-prefix">@opengui</span><textarea class="start-request" id="start-request" aria-describedby="start-prefix" maxlength="4000" placeholder="描述你想让手机完成的任务，例如：打开小红书，搜索少儿英语"></textarea></div><div class="start-field"><span class="start-label">执行设备<span class="start-label-actions"><button class="help-link" id="start-device-help" title="查看设备连接帮助">未检测到已连接设备？</button><button class="access-link" id="start-refresh">重新检测</button></span></span><div class="start-device-layout"><div class="start-options" id="start-devices" role="radiogroup" aria-label="执行设备"></div><figure class="start-preview" id="start-preview" data-state="idle" aria-label="所选设备实时画面"><div class="start-preview-frame" id="start-preview-frame"><div class="start-preview-screen"><canvas id="start-preview-canvas" width="540" height="1170" hidden></canvas><span class="start-preview-note" id="start-preview-note">选择设备后显示画面</span></div></div><figcaption class="start-preview-caption" id="start-preview-caption">实时画面</figcaption></figure></div></div><div class="start-field start-advanced"><span class="start-label">高级选项</span><div class="start-advanced-row"><label class="start-switch"><input type="checkbox" role="switch" id="start-content-review"><span class="start-switch-track" aria-hidden="true"></span><span>发内容前需要审核</span></label><span class="content-review-help"><button type="button" class="help-icon" aria-label="发内容前需要审核是怎么工作的" aria-describedby="content-review-tip">?</button><span role="tooltip" id="content-review-tip">开启后，OpenGUI 在发帖、评论、回复、私信等对外发布文字内容前会先暂停，把发布账号、发布位置、上下文和完整内容交给你审核，你可以批准、修改或跳过。批准的内容输入后会与输入框逐字核对，一致才会发布；发布后截图确认已出现，结果不确定时不会自动重发。点赞、关注、收藏等不含文字的操作不需要审核。</span></span></div></div><div class="start-actions"><p class="start-blocker" id="start-blocker" aria-live="polite"></p><button class="primary" id="start-run" disabled>开始执行</button></div></section><div id="workbench"><main id="wall" class="phones"></main></div><aside class="review-panel" id="review-panel" aria-label="评论审核" hidden><div class="comment-progress" id="comment-progress"></div><div id="reviews"></div></aside><aside class="floating-plan" id="plan" aria-label="执行步骤"><div class="plan-body"><div class="plan-head"><button class="plan-toggle" id="plan-heading" aria-expanded="true" aria-controls="todos" hidden><span class="plan-title"><strong id="plan-title">执行步骤</strong><span id="plan-count"></span></span>${icon('chevron')}</button><p class="plan-state" id="task" aria-live="polite">准备中</p></div><ol class="task-list" id="todos" hidden></ol></div></aside></div>
-<div class="workspace"><section class="section" id="report-section" hidden aria-labelledby="report-title"><div class="report-card"><div class="eyebrow">TASK REPORT · 任务报告</div><h2 class="report-title" id="report-title">任务报告</h2><div class="report-callout" id="report-callout"><strong id="report-state">任务尚未结束</strong><p id="report-summary"></p></div><div class="report-meta" id="report-meta"></div><div class="result-list" id="report-tests"></div><div class="exports"><a class="button primary" id="export-md">下载 Markdown</a><a class="button" id="export-pdf">下载 PDF</a><a class="button" id="export-word">下载 Word</a><a class="button" id="export-evidence">截图证据包</a><button type="button" class="primary new-task" id="report-new-task">${icon('plus')}新建任务</button></div><p class="report-note" id="report-note"></p></div></section><section class="section" id="checks-section" hidden><div class="section-head"><strong>检查项</strong><span id="scenario-counts"></span></div><div id="test-cases"></div></section><section class="section" id="trace-section" aria-label="本次运行"><div class="section-head"><strong>本次运行</strong><span id="trace-stats">等待执行</span></div><div id="trace-chart" hidden><div class="run-axis" id="trace-axis" aria-label="时间刻度"></div><div class="run-track-row"><span>模型</span><div class="run-track" id="model-track"></div></div><div class="run-track-row"><span>设备</span><div class="run-track" id="tool-track"></div></div><p class="run-note" id="model-source"></p></div><div class="run-log" id="trace-list"></div></section></div>
-<dialog id="examples-dialog" aria-labelledby="examples-title"><div class="dialog-heading"><h2 id="examples-title">场景示例</h2><button data-close aria-label="关闭">×</button></div><p class="dialog-description">首次使用可先试「设置与返回桌面」。选择「填入任务」后可继续编辑，替换【】中的占位内容，再点击「开始执行」。也可复制到 WorkBuddy 对话。</p><div class="prompt-library" id="templates"></div></dialog>
-<dialog id="guide" aria-labelledby="guide-title"><div class="dialog-heading"><h2 id="guide-title">设备连接帮助</h2><button data-close aria-label="关闭">×</button></div><p class="dialog-description">找到你遇到的问题，按提示在手机或电脑上操作。</p><div class="connection-faq">
-<details open><summary>第一次连接 Android 手机，要做什么？${icon('chevron')}</summary><ol><li>打开「设置 → 关于手机」，连续点击「版本号」7 次，直到提示已进入开发者模式。</li><li>进入「设置 → 系统 → 开发者选项」，打开「USB 调试」。</li><li>用支持数据传输的数据线连接电脑，通知栏的 USB 用途选择「传输文件（MTP）」，不要选「仅充电」。</li><li>小米、Redmi、vivo 等机型还需打开「USB 调试（安全设置）」和「允许通过 USB 安装应用」。</li><li>手机弹出「允许 USB 调试吗？」时，勾选「始终允许」并点击确定。</li></ol></details>
-<details><summary>电脑找不到手机怎么办？${icon('chevron')}</summary><p>解锁手机，把 USB 用途改为「传输文件」（仅充电模式无法建立调试连接），再看手机是否出现授权弹窗。仍找不到时，换一根支持数据传输的线或换一个 USB 接口，然后点击「重新检测连接」。</p></details>
-<details><summary>提示需要授权（unauthorized）？${icon('chevron')}</summary><p>手机已被发现，但还没允许这台电脑调试。解锁手机，在「允许 USB 调试吗？」弹窗中点击允许；没有弹窗时重新插拔数据线，或在开发者选项中撤销授权后再连接。</p></details>
-<details><summary>能看到画面，却不能点击？${icon('chevron')}</summary><p>多见于小米 / Redmi：在开发者选项中打开「USB 调试（安全设置）」，按系统提示允许模拟点击。权限和安全弹窗请在手机上手动确认，处理后点击「重新检测连接」。</p></details>
-<details><summary>连接突然断开，任务会丢吗？${icon('chevron')}</summary><p>不会。任务会自动暂停并保留进度、草稿和截图。重新连接同一台手机后点击「重新检测连接」，系统会先核对当前画面，再从原步骤继续，不会重复上一步。</p></details>
-<details><summary>可以用模拟器或 iPhone 吗？${icon('chevron')}</summary><p>支持 Android 模拟器（在 Android Studio 中创建并启动）；macOS 上也可使用已启动的 iOS 模拟器做界面测试。iOS 真机暂不支持，云手机敬请期待。</p></details>
-</div><div class="diagnostic"><div class="diagnostic-head"><span>仍然找不到设备？检查一下电脑侧的 USB 与调试连接。</span><button id="diagnose-connection">检查当前连接</button></div><div id="connection-diagnostic" aria-live="polite" hidden></div></div><div class="dialog-footer"><button data-close>关闭</button><button class="primary" id="guide-recheck">重新检测连接</button></div></dialog>
-<dialog id="devices" class="wide" aria-labelledby="devices-heading"><div class="dialog-heading"><h2 id="devices-heading">选择设备</h2><button data-close aria-label="关闭">×</button></div><p class="dialog-description" id="devices-message" aria-live="polite"></p><p class="device-goal" id="device-goal" hidden></p><div id="device-list"></div><div class="cloud-coming" aria-disabled="true"><div><b>云手机</b><p>让 AI 在多台云端设备上并行工作。</p></div><span>敬请期待</span></div><p class="dialog-description" id="device-binding" style="margin:14px 0 0">每个任务只绑定一台设备，确认后不会自动切换。</p><div class="dialog-footer"><button class="left" id="device-help">连接帮助</button><button id="refresh-devices">重新检测</button><button data-close>取消</button><button class="primary" id="confirm-device" disabled>连接设备</button></div></dialog><dialog id="emulator-dialog" aria-labelledby="emulator-title"><div class="dialog-heading"><h2 id="emulator-title">安装 Android 模拟器</h2><button data-close aria-label="关闭">×</button></div><p class="dialog-description">没有手机也能使用 OpenGUI：下载官方 Android 模拟器和 Android 14 系统镜像（约 <span id="emulator-size">2.0 GB</span>），在本机创建一台虚拟手机并在后台启动，完成后会出现在设备列表中。</p><ul><li>需要约 8 GB 可用磁盘空间；下载时间取决于网络，关闭工作台不影响下载，中断后再次安装会续传。</li><li>文件来自 Google 官方源或腾讯云镜像，均按 Google 公布的大小和校验值核对。</li><li>只安装在 OpenGUI 自己的目录，不改动已有的 Android Studio 和模拟器。</li><li>Windows 需在「启用或关闭 Windows 功能」中开启「Windows 虚拟机监控程序平台」。</li></ul><label class="emulator-license"><input type="checkbox" id="emulator-accept">我已阅读并同意 <a href="https://developer.android.com/studio/terms" target="_blank" rel="noopener noreferrer">Android SDK 许可协议</a></label><div class="dialog-footer"><button data-close>取消</button><button class="primary" id="emulator-install" disabled>开始安装</button></div></dialog>
-<dialog id="model-info" class="popover" aria-labelledby="model-title"><div class="popover-label" id="model-title">执行模型</div><div id="model-list"></div><p class="popover-note" id="model-message" aria-live="polite">任务执行期间不能切换模型。</p></dialog>
-<dialog id="more-menu" class="popover" aria-label="更多设备操作"><button class="menu-item" id="menu-recheck">重新检测连接与环境</button><button class="menu-item" id="menu-help">设备连接帮助</button><button class="menu-item danger" id="disconnect" title="停止本次控制并释放设备；不会卸载应用或删除数据"><span>断开当前设备<small>停止本次控制，不卸载应用、不删数据</small></span></button></dialog>
-<dialog id="account-dialog" aria-labelledby="account-title" aria-describedby="account-state"><div class="dialog-heading"><h2 id="account-title">OpenGUI登录/注册</h2><button data-close aria-label="关闭">×</button></div><p id="account-state" class="account-description">欢迎体验OpenGUI，登录时若未注册，将自动注册</p><form id="login-form" novalidate><label for="account-phone">手机号</label><input id="account-phone" type="tel" autocomplete="tel" inputmode="numeric" maxlength="11" placeholder="请输入 11 位手机号"><label for="account-code">验证码</label><div class="sms-row"><input id="account-code" autocomplete="one-time-code" inputmode="numeric" maxlength="6" placeholder="6 位验证码"><button type="button" id="send-otp">获取验证码</button></div></form><div id="account-profile" hidden><span class="account-avatar" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="3.5"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/></svg></span><div><strong id="account-phone-display"></strong><p>已登录</p></div></div><p id="account-error" role="alert" hidden></p><p id="account-lock-note" class="account-description" hidden>任务执行中，结束后可切换账号或服务。</p><div class="dialog-footer"><button class="left" id="sign-out" hidden>退出登录</button><button data-close>取消</button><button id="sign-in" class="primary" type="submit" form="login-form">登录</button></div></dialog>
-<dialog id="input-help" aria-labelledby="input-help-title"><div class="dialog-heading"><h2 id="input-help-title">能看到画面，但手机拒绝点击</h2><button data-close aria-label="关闭">×</button></div><p class="dialog-description" id="input-help-guidance"></p><p class="dialog-description">请在手机上处理系统安全设置。失败的操作不会自动重放；处理后重新检测，并以后续操作结果为准。</p><p class="muted" id="input-help-state"></p><div class="dialog-footer"><button id="input-connection-help">查看连接帮助</button><button id="input-recheck" class="primary">我已处理，重新检测</button></div></dialog>
+</style>${browserI18nScript(hostLocale)}</head><body>
+<header class="panel-header"><div class="brand"><h1 class="opengui-name">OpenGUI</h1><span class="version-tag">${VERSION}</span></div><div class="pluginlinks"><label class="language-picker"><span class="language-label">Language</span><select id="ui-language" aria-label="Language / 语言"><option value="auto" data-i18n="跟随 WorkBuddy">跟随 WorkBuddy</option><option value="zh-CN">中文</option><option value="en">English</option></select></label><button class="plugin-account" id="account-button" aria-haspopup="dialog"><span data-i18n="登录">登录</span></button><a class="icon-link" href="https://github.com/Core-Mate/OpenGUI" target="_blank" rel="noopener noreferrer" title="OpenGUI GitHub" aria-label="OpenGUI GitHub">${GITHUB_ICON}</a></div></header>
+<div class="devicebar"><div class="device-info"><span class="environment-help"><button class="status-dot" id="connection-dot-button" aria-describedby="connection-tip" aria-label="设备连接状态" data-i18n-aria-label="设备连接状态"><span class="dot" id="connection-dot"></span></button><span role="tooltip" id="connection-tip"><span data-i18n="等待设备画面">等待设备画面</span></span></span><button class="device-selector" id="device-name" aria-haspopup="dialog"><span id="device-label"><span data-i18n="选择设备">选择设备</span></span>${icon('chevron')}</button><button class="model-selector" id="model" aria-haspopup="dialog" aria-controls="model-info" aria-expanded="false"><span id="model-label"><span data-i18n="跟随 WorkBuddy">跟随 WorkBuddy</span></span>${icon('chevron')}</button></div><div class="device-actions"><button class="scenario-button" id="examples"><span data-i18n="场景示例">场景示例</span></button><button class="takeover" id="takeover" hidden>${icon('hand')}<span><span data-i18n="接管设备">接管设备</span></span></button><div class="more"><button id="more" aria-label="更多设备操作" data-i18n-aria-label="更多设备操作" aria-haspopup="menu" aria-expanded="false">${icon('more')}</button></div></div></div>
+<div class="alerts" id="alerts" aria-live="polite"><div class="alert" id="handoff-notice" hidden><div><strong id="handoff-title"><span data-i18n="需要你在手机上处理">需要你在手机上处理</span></strong><p id="handoff-reason"></p><p id="handoff-instruction"></p></div></div><div class="alert" id="input-notice" hidden><div><strong id="input-title"><span data-i18n="手机拒绝了模拟点击">手机拒绝了模拟点击</span></strong><p id="input-guidance"></p><p id="input-state"></p></div><div class="alert-actions"><button id="input-details"><span data-i18n="查看处理方法">查看处理方法</span></button></div></div><div class="alert" id="connection-alert" hidden><div><strong id="connection-alert-title"></strong><p id="connection-alert-detail"></p></div><div class="alert-actions"><button id="recheck"><span data-i18n="重新检测">重新检测</span></button></div></div><div class="alert" id="apk-alert" hidden></div><div class="alert info" id="device-preference-notice" hidden></div><div class="alert" id="execution-budget" hidden></div></div>
+<div class="canvas" id="stage"><div class="environment-status"><details class="environment" id="environment-details"><summary id="health-label"><span data-i18n="正在连接设备画面…">正在连接设备画面…</span></summary><div class="environment-panel"><p id="health-detail"><span data-i18n="正在等待第一帧画面。">正在等待第一帧画面。</span></p><div id="environment"></div></div></details><span class="environment-help" id="environment-help"><button id="health-info" aria-label="连接诊断" data-i18n-aria-label="连接诊断" aria-describedby="environment-tip">${icon('info')}</button><span role="tooltip" id="environment-tip"><span data-i18n="遇到连接或操作问题，点击查看解决办法。">遇到连接或操作问题，点击查看解决办法。</span></span></span><button class="access-link" id="access-link"><span data-i18n="连接帮助">连接帮助</span></button></div><button class="quiet zoom" id="zoom" aria-label="放大设备画面" data-i18n-aria-label="放大设备画面" aria-pressed="false" hidden>${icon('expand')}</button><section class="start-panel" id="start-panel" hidden aria-labelledby="start-title"><div class="start-head"><h2 id="start-title"><span data-i18n="新建任务">新建任务</span></h2></div><p class="start-hint"><span data-i18n="先登录，再连接设备、填写任务。执行模型跟随当前 WorkBuddy 对话。点击「开始执行」后才会操作手机；首次使用可从「场景示例」选一个简单任务。">先登录，再连接设备、填写任务。执行模型跟随当前 WorkBuddy 对话。点击「开始执行」后才会操作手机；首次使用可从「场景示例」选一个简单任务。</span></p><div class="start-field"><label class="start-label" for="start-request"><span data-i18n="你的任务">你的任务</span></label><span class="start-prefix" id="start-prefix">@opengui</span><textarea class="start-request" id="start-request" aria-describedby="start-prefix" maxlength="4000" placeholder="描述你想让手机完成的任务，例如：打开小红书，搜索少儿英语" data-i18n-placeholder="描述你想让手机完成的任务，例如：打开小红书，搜索少儿英语"></textarea></div><div class="start-field"><span class="start-label"><span data-i18n="执行设备">执行设备</span><span class="start-label-actions"><button class="help-link" id="start-device-help" title="查看设备连接帮助" data-i18n-title="查看设备连接帮助"><span data-i18n="未检测到已连接设备？">未检测到已连接设备？</span></button><button class="access-link" id="start-refresh"><span data-i18n="重新检测">重新检测</span></button></span></span><div class="start-device-layout"><div class="start-options" id="start-devices" role="radiogroup" aria-label="执行设备" data-i18n-aria-label="执行设备"></div><figure class="start-preview" id="start-preview" data-state="idle" aria-label="所选设备实时画面" data-i18n-aria-label="所选设备实时画面"><div class="start-preview-frame" id="start-preview-frame"><div class="start-preview-screen"><canvas id="start-preview-canvas" width="540" height="1170" hidden></canvas><span class="start-preview-note" id="start-preview-note"><span data-i18n="选择设备后显示画面">选择设备后显示画面</span></span></div></div><figcaption class="start-preview-caption" id="start-preview-caption"><span data-i18n="实时画面">实时画面</span></figcaption></figure></div></div><div class="start-field start-advanced"><span class="start-label"><span data-i18n="高级选项">高级选项</span></span><div class="start-advanced-row"><label class="start-switch"><input type="checkbox" role="switch" id="start-content-review"><span class="start-switch-track" aria-hidden="true"></span><span><span data-i18n="发内容前需要审核">发内容前需要审核</span></span></label><span class="content-review-help"><button type="button" class="help-icon" aria-label="发内容前需要审核是怎么工作的" data-i18n-aria-label="发内容前需要审核是怎么工作的" aria-describedby="content-review-tip">?</button><span role="tooltip" id="content-review-tip"><span data-i18n="开启后，OpenGUI 在发帖、评论、回复、私信等对外发布文字内容前会先暂停，把发布账号、发布位置、上下文和完整内容交给你审核，你可以批准、修改或跳过。批准的内容输入后会与输入框逐字核对，一致才会发布；发布后截图确认已出现，结果不确定时不会自动重发。点赞、关注、收藏等不含文字的操作不需要审核。">开启后，OpenGUI 在发帖、评论、回复、私信等对外发布文字内容前会先暂停，把发布账号、发布位置、上下文和完整内容交给你审核，你可以批准、修改或跳过。批准的内容输入后会与输入框逐字核对，一致才会发布；发布后截图确认已出现，结果不确定时不会自动重发。点赞、关注、收藏等不含文字的操作不需要审核。</span></span></span></div></div><div class="start-actions"><p class="start-blocker" id="start-blocker" aria-live="polite"></p><button class="primary" id="start-run" disabled><span data-i18n="开始执行">开始执行</span></button></div></section><div id="workbench"><main id="wall" class="phones"></main></div><aside class="review-panel" id="review-panel" aria-label="评论审核" data-i18n-aria-label="评论审核" hidden><div class="comment-progress" id="comment-progress"></div><div id="reviews"></div></aside><aside class="floating-plan" id="plan" aria-label="执行步骤" data-i18n-aria-label="执行步骤"><div class="plan-body"><div class="plan-head"><button class="plan-toggle" id="plan-heading" aria-expanded="true" aria-controls="todos" hidden><span class="plan-title"><strong id="plan-title"><span data-i18n="执行步骤">执行步骤</span></strong><span id="plan-count"></span></span>${icon('chevron')}</button><p class="plan-state" id="task" aria-live="polite"><span data-i18n="准备中">准备中</span></p></div><ol class="task-list" id="todos" hidden></ol></div></aside></div>
+<div class="workspace"><section class="section" id="report-section" hidden aria-labelledby="report-title"><div class="report-card"><div class="eyebrow"><span data-i18n="TASK REPORT · 任务报告">TASK REPORT · 任务报告</span></div><h2 class="report-title" id="report-title"><span data-i18n="任务报告">任务报告</span></h2><div class="report-callout" id="report-callout"><strong id="report-state"><span data-i18n="任务尚未结束">任务尚未结束</span></strong><p id="report-summary"></p></div><div class="report-meta" id="report-meta"></div><div class="result-list" id="report-tests"></div><div class="exports"><a class="button primary" id="export-md"><span data-i18n="下载 Markdown">下载 Markdown</span></a><a class="button" id="export-pdf"><span data-i18n="下载 PDF">下载 PDF</span></a><a class="button" id="export-word"><span data-i18n="下载 Word">下载 Word</span></a><a class="button" id="export-evidence"><span data-i18n="截图证据包">截图证据包</span></a><button type="button" class="primary new-task" id="report-new-task">${icon('plus')}<span data-i18n="新建任务">新建任务</span></button></div><p class="report-note" id="report-note"></p></div></section><section class="section" id="checks-section" hidden><div class="section-head"><strong><span data-i18n="检查项">检查项</span></strong><span id="scenario-counts"></span></div><div id="test-cases"></div></section><section class="section" id="trace-section" aria-label="本次运行" data-i18n-aria-label="本次运行"><div class="section-head"><strong><span data-i18n="本次运行">本次运行</span></strong><span id="trace-stats"><span data-i18n="等待执行">等待执行</span></span></div><div id="trace-chart" hidden><div class="run-axis" id="trace-axis" aria-label="时间刻度" data-i18n-aria-label="时间刻度"></div><div class="run-track-row"><span><span data-i18n="模型">模型</span></span><div class="run-track" id="model-track"></div></div><div class="run-track-row"><span><span data-i18n="设备">设备</span></span><div class="run-track" id="tool-track"></div></div><p class="run-note" id="model-source"></p></div><div class="run-log" id="trace-list"></div></section></div>
+<dialog id="examples-dialog" aria-labelledby="examples-title"><div class="dialog-heading"><h2 id="examples-title"><span data-i18n="场景示例">场景示例</span></h2><button data-close aria-label="关闭" data-i18n-aria-label="关闭">×</button></div><p class="dialog-description"><span data-i18n="首次使用可先试「设置与返回桌面」。选择「填入任务」后可继续编辑，替换【】中的占位内容，再点击「开始执行」。也可复制到 WorkBuddy 对话。">首次使用可先试「设置与返回桌面」。选择「填入任务」后可继续编辑，替换【】中的占位内容，再点击「开始执行」。也可复制到 WorkBuddy 对话。</span></p><div class="prompt-library" id="templates"></div></dialog>
+<dialog id="guide" aria-labelledby="guide-title"><div class="dialog-heading"><h2 id="guide-title"><span data-i18n="设备连接帮助">设备连接帮助</span></h2><button data-close aria-label="关闭" data-i18n-aria-label="关闭">×</button></div><p class="dialog-description"><span data-i18n="找到你遇到的问题，按提示在手机或电脑上操作。">找到你遇到的问题，按提示在手机或电脑上操作。</span></p><div class="connection-faq">
+<details open><summary><span data-i18n="第一次连接 Android 手机，要做什么？">第一次连接 Android 手机，要做什么？</span>${icon('chevron')}</summary><ol><li><span data-i18n="打开「设置 → 关于手机」，连续点击「版本号」7 次，直到提示已进入开发者模式。">打开「设置 → 关于手机」，连续点击「版本号」7 次，直到提示已进入开发者模式。</span></li><li><span data-i18n="进入「设置 → 系统 → 开发者选项」，打开「USB 调试」。">进入「设置 → 系统 → 开发者选项」，打开「USB 调试」。</span></li><li><span data-i18n="用支持数据传输的数据线连接电脑，通知栏的 USB 用途选择「传输文件（MTP）」，不要选「仅充电」。">用支持数据传输的数据线连接电脑，通知栏的 USB 用途选择「传输文件（MTP）」，不要选「仅充电」。</span></li><li><span data-i18n="小米、Redmi、vivo 等机型还需打开「USB 调试（安全设置）」和「允许通过 USB 安装应用」。">小米、Redmi、vivo 等机型还需打开「USB 调试（安全设置）」和「允许通过 USB 安装应用」。</span></li><li><span data-i18n="手机弹出「允许 USB 调试吗？」时，勾选「始终允许」并点击确定。">手机弹出「允许 USB 调试吗？」时，勾选「始终允许」并点击确定。</span></li></ol></details>
+<details><summary><span data-i18n="电脑找不到手机怎么办？">电脑找不到手机怎么办？</span>${icon('chevron')}</summary><p><span data-i18n="解锁手机，把 USB 用途改为「传输文件」（仅充电模式无法建立调试连接），再看手机是否出现授权弹窗。仍找不到时，换一根支持数据传输的线或换一个 USB 接口，然后点击「重新检测连接」。">解锁手机，把 USB 用途改为「传输文件」（仅充电模式无法建立调试连接），再看手机是否出现授权弹窗。仍找不到时，换一根支持数据传输的线或换一个 USB 接口，然后点击「重新检测连接」。</span></p></details>
+<details><summary><span data-i18n="提示需要授权（unauthorized）？">提示需要授权（unauthorized）？</span>${icon('chevron')}</summary><p><span data-i18n="手机已被发现，但还没允许这台电脑调试。解锁手机，在「允许 USB 调试吗？」弹窗中点击允许；没有弹窗时重新插拔数据线，或在开发者选项中撤销授权后再连接。">手机已被发现，但还没允许这台电脑调试。解锁手机，在「允许 USB 调试吗？」弹窗中点击允许；没有弹窗时重新插拔数据线，或在开发者选项中撤销授权后再连接。</span></p></details>
+<details><summary><span data-i18n="能看到画面，却不能点击？">能看到画面，却不能点击？</span>${icon('chevron')}</summary><p><span data-i18n="多见于小米 / Redmi：在开发者选项中打开「USB 调试（安全设置）」，按系统提示允许模拟点击。权限和安全弹窗请在手机上手动确认，处理后点击「重新检测连接」。">多见于小米 / Redmi：在开发者选项中打开「USB 调试（安全设置）」，按系统提示允许模拟点击。权限和安全弹窗请在手机上手动确认，处理后点击「重新检测连接」。</span></p></details>
+<details><summary><span data-i18n="连接突然断开，任务会丢吗？">连接突然断开，任务会丢吗？</span>${icon('chevron')}</summary><p><span data-i18n="不会。任务会自动暂停并保留进度、草稿和截图。重新连接同一台手机后点击「重新检测连接」，系统会先核对当前画面，再从原步骤继续，不会重复上一步。">不会。任务会自动暂停并保留进度、草稿和截图。重新连接同一台手机后点击「重新检测连接」，系统会先核对当前画面，再从原步骤继续，不会重复上一步。</span></p></details>
+<details><summary><span data-i18n="可以用模拟器或 iPhone 吗？">可以用模拟器或 iPhone 吗？</span>${icon('chevron')}</summary><p><span data-i18n="支持 Android 模拟器（在 Android Studio 中创建并启动）；macOS 上也可使用已启动的 iOS 模拟器做界面测试。iOS 真机暂不支持，云手机敬请期待。">支持 Android 模拟器（在 Android Studio 中创建并启动）；macOS 上也可使用已启动的 iOS 模拟器做界面测试。iOS 真机暂不支持，云手机敬请期待。</span></p></details>
+</div><div class="diagnostic"><div class="diagnostic-head"><span><span data-i18n="仍然找不到设备？检查一下电脑侧的 USB 与调试连接。">仍然找不到设备？检查一下电脑侧的 USB 与调试连接。</span></span><button id="diagnose-connection"><span data-i18n="检查当前连接">检查当前连接</span></button></div><div id="connection-diagnostic" aria-live="polite" hidden></div></div><div class="dialog-footer"><button data-close><span data-i18n="关闭">关闭</span></button><button class="primary" id="guide-recheck"><span data-i18n="重新检测连接">重新检测连接</span></button></div></dialog>
+<dialog id="devices" class="wide" aria-labelledby="devices-heading"><div class="dialog-heading"><h2 id="devices-heading"><span data-i18n="选择设备">选择设备</span></h2><button data-close aria-label="关闭" data-i18n-aria-label="关闭">×</button></div><p class="dialog-description" id="devices-message" aria-live="polite"></p><p class="device-goal" id="device-goal" hidden></p><div id="device-list"></div><div class="cloud-coming" aria-disabled="true"><div><b><span data-i18n="云手机">云手机</span></b><p><span data-i18n="让 AI 在多台云端设备上并行工作。">让 AI 在多台云端设备上并行工作。</span></p></div><span><span data-i18n="敬请期待">敬请期待</span></span></div><p class="dialog-description" id="device-binding" style="margin:14px 0 0"><span data-i18n="每个任务只绑定一台设备，确认后不会自动切换。">每个任务只绑定一台设备，确认后不会自动切换。</span></p><div class="dialog-footer"><button class="left" id="device-help"><span data-i18n="连接帮助">连接帮助</span></button><button id="refresh-devices"><span data-i18n="重新检测">重新检测</span></button><button data-close><span data-i18n="取消">取消</span></button><button class="primary" id="confirm-device" disabled><span data-i18n="连接设备">连接设备</span></button></div></dialog><dialog id="emulator-dialog" aria-labelledby="emulator-title"><div class="dialog-heading"><h2 id="emulator-title"><span data-i18n="安装 Android 模拟器">安装 Android 模拟器</span></h2><button data-close aria-label="关闭" data-i18n-aria-label="关闭">×</button></div><p class="dialog-description"><span data-i18n="没有手机也能使用 OpenGUI：下载官方 Android 模拟器和 Android 14 系统镜像（约 ">没有手机也能使用 OpenGUI：下载官方 Android 模拟器和 Android 14 系统镜像（约 </span><span id="emulator-size">2.0 GB</span><span data-i18n="），在本机创建一台虚拟手机并在后台启动，完成后会出现在设备列表中。">），在本机创建一台虚拟手机并在后台启动，完成后会出现在设备列表中。</span></p><ul><li><span data-i18n="需要约 8 GB 可用磁盘空间；下载时间取决于网络，关闭工作台不影响下载，中断后再次安装会续传。">需要约 8 GB 可用磁盘空间；下载时间取决于网络，关闭工作台不影响下载，中断后再次安装会续传。</span></li><li><span data-i18n="文件来自 Google 官方源或腾讯云镜像，均按 Google 公布的大小和校验值核对。">文件来自 Google 官方源或腾讯云镜像，均按 Google 公布的大小和校验值核对。</span></li><li><span data-i18n="只安装在 OpenGUI 自己的目录，不改动已有的 Android Studio 和模拟器。">只安装在 OpenGUI 自己的目录，不改动已有的 Android Studio 和模拟器。</span></li><li><span data-i18n="Windows 需在「启用或关闭 Windows 功能」中开启「Windows 虚拟机监控程序平台」。">Windows 需在「启用或关闭 Windows 功能」中开启「Windows 虚拟机监控程序平台」。</span></li></ul><label class="emulator-license"><input type="checkbox" id="emulator-accept"><span data-i18n="我已阅读并同意 ">我已阅读并同意 </span><a href="https://developer.android.com/studio/terms" target="_blank" rel="noopener noreferrer"><span data-i18n="Android SDK 许可协议">Android SDK 许可协议</span></a></label><div class="dialog-footer"><button data-close><span data-i18n="取消">取消</span></button><button class="primary" id="emulator-install" disabled><span data-i18n="开始安装">开始安装</span></button></div></dialog>
+<dialog id="model-info" class="popover" aria-labelledby="model-title"><div class="popover-label" id="model-title"><span data-i18n="执行模型">执行模型</span></div><div id="model-list"></div><p class="popover-note" id="model-message" aria-live="polite"><span data-i18n="任务执行期间不能切换模型。">任务执行期间不能切换模型。</span></p></dialog>
+<dialog id="more-menu" class="popover" aria-label="更多设备操作" data-i18n-aria-label="更多设备操作"><button class="menu-item" id="menu-recheck"><span data-i18n="重新检测连接与环境">重新检测连接与环境</span></button><button class="menu-item" id="menu-help"><span data-i18n="设备连接帮助">设备连接帮助</span></button><button class="menu-item danger" id="disconnect" title="停止本次控制并释放设备；不会卸载应用或删除数据" data-i18n-title="停止本次控制并释放设备；不会卸载应用或删除数据"><span><span data-i18n="断开当前设备">断开当前设备</span><small><span data-i18n="停止本次控制，不卸载应用、不删数据">停止本次控制，不卸载应用、不删数据</span></small></span></button></dialog>
+<dialog id="account-dialog" aria-labelledby="account-title" aria-describedby="account-state"><div class="dialog-heading"><h2 id="account-title"><span data-i18n="OpenGUI登录/注册">OpenGUI登录/注册</span></h2><button data-close aria-label="关闭" data-i18n-aria-label="关闭">×</button></div><p id="account-state" class="account-description"><span data-i18n="欢迎体验OpenGUI，登录时若未注册，将自动注册。目前仅支持中国大陆手机号。">欢迎体验OpenGUI，登录时若未注册，将自动注册。目前仅支持中国大陆手机号。</span></p><form id="login-form" novalidate><label for="account-phone"><span data-i18n="手机号">手机号</span></label><input id="account-phone" type="tel" autocomplete="tel" inputmode="numeric" maxlength="11" placeholder="请输入 11 位手机号" data-i18n-placeholder="请输入 11 位手机号"><label for="account-code"><span data-i18n="验证码">验证码</span></label><div class="sms-row"><input id="account-code" autocomplete="one-time-code" inputmode="numeric" maxlength="6" placeholder="6 位验证码" data-i18n-placeholder="6 位验证码"><button type="button" id="send-otp"><span data-i18n="获取验证码">获取验证码</span></button></div></form><div id="account-profile" hidden><span class="account-avatar" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="3.5"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/></svg></span><div><strong id="account-phone-display"></strong><p><span data-i18n="已登录">已登录</span></p></div></div><p id="account-error" role="alert" hidden></p><p id="account-lock-note" class="account-description" hidden><span data-i18n="任务执行中，结束后可切换账号或服务。">任务执行中，结束后可切换账号或服务。</span></p><div class="dialog-footer"><button class="left" id="sign-out" hidden><span data-i18n="退出登录">退出登录</span></button><button data-close><span data-i18n="取消">取消</span></button><button id="sign-in" class="primary" type="submit" form="login-form"><span data-i18n="登录">登录</span></button></div></dialog>
+<dialog id="input-help" aria-labelledby="input-help-title"><div class="dialog-heading"><h2 id="input-help-title"><span data-i18n="能看到画面，但手机拒绝点击">能看到画面，但手机拒绝点击</span></h2><button data-close aria-label="关闭" data-i18n-aria-label="关闭">×</button></div><p class="dialog-description" id="input-help-guidance"></p><p class="dialog-description"><span data-i18n="请在手机上处理系统安全设置。失败的操作不会自动重放；处理后重新检测，并以后续操作结果为准。">请在手机上处理系统安全设置。失败的操作不会自动重放；处理后重新检测，并以后续操作结果为准。</span></p><p class="muted" id="input-help-state"></p><div class="dialog-footer"><button id="input-connection-help"><span data-i18n="查看连接帮助">查看连接帮助</span></button><button id="input-recheck" class="primary"><span data-i18n="我已处理，重新检测">我已处理，重新检测</span></button></div></dialog>
 <div id="toast" role="status" hidden></div>`
 }
 
 export function workbenchScript(): string {
   return String.raw`<script>
-const connectionHint = ${connectionHint.toString()};
+const baseConnectionHint = ${connectionHint.toString()};
+const connectionHint = (device, environment) => baseConnectionHint(device, environment, source => formatUiEnvironment(source, t));
 const ICONS = ${JSON.stringify(ICONS)};
 const icon = (name) => '<svg class="ui-icon icon-' + name + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONS[name] + '</svg>';
+const createEmulatorPicker = ${createEmulatorPicker.toString()};
 const byId = (id) => document.getElementById(id),
 	boardKey = "opengui-board:" + location.pathname,
 	boardToken = new URLSearchParams(location.hash.slice(1)).get("board") || sessionStorage.getItem(boardKey);
@@ -593,13 +619,13 @@ if (boardToken) {
 let connectionPromptedAt = null, inputPromptedAt = null, boardStatus = null, traceSnapshot = "", reviewSnapshot = "", testSnapshot = "", planSnapshot = "", reportSnapshot = "", finishedReport = false, toastTimer;
 const openTraces = new Set(), traceBars = new Map();
 let traceSeen = null;
-const kindLabels = { environment: "环境检查", apk_inspect: "安装包检查", apk_install: "安装应用", model: "模型推理", observe: "读取屏幕", tap: "点击", swipe: "滑动", text: "输入文本", replace_text: "替换输入框文字", read_text: "读取输入框", key: "按键", launch: "启动应用", wait: "等待页面" };
-const stateLabels = { running: "进行中", executed: "已完成", failed: "失败", unknown: "结果待确认" };
-const reviewLabels = { pending: "待你审核", approved: "已批准 · 等待发送", skipped: "已跳过", submitted: "已发送 · 待核验", sent: "已发送并核验", unknown: "结果待确认" };
-const todoLabels = { pending: "待执行", in_progress: "执行中", awaiting_user: "待你处理", completed: "已完成", failed: "失败", skipped: "已跳过", unfinished: "未完成" };
-const caseLabels = { passed: "通过", failed: "失败", unverified: "待确认", not_checked: "未检查" };
-const errorLabels = { model_upstream_error: "模型服务返回错误", model_network_error: "模型请求失败（已重试）", model_request_failed: "模型请求失败", screen_changed: "画面已变化，未执行", stop_before_submit: "按约定停在提交前，未执行", stop_action_unclassified: "未标明操作用途，未执行", budget_exhausted: "执行次数已用完", task_paused: "任务已暂停", device_offline: "设备离线", connection_lost: "连接中断", input_permission_denied: "手机拒绝模拟输入", no_progress: "多次操作画面无变化", observation_required: "需要先读取最新画面", operation_failed: "执行失败", cancelled: "已取消", review_required: "需要先审核评论" };
-const outcomeLabels = { completed: "任务已完成", stopped: "已按约定停止", blocked: "任务受阻", unknown: "结果待确认", cancelled: "任务已停止" };
+const kindLabels = localizedLabels({ environment: "环境检查", apk_inspect: "安装包检查", apk_install: "安装应用", model: "模型推理", observe: "读取屏幕", tap: "点击", swipe: "滑动", text: "输入文本", replace_text: "替换输入框文字", read_text: "读取输入框", key: "按键", launch: "启动应用", wait: "等待页面" });
+const stateLabels = localizedLabels({ running: "进行中", executed: "已完成", failed: "失败", unknown: "结果待确认" });
+const reviewLabels = localizedLabels({ pending: "待你审核", approved: "已批准 · 等待发送", skipped: "已跳过", submitted: "已发送 · 待核验", sent: "已发送并核验", unknown: "结果待确认" });
+const todoLabels = localizedLabels({ pending: "待执行", in_progress: "执行中", awaiting_user: "待你处理", completed: "已完成", failed: "失败", skipped: "已跳过", unfinished: "未完成" });
+const caseLabels = localizedLabels({ passed: "通过", failed: "失败", unverified: "待确认", not_checked: "未检查" });
+const errorLabels = localizedLabels({ model_upstream_error: "模型服务返回错误", model_network_error: "模型请求失败（已重试）", model_request_failed: "模型请求失败", screen_changed: "画面已变化，未执行", stop_before_submit: "按约定停在提交前，未执行", stop_action_unclassified: "未标明操作用途，未执行", budget_exhausted: "执行次数已用完", task_paused: "任务已暂停", device_offline: "设备离线", connection_lost: "连接中断", input_permission_denied: "手机拒绝模拟输入", no_progress: "多次操作画面无变化", observation_required: "需要先读取最新画面", operation_failed: "执行失败", cancelled: "已取消", review_required: "需要先审核评论" });
+const outcomeLabels = localizedLabels({ completed: "任务已完成", stopped: "已按约定停止", blocked: "任务受阻", unknown: "结果待确认", cancelled: "任务已停止" });
 function toast(message) {
 	byId("toast").textContent = message;
 	byId("toast").hidden = false;
@@ -618,7 +644,7 @@ function shortTitle(text, fallback) {
 	if (!first) return fallback;
 	return first.length > 22 ? first.slice(0, 21) + "…" : first;
 }
-function closePopovers(except) { for (const id of ["model-info", "more-menu"]) if (id !== except && byId(id).open) byId(id).close(); }
+function closePopovers(except) { activeEmulatorPicker?.close(); for (const id of ["model-info", "more-menu"]) if (id !== except && byId(id).open) byId(id).close(); }
 function show(id) {
 	closePopovers();
 	document.querySelectorAll("dialog[open]").forEach((d) => d.close());
@@ -654,8 +680,8 @@ addEventListener("resize", () => { placePopover(byId("model-info"), byId("model"
 for (const id of ["access-link", "menu-help", "device-help", "health-info", "input-connection-help"]) byId(id).onclick = () => show("guide");
 byId("examples").onclick = () => show("examples-dialog");
 byId("report-new-task").onclick = async () => {
-	try { await navigator.clipboard.writeText("@opengui"); toast("已复制 @opengui，请回到 WorkBuddy 对话粘贴并发送，以开始新任务"); }
-	catch { toast("请回到 WorkBuddy 对话发送 @opengui，以开始新任务"); }
+	try { await navigator.clipboard.writeText("@opengui"); toast(t("已复制 @opengui，请回到 WorkBuddy 对话粘贴并发送，以开始新任务")); }
+	catch { toast(t("请回到 WorkBuddy 对话发送 @opengui，以开始新任务")); }
 };
 byId("device-name").onclick = () => { if (boardStatus?.startRequired) { byId("start-devices").scrollIntoView({ block: "center", behavior: "smooth" }); byId("start-devices").querySelector("input:not(:disabled)")?.focus(); } else void showDevices(); };
 byId("more").onclick = () => togglePopover("more-menu", byId("more"));
@@ -663,30 +689,35 @@ byId("account-button").onclick = () => show("account-dialog");
 byId("zoom").onclick = () => {
 	const zoomed = byId("stage").classList.toggle("zoomed");
 	byId("zoom").setAttribute("aria-pressed", String(zoomed));
-	byId("zoom").setAttribute("aria-label", zoomed ? "还原设备画面" : "放大设备画面");
+	byId("zoom").setAttribute("aria-label", zoomed ? t("还原设备画面") : t("放大设备画面"));
 };
+let lastConnectionDiagnostic = null;
+function renderConnectionDiagnostic(diagnostic) {
+	const result = byId("connection-diagnostic");
+	result.replaceChildren();
+	const append = (text) => result.append(el("p", "", text));
+	append(diagnostic.adb.status === "checked" ? t("已授权 {authorized} 台，待授权 {pending} 台，离线 {offline} 台", { authorized: diagnostic.adb.authorizedUsb, pending: diagnostic.adb.unauthorizedUsb, offline: diagnostic.adb.unavailableUsb }) : t("调试连接：未能完成检测"));
+	append(diagnostic.usb.status === "checked" ? t("电脑 USB 接口：调试 {debug} 个，文件传输 / 相机 {media} 个", { debug: diagnostic.usb.adbInterfaces, media: diagnostic.usb.mediaInterfaces }) : t("电脑 USB 接口：未能完成检测"));
+	for (const guidance of diagnostic.guidance) append(t(guidance));
+	append(t("检测时间 ") + new Date(diagnostic.checkedAt).toLocaleTimeString(i18n.locale));
+}
 byId("diagnose-connection").onclick = async () => {
 	const button = byId("diagnose-connection"), result = byId("connection-diagnostic");
 	if (button.disabled) return;
-	button.disabled = true; result.hidden = false; result.textContent = "正在检查…";
+	button.disabled = true; result.hidden = false; result.textContent = t("正在检查…");
 	try {
 		const response = await fetch(location.pathname + "connection-diagnostic", { cache: "no-store", signal: AbortSignal.timeout(10000) });
 		if (!response.ok) throw Error("connection_diagnostic_unavailable");
 		const diagnostic = await response.json();
-		result.replaceChildren();
-		const append = (text) => result.append(el("p", "", text));
-		append(diagnostic.adb.status === "checked" ? "调试连接：已授权 " + diagnostic.adb.authorizedUsb + " 台，待授权 " + diagnostic.adb.unauthorizedUsb + " 台，离线 " + diagnostic.adb.unavailableUsb + " 台" : "调试连接：未能完成检测");
-		append(diagnostic.usb.status === "checked" ? "电脑 USB 接口：调试 " + diagnostic.usb.adbInterfaces + " 个，文件传输 / 相机 " + diagnostic.usb.mediaInterfaces + " 个" : "电脑 USB 接口：未能完成检测");
-		for (const guidance of diagnostic.guidance) append(guidance);
-		append("检测时间 " + new Date(diagnostic.checkedAt).toLocaleTimeString());
-	} catch { result.textContent = "这次检测没有完成，请检查连接后重试。"; }
+		lastConnectionDiagnostic = diagnostic; renderConnectionDiagnostic(diagnostic);
+	} catch { result.textContent = t("这次检测没有完成，请检查连接后重试。"); }
 	finally { button.disabled = false; }
 };
 
 let deviceInventory = [], deviceSelectedId = "", devicePickerPending = false, deviceSelectionPrompted = false;
 function deviceDetails(device) {
-	const connection = { usb: "真机 · USB", network: "真机 · 无线调试", local_simulator: "模拟器" }[device.connection] || "连接方式未知";
-	return [(device.os === "ios" ? "iOS " : "Android ") + (device.osVersion || "版本待确认"), connection, "…" + (device.serialSuffix || "????"), device.manufacturer].filter(Boolean).join(" · ");
+	const connection = { usb: t("真机 · USB"), network: t("真机 · 无线调试"), local_simulator: t("模拟器") }[device.connection] || t("连接方式未知");
+	return [(device.os === "ios" ? "iOS " : "Android ") + (device.osVersion || t("版本待确认")), connection, "…" + (device.serialSuffix || "????"), device.manufacturer].filter(Boolean).join(" · ");
 }
 function updateDeviceButtons() {
 	const choosing = Boolean(boardStatus?.selectionRequired);
@@ -694,17 +725,17 @@ function updateDeviceButtons() {
 	byId("confirm-device").hidden = !choosing;
 	byId("confirm-device").disabled = !available || !deviceInventory.some((d) => d.id === deviceSelectedId && d.selectable);
 	byId("refresh-devices").disabled = devicePickerPending;
-	byId("devices-heading").textContent = choosing ? "选择设备" : "当前设备";
-	byId("device-binding").textContent = choosing ? "每个任务只绑定一台设备。确认后沿用当前任务，看到新画面后才开始操作。" : "当前任务已绑定这台设备。如需换设备，请先结束任务再发起新任务。";
+	byId("devices-heading").textContent = choosing ? t("选择设备") : t("当前设备");
+	byId("device-binding").textContent = choosing ? t("每个任务只绑定一台设备。确认后沿用当前任务，看到新画面后才开始操作。") : t("当前任务已绑定这台设备。如需换设备，请先结束任务再发起新任务。");
 	byId("device-goal").hidden = !boardStatus?.board?.objective;
-	byId("device-goal").textContent = "当前任务：" + (boardStatus?.board?.objective || "");
+	byId("device-goal").textContent = t("当前任务：") + (boardStatus?.board?.objective || "");
 }
 function renderDeviceChoices() {
 	const list = byId("device-list");
 	list.replaceChildren();
 	const sections = [
-		[false, "Android 真机", "USB / 无线调试 · 需 Android 5.0+ · iOS 真机暂不支持"],
-		[true, "本地模拟器", "Android 模拟器 · macOS 上的 iOS 模拟器"],
+		[false, t("Android 真机"), t("USB / 无线调试 · 需 Android 5.0+ · iOS 真机暂不支持")],
+		[true, t("本地模拟器"), t("Android 模拟器 · macOS 上的 iOS 模拟器")],
 	];
 	for (const [simulator, heading, advice] of sections) {
 		const title = el("div", "device-section-title");
@@ -715,23 +746,23 @@ function renderDeviceChoices() {
 		// Shut-down simulators are listed once, folded, instead of as a column of failures.
 		const idle = simulator ? all.filter((d) => !d.selected && d.selectionStatus === "not_connected") : [];
 		const devices = all.filter((d) => !idle.includes(d));
-		if (!devices.length) list.append(el("p", "device-help", simulator ? "  暂未发现运行中的模拟器。" : "  暂未发现手机。连接后点击「重新检测」。"));
+		if (!devices.length) list.append(el("p", "device-help", simulator ? t("  暂未发现运行中的模拟器。") : t("  暂未发现手机。连接后点击「重新检测」。")));
 		for (const device of devices) {
 			const row = el("label", "device-row"), radio = el("input"), copy = el("span"), state = el("span", "device-state"), check = el("span", "row-check");
 			radio.type = "radio"; radio.name = "selected-device"; radio.value = device.id;
 			radio.checked = device.id === deviceSelectedId || (!deviceSelectedId && device.selected);
 			radio.disabled = !boardStatus?.canSelectDevice || !device.selectable || devicePickerPending || !boardToken;
 			radio.onchange = () => { deviceSelectedId = device.id; updateDeviceButtons(); };
-			const hint = device.connectionHint || connectionHint(device);
+			const hint = connectionHint(device);
 			copy.append(el("b", "", device.name), el("small", "", deviceDetails(device)));
-			state.textContent = (device.selected ? "当前设备" : hint.warning ? hint.label : "可连接") + (device.preferred ? " · 上次使用" : "");
+			state.textContent = (device.selected ? t("当前设备") : hint.warning ? hint.label : t("可连接")) + (device.preferred ? t(" · 上次使用") : "");
 			state.classList.toggle("needs-help", hint.warning);
 			check.innerHTML = icon("check");
 			row.classList.toggle("disabled", radio.disabled);
 			row.title = hint.detail;
 			row.append(radio, copy, state, check);
 			if (hint.warning) {
-				const help = el("details", "device-help"), summary = el("summary", "", "原因与处理");
+				const help = el("details", "device-help"), summary = el("summary", "", t("原因与处理"));
 				help.append(summary, el("p", "", hint.detail));
 				help.onclick = (event) => event.stopPropagation();
 				row.append(help);
@@ -739,13 +770,13 @@ function renderDeviceChoices() {
 			list.append(row);
 		}
 		if (idle.length) {
-			const folded = el("details", "sim-install"), summary = el("summary", "", "另有 " + idle.length + " 个未启动的模拟器");
-			folded.append(summary, el("p", "", idle.map((d) => d.name + "（" + deviceDetails(d) + "）").join("；") + "。启动后点击「重新检测」即可选择。"));
+			const folded = el("details", "sim-install"), summary = el("summary", "", t("另有 {count} 个未启动的模拟器", { count: idle.length }));
+			folded.append(summary, el("p", "", idle.map((d) => d.name + "（" + deviceDetails(d) + "）").join("；") + t("。启动后点击「重新检测」即可选择。")));
 			list.append(folded);
 		}
 		if (simulator) {
-			const install = el("details", "sim-install"), summary = el("summary", "", "安装与环境检查");
-			install.append(summary, el("p", "", "Android：在 Android Studio 的 SDK Manager 安装 Emulator、Platform Tools 和系统镜像，创建并启动虚拟设备。iOS（仅 macOS）：安装 Xcode 与 iOS Simulator runtime，启动模拟器后重新检测。"));
+			const install = el("details", "sim-install"), summary = el("summary", "", t("安装与环境检查"));
+			install.append(summary, el("p", "", t("Android：在 Android Studio 的 SDK Manager 安装 Emulator、Platform Tools 和系统镜像，创建并启动虚拟设备。iOS（仅 macOS）：安装 Xcode 与 iOS Simulator runtime，启动模拟器后重新检测。")));
 			list.append(install);
 		}
 	}
@@ -754,23 +785,23 @@ function renderDeviceChoices() {
 async function showDevices(autoBind = false) {
 	show("devices");
 	if (devicePickerPending) return;
-	devicePickerPending = true; updateDeviceButtons(); byId("devices-message").textContent = "正在读取已连接的设备…";
+	devicePickerPending = true; updateDeviceButtons(); byId("devices-message").textContent = t("正在读取已连接的设备…");
 	try {
 		const response = await fetch(location.pathname + "devices?refresh=1"), result = await response.json();
-		if (!response.ok) throw Error(result.error || "设备检测没有完成，请检查连接后重试");
+		if (!response.ok) throw Error(result.error || t("设备检测没有完成，请检查连接后重试"));
 		deviceInventory = result.devices;
 		const preferred = deviceInventory.find((d) => d.id === result.preferredDeviceId && d.selectable);
 		if (!result.canSelectDevice) deviceSelectedId = deviceInventory.find((d) => d.selected)?.id || "";
 		else if (!deviceInventory.some((d) => d.id === deviceSelectedId && d.selectable)) deviceSelectedId = preferred?.id || "";
-		byId("devices-message").textContent = result.devicePreferenceError
-			|| (result.canSelectDevice && result.preferredDeviceId && !preferred ? "上次使用的设备当前不可用。连接后重新检测，或选择另一台；任务要求已保留。"
-			: !deviceInventory.length ? "还没有发现设备。连接手机并允许 USB 调试，或启动模拟器后点击「重新检测」。任务要求已保留。"
-			: result.canSelectDevice ? "按型号、系统版本和序列号后 4 位确认要使用的设备。" : "本次任务已绑定这台设备，重新检测不会切换手机。");
+		byId("devices-message").textContent = t(result.devicePreferenceError)
+			|| (result.canSelectDevice && result.preferredDeviceId && !preferred ? t("上次使用的设备当前不可用。连接后重新检测，或选择另一台；任务要求已保留。")
+			: !deviceInventory.length ? t("还没有发现设备。连接手机并允许 USB 调试，或启动模拟器后点击「重新检测」。任务要求已保留。")
+			: result.canSelectDevice ? t("按型号、系统版本和序列号后 4 位确认要使用的设备。") : t("本次任务已绑定这台设备，重新检测不会切换手机。"));
 		devicePickerPending = false; renderDeviceChoices(); void refreshEmulator();
 		const eligible = deviceInventory.filter((d) => d.selectable);
 		const reusable = preferred || (!result.preferredDeviceId && eligible.length === 1 ? eligible[0] : undefined);
 		if (autoBind && result.canSelectDevice && reusable) { deviceSelectedId = reusable.id; renderDeviceChoices(); await confirmDevice(); }
-	} catch (error) { byId("devices-message").textContent = error.message; }
+	} catch (error) { byId("devices-message").textContent = t(error.message); }
 	finally { devicePickerPending = false; updateDeviceButtons(); }
 }
 async function confirmDevice() {
@@ -785,6 +816,10 @@ byId("confirm-device").onclick = () => void confirmDevice();
 /* One-click Android emulator: shown in both device pickers when no Android device is attached,
    or while an install/start is running. The broker does the work; the page only polls progress. */
 let emulatorState = null, emulatorTimer = 0, emulatorLoading = false, emulatorPhase = "";
+let selectedEmulatorName = "", activeEmulatorPicker = null;
+document.addEventListener("pointerdown", event => { if (activeEmulatorPicker && !activeEmulatorPicker.element.contains(event.target)) activeEmulatorPicker.close(); });
+document.addEventListener("scroll", () => activeEmulatorPicker?.refresh(), true);
+addEventListener("resize", () => activeEmulatorPicker?.refresh());
 const emulatorBoxes = [];
 function emulatorBox() { const box = el("div", "emulator-box"); box.hidden = true; emulatorBoxes.push(box); return box; }
 const startEmulatorBox = emulatorBox(), dialogEmulatorBox = emulatorBox();
@@ -795,7 +830,7 @@ function openEmulatorDialog() {
 	byId("emulator-accept").checked = false; byId("emulator-install").disabled = true;
 	show("emulator-dialog");
 }
-const emulatorErrorText = (error) => error === "emulator_cancelled" ? "已取消" : String(error || "").includes(": ") ? String(error).slice(String(error).indexOf(": ") + 2) : "没有完成，请重试";
+const emulatorErrorText = (error) => error === "emulator_cancelled" ? t("已取消") : String(error || "").includes(": ") ? t(String(error)).replace(/^[a-z_]+: /, "") : t("没有完成，请重试");
 async function refreshEmulator() {
 	clearTimeout(emulatorTimer);
 	if (emulatorLoading) return;
@@ -807,7 +842,7 @@ async function refreshEmulator() {
 	if (phase === "ready" && emulatorPhase && emulatorPhase !== "ready") {
 		startDevicesLoaded = false; if (boardStatus) renderStart(boardStatus, true);
 		if (byId("devices").open) void showDevices();
-		toast("Android 模拟器已就绪");
+		toast(t("Android 模拟器已就绪"));
 	}
 	emulatorPhase = phase;
 	renderEmulator();
@@ -817,20 +852,22 @@ async function emulatorAction(body) {
 	try {
 		const response = await fetch(location.pathname + "emulator", { method: "POST", headers: { "Content-Type": "application/json", "X-OpenGUI-Board": boardToken || "" }, body: JSON.stringify(body) });
 		const result = await response.json().catch(() => ({}));
-		if (!response.ok) throw Error(result.error || "操作没有完成，请稍后重试");
+		if (!response.ok) throw Error(result.error || t("操作没有完成，请稍后重试"));
 		emulatorState = result; emulatorPhase = result.job?.phase || "checking"; renderEmulator(); void refreshEmulator();
-	} catch (error) { toast(error.message); }
+	} catch (error) { toast(t(error.message)); }
 }
 function emulatorRow(box, title, detail, buttons, className = "") {
-	const row = el("div", "emulator-row" + (className ? " " + className : "")), copy = el("div"), actions = el("div", "actions");
+	const row = el("div", "emulator-row" + (className ? " " + className : "")), copy = el("div", "emulator-copy"), actions = el("div", "actions");
 	copy.append(el("b", "", title)); if (detail) copy.append(el("p", "", detail));
 	for (const button of buttons) actions.append(button);
 	row.append(copy, actions); box.append(row);
 }
 function emulatorButton(label, primary, onClick) { const button = el("button", primary ? "primary" : "", label); button.disabled = !boardToken; button.onclick = onClick; return button; }
 function renderEmulator() {
+	activeEmulatorPicker?.close(); activeEmulatorPicker = null;
 	const state = emulatorState, job = state?.job, active = Boolean(job && !["ready", "error"].includes(job.phase));
 	const avds = (state?.avds || []).filter((avd) => !avd.running);
+	if (!avds.some(avd => avd.name === selectedEmulatorName)) selectedEmulatorName = avds[0]?.name || "";
 	for (const box of emulatorBoxes) {
 		const androidFound = box === startEmulatorBox ? startDevices.length > 0 : (deviceInventory || []).some((d) => d.os !== "ios");
 		box.replaceChildren();
@@ -838,19 +875,22 @@ function renderEmulator() {
 		if (box.hidden) continue;
 		if (active) {
 			const percent = job.total ? Math.min(100, Math.floor(job.received / job.total * 100)) : undefined;
-			emulatorRow(box, job.label, job.total ? "已下载 " + sizeLabel(job.received || 0) + " / " + sizeLabel(job.total) + "（" + percent + "%）" + (job.source ? " · 来源 " + job.source : "") : "", [emulatorButton("取消", false, () => void emulatorAction({ action: "cancel" }))]);
+			emulatorRow(box, t(job.label), job.total ? t("已下载 {received} / {total}（{percent}%）", { received: sizeLabel(job.received || 0), total: sizeLabel(job.total), percent }) + (job.source ? t(" · 来源 ") + job.source : "") : "", [emulatorButton(t("取消"), false, () => void emulatorAction({ action: "cancel" }))]);
 			const bar = el("div", "emulator-progress" + (percent === undefined ? " indeterminate" : "")), fill = el("span");
 			if (percent !== undefined) fill.style.width = percent + "%";
 			bar.append(fill); box.append(bar);
 		} else if (job?.phase === "error") {
-			emulatorRow(box, "Android 模拟器" + (job.error === "emulator_cancelled" ? "已取消" : "没有完成"), emulatorErrorText(job.error), [emulatorButton("重试", true, () => avds.length ? void emulatorAction({ action: "start", name: avds[0].name }) : openEmulatorDialog())], "emulator-error");
+			emulatorRow(box, t("Android 模拟器") + " · " + (job.error === "emulator_cancelled" ? t("已取消") : t("没有完成")), emulatorErrorText(job.error), [emulatorButton(t("重试"), true, () => avds.length ? void emulatorAction({ action: "start", name: avds[0].name }) : openEmulatorDialog())], "emulator-error");
 		} else if (avds.length) {
-			const select = el("select");
-			for (const avd of avds) { const option = el("option", "", avd.name + (avd.origin === "opengui" ? "（OpenGUI）" : "（Android Studio）")); option.value = avd.name; select.append(option); }
-			const controls = avds.length > 1 ? [select] : [];
-			emulatorRow(box, avds.length > 1 ? "启动已有的 Android 模拟器" : "已有模拟器：" + avds[0].name, "在后台启动，启动后出现在设备列表中", [...controls, emulatorButton("启动模拟器", true, () => void emulatorAction({ action: "start", name: avds.length > 1 ? select.value : avds[0].name }))]);
+			const controls = [];
+			if (avds.length > 1) controls.push(createEmulatorPicker(avds.map(avd => ({ name: avd.name, origin: avd.origin === "opengui" ? "OpenGUI" : "Android Studio" })), selectedEmulatorName, {
+				label: t("选择 Android 模拟器"), disabled: !boardToken, chevronIcon: icon("chevron"), checkIcon: icon("check"),
+				onSelect: name => { selectedEmulatorName = name; }, onOpen: picker => { closePopovers(); activeEmulatorPicker = picker; },
+			}).element);
+			const start = emulatorButton(t("启动模拟器"), true, () => void emulatorAction({ action: "start", name: selectedEmulatorName })); start.classList.add("emulator-start");
+			emulatorRow(box, avds.length > 1 ? t("启动已有的 Android 模拟器") : t("已有模拟器：") + avds[0].name, t("在后台启动，启动后出现在设备列表中"), [...controls, start], "emulator-choice");
 		} else {
-			emulatorRow(box, "没有手机？一键安装 Android 模拟器", "下载约 " + sizeLabel(state.downloadBytes || 2.1 * 1024 ** 3) + "，在本机后台运行一台虚拟手机", [emulatorButton("一键安装", true, openEmulatorDialog)]);
+			emulatorRow(box, t("没有手机？一键安装 Android 模拟器"), t("下载约 {size}，在本机后台运行一台虚拟手机", { size: sizeLabel(state.downloadBytes || 2.1 * 1024 ** 3) }), [emulatorButton(t("一键安装"), true, openEmulatorDialog)]);
 		}
 	}
 }
@@ -861,42 +901,47 @@ byId("emulator-install").onclick = () => {
 	void emulatorAction({ action: "install", acceptLicense: true });
 };
 
+function renderTemplates() {
+byId("templates").replaceChildren();
 const templates = [
-	["先试一下 · 设置与返回桌面", "@opengui 打开手机设置，再返回桌面，确认回到桌面后结束。"],
-	["自动化测试", "@opengui 帮我测试【应用／页面】的【功能或操作流程】，使用【测试数据】，预期看到【结果】。如果发现异常，记录操作步骤和截图，做到【结束位置】就停。"],
-	["运营评论", "@opengui 帮我处理【平台／账号／帖子链接】下的【评论范围】。逐条查看评论及上下文并用【期望语气】起草回复，交给我审核后发送。不需要回复的直接跳过并记录原因。直到【处理满 N 条／运行 X 分钟】或我主动停止，最后汇总处理结果。"],
+	[t("先试一下 · 设置与返回桌面"), t("@opengui 打开手机设置，再返回桌面，确认回到桌面后结束。")],
+	[t("自动化测试"), t("@opengui 帮我测试【应用／页面】的【功能或操作流程】，使用【测试数据】，预期看到【结果】。如果发现异常，记录操作步骤和截图，做到【结束位置】就停。")],
+	[t("运营评论"), t("@opengui 帮我处理【平台／账号／帖子链接】下的【评论范围】。逐条查看评论及上下文并用【期望语气】起草回复，交给我审核后发送。不需要回复的直接跳过并记录原因。直到【处理满 N 条／运行 X 分钟】或我主动停止，最后汇总处理结果。")],
 ];
 for (const [title, text] of templates) {
-	const section = el("div", "template"), heading = el("div", "template-heading"), copy = el("button", "", "复制模板"), pre = el("pre", "", text);
+	const section = el("div", "template"), heading = el("div", "template-heading"), copy = el("button", "", t("复制模板")), pre = el("pre", "", text);
 	copy.onclick = async () => {
 		try {
 			await navigator.clipboard.writeText(text);
-			toast("模板已复制，请粘贴到 WorkBuddy 对话框并修改");
+			toast(t("模板已复制，请粘贴到 WorkBuddy 对话框并修改"));
 		} catch {
 			const range = document.createRange();
 			range.selectNodeContents(pre);
 			getSelection().removeAllRanges();
 			getSelection().addRange(range);
-			toast("剪贴板不可用，已选中模板文字，请手动复制");
+			toast(t("剪贴板不可用，已选中模板文字，请手动复制"));
 		}
 	};
-	const use = el("button", "", "填入任务");
+	const use = el("button", "", t("填入任务"));
 	use.onclick = () => {
-		if (!boardStatus?.startRequired || startBusy) { toast("请先点击「新建任务」，再填入示例"); return; }
-		const comments = title === "运营评论";
+		if (!boardStatus?.startRequired || startBusy) { toast(t("请先点击「新建任务」，再填入示例")); return; }
+		const comments = title === t("运营评论");
 		if (comments) byId("start-content-review").checked = true;
 		byId("start-request").value = taskText(text); startRequestDirty = true;
 		byId("examples-dialog").close(); renderStart(boardStatus, true); byId("start-request").focus();
-		toast("已填入任务，请检查内容；点击「开始执行」后才会运行");
+		toast(t("已填入任务，请检查内容；点击「开始执行」后才会运行"));
 	};
 	heading.append(el("strong", "", title), use, copy);
 	section.append(heading, pre);
 	byId("templates").append(section);
 }
 
+}
+renderTemplates();
+
 async function boardAction(action, extra = {}) {
 	if (!boardToken) {
-		toast("这是只读画面，请从当前任务打开工作台");
+		toast(t("这是只读画面，请从当前任务打开工作台"));
 		return;
 	}
 	const buttons = [...document.querySelectorAll("#takeover,#recheck,#menu-recheck,#guide-recheck,#disconnect,#send-otp,#sign-in,#sign-out")];
@@ -908,9 +953,9 @@ async function boardAction(action, extra = {}) {
 			body: JSON.stringify({ action, ...extra }),
 		});
 		if (!response.ok)
-			throw Error(response.status === 403 ? "控制入口已失效，请回到当前任务"
-				: response.status === 409 ? "任务已结束"
-				: (await response.json().catch(() => ({}))).error || "操作没有完成，请确认设备仍然连接");
+			throw Error(response.status === 403 ? t("控制入口已失效，请回到当前任务")
+				: response.status === 409 ? t("任务已结束")
+				: (await response.json().catch(() => ({}))).error || t("操作没有完成，请确认设备仍然连接"));
 		const result = await response.json();
 		if (action === "new_task") { location.assign(result.workbenchUrl); return true; }
 		renderBoard(result);
@@ -920,17 +965,17 @@ async function boardAction(action, extra = {}) {
 		}
 		const control = boardStatus?.board?.control;
 		toast(action === "resume" || action === "recheck"
-			? control === "manual" ? "连接已检测，你仍在控制设备；处理完后点击「恢复控制」"
-				: control === "paused" ? "连接已检测，任务仍暂停；请确认设备连接后再次重新检测"
-				: "已检测，下一步先核对当前画面再继续"
-			: action === "select_device" ? "已连接所选设备，等待画面"
-			: action === "takeover" ? "已暂停 AI 操作并交给你控制，处理完后点击「恢复控制」"
-			: action === "model" ? "模型选择已更新：" + (boardStatus?.board?.model || "跟随 WorkBuddy")
-			: "状态已更新");
+			? control === "manual" ? t("连接已检测，你仍在控制设备；处理完后点击「恢复控制」")
+				: control === "paused" ? t("连接已检测，任务仍暂停；请确认设备连接后再次重新检测")
+				: t("已检测，下一步先核对当前画面再继续")
+			: action === "select_device" ? t("已连接所选设备，等待画面")
+			: action === "takeover" ? t("已暂停 AI 操作并交给你控制，处理完后点击「恢复控制」")
+			: action === "model" ? t("模型选择已更新：") + (boardStatus?.board?.model || t("跟随 WorkBuddy"))
+			: t("状态已更新"));
 		return true;
 	} catch (error) {
-		toast(error.message);
-		if (action === "account") accountError(error.message);
+		toast(t(error.message));
+		if (action === "account") accountError(t(error.message));
 		return false;
 	} finally {
 		buttons.forEach((b) => (b.disabled = false));
@@ -942,10 +987,10 @@ function showModels() {
 	const picker = byId("model-info"), trigger = byId("model");
 	if (trigger.disabled || !togglePopover("model-info", trigger)) return;
 	const option = el("div", "menu-item selected"), name = el("span"), check = el("span", "model-check");
-	name.append(el("b", "", "跟随 WorkBuddy"), el("small", "", "使用当前对话的模型"));
+	name.append(el("b", "", t("跟随 WorkBuddy")), el("small", "", t("使用当前对话的模型")));
 	check.innerHTML = icon("check"); option.append(name, check);
 	byId("model-list").replaceChildren(option);
-	byId("model-message").textContent = "执行模型跟随当前 WorkBuddy 对话。";
+	byId("model-message").textContent = t("执行模型跟随当前 WorkBuddy 对话。");
 	placePopover(picker, trigger);
 }
 byId("model").onclick = showModels;
@@ -960,29 +1005,29 @@ async function accountAction(extra) {
 }
 function accountServiceReady() {
 	if (boardStatus?.account?.serviceUrl) return true;
-	accountError("当前版本未内置账号服务，暂时无法登录。"); return false;
+	accountError(t("当前版本未内置账号服务，暂时无法登录。")); return false;
 }
 byId("send-otp").onclick = async () => {
 	if (Date.now() < otpDeadline || accountPending) return;
 	const phone = byId("account-phone").value.trim();
-	if (!/^1[3-9][0-9]{9}$/.test(phone)) return accountError("请输入正确的 11 位手机号。", "account-phone");
+	if (!/^1[3-9][0-9]{9}$/.test(phone)) return accountError(t("请输入正确的 11 位手机号。"), "account-phone");
 	if (!accountServiceReady()) return;
 	if (await accountAction({ operation: "send-otp", phone })) {
-		otpDeadline = Date.now() + 60000; toast("验证码已发送"); if (boardStatus) renderBoard(boardStatus);
+		otpDeadline = Date.now() + 60000; toast(t("验证码已发送")); if (boardStatus) renderBoard(boardStatus);
 	}
 };
 byId("login-form").onsubmit = async (event) => {
 	event.preventDefault(); if (accountPending) return;
 	const phone = byId("account-phone").value.trim(), code = byId("account-code").value.trim();
-	if (!/^1[3-9][0-9]{9}$/.test(phone)) return accountError("请输入正确的 11 位手机号。", "account-phone");
-	if (!/^[0-9]{6}$/.test(code)) return accountError("请输入 6 位短信验证码。", "account-code");
+	if (!/^1[3-9][0-9]{9}$/.test(phone)) return accountError(t("请输入正确的 11 位手机号。"), "account-phone");
+	if (!/^[0-9]{6}$/.test(code)) return accountError(t("请输入 6 位短信验证码。"), "account-code");
 	if (!accountServiceReady()) return;
 	if (await accountAction({ operation: "login", phone, code })) {
 		byId("account-code").value = ""; byId("account-phone").value = "";
-		byId("account-dialog").close(); toast("登录成功");
+		byId("account-dialog").close(); toast(t("登录成功"));
 	}
 };
-byId("sign-out").onclick = async () => { if (await accountAction({ operation: "logout" })) { byId("account-dialog").close(); toast("已退出登录"); } };
+byId("sign-out").onclick = async () => { if (await accountAction({ operation: "logout" })) { byId("account-dialog").close(); toast(t("已退出登录")); } };
 
 byId("takeover").onclick = () => boardAction(boardStatus?.board?.control === "manual" ? "resume" : "takeover");
 function recheck() {
@@ -1000,16 +1045,16 @@ byId("input-recheck").onclick = async () => { if (await boardAction("recheck")) 
    device operations are shown as derived host time, clearly marked as an estimate. */
 function waitWindows(board) {
 	const now = Date.now(), windows = [];
-	for (const handoff of board.handoffs || []) windows.push([Date.parse(handoff.requestedAt), handoff.resumedAt ? Date.parse(handoff.resumedAt) : now, "等待你在手机上处理"]);
+	for (const handoff of board.handoffs || []) windows.push([Date.parse(handoff.requestedAt), handoff.resumedAt ? Date.parse(handoff.resumedAt) : now, t("等待你在手机上处理")]);
 	for (const review of board.reviews || []) {
 		const drafted = review.draftVersions?.[0]?.savedAt;
-		if (drafted) windows.push([Date.parse(drafted), review.reviewedAt ? Date.parse(review.reviewedAt) : now, review.kind && review.kind !== "comment" ? "等待你审核内容" : "等待你审核评论"]);
+		if (drafted) windows.push([Date.parse(drafted), review.reviewedAt ? Date.parse(review.reviewedAt) : now, review.kind && review.kind !== "comment" ? t("等待你审核内容") : t("等待你审核评论")]);
 	}
 	return windows;
 }
 function timeline(board) {
 	const traces = (board.traces || []).slice().sort((a, b) => Date.parse(a.startedAt) - Date.parse(b.startedAt));
-	const entries = traces.map((t) => ({ ...t, track: t.kind === "model" ? "model" : "tool", label: t.label || kindLabels[t.kind] || "设备操作" }));
+	const entries = traces.map((trace) => ({ ...trace, track: trace.kind === "model" ? "model" : "tool", label: formatUiTrace(trace.label, trace.kind, i18n.locale, t) || kindLabels[trace.kind] || t("设备操作") }));
 	if (!board.modelConfig) {
 		const tools = entries.filter((t) => t.track === "tool"), windows = waitWindows(board);
 		for (let i = 1; i < tools.length; i++) {
@@ -1018,7 +1063,7 @@ function timeline(board) {
 			// Several reviews or handoffs can share one gap; their combined overlap decides.
 			const overlaps = windows.map(([from, to, label]) => [Math.max(0, Math.min(end, to) - Math.max(start, from)), label]).sort((a, b) => b[0] - a[0]);
 			const wait = overlaps.reduce((sum, [covered]) => sum + covered, 0) > gap / 2 ? [0, 0, overlaps[0][1]] : undefined;
-			entries.push({ id: "gap-" + tools[i].id, track: "model", derived: true, wait: Boolean(wait), label: wait ? wait[2] : "模型思考（推算）", kind: "host", startedAt: new Date(start).toISOString(), durationMs: gap, status: "executed" });
+			entries.push({ id: "gap-" + tools[i].id, track: "model", derived: true, wait: Boolean(wait), label: wait ? wait[2] : t("模型思考（推算）"), kind: "host", startedAt: new Date(start).toISOString(), durationMs: gap, status: "executed" });
 		}
 	}
 	return entries.sort((a, b) => Date.parse(a.startedAt) - Date.parse(b.startedAt));
@@ -1027,20 +1072,20 @@ function thinkingTime(thinking) { return thinking.reduce((sum, t) => sum + (t.du
 function traceDetail(entry, start, thinking = []) {
 	const dl = el("dl", "run-detail");
 	const rows = [
-		["结果", entry.derived ? (entry.wait ? "等待中，不计入模型或设备耗时" : "两次设备操作之间的宿主时间") : stateLabels[entry.status] || entry.status],
-		["开始", new Date(entry.startedAt).toLocaleTimeString() + " · +" + seconds(Date.parse(entry.startedAt) - start)],
-		[thinking.length ? "设备耗时" : "耗时", entry.durationMs === undefined ? "进行中" : entry.durationMs + " ms"],
-		["时间来源", entry.derived ? "推算：WorkBuddy 未提供模型耗时，按设备操作间隔计算（含模型推理与网络）" : entry.kind === "model" ? "模型请求往返（含网络）" : "本地设备操作计时"],
+		[t("结果"), entry.derived ? (entry.wait ? t("等待中，不计入模型或设备耗时") : t("两次设备操作之间的宿主时间")) : stateLabels[entry.status] || entry.status],
+		[t("开始"), new Date(entry.startedAt).toLocaleTimeString(i18n.locale) + " · +" + seconds(Date.parse(entry.startedAt) - start)],
+		[thinking.length ? t("设备耗时") : t("耗时"), entry.durationMs === undefined ? t("进行中") : entry.durationMs + " ms"],
+		[t("时间来源"), entry.derived ? t("推算：WorkBuddy 未提供模型耗时，按设备操作间隔计算（含模型推理与网络）") : entry.kind === "model" ? t("模型请求往返（含网络）") : t("本地设备操作计时")],
 	];
-	if (entry.step && !entry.derived) rows.splice(1, 0, ["所属步骤", entry.step]);
-	if (thinking.length) rows.splice(1, 0, ["模型思考", thinkingTime(thinking) + " ms · " + (thinking.some((t) => t.derived) ? "推算：上一次设备操作结束到这次开始的间隔，含模型推理与网络" : "实测：模型请求往返，含网络") + (thinking.length > 1 ? "（" + thinking.length + " 次请求）" : "")]);
-	if (entry.code) rows.push(["原因", errorLabels[entry.code] || "执行未成功"]);
+	if (entry.step && !entry.derived) rows.splice(1, 0, [t("所属步骤"), entry.step]);
+	if (thinking.length) rows.splice(1, 0, [t("模型思考"), thinkingTime(thinking) + " ms · " + (thinking.some((t) => t.derived) ? t("推算：上一次设备操作结束到这次开始的间隔，含模型推理与网络") : t("实测：模型请求往返，含网络")) + (thinking.length > 1 ? "（" + thinking.length + t(" 次请求）") : "")]);
+	if (entry.code) rows.push([t("原因"), errorLabels[entry.code] || t("执行未成功")]);
 	for (const [label, value] of rows) dl.append(el("dt", "", label), el("dd", "", value));
 	if (entry.observationId && boardStatus?.board?.evidenceFiles?.[entry.observationId]) {
-		const link = el("a", "", "查看截图");
+		const link = el("a", "", t("查看截图"));
 		link.href = location.pathname + "evidence?observationId=" + encodeURIComponent(entry.observationId); link.target = "_blank"; link.rel = "noopener";
 		const dd = el("dd"); dd.append(link);
-		dl.append(el("dt", "", "证据"), dd);
+		dl.append(el("dt", "", t("证据")), dd);
 	}
 	return dl;
 }
@@ -1057,17 +1102,17 @@ function renderTrace(status) {
 	byId("trace-chart").hidden = !entries.length;
 	log.replaceChildren();
 	if (!entries.length) {
-		byId("trace-stats").textContent = "等待执行";
-		log.append(el("p", "run-empty", "开始执行后，这里会按时间列出每一步操作和耗时。"));
+		byId("trace-stats").textContent = t("等待执行");
+		log.append(el("p", "run-empty", t("开始执行后，这里会按时间列出每一步操作和耗时。")));
 		return;
 	}
 	const start = Date.parse(entries[0].startedAt), end = entries.reduce((last, t) => Math.max(last, Date.parse(t.startedAt) + (t.durationMs || 0)), start), total = Math.max(1, end - start);
 	const operations = tools.filter((t) => !["environment", "apk_inspect"].includes(t.kind)).length, limit = board.executionBudget?.initialLimits?.operationLimit;
 	const unknown = tools.filter((t) => t.status === "unknown").length;
-	byId("trace-stats").textContent = seconds(total) + " · " + operations + (limit ? " / " + limit : "") + " 次操作" + (unknown ? " · " + unknown + " 项待确认" : "");
+	byId("trace-stats").textContent = t("{duration} · {count}{limit} 次操作", { duration: seconds(total), count: operations, limit: limit ? " / " + limit : "" }) + (unknown ? t(" · {count} 项待确认", { count: unknown }) : "");
 	byId("trace-axis").replaceChildren(...[0, 1, 2, 3, 4].map((i) => el("span", "", seconds(total * i / 4))));
 	// Follow-WorkBuddy runs show no note; only configured models explain their measured timeline.
-	byId("model-source").textContent = board.modelConfig ? "模型推理与设备操作使用同一时间轴，模型耗时包含网络往返。" : "";
+	byId("model-source").textContent = board.modelConfig ? t("模型推理与设备操作使用同一时间轴，模型耗时包含网络往返。") : "";
 	byId("model-source").hidden = !board.modelConfig;
 	// The log reads one row per device action: the model time that produced it (estimated when
 	// following WorkBuddy, measured for configured models) is folded in as a 思考 tag. Waits for the
@@ -1104,8 +1149,8 @@ function renderTrace(status) {
 		const name = entry.derived ? entry.label : entry.label + (entry.status === "executed" ? "" : " · " + (entry.code && errorLabels[entry.code] || stateLabels[entry.status]));
 		const nameEl = el("span");
 		if (thinking.length) {
-			const estimated = thinking.some((t) => t.derived), tag = el("span", "run-think", "思考 " + (estimated ? "≈" : "") + seconds(thinkingTime(thinking)));
-			tag.title = estimated ? "模型思考（推算）：上一次设备操作结束到这次开始的间隔，含模型推理与网络" : "模型规划下一步：模型请求往返，含网络";
+			const estimated = thinking.some((t) => t.derived), tag = el("span", "run-think", t("思考 ") + (estimated ? "≈" : "") + seconds(thinkingTime(thinking)));
+			tag.title = estimated ? t("模型思考（推算）：上一次设备操作结束到这次开始的间隔，含模型推理与网络") : t("模型规划下一步：模型请求往返，含网络");
 			nameEl.append(tag);
 		}
 		nameEl.append(name);
@@ -1125,7 +1170,7 @@ try { planCollapsed = localStorage.getItem("opengui-plan-collapsed") === "1"; } 
 function applyPlanCollapse() {
 	byId("plan").classList.toggle("collapsed", planCollapsed);
 	byId("plan-heading").setAttribute("aria-expanded", String(!planCollapsed));
-	byId("plan-heading").title = planCollapsed ? "展开任务清单" : "收起任务清单";
+	byId("plan-heading").title = planCollapsed ? t("展开任务清单") : t("收起任务清单");
 }
 byId("plan-heading").onclick = () => {
 	planCollapsed = !planCollapsed; applyPlanCollapse();
@@ -1180,14 +1225,14 @@ function renderPlan(status) {
 	byId("review-panel").hidden = !comments;
 	if (comments) {
 		const sent = reviews.filter((r) => r.status === "sent").length, target = board.commentBudget?.targetCount;
-		progress.replaceChildren(el("span", "", sent + (target ? " / " + target : "") + (board.scenario === "comments" ? " 条已发送并核验" : " 条已发布并核验")), el("span", "", board.contentReview && board.scenario !== "comments" ? "发内容前需要审核" : "逐条审核后发送"));
+		progress.replaceChildren(el("span", "", sent + (target ? " / " + target : "") + (board.scenario === "comments" ? t(" 条已发送并核验") : t(" 条已发布并核验"))), el("span", "", board.contentReview && board.scenario !== "comments" ? t("发内容前需要审核") : t("逐条审核后发送")));
 	}
 }
 
-const unsavedDrafts = new Map(), skipOpen = new Set();
+const unsavedDrafts = new Map(), skipOpen = new Set(), skipReasons = new Map();
 // Content review generalizes comment review: posts, replies and messages share the same card and gates.
-const contentKinds = { post: "帖子", comment: "评论", reply: "回复", message: "私信" };
-function reviewTitle(review, index) { const kind = contentKinds[review.kind] || "评论"; return (index + 1) + ". " + (review.title ? shortTitle(review.title, kind) : shortTitle(review.target, kind + " " + (index + 1))); }
+const contentKinds = localizedLabels({ post: "帖子", comment: "评论", reply: "回复", message: "私信" });
+function reviewTitle(review, index) { const kind = contentKinds[review.kind] || t("评论"); return (index + 1) + ". " + (review.title ? shortTitle(review.title, kind) : shortTitle(review.target, kind + " " + (index + 1))); }
 function renderReviews(board) {
 	const snapshot = JSON.stringify({ reviews: board.reviews || [], control: board.control, skip: [...skipOpen] });
 	if (snapshot === reviewSnapshot) return;
@@ -1203,7 +1248,7 @@ function renderReviews(board) {
 			const row = el("div", "review-row"), mark = el("span", "task-mark");
 			if (review.status === "sent") mark.innerHTML = icon("check"); else mark.textContent = review.status === "skipped" ? "–" : String(index + 1);
 			row.dataset.status = review.status;
-			row.append(mark, el("strong", "", reviewTitle(review, index)), el("small", "", (review.status === "sent" && review.kind === "post" ? "已发布并核验" : reviewLabels[review.status]) + (review.skipReason ? " · " + review.skipReason : "")));
+			row.append(mark, el("strong", "", reviewTitle(review, index)), el("small", "", (review.status === "sent" && review.kind === "post" ? t("已发布并核验") : reviewLabels[review.status]) + (review.skipReason ? " · " + review.skipReason : "")));
 			list.append(row);
 			return;
 		}
@@ -1213,28 +1258,31 @@ function renderReviews(board) {
 }
 function reviewCard(board, review, index) {
 	const card = el("article", "review"), head = el("div", "review-head");
+	card.dataset.reviewId = review.id;
 	const status = el("span", "", reviewLabels[review.status]);
 	if (review.kind && review.kind !== "comment") status.prepend(el("em", "review-kind", contentKinds[review.kind]));
 	head.append(el("strong", "", reviewTitle(review, index)), status);
-	const where = review.kind === "post" ? "发布位置：" + review.target + "\n当前账号：" + review.account + "\n背景：" + review.context
-		: review.kind === "message" ? "对话背景：" + review.context + "\n当前账号：" + review.account + " · 发给：" + review.target
-		: "原帖摘要：" + review.context + "\n当前账号：" + review.account + " · 目标：" + review.target;
+	const where = review.kind === "post" ? t("发布位置：") + review.target + t("\n当前账号：") + review.account + t("\n背景：") + review.context
+		: review.kind === "message" ? t("对话背景：") + review.context + t("\n当前账号：") + review.account + t(" · 发给：") + review.target
+		: t("原帖摘要：") + review.context + t("\n当前账号：") + review.account + t(" · 目标：") + review.target;
 	const quote = el("div", "quote", where);
 	card.append(head, quote);
-	if (review.title) card.append(el("p", "review-title", "标题：" + review.title));
+	if (review.title) card.append(el("p", "review-title", t("标题：") + review.title));
 	const editable = review.status === "pending" && boardToken && board.control !== "ended";
 	const editing = unsavedDrafts.has(review.id);
 	const draft = el("p", "draft", review.draft), editor = el("textarea");
 	editor.value = unsavedDrafts.get(review.id)?.draft ?? review.draft;
-	editor.maxLength = 2000; editor.setAttribute("aria-label", "修改评论草稿");
+	editor.maxLength = 2000; editor.setAttribute("aria-label", t("修改评论草稿"));
 	editor.oninput = () => unsavedDrafts.set(review.id, { draft: editor.value, expectedVersion: unsavedDrafts.get(review.id)?.expectedVersion ?? (review.contentVersion || 1) });
 	draft.hidden = editing && editable; editor.hidden = !(editing && editable);
 	card.append(draft, editor);
 	if (review.platformInput) card.append(originalDraft(board, review));
 	if (editable) {
 		const actions = el("div", "review-actions"), reason = el("input");
-		reason.placeholder = "跳过原因（可选，仅跳过此条，任务继续）"; reason.maxLength = 2000; reason.setAttribute("aria-label", "跳过原因");
-		reason.hidden = !skipOpen.has(review.id);
+		reason.placeholder = t("跳过原因（可选，仅跳过此条，任务继续）"); reason.maxLength = 2000; reason.setAttribute("aria-label", t("跳过原因"));
+		reason.value = skipReasons.get(review.id) || "";
+	reason.oninput = () => skipReasons.set(review.id, reason.value);
+	reason.hidden = !skipOpen.has(review.id);
 		const submit = async (action, extra) => {
 			actions.querySelectorAll("button").forEach((b) => (b.disabled = true));
 			const saved = await boardAction(action === "save" ? "review_save" : "review", {
@@ -1242,21 +1290,21 @@ function reviewCard(board, review, index) {
 				expectedVersion: unsavedDrafts.get(review.id)?.expectedVersion ?? (review.contentVersion || 1),
 				draft: editor.value, ...extra,
 			});
-			if (saved) { unsavedDrafts.delete(review.id); skipOpen.delete(review.id); reviewSnapshot = ""; renderReviews(boardStatus.board || {}); }
+			if (saved) { unsavedDrafts.delete(review.id); skipOpen.delete(review.id); skipReasons.delete(review.id); reviewSnapshot = ""; renderReviews(boardStatus.board || {}); }
 			actions.querySelectorAll("button").forEach((b) => (b.disabled = false));
 		};
 		const button = (label, className, onclick) => { const b = el("button", className, label); b.onclick = onclick; actions.append(b); };
 		if (skipOpen.has(review.id)) {
-			button("确认跳过", "primary", () => submit("skip", { reason: reason.value }));
-			button("取消", "", () => { skipOpen.delete(review.id); reviewSnapshot = ""; renderReviews(boardStatus.board || {}); });
+			button(t("确认跳过"), "primary", () => submit("skip", { reason: reason.value }));
+			button(t("取消"), "", () => { skipOpen.delete(review.id); reviewSnapshot = ""; renderReviews(boardStatus.board || {}); });
 		} else if (editing) {
-			button("保存草稿", "primary", () => submit("save"));
-			button("批准并发送", "", () => submit("approve"));
-			button("取消修改", "quiet", () => { unsavedDrafts.delete(review.id); reviewSnapshot = ""; renderReviews(boardStatus.board || {}); });
+			button(t("保存草稿"), "primary", () => submit("save"));
+			button(t("批准并发送"), "", () => submit("approve"));
+			button(t("取消修改"), "quiet", () => { unsavedDrafts.delete(review.id); reviewSnapshot = ""; renderReviews(boardStatus.board || {}); });
 		} else {
-			button("批准并发送", "primary", () => submit("approve"));
-			button("修改草稿", "", () => { unsavedDrafts.set(review.id, { draft: review.draft, expectedVersion: review.contentVersion || 1 }); reviewSnapshot = ""; renderReviews(boardStatus.board || {}); byId("reviews").querySelector("textarea:not([hidden])")?.focus(); });
-			button("跳过此条", "quiet", () => { skipOpen.add(review.id); reviewSnapshot = ""; renderReviews(boardStatus.board || {}); byId("reviews").querySelector("input")?.focus(); });
+			button(t("批准并发送"), "primary", () => submit("approve"));
+			button(t("修改草稿"), "", () => { unsavedDrafts.set(review.id, { draft: review.draft, expectedVersion: review.contentVersion || 1 }); reviewSnapshot = ""; renderReviews(boardStatus.board || {}); byId("reviews").querySelector("textarea:not([hidden])")?.focus(); });
+			button(t("跳过此条"), "quiet", () => { skipOpen.add(review.id); reviewSnapshot = ""; renderReviews(boardStatus.board || {}); byId("reviews").querySelector("input")?.focus(); });
 		}
 		card.append(reason, actions);
 	}
@@ -1265,45 +1313,45 @@ function reviewCard(board, review, index) {
 }
 function originalDraft(board, review) {
 	const input = review.platformInput, box = el("div", "original");
-	const labels = { empty: "评论框为空", matches: "评论框内容与最终稿一致", differs: "评论框里已有其他文字", unreadable: "未能读取评论框内容" };
+	const labels = { empty: t("评论框为空"), matches: t("评论框内容与最终稿一致"), differs: t("评论框里已有其他文字"), unreadable: t("未能读取评论框内容") };
 	box.append(el("strong", "", labels[input.status]));
-	const text = el("p", "", input.text === undefined ? "未能读取，不会填入或发送。" : input.text === "" ? "（空）" : input.text);
+	const text = el("p", "", input.text === undefined ? t("未能读取，不会填入或发送。") : input.text === "" ? t("（空）") : input.text);
 	text.style.whiteSpace = "pre-wrap";
-	box.append(text, el("small", "", (input.source === "device_clipboard" ? "从手机读取" : "根据画面识别") + " · " + new Date(input.readAt).toLocaleTimeString()));
+	box.append(text, el("small", "", (input.source === "device_clipboard" ? t("从手机读取") : t("根据画面识别")) + " · " + new Date(input.readAt).toLocaleTimeString(i18n.locale)));
 	const choice = review.replacementDecisions?.at(-1), granted = choice?.decision === "replace" && !choice.usedAt && choice.originalText === input.text && choice.contentVersion === (review.contentVersion || 1);
 	if (input.status === "differs" && !(review.inputAttempts || []).some((a) => a.platformVersion === input.version && a.beforeObservationId === input.evidenceObservationId) && ["pending", "approved"].includes(review.status) && boardToken && board.control !== "ended" && !granted) {
 		const buttons = el("div", "review-actions");
-		for (const [name, decision] of [["保留原文字，不发送", "keep"], ["替换为最终稿", "replace"]]) {
+		for (const [name, decision] of [[t("保留原文字，不发送"), "keep"], [t("替换为最终稿"), "replace"]]) {
 			const button = el("button", decision === "replace" ? "primary" : "", name);
 			button.onclick = async () => { buttons.querySelectorAll("button").forEach((b) => (b.disabled = true)); await boardAction("comment_original", { reviewId: review.id, decision, platformVersion: input.version, contentVersion: review.contentVersion || 1 }); buttons.querySelectorAll("button").forEach((b) => (b.disabled = false)); };
 			buttons.append(button);
 		}
 		box.append(buttons);
-	} else if (granted) box.append(el("p", "", "已允许替换；发送前仍会再次核对评论框内容。"));
+	} else if (granted) box.append(el("p", "", t("已允许替换；发送前仍会再次核对评论框内容。")));
 	return box;
 }
 function reviewHistory(board, review) {
-	const history = el("details"), sourceLabels = { generated: "AI 草稿", human: "人工修改", platform: "评论框原文" };
-	history.append(el("summary", "", "草稿版本与审核记录"));
+	const history = el("details"), sourceLabels = { generated: t("AI 草稿"), human: t("人工修改"), platform: t("评论框原文") };
+	history.append(el("summary", "", t("草稿版本与审核记录")));
 	for (const item of review.draftVersions || []) {
-		history.append(el("p", "", "版本 " + item.version + " · " + (sourceLabels[item.source] || item.source) + " · " + new Date(item.savedAt).toLocaleString() + "\n" + item.draft));
+		history.append(el("p", "", t("版本 ") + item.version + " · " + (sourceLabels[item.source] || item.source) + " · " + new Date(item.savedAt).toLocaleString(i18n.locale) + "\n" + item.draft));
 		if (review.status === "pending" && boardToken && board.control !== "ended" && item.draft.trim()) {
-			const choose = el("button", "", "使用版本 " + item.version);
+			const choose = el("button", "", t("使用版本 ") + item.version);
 			choose.onclick = () => { unsavedDrafts.set(review.id, { draft: item.draft, expectedVersion: review.contentVersion || 1 }); reviewSnapshot = ""; renderReviews(boardStatus.board || {}); };
 			history.append(choose);
 		}
 	}
-	for (const item of review.decisions || []) history.append(el("p", "", (item.decision === "approve" ? "已批准" : "已跳过") + " · 版本 " + item.contentVersion + " · " + new Date(item.decidedAt).toLocaleString() + (item.reason ? " · " + item.reason : "")));
-	for (const item of review.replacementDecisions || []) history.append(el("p", "", (item.decision === "keep" ? "保留原文字" : "允许替换一次") + " · 版本 " + item.contentVersion + " · " + new Date(item.decidedAt).toLocaleString() + (item.usedAt ? " · 已使用" : "")));
-	const attemptLabels = { executed: "已填入", unknown: "结果待确认", pending: "填入中" };
-	for (const item of review.inputAttempts || []) history.append(el("p", "", "填入 · " + (attemptLabels[item.outcome] || item.outcome) + " · " + new Date(item.startedAt).toLocaleString()));
+	for (const item of review.decisions || []) history.append(el("p", "", (item.decision === "approve" ? t("已批准") : t("已跳过")) + t(" · 版本 ") + item.contentVersion + " · " + new Date(item.decidedAt).toLocaleString(i18n.locale) + (item.reason ? " · " + item.reason : "")));
+	for (const item of review.replacementDecisions || []) history.append(el("p", "", (item.decision === "keep" ? t("保留原文字") : t("允许替换一次")) + t(" · 版本 ") + item.contentVersion + " · " + new Date(item.decidedAt).toLocaleString(i18n.locale) + (item.usedAt ? t(" · 已使用") : "")));
+	const attemptLabels = { executed: t("已填入"), unknown: t("结果待确认"), pending: t("填入中") };
+	for (const item of review.inputAttempts || []) history.append(el("p", "", t("填入 · ") + (attemptLabels[item.outcome] || item.outcome) + " · " + new Date(item.startedAt).toLocaleString(i18n.locale)));
 	return history;
 }
 
 function renderTests(board) {
 	const cases = board.testCases || [];
 	const count = (status) => cases.filter((test) => test.result?.status === status).length;
-	const parts = [["通过", count("passed")], ["失败", count("failed")], ["待确认", count("unverified")], ["未检查", count("not_checked")], ["待执行", cases.filter((test) => !test.result).length]].filter(([, n]) => n > 0);
+	const parts = [[t("通过"), count("passed")], [t("失败"), count("failed")], [t("待确认"), count("unverified")], [t("未检查"), count("not_checked")], [t("待执行"), cases.filter((test) => !test.result).length]].filter(([, n]) => n > 0);
 	byId("scenario-counts").textContent = parts.map(([label, n]) => label + " " + n).join(" · ");
 	byId("checks-section").hidden = !cases.length;
 	const snapshot = JSON.stringify({ cases, active: board.activeTestCaseId, stop: board.stopBeforeSubmit });
@@ -1311,33 +1359,33 @@ function renderTests(board) {
 	testSnapshot = snapshot;
 	const host = byId("test-cases");
 	host.replaceChildren();
-	if (board.stopBeforeSubmit) host.append(el("p", "muted", "本任务约定停在提交前：最终提交、发送、支付等操作不会执行。"));
-	const sourceLabels = { user: "用户要求", prd: "需求文档", case: "已有用例", unknown: "未注明" };
+	if (board.stopBeforeSubmit) host.append(el("p", "muted", t("本任务约定停在提交前：最终提交、发送、支付等操作不会执行。")));
+	const sourceLabels = { user: t("用户要求"), prd: t("需求文档"), case: t("已有用例"), unknown: t("未注明") };
 	for (const test of cases) {
 		const d = test.definition, r = test.result, card = el("article", "case"), head = el("div", "case-head");
-		const label = r ? caseLabels[r.status] : board.activeTestCaseId === test.id ? "检查中" : "待执行";
+		const label = r ? caseLabels[r.status] : board.activeTestCaseId === test.id ? t("检查中") : t("待执行");
 		head.append(el("strong", "", d.title), el("span", "badge " + (r?.status || ""), label));
-		card.append(head, el("p", "", "预期：" + d.expected), el("p", "", "实际：" + (r?.actual || "尚未记录") + (r?.reason ? "（" + r.reason + "）" : "")));
+		card.append(head, el("p", "", t("预期：") + d.expected), el("p", "", t("实际：") + (r?.actual || t("尚未记录")) + (r?.reason ? "（" + r.reason + "）" : "")));
 		const details = el("details"), body = el("p");
-		details.append(el("summary", "", "步骤、输入与环境"));
+		details.append(el("summary", "", t("步骤、输入与环境")));
 		body.textContent = [
-			"预期来源：" + (sourceLabels[d.expectedSource.kind] || d.expectedSource.kind) + (d.expectedSource.reference ? " · " + d.expectedSource.reference : ""),
-			"应用 / 版本：" + d.context.app + " / " + d.context.version,
-			"环境 / 账号 / 起点：" + d.context.environment + " / " + d.context.account + " / " + d.context.startPage,
-			"前置条件：" + (d.prerequisites.join("；") || "无"),
-			"测试数据：" + (d.testData.source === "generated" ? "系统生成 · " : d.testData.source === "user" ? "用户提供 · " : "") + d.testData.description,
-			"停止条件：" + d.stoppingCondition,
-			"计划步骤：\n" + d.steps.map((s, i) => (i + 1) + ". " + s).join("\n"),
-			r?.checkedStepIndexes ? "已核对步骤：" + (r.checkedStepIndexes.map((i) => i + 1).join("、") || "无") : "",
-			"实际执行：\n" + (r?.executedSteps.length ? r.executedSteps.map((s, i) => (i + 1) + ". " + s).join("\n") : "未记录"),
-			r?.reproduction ? "复现结论：" + ({ reproduced: "已复现", not_reproduced: "本次未复现", unknown: "无法确认" }[r.reproduction] || r.reproduction) : "",
-			r?.status === "failed" ? "缺陷 DEF-" + test.id.slice(0, 8) + " · 发生页面：" + (r.page || "未知页面") : "",
-			test.origin ? "复测：关联上次结果「" + (caseLabels[test.origin.result?.status] || "未检查") + "」；条件变化：" + (Object.keys(d.context).filter((k) => d.context[k] !== test.origin.context[k]).join("、") || "无") : "",
+			t("预期来源：") + (sourceLabels[d.expectedSource.kind] || d.expectedSource.kind) + (d.expectedSource.reference ? " · " + d.expectedSource.reference : ""),
+			t("应用 / 版本：") + d.context.app + " / " + d.context.version,
+			t("环境 / 账号 / 起点：") + d.context.environment + " / " + d.context.account + " / " + d.context.startPage,
+			t("前置条件：") + (d.prerequisites.join("；") || t("无")),
+			t("测试数据：") + (d.testData.source === "generated" ? t("系统生成 · ") : d.testData.source === "user" ? t("用户提供 · ") : "") + d.testData.description,
+			t("停止条件：") + d.stoppingCondition,
+			t("计划步骤：\n") + d.steps.map((s, i) => (i + 1) + ". " + s).join("\n"),
+			r?.checkedStepIndexes ? t("已核对步骤：") + (r.checkedStepIndexes.map((i) => i + 1).join("、") || t("无")) : "",
+			t("实际执行：\n") + (r?.executedSteps.length ? r.executedSteps.map((s, i) => (i + 1) + ". " + s).join("\n") : t("未记录")),
+			r?.reproduction ? t("复现结论：") + ({ reproduced: t("已复现"), not_reproduced: t("本次未复现"), unknown: t("无法确认") }[r.reproduction] || r.reproduction) : "",
+			r?.status === "failed" ? t("缺陷 DEF-") + test.id.slice(0, 8) + t(" · 发生页面：") + (r.page || t("未知页面")) : "",
+			test.origin ? t("复测：关联上次结果「") + (caseLabels[test.origin.result?.status] || t("未检查")) + t("」；条件变化：") + (Object.keys(d.context).filter((k) => d.context[k] !== test.origin.context[k]).join("、") || t("无")) : "",
 		].filter(Boolean).join("\n");
 		details.append(body);
 		card.append(details);
 		(r?.evidenceObservationIds || []).forEach((id, i) => {
-			const link = el("a", "", "截图 " + (i + 1));
+			const link = el("a", "", t("截图 ") + (i + 1));
 			link.href = location.pathname + "evidence?observationId=" + encodeURIComponent(id); link.target = "_blank"; link.rel = "noopener";
 			card.append(link);
 		});
@@ -1359,18 +1407,18 @@ function renderExecutionBudget(status) {
 	host.dataset.state = key; host.replaceChildren();
 	if (!eligible && !pending) return;
 	const copy = el("div");
-	copy.append(el("strong", "", eligible ? "执行次数已用完" : "已追加执行次数"), el("p", "", eligible ? "已用 " + operations + " / " + operationLimit + " 次。目标、清单和已有结果都已保留，可以追加有限次数继续同一任务。" : "请回到 WorkBuddy 对话继续；恢复后会先核对当前画面。"));
+	copy.append(el("strong", "", eligible ? t("执行次数已用完") : t("已追加执行次数")), el("p", "", eligible ? t("已用 ") + operations + " / " + operationLimit + t(" 次。目标、清单和已有结果都已保留，可以追加有限次数继续同一任务。") : t("请回到 WorkBuddy 对话继续；恢复后会先核对当前画面。")));
 	const actions = el("div", "alert-actions");
 	if (eligible) {
-		const input = el("input"), button = el("button", "primary", "追加");
-		input.type = "number"; input.min = "1"; input.max = "100"; input.step = "1"; input.id = "budget-additional"; input.placeholder = "1–100"; input.setAttribute("aria-label", "追加的执行次数（1–100）"); input.style.width = "76px";
+		const input = el("input"), button = el("button", "primary", t("追加"));
+		input.type = "number"; input.min = "1"; input.max = "100"; input.step = "1"; input.id = "budget-additional"; input.placeholder = "1–100"; input.setAttribute("aria-label", t("追加的执行次数（1–100）")); input.style.width = "76px";
 		button.id = "extend-budget";
-		button.onclick = async () => { const additional = Number(input.value); if (!Number.isInteger(additional) || additional < 1 || additional > 100) { toast("请输入 1–100 的整数"); return; } button.disabled = true; await boardAction("budget_extend", { additional, operationLimit, inferenceLimit }); button.disabled = false; };
+		button.onclick = async () => { const additional = Number(input.value); if (!Number.isInteger(additional) || additional < 1 || additional > 100) { toast(t("请输入 1–100 的整数")); return; } button.disabled = true; await boardAction("budget_extend", { additional, operationLimit, inferenceLimit }); button.disabled = false; };
 		actions.append(input, button);
 	} else {
-		const button = el("button", "", "复制继续指令");
+		const button = el("button", "", t("复制继续指令"));
 		button.id = "copy-budget-continuation";
-		button.onclick = async () => { try { await navigator.clipboard.writeText("@opengui 继续原任务 " + status.viewerId + "，使用工作台已追加的执行次数。沿用原目标、原设备和已有结果，先重新读取画面，不重复发送结果未知或已提交的评论。"); toast("已复制，请粘贴到当前对话"); } catch { toast("复制失败，请在对话中说明继续任务 " + status.viewerId); } };
+		button.onclick = async () => { try { await navigator.clipboard.writeText(t("@opengui 继续原任务 ") + status.viewerId + t("，使用工作台已追加的执行次数。沿用原目标、原设备和已有结果，先重新读取画面，不重复发送结果未知或已提交的评论。")); toast(t("已复制，请粘贴到当前对话")); } catch { toast(t("复制失败，请在对话中说明继续任务 ") + status.viewerId); } };
 		actions.append(button);
 	}
 	host.append(copy, actions);
@@ -1381,17 +1429,17 @@ function renderEnvironment(board) {
 	host.replaceChildren(); apkAlert.replaceChildren();
 	apkAlert.hidden = !board.apk;
 	if (board.apk) {
-		const apk = board.apk, labels = { prepared: "已准备，待安装", installing: "安装中", installed: "已安装", failed: "安装失败", unknown: "安装结果未知，不会重复安装" };
+		const apk = board.apk, labels = { prepared: t("已准备，待安装"), installing: t("安装中"), installed: t("已安装"), failed: t("安装失败"), unknown: t("安装结果未知，不会重复安装") };
 		const copy = el("div");
-		copy.append(el("strong", "", "安装包 · " + labels[apk.status]), el("p", "", apk.fileName + " · " + apk.packageName + " · 版本 " + (apk.versionName || "未知")));
+		copy.append(el("strong", "", t("安装包 · ") + labels[apk.status]), el("p", "", apk.fileName + " · " + apk.packageName + t(" · 版本 ") + (apk.versionName || t("未知"))));
 		apkAlert.append(copy);
 		if (apk.existingApp) {
-			copy.append(el("p", "", "手机上已有这个应用（版本 " + (apk.existingApp.version || "未知") + "）。安装会覆盖应用并保留数据。"));
-			if (apk.updateApprovedAt) copy.append(el("p", "", "你已确认更新。"));
+			copy.append(el("p", "", t("手机上已有这个应用（版本 ") + (apk.existingApp.version || t("未知")) + t("）。安装会覆盖应用并保留数据。")));
+			if (apk.updateApprovedAt) copy.append(el("p", "", t("你已确认更新。")));
 			else if (apk.status === "prepared" && board.control !== "ended") {
-				const actions = el("div", "alert-actions"), confirm = el("button", "primary", "确认更新"), cancel = el("button", "", "停止任务");
+				const actions = el("div", "alert-actions"), confirm = el("button", "primary", t("确认更新")), cancel = el("button", "", t("停止任务"));
 				confirm.onclick = () => boardAction("apk_update_confirm", { artifactId: apk.id, sha256: apk.sha256, existingVersion: apk.existingApp.version || "unknown" });
-				cancel.title = "停止本次任务，不安装";
+				cancel.title = t("停止本次任务，不安装");
 				cancel.onclick = () => boardAction("disconnect");
 				actions.append(confirm, cancel); apkAlert.append(actions);
 			}
@@ -1400,12 +1448,12 @@ function renderEnvironment(board) {
 	const state = board.environment;
 	if (!state) return;
 	const ok = state.checks.filter((item) => item.required).every((item) => item.status === "passed");
-	host.append(el("p", "", "应用 " + state.spec.packageName + " · " + (state.stale ? "需要重新检查" : ok ? "必需项已通过" : "有未通过或待确认的必需项")));
-	const checks = el("div", "checks"), labels = { passed: "通过", failed: "未通过", unknown: "待确认" };
+	host.append(el("p", "", t("应用 ") + state.spec.packageName + " · " + (state.stale ? t("需要重新检查") : ok ? t("必需项已通过") : t("有未通过或待确认的必需项"))));
+	const checks = el("div", "checks"), labels = { passed: t("通过"), failed: t("未通过"), unknown: t("待确认") };
 	for (const check of state.checks) {
 		const row = el("div", "check-row " + check.status);
-		row.title = check.detail;
-		row.append(el("span", "", check.label + (check.required ? "" : "（参考）")), el("span", "", labels[check.status] + (check.observedValue ? " · " + check.observedValue : "")));
+		row.title = formatUiEnvironment(check.detail, t);
+		row.append(el("span", "", formatUiEnvironment(check.label, t) + (check.required ? "" : t("（参考）"))), el("span", "", labels[check.status] + (check.observedValue ? " · " + check.observedValue : "")));
 		checks.append(row);
 	}
 	host.append(checks);
@@ -1416,13 +1464,13 @@ function renderInputDiagnostic(status) {
 	const pending = diagnostic && diagnostic.status !== "resolved";
 	byId("input-notice").hidden = !pending;
 	if (!diagnostic) return;
-	const detail = diagnostic.status === "blocked" ? "已暂停操作。处理手机的安全设置后，点击「我已处理，重新检测」。"
-		: diagnostic.status === "recheck_pending" ? "已重新检测，下一步会先读取画面；点击权限是否恢复，以后续操作结果为准。"
-		: "后续操作已返回结果。";
-	byId("input-guidance").textContent = diagnostic.guidance;
-	byId("input-help-guidance").textContent = diagnostic.guidance;
+	const detail = diagnostic.status === "blocked" ? t("已暂停操作。处理手机的安全设置后，点击「我已处理，重新检测」。")
+		: diagnostic.status === "recheck_pending" ? t("已重新检测，下一步会先读取画面；点击权限是否恢复，以后续操作结果为准。")
+		: t("后续操作已返回结果。");
+	byId("input-guidance").textContent = t(diagnostic.guidance);
+	byId("input-help-guidance").textContent = t(diagnostic.guidance);
 	byId("input-state").textContent = detail;
-	byId("input-help-state").textContent = status.taskState === "ended" ? "本次任务已结束，记录已保留。" : detail;
+	byId("input-help-state").textContent = status.taskState === "ended" ? t("本次任务已结束，记录已保留。") : detail;
 	byId("input-recheck").disabled = !boardToken || status.taskState === "ended";
 	if (pending && diagnostic.status === "blocked" && status.taskState !== "ended" && inputPromptedAt !== diagnostic.detectedAt && !document.querySelector("dialog[open]:not(.popover)")) {
 		inputPromptedAt = diagnostic.detectedAt; show("input-help");
@@ -1440,24 +1488,24 @@ function renderReport(status) {
 	if (snapshot !== reportSnapshot) {
 		reportSnapshot = snapshot;
 		const count = (s) => cases.filter((c) => c.result?.status === s).length;
-		byId("report-title").textContent = shortTitle(board.objective, "任务报告");
+		byId("report-title").textContent = shortTitle(board.objective, t("任务报告"));
 		byId("report-state").textContent = cases.length
-			? [["项通过", count("passed")], ["项失败", count("failed")], ["项待确认", count("unverified")], ["项未检查", count("not_checked")]].filter(([, n]) => n).map(([l, n]) => n + " " + l).join(" · ") || outcomeLabels[outcome]
-			: reviews.length ? reviews.filter((r) => r.status === "sent").length + " 条发送成功 · " + reviews.filter((r) => r.status === "skipped").length + " 条跳过" + (reviews.some((r) => ["submitted", "unknown"].includes(r.status)) ? " · " + reviews.filter((r) => ["submitted", "unknown"].includes(r.status)).length + " 条待核验" : "")
+			? [[t("项通过"), count("passed")], [t("项失败"), count("failed")], [t("项待确认"), count("unverified")], [t("项未检查"), count("not_checked")]].filter(([, n]) => n).map(([l, n]) => n + " " + l).join(" · ") || outcomeLabels[outcome]
+			: reviews.length ? reviews.filter((r) => r.status === "sent").length + t(" 条发送成功 · ") + reviews.filter((r) => r.status === "skipped").length + t(" 条跳过") + (reviews.some((r) => ["submitted", "unknown"].includes(r.status)) ? " · " + reviews.filter((r) => ["submitted", "unknown"].includes(r.status)).length + t(" 条待核验") : "")
 			: outcomeLabels[outcome];
-		byId("report-summary").textContent = [outcomeLabels[outcome] + "。" + (board.result?.summary || ""), board.stopBeforeSubmit ? "按约定停在提交前，最终提交未执行。" : ""].filter(Boolean).join("\n");
+		byId("report-summary").textContent = [outcomeLabels[outcome] + "。" + (board.result?.summary || ""), board.stopBeforeSubmit ? t("按约定停在提交前，最终提交未执行。") : ""].filter(Boolean).join("\n");
 		byId("report-callout").classList.toggle("blocked", ["blocked", "unknown"].includes(outcome));
 		const traces = board.traces || [], start = traces.length ? Date.parse(traces[0].startedAt) : 0;
 		const end = traces.reduce((last, t) => Math.max(last, Date.parse(t.startedAt) + (t.durationMs || 0)), start);
 		const device = (status.devices || [])[0];
 		const meta = byId("report-meta"); meta.replaceChildren();
-		for (const [label, value] of [["设备", device ? device.name + " · …" + (device.serialSuffix || "") : "未绑定"], ["模型", board.model || "跟随 WorkBuddy"], ["用时", traces.length ? seconds(end - start) : "—"], ["截图证据", (board.evidenceCount || 0) + " 张"]]) {
+		for (const [label, value] of [[t("设备"), device ? device.name + " · …" + (device.serialSuffix || "") : t("未绑定")], [t("模型"), board.model || t("跟随 WorkBuddy")], [t("用时"), traces.length ? seconds(end - start) : "—"], [t("截图证据"), t("{count} 张", { count: board.evidenceCount || 0 })]]) {
 			const item = el("div", "", label); item.append(el("b", "", value)); meta.append(item);
 		}
 		const results = byId("report-tests"); results.replaceChildren();
-		for (const test of cases) { const row = el("div", "", test.definition.title); row.append(el("span", test.result?.status || "", test.result ? caseLabels[test.result.status] : "未执行")); results.append(row); }
+		for (const test of cases) { const row = el("div", "", test.definition.title); row.append(el("span", test.result?.status || "", test.result ? caseLabels[test.result.status] : t("未执行"))); results.append(row); }
 		reviews.forEach((review, index) => { const row = el("div", "", reviewTitle(review, index)); row.append(el("span", review.status === "sent" ? "passed" : "", reviewLabels[review.status])); results.append(row); });
-		byId("report-note").textContent = [status.archivePath ? "本地归档：" + status.archivePath : "", status.reportExports?.error ? "导出失败：" + status.reportExports.error : ""].filter(Boolean).join("\n");
+		byId("report-note").textContent = [status.archivePath ? t("本地归档：") + status.archivePath : "", status.reportExports?.error ? t("导出失败：") + status.reportExports.error : ""].filter(Boolean).join("\n");
 	}
 	if (!finishedReport) { finishedReport = true; setTimeout(() => byId("report-section").scrollIntoView({ block: "start", behavior: "smooth" }), 150); }
 }
@@ -1465,24 +1513,24 @@ function renderReport(status) {
 function connectionState(status, board, devices, connected) {
 	const hints = devices.map((device) => {
 		const advisory = deviceInventory.find((item) => item.id === device.id)?.connectionHint;
-		return advisory?.warning ? advisory : connectionHint(device, board.environment);
+		return connectionHint(advisory?.warning ? deviceInventory.find((item) => item.id === device.id) : device, board.environment);
 	});
-	let hint = hints.find((item) => item.warning) || hints[0] || { label: "未连接设备", detail: "连接 Android 手机或启动本地模拟器，然后点击「选择设备」。", warning: true };
-	if (status.startRequired) return { label: "等待开始执行", detail: "确认任务、模型和执行设备后点击「开始执行」，之后才会连接设备。", warning: false };
+	let hint = hints.find((item) => item.warning) || hints[0] || { label: t("未连接设备"), detail: t("连接 Android 手机或启动本地模拟器，然后点击「选择设备」。"), warning: true };
+	if (status.startRequired) return { label: t("等待开始执行"), detail: t("确认任务、模型和执行设备后点击「开始执行」，之后才会连接设备。"), warning: false };
 	const mode = board.control || "idle";
 	// The first frame is still on its way: connecting is normal, not a fault to diagnose.
-	if (devices.length && ["preparing", "waiting_for_frame"].includes(status.state) && !status.errorCode && !board.connectionRecovery) hint = { label: "正在连接设备画面…", detail: "首帧画面出现后才会开始操作手机。超过 30 秒没有画面时，本次任务会停止且不会操作手机。", warning: false };
+	if (devices.length && ["preparing", "waiting_for_frame"].includes(status.state) && !status.errorCode && !board.connectionRecovery) hint = { label: t("正在连接设备画面…"), detail: t("首帧画面出现后才会开始操作手机。超过 30 秒没有画面时，本次任务会停止且不会操作手机。"), warning: false };
 	// A takeover or pause invalidates the environment on purpose; it is rechecked on handback.
-	if (board.environment?.stale && (mode === "manual" || mode === "paused") && !hints.some((item) => item.warning && item.label !== "已连接 · 环境待确认")) hint = { label: mode === "manual" ? "你正在控制设备" : "任务已暂停", detail: "恢复控制后，会自动重新检查设备与应用环境。", warning: false };
-	if (status.errorCode === "display_timeout") hint = { label: "设备画面连接超时", detail: "30 秒内没有收到可显示的画面，本次任务已停止，没有操作手机。任务要求已保留，请检查连接后在对话中重新发起。", warning: true };
+	if (board.environment?.stale && (mode === "manual" || mode === "paused") && !hints.some((item) => item.warning && item.label !== t("已连接 · 环境待确认"))) hint = { label: mode === "manual" ? t("你正在控制设备") : t("任务已暂停"), detail: t("恢复控制后，会自动重新检查设备与应用环境。"), warning: false };
+	if (status.errorCode === "display_timeout") hint = { label: t("设备画面连接超时"), detail: t("30 秒内没有收到可显示的画面，本次任务已停止，没有操作手机。任务要求已保留，请检查连接后在对话中重新发起。"), warning: true };
 	const recovery = board.connectionRecovery;
 	if (recovery && recovery.status !== "resolved") {
 		hint = recovery.status === "waiting_recheck"
-			? { label: "连接中断 · 已暂停", detail: "重新连接同一台设备后点击「重新检测」。进度、草稿和截图都已保留，不会切换设备或重复上一步。", warning: true, alert: true }
-			: { label: "已重新检测 · 等待核对画面", detail: "下一步先读取最新画面，确认上一步的实际结果后再继续。", warning: true };
+			? { label: t("连接中断 · 已暂停"), detail: t("重新连接同一台设备后点击「重新检测」。进度、草稿和截图都已保留，不会切换设备或重复上一步。"), warning: true, alert: true }
+			: { label: t("已重新检测 · 等待核对画面"), detail: t("下一步先读取最新画面，确认上一步的实际结果后再继续。"), warning: true };
 		if (connectionPromptedAt !== recovery.detectedAt) connectionPromptedAt = recovery.detectedAt;
 	}
-	if (board.inputDiagnostic && board.inputDiagnostic.status !== "resolved") hint = { label: board.inputDiagnostic.status === "blocked" ? "手机拒绝模拟点击" : "触控权限待核对", detail: board.inputDiagnostic.guidance, warning: true };
+	if (board.inputDiagnostic && board.inputDiagnostic.status !== "resolved") hint = { label: board.inputDiagnostic.status === "blocked" ? t("手机拒绝模拟点击") : t("触控权限待核对"), detail: t(board.inputDiagnostic.guidance), warning: true };
 	return hint;
 }
 
@@ -1495,7 +1543,7 @@ async function loadStartDevices() {
 	startDevicesLoaded = true; startDevicesLoading = true;
 	try {
 		const response = await fetch(location.pathname + "devices?refresh=1"), result = await response.json();
-		if (!response.ok) throw Error(result.error || "设备检测没有完成");
+		if (!response.ok) throw Error(result.error || t("设备检测没有完成"));
 		startDevices = (result.devices || []).filter((d) => d.os !== "ios");
 		const suggested = boardStatus?.suggestedDeviceId || result.preferredDeviceId;
 		if (!startDevices.some((d) => d.id === startDeviceId && d.selectable)) startDeviceId = startDevices.find((d) => d.id === suggested && d.selectable)?.id || (startDevices.filter((d) => d.selectable).length === 1 ? startDevices.find((d) => d.selectable).id : null);
@@ -1526,25 +1574,25 @@ function renderStart(status, force = false) {
 	startRequestSource = board.objective ? taskText(board.request || board.objective) : "";
 	if (!startRequestDirty) byId("start-request").value = startRequestSource;
 	byId("start-request").disabled = startBusy || !boardToken;
-	byId("start-title").textContent = board.objective ? "确认任务" : "新建任务";
+	byId("start-title").textContent = board.objective ? t("确认任务") : t("新建任务");
 	// Android (phones and emulators) is selectable; iOS and cloud phones are listed as coming soon.
 	const devices = byId("start-devices"); devices.replaceChildren();
 	const group = (title, note) => { const box = el("div", "start-group"), heading = el("div", "start-group-title", title); if (note) heading.append(el("small", "", note)); box.append(heading); devices.append(box); return box; };
 	const placeholder = (box, text, soon) => { const row = el("div", "start-placeholder"); row.append(el("span", "", text)); if (soon) row.append(el("span", "soon", soon)); box.append(row); };
-	const android = group("Android 设备", "真机 · 模拟器");
-	if (!startDevicesLoaded || startDevicesLoading) placeholder(android, "正在读取设备…");
-	else if (!startDevices.length) placeholder(android, "未检测到已连接设备");
-	placeholder(group("iOS 设备", "真机 · 模拟器"), "暂不可选", "即将支持");
-	placeholder(group("云真机"), "在云端设备上执行任务", "即将支持");
+	const android = group(t("Android 设备"), t("真机 · 模拟器"));
+	if (!startDevicesLoaded || startDevicesLoading) placeholder(android, t("正在读取设备…"));
+	else if (!startDevices.length) placeholder(android, t("未检测到已连接设备"));
+	placeholder(group(t("iOS 设备"), t("真机 · 模拟器")), t("暂不可选"), t("即将支持"));
+	placeholder(group(t("云真机")), t("在云端设备上执行任务"), t("即将支持"));
 	for (const device of startDevices) {
-		const hint = device.connectionHint || connectionHint(device);
-		android.append(startOption("start-device", device.id, startDeviceId === device.id, !device.selectable, device.name, deviceDetails(device), device.selectable ? (device.preferred ? "上次使用" : "可连接") : hint.label, device.selectable ? "" : "warning", (v) => { startDeviceId = v; }));
+		const hint = connectionHint(device);
+		android.append(startOption("start-device", device.id, startDeviceId === device.id, !device.selectable, device.name, deviceDetails(device), device.selectable ? (device.preferred ? t("上次使用") : t("可连接")) : hint.label, device.selectable ? "" : "warning", (v) => { startDeviceId = v; }));
 	}
 	if (startDevicesLoaded && !startDevicesLoading) { android.append(startEmulatorBox); renderEmulator(); if (!emulatorState) void refreshEmulator(); }
-	const blocker = !boardToken ? "请从当前任务打开工作台" : !user ? "请先登录" : startDevicesLoaded && !startDevicesLoading && !startDevices.length ? "请连接 Android 手机并允许 USB 调试，或在下方启动模拟器，再点击「重新检测」" : !taskText(byId("start-request").value) ? "请填写要执行的任务" : !startDeviceId ? "请选择执行设备" : startMessage || "准备就绪。开始后在右侧查看进度；需审核或接管时会显示提示。";
+	const blocker = !boardToken ? t("请从当前任务打开工作台") : !user ? t("请先登录") : startDevicesLoaded && !startDevicesLoading && !startDevices.length ? t("请连接 Android 手机并允许 USB 调试，或在下方启动模拟器，再点击「重新检测」") : !taskText(byId("start-request").value) ? t("请填写要执行的任务") : !startDeviceId ? t("请选择执行设备") : t(startMessage) || t("准备就绪。开始后在右侧查看进度；需审核或接管时会显示提示。");
 	byId("start-blocker").textContent = blocker;
 	byId("start-run").disabled = startBusy || !boardToken || !user || !startDeviceId || !taskText(byId("start-request").value);
-	byId("start-run").textContent = startBusy ? "正在连接设备…" : "开始执行";
+	byId("start-run").textContent = startBusy ? t("正在连接设备…") : t("开始执行");
 }
 byId("start-refresh").onclick = () => { startDevicesLoaded = false; if (boardStatus) renderStart(boardStatus, true); };
 byId("start-device-help").onclick = () => show("guide");
@@ -1552,6 +1600,7 @@ byId("start-device-help").onclick = () => show("guide");
    screenshot every few seconds where video is unavailable. It is display-only and never reaches a model. */
 let previewDeviceId = null, previewShown = null, previewRun = 0, previewTimer = 0, previewAspect = "";
 function setPreview(state, note, caption) {
+	note = t(i18n.source(note)); caption = t(i18n.source(caption));
 	byId("start-preview").dataset.state = state;
 	byId("start-preview-note").textContent = note; byId("start-preview-note").hidden = !note;
 	byId("start-preview-caption").textContent = caption;
@@ -1562,10 +1611,10 @@ function syncPreview() {
 	previewDeviceId = wanted; previewRun++; clearTimeout(previewTimer); globalThis.openguiPreview?.close();
 	// Pausing (while starting or with the page hidden) keeps the last frame; another device clears it.
 	if (startDeviceId !== previewShown) { previewShown = null; previewAspect = ""; byId("start-preview-canvas").hidden = true; byId("start-preview-frame").style.aspectRatio = ""; }
-	if (!wanted) { setPreview("idle", previewShown || startDeviceId ? "" : "选择设备后显示画面", "实时画面"); return; }
-	if (!previewShown) setPreview("loading", "正在连接画面…", "实时画面");
+	if (!wanted) { setPreview("idle", previewShown || startDeviceId ? "" : t("选择设备后显示画面"), t("实时画面")); return; }
+	if (!previewShown) setPreview("loading", t("正在连接画面…"), t("实时画面"));
 	const run = previewRun, canvas = byId("start-preview-canvas");
-	const video = globalThis.openguiPreview?.open(wanted, canvas, () => { if (run === previewRun) showPreviewFrame(wanted, "实时画面"); }, () => { if (run === previewRun) void pullPreview(run, wanted, 0); });
+	const video = globalThis.openguiPreview?.open(wanted, canvas, () => { if (run === previewRun) showPreviewFrame(wanted, t("实时画面")); }, () => { if (run === previewRun) void pullPreview(run, wanted, 0); });
 	if (!video) void pullPreview(run, wanted, 0);
 }
 function showPreviewFrame(deviceId, caption) {
@@ -1584,11 +1633,11 @@ async function pullPreview(run, deviceId, failures) {
 		if (run !== previewRun) { frame.close(); return; }
 		if (canvas.width !== frame.width || canvas.height !== frame.height) { canvas.width = frame.width; canvas.height = frame.height; }
 		canvas.getContext("2d").drawImage(frame, 0, 0); frame.close();
-		failures = 0; showPreviewFrame(deviceId, "定时截图");
+		failures = 0; showPreviewFrame(deviceId, t("定时截图"));
 	} catch {
 		if (run !== previewRun) return;
 		failures++;
-		setPreview("error", canvas.hidden ? "画面暂不可用" : "", canvas.hidden ? "正在重试…" : "画面暂停更新");
+		setPreview("error", canvas.hidden ? t("画面暂不可用") : "", canvas.hidden ? t("正在重试…") : t("画面暂停更新"));
 	}
 	if (run === previewRun) previewTimer = setTimeout(() => void pullPreview(run, deviceId, failures), failures ? Math.min(8000, 1500 * failures) : 800);
 }
@@ -1596,7 +1645,7 @@ document.addEventListener("visibilitychange", syncPreview);
 byId("start-run").onclick = async () => {
 	if (startBusy || byId("start-run").disabled) return;
 	startBusy = true; renderStart(boardStatus, true);
-	try { if (await boardAction("start", { modelId: "host", deviceId: startDeviceId, request: taskText(byId("start-request").value), contentReview: byId("start-content-review").checked })) toast("已开始执行，正在连接设备画面"); }
+	try { if (await boardAction("start", { modelId: "host", deviceId: startDeviceId, request: taskText(byId("start-request").value), contentReview: byId("start-content-review").checked })) toast(t("已开始执行，正在连接设备画面")); }
 	finally { startBusy = false; if (boardStatus) { renderBoard(boardStatus); renderStart(boardStatus, true); } }
 };
 
@@ -1607,58 +1656,58 @@ function renderBoard(status) {
 	const active = ["agent", "paused", "manual", "reconciling"].includes(mode) && !ended;
 	const connected = devices.length > 0 && devices.every((d) => d.state === "ready");
 	byId("device-preference-notice").hidden = !status.devicePreferenceError;
-	byId("device-preference-notice").textContent = status.devicePreferenceError || "";
+	byId("device-preference-notice").textContent = t(status.devicePreferenceError || "");
 	renderInputDiagnostic(status);
 
-	byId("task").textContent = status.errorCode === "display_timeout" ? "画面连接超时 · 任务已停止"
-		: ended ? (outcomeLabels[board.result?.outcome] || "任务已结束")
-		: mode === "manual" ? "你正在手动控制设备"
-		: mode === "paused" ? "任务已暂停 · 已有进度已保留"
-		: mode === "reconciling" ? "正在核对当前画面，确认后继续"
-		: !board.objective && mode === "idle" ? "等待任务 · 在 WorkBuddy 对话中描述目标"
-		: status.selectionRequired && board.objective ? "任务已保留 · 连接并选择设备后继续"
-		: status.progress?.message || (devices.length ? "正在准备" : "等待连接设备");
+	byId("task").textContent = status.errorCode === "display_timeout" ? t("画面连接超时 · 任务已停止")
+		: ended ? (outcomeLabels[board.result?.outcome] || t("任务已结束"))
+		: mode === "manual" ? t("你正在手动控制设备")
+		: mode === "paused" ? t("任务已暂停 · 已有进度已保留")
+		: mode === "reconciling" ? t("正在核对当前画面，确认后继续")
+		: !board.objective && mode === "idle" ? t("等待任务 · 在 WorkBuddy 对话中描述目标")
+		: status.selectionRequired && board.objective ? t("任务已保留 · 连接并选择设备后继续")
+		: formatUiProgress(status.progress, i18n.locale, t) || (devices.length ? t("正在准备") : t("等待连接设备"));
 
 	const account = status.account || {}, user = account.user;
-	byId("account-button").textContent = user?.phone || "登录";
-	byId("account-title").textContent = user ? "账号设置" : "OpenGUI登录/注册";
-	byId("account-state").textContent = user ? "管理当前登录的账号。" : "欢迎体验OpenGUI，登录时若未注册，将自动注册";
+	byId("account-button").textContent = user?.phone || t("登录");
+	byId("account-title").textContent = user ? t("账号设置") : t("OpenGUI登录/注册");
+	byId("account-state").textContent = user ? t("管理当前登录的账号。") : t("欢迎体验OpenGUI，登录时若未注册，将自动注册。目前仅支持中国大陆手机号。");
 	byId("login-form").hidden = Boolean(user); byId("sign-in").hidden = Boolean(user); byId("sign-out").hidden = !user;
 	byId("account-profile").hidden = !user; byId("account-phone-display").textContent = user?.phone || "";
 	const accountLocked = ["agent", "paused", "manual", "reconciling"].includes(mode);
 	byId("account-lock-note").hidden = !accountLocked;
 	for (const id of ["send-otp", "sign-in", "sign-out", "account-phone", "account-code"]) byId(id).disabled = accountPending || account.busy || !boardToken || accountLocked;
 	byId("send-otp").disabled ||= Date.now() < otpDeadline;
-	byId("send-otp").textContent = Date.now() < otpDeadline ? "重新获取（" + Math.ceil((otpDeadline - Date.now()) / 1000) + "s）" : "获取验证码";
-	byId("sign-in").textContent = accountPending ? "请稍候…" : "登录";
+	byId("send-otp").textContent = Date.now() < otpDeadline ? t("重新获取（{seconds}s）", { seconds: Math.ceil((otpDeadline - Date.now()) / 1000) }) : t("获取验证码");
+	byId("sign-in").textContent = accountPending ? t("请稍候…") : t("登录");
 
-	byId("model-label").textContent = "跟随 WorkBuddy";
+	byId("model-label").textContent = t("跟随 WorkBuddy");
 	byId("model").disabled = !boardToken || mode !== "idle";
-	byId("model").title = byId("model").disabled ? "任务执行期间锁定模型，下次任务开始前可切换" : "选择执行模型";
+	byId("model").title = byId("model").disabled ? t("任务执行期间锁定模型，下次任务开始前可切换") : t("选择执行模型");
 	if (byId("model").disabled && byId("model-info").open) byId("model-info").close();
 
 	const handoff = (board.handoffs || []).find((item) => item.status !== "resolved");
 	byId("handoff-notice").hidden = !handoff;
 	if (handoff) {
-		const labels = { password: "输入密码", otp: "输入验证码", payment: "确认支付", security: "处理安全提示", login: "登录账号", verification: "完成身份验证", other: "人工处理" };
-		byId("handoff-title").textContent = "需要你在手机上" + (labels[handoff.category] || "处理");
+		const labels = { password: t("输入密码"), otp: t("输入验证码"), payment: t("确认支付"), security: t("处理安全提示"), login: t("登录账号"), verification: t("完成身份验证"), other: t("人工处理") };
+		byId("handoff-title").textContent = t("需要你在手机上") + (labels[handoff.category] || t("处理"));
 		byId("handoff-reason").textContent = handoff.reason;
-		byId("handoff-instruction").textContent = ended ? "任务已结束，这一步没有完成。" : handoff.status === "waiting_observation" ? "已恢复控制，正在核对当前画面。" : "完成后点击右上角「恢复控制」，系统会重新核对画面再继续。请不要在对话中发送密码或验证码。";
+		byId("handoff-instruction").textContent = ended ? t("任务已结束，这一步没有完成。") : handoff.status === "waiting_observation" ? t("已恢复控制，正在核对当前画面。") : t("完成后点击右上角「恢复控制」，系统会重新核对画面再继续。请不要在对话中发送密码或验证码。");
 	}
 
 	byId("wall").hidden = devices.length === 0;
 	byId("plan").hidden = devices.length === 0 && !(status.todos || []).length;
-	byId("device-label").textContent = devices.length === 1 ? devices[0].name + " · …" + (devices[0].serialSuffix || "") : devices.length ? devices.length + " 台设备" : "选择设备";
+	byId("device-label").textContent = devices.length === 1 ? devices[0].name + " · …" + (devices[0].serialSuffix || "") : devices.length ? devices.length + t(" 台设备") : t("选择设备");
 
 	const hint = connectionState(status, board, devices, connected);
 	byId("connection-dot").className = "dot " + (devices.length && !hint.warning ? "ready" : hint.warning ? "warning" : "");
 	byId("connection-tip").textContent = hint.label + "：" + hint.detail;
-	byId("connection-dot-button").setAttribute("aria-label", "设备连接状态：" + hint.label);
-	byId("health-label").textContent = status.startRequired ? hint.label : !devices.length ? "未连接设备" : hint.warning || !connected || ["manual", "paused"].includes(mode) ? hint.label : "环境已就绪";
+	byId("connection-dot-button").setAttribute("aria-label", t("设备连接状态：") + hint.label);
+	byId("health-label").textContent = status.startRequired ? hint.label : !devices.length ? t("未连接设备") : hint.warning || !connected || ["manual", "paused"].includes(mode) ? hint.label : t("环境已就绪");
 	byId("health-detail").textContent = hint.detail;
-	byId("environment-tip").textContent = hint.warning ? hint.detail : "设备连接正常。遇到连接或操作问题，点击查看解决办法。";
+	byId("environment-tip").textContent = hint.warning ? hint.detail : t("设备连接正常。遇到连接或操作问题，点击查看解决办法。");
 	byId("environment-help").classList.toggle("has-issue", hint.warning);
-	byId("access-link").textContent = hint.warning ? "接入指引" : "连接帮助";
+	byId("access-link").textContent = hint.warning ? t("接入指引") : t("连接帮助");
 	byId("access-link").classList.toggle("issue", hint.warning);
 	const needsRecheck = active && (hint.alert || board.connectionRecovery?.status === "waiting_recheck" || board.environment?.stale && mode === "reconciling" || status.errorCode === "device_unavailable");
 	byId("connection-alert").hidden = !needsRecheck;
@@ -1669,8 +1718,8 @@ function renderBoard(status) {
 	const showControls = devices.length > 0 && !ended && Boolean(boardToken);
 	byId("takeover").hidden = !showControls; byId("takeover").disabled = !active;
 	// Takeover is the pause: no screenshots or model calls until the person resumes control.
-	byId("takeover").innerHTML = mode === "manual" ? icon("play") + "<span>恢复控制</span>" : icon("hand") + "<span>接管设备</span>";
-	byId("takeover").title = mode === "manual" ? "恢复后会先重新截图核对画面，再继续执行" : "暂停 AI 操作，由你直接操作手机";
+	byId("takeover").innerHTML = mode === "manual" ? icon("play") + t("<span>恢复控制</span>") : icon("hand") + t("<span>接管设备</span>");
+	byId("takeover").title = mode === "manual" ? t("恢复后会先重新截图核对画面，再继续执行") : t("暂停 AI 操作，由你直接操作手机");
 	byId("takeover").classList.toggle("returning", mode === "manual");
 	byId("menu-recheck").disabled = (!active && !status.canSelectDevice) || !boardToken;
 	byId("disconnect").disabled = !active || !boardToken;
@@ -1689,7 +1738,7 @@ function renderBoard(status) {
 		c.watermark.hidden = !covered;
 		c.watermark.classList.toggle("placeholder", !(mode === "manual" && !controllable) && !c.hadFrame);
 		// An open stream waiting for its next key frame is refreshing, not disconnected.
-		c.watermark.textContent = mode === "manual" && !controllable ? "你正在手动控制设备" : !c.hadFrame ? "正在连接设备画面…" : ended && !c.ws ? "最后画面 · 任务已结束" : c.ws ? "正在刷新画面…" : "连接中断 · 最后有效画面";
+		c.watermark.textContent = mode === "manual" && !controllable ? t("你正在手动控制设备") : !c.hadFrame ? t("正在连接设备画面…") : ended && !c.ws ? t("最后画面 · 任务已结束") : c.ws ? t("正在刷新画面…") : t("连接中断 · 最后有效画面");
 	}
 	renderPlan(status);
 	renderStart(status);
@@ -1701,6 +1750,34 @@ function renderBoard(status) {
 	renderEnvironment(board);
 	renderReport(status);
 }
+// Re-render presentation only. No task action, control input, stream restart or page navigation.
+addEventListener("opengui:languagechange", () => {
+ const focused = document.activeElement, reviewId = focused.closest?.('[data-review-id]')?.dataset.reviewId;
+ const field = focused.matches('input,textarea') ? { id: focused.id, reviewId, tag: focused.tagName.toLowerCase(), start: focused.selectionStart, end: focused.selectionEnd } : null;
+ const budgetValue = byId("budget-additional")?.value;
+ traceSnapshot = reviewSnapshot = testSnapshot = planSnapshot = reportSnapshot = "";
+ byId("execution-budget").removeAttribute("data-state");
+ byId("start-panel").removeAttribute("data-snapshot");
+ renderTemplates();
+ if (boardStatus) { renderBoard(boardStatus); renderStart(boardStatus, true); }
+ if (byId("devices").open) renderDeviceChoices();
+ for (const id of ["account-error", "devices-message", "toast", "start-preview-note", "start-preview-caption"]) {
+  const node = byId(id); node.textContent = t(i18n.source(node.textContent));
+ }
+ if (lastConnectionDiagnostic) renderConnectionDiagnostic(lastConnectionDiagnostic);
+ else byId("connection-diagnostic").textContent = t(i18n.source(byId("connection-diagnostic").textContent));
+ if (byId("model-info").open) {
+  byId("model-list").querySelector("b").textContent = t("跟随 WorkBuddy");
+  byId("model-list").querySelector("small").textContent = t("使用当前对话的模型");
+  byId("model-message").textContent = t("执行模型跟随当前 WorkBuddy 对话。");
+ }
+ byId("zoom").setAttribute("aria-label", byId("stage").classList.contains("zoomed") ? t("还原设备画面") : t("放大设备画面"));
+ if (budgetValue !== undefined && byId("budget-additional")) byId("budget-additional").value = budgetValue;
+ if (field) {
+  const target = field.id ? byId(field.id) : [...document.querySelectorAll('[data-review-id]')].find(node => node.dataset.reviewId === field.reviewId)?.querySelector(field.tag);
+  if (target) { target.focus({ preventScroll: true }); if (field.start !== null) target.setSelectionRange(field.start, field.end); }
+ }
+});
 for (const [id, format] of [["export-md", "md"], ["export-word", "docx"], ["export-pdf", "pdf"], ["export-evidence", "zip"]]) {
 	byId(id).href = location.pathname + "report?format=" + format;
 }

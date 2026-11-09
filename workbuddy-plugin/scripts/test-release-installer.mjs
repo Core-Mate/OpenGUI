@@ -23,7 +23,7 @@ try {
  const app = join(temporary, 'WorkBuddy AI.app')
  const cli = join(app, 'Contents/Resources/app.asar.unpacked/cli')
  await mkdir(join(cli,'dist'), {recursive:true})
- await writeFile(join(app,'Contents/Info.plist'), '<?xml version="1.0"?><plist version="1.0"><dict><key>CFBundleIdentifier</key><string>com.tencent.workbuddy.mac</string><key>CFBundleExecutable</key><string>Electron</string><key>CFBundleShortVersionString</key><string>5.5.3</string></dict></plist>')
+ await writeFile(join(app,'Contents/Info.plist'), '<?xml version="1.0"?><plist version="1.0"><dict><key>CFBundleIdentifier</key><string>com.workbuddy.workbuddy-ai</string><key>CFBundleExecutable</key><string>Electron</string><key>CFBundleShortVersionString</key><string>5.5.3</string></dict></plist>')
  await writeFile(join(cli,'product.json'), JSON.stringify({dataFolderName:'.workbuddy-ai'}))
  await writeFile(join(cli,'dist/codebuddy.js'), 'UserPromptSubmit PreToolUse Stop SubagentStop FinalStop SessionEnd StopFailure')
  await writeFile(join(bin, 'ps'), '#!/bin/sh\nprintf "%s\\n" "$TEST_APP/Contents/MacOS/Electron"\n', {mode:0o755})
@@ -31,7 +31,7 @@ try {
  await mkdir(config, {recursive:true})
  await writeFile(join(config, 'mcp.json'), JSON.stringify({mcpServers:{other:{command:'keep-me'}}}))
  await writeFile(join(config, 'settings.json'), JSON.stringify({custom:true,hooks:{Stop:[{hooks:[{type:'command',command:'other-hook'}]}]}}))
- const archive = join(root, 'dist/opengui-mcp-0.4.1.tgz')
+ const archive = join(root, 'dist/opengui-mcp-0.4.2.tgz')
  const installer = testCurl ? join(root, 'install.sh') : process.argv[2] ?? join(root, 'scripts/install-macos.command')
  const bootstrapSource = testCurl ? await readFile(installer, 'utf8') : undefined
  const opened = join(temporary, 'opened-guides.txt')
@@ -43,8 +43,8 @@ for ((i=1; i<=$#; i++)); do
  case "$arg" in https://*) url=$arg ;; -o) ((i+=1)); target=\${!i} ;; esac
 done
 case "$url" in
- https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/scripts/install-macos.command) cp "$TEST_SOURCE/scripts/install-macos.command" "$target" ;;
- https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/resources/OpenGUI-*) cp "$TEST_SOURCE/resources/OpenGUI-授权指南.html" "$target" ;;
+ https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-v0.4.2/installer.sh) cp "$TEST_SOURCE/scripts/install-macos.command" "$target" ;;
+ https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-v0.4.2/OpenGUI-Authorization.html) cp "$TEST_SOURCE/resources/OpenGUI-授权指南.html" "$target" ;;
  *) exec /usr/bin/curl "$@" ;;
 esac
 `, {mode:0o755})
@@ -53,7 +53,7 @@ esac
  const launchDirectory = join(temporary, 'restricted launch directory')
  await mkdir(launchDirectory)
  const sandboxProfile = `(version 1) (allow default) (deny file-read-metadata (subpath ${JSON.stringify(launchDirectory)}))`
- const run = (extra={}) => spawnSync(deniedCwd ? '/usr/bin/sandbox-exec' : 'bash', [...(deniedCwd ? ['-p', sandboxProfile, 'bash'] : []), ...(testCurl ? ['-s', '--'] : [installer]), '--archive', archive, ...(!testCurl && process.argv[2] ? [] : ['--app', app])], {encoding:'utf8',cwd:launchDirectory,input:bootstrapSource,env:{...process.env,HOME:home,WORKBUDDY_CONFIG_DIR:'',CODEBUDDY_CONFIG_DIR:'',WORKBUDDY_INSTANCE_NUMBER:'',TEST_APP:app,TEST_SOURCE:root,TEST_OPEN_LOG:opened,PATH:bin+':'+process.env.PATH,...extra}})
+ const run = (extra={}) => spawnSync(deniedCwd ? '/usr/bin/sandbox-exec' : 'bash', [...(deniedCwd ? ['-p', sandboxProfile, 'bash'] : []), ...(testCurl ? ['-s', '--'] : [installer]), '--archive', archive, '--edition', 'international', ...(!testCurl && process.argv[2] ? [] : ['--app', app])], {encoding:'utf8',cwd:launchDirectory,input:bootstrapSource,env:{...process.env,HOME:home,WORKBUDDY_CONFIG_DIR:'',CODEBUDDY_CONFIG_DIR:'',WORKBUDDY_INSTANCE_NUMBER:'',OPENGUI_DOWNLOAD_SOURCE:'',OPENGUI_VIDEO_MIRROR:'',TEST_APP:app,TEST_SOURCE:root,TEST_OPEN_LOG:opened,PATH:bin+':'+process.env.PATH,...extra}})
  const originalMcp = await readFile(join(config,'mcp.json'),'utf8')
  assert.equal(JSON.parse(originalMcp).mcpServers.opengui, undefined)
  let result
@@ -65,6 +65,9 @@ esac
   }
   const started = Date.now()
   result=run(); assert.equal(result.status,0,result.stderr+'\n'+result.stdout)
+  assert.match(result.stdout, /edition: international/)
+  assert.match(result.stdout, /Download source: official; npm: https:\/\/registry.npmjs.org/)
+  await assert.rejects(readFile(join(home, '.workbuddy/mcp.json')), { code: 'ENOENT' })
   const mcp=JSON.parse(await readFile(join(config,'mcp.json'))), settings=JSON.parse(await readFile(join(config,'settings.json')))
   assert.equal(mcp.mcpServers.other.command,'keep-me'); assert.equal(settings.custom,true)
   assert.equal(settings.hooks.Stop.length,2, JSON.stringify({iteration:i, settings, stdout:result.stdout, stderr:result.stderr}))
@@ -75,7 +78,7 @@ esac
   if (i === 0) assert.match(result.stdout, /CONFIG_WRITTEN/)
   else assert.match(result.stdout, /ALREADY_CONFIGURED/)
   const state=JSON.parse(await readFile(join(stateRoot,`local-install-${createHash('sha256').update(config).digest('hex').slice(0,16)}.json`)))
-  assert.equal(state.version,'0.4.1'); assert.equal(state.configRoot, config); assert(state.backups.every(b=>b.backup===null || b.backup.includes('before-opengui')))
+  assert.equal(state.version,'0.4.2'); assert.equal(state.configRoot, config); assert(state.backups.every(b=>b.backup===null || b.backup.includes('before-opengui')))
   if (testCurl) {
    const receiptPath = result.stdout.match(/INSTALLATION_RESULT: (.+)/)?.[1]
    assert(receiptPath, result.stdout)

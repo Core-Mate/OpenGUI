@@ -2,7 +2,7 @@
 
 适用于 macOS（Apple 芯片 / Intel）、WorkBuddy 5.5.3 及以上版本，包含国际版 WorkBuddy AI。通过 [OpenGUI GitHub 仓库](https://github.com/Core-Mate/OpenGUI)和 GitHub Release 安装本地 MCP、Skill、任务 Hooks 及依赖，不需要先在官方连接器市场上架，也不需要部署 `server/` 或编译 Android 客户端。
 
-当前公开运行时为 [0.4.1 公测预发布版](https://github.com/Core-Mate/OpenGUI/releases/tag/opengui-workbuddy-v0.4.1)，国内版和国际版共用同一个安装包。中英文切换、自动跟随 WorkBuddy 语言和模拟器下拉框改进尚未合入公开源码或安装包。
+当前公开运行时为 [0.4.2 公测预发布版](https://github.com/Core-Mate/OpenGUI/releases/tag/opengui-workbuddy-v0.4.2)，国内版和国际版共用同一个安装包。工作台界面支持中英文切换，默认跟随 WorkBuddy 语言。
 
 完整流程：**运行 GitHub 安装脚本 → 重启 WorkBuddy 一次 → 用户授权 Skill 和 MCP → 原生工具验证 → 登录并开始手机任务**。
 
@@ -27,7 +27,7 @@
 我的国际版应用位于 /Applications/WorkBuddy AI.app。
 
 先读取仓库 workbuddy-plugin/docs/install-from-github.zh-CN.md，并检查公开安装脚本的参数。
-使用仓库 workbuddy-plugin/install.sh，明确指定 --app "/Applications/WorkBuddy AI.app" 和 --download-source official。
+使用 0.4.2 Release 中的 install.sh（https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-v0.4.2/install.sh），明确指定 --app "/Applications/WorkBuddy AI.app" 和 --download-source official。
 先执行 --check；通过后执行完整安装，保留安装结果、日志和授权指南路径。
 已有运行中的 OpenGUI 任务导致升级受阻时，报告原因并保留原配置，不强制结束进程。
 
@@ -44,16 +44,16 @@ WorkBuddy 的正常终端权限提示仍适用。如果它无法读取 GitHub �
 可选：先执行环境检查。入口会下载并校验文件、保留本次检查记录，不写 MCP、Skill 或 Hooks 配置：
 
 ```bash
-cd "$HOME" && curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh | bash -s -- --check --app "/Applications/WorkBuddy AI.app" --download-source official
+cd "$HOME" && curl -fsSL https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-v0.4.2/install.sh | bash -s -- --check --app "/Applications/WorkBuddy AI.app" --download-source official
 ```
 
 然后执行完整安装：
 
 ```bash
-cd "$HOME" && curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh | bash -s -- --app "/Applications/WorkBuddy AI.app" --download-source official
+cd "$HOME" && curl -fsSL https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-v0.4.2/install.sh | bash -s -- --app "/Applications/WorkBuddy AI.app" --download-source official
 ```
 
-也可以[下载 install.sh](https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh)，保存到电脑后执行：
+也可以[下载 install.sh](https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-v0.4.2/install.sh)，保存到电脑后执行：
 
 ```bash
 bash /实际下载路径/install.sh --app "/Applications/WorkBuddy AI.app" --download-source official

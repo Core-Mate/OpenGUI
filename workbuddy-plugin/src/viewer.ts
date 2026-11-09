@@ -19,6 +19,7 @@ import type { TaskStore, StoredTask } from './task-store.ts'
 import type { CoreMateClient } from './coremate-client.ts'
 import type { DeviceChoice, DeviceInfo } from './device-info.ts'
 import type { ConnectionDiagnostic } from './connection-diagnostics.ts'
+import type { UiLocale } from './ui-i18n.ts'
 
 export interface ViewerDevice extends VideoDevice, Partial<Pick<DeviceInfo, 'model' | 'manufacturer' | 'os' | 'osVersion' | 'sdk' | 'connection'>> { readonly name: string }
 export interface ViewerStreams {
@@ -52,6 +53,7 @@ interface Viewer {
   starting?: boolean
   nextTask?: Promise<{ viewerId: string; workbenchUrl: string }>
   suggestedDeviceId?: string | undefined
+  hostUiLocale?: () => UiLocale | undefined
   /** Live views of a candidate device on the start page; never the task's display. */
   previews?: Set<ScrcpyStreamSink>
 }
@@ -408,6 +410,7 @@ export class ViewerServer {
   endOwner(owner: string): void { for (const v of this.viewers.values()) if (v.owner === owner) { v.ended = true; v.plan.pause(); this.closePreviews(v); this.persist(v) } }
   endTask(id: string): void { const viewer = this.require(id); viewer.ended = true; viewer.plan.pause(); this.persist(viewer) }
   url(id: string): string { const v = this.require(id); return `${this.origin}/${v.token}/` }
+  setHostUiLocale(id: string, source: () => UiLocale | undefined): void { this.require(id).hostUiLocale = source }
   async dispose(): Promise<void> {
     clearInterval(this.sweep)
     for (const v of this.viewers.values()) this.closeViewer(v.id, v.owner)
@@ -467,8 +470,8 @@ export class ViewerServer {
           res.setHeader('Referrer-Policy', 'no-referrer')
           res.setHeader('X-Content-Type-Options', 'nosniff')
           res.setHeader('Content-Security-Policy', "default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'")
-          if (req.method === 'GET' && route === '') { v.lastPage = this.now(); res.setHeader('Content-Type', 'text/html; charset=utf-8'); res.end(viewerPage()); return }
-          if (req.method === 'GET' && route === 'status') { v.lastPage = this.now(); res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(this.snapshot(v))); return }
+          if (req.method === 'GET' && route === '') { v.lastPage = this.now(); res.setHeader('Content-Type', 'text/html; charset=utf-8'); res.end(viewerPage(v.hostUiLocale?.())); return }
+          if (req.method === 'GET' && route === 'status') { v.lastPage = this.now(); res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify({ ...this.snapshot(v), uiLocale: v.hostUiLocale?.() ?? null })); return }
           if (req.method === 'GET' && route === 'devices') {
             const devices = await this.deviceListHandler?.(AbortSignal.timeout(10_000), url.searchParams.get('refresh') === '1', v.id) ?? []
             this.update(v)

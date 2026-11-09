@@ -1,11 +1,11 @@
 # Install OpenGUI into WorkBuddy
 
-This guide installs the published OpenGUI 0.4.1 WorkBuddy connector on macOS. It uses the [official public-testing release](https://github.com/Core-Mate/OpenGUI/releases/tag/opengui-workbuddy-v0.4.1); no source checkout, system Node installation, full backend deployment, or DSH installation is needed.
+This guide installs the published OpenGUI 0.4.2 WorkBuddy connector on macOS. It uses the [official public-testing release](https://github.com/Core-Mate/OpenGUI/releases/tag/opengui-workbuddy-v0.4.2); no source checkout, system Node installation, full backend deployment, or DSH installation is needed.
 
 > [!IMPORTANT]
 > **Restart WorkBuddy once after installation.** Finish other tasks, **fully quit with ⌘Q**, then reopen WorkBuddy before authorizing the Skill and connector. Closing its window is not enough.
 
-For copyable WorkBuddy chat prompts and the full Chinese flow, see [install from GitHub](docs/install-from-github.zh-CN.md). China and international WorkBuddy use the same OpenGUI 0.4.1 package and version.
+For copyable WorkBuddy chat prompts and the full Chinese flow, see [install from GitHub](docs/install-from-github.zh-CN.md). China and international WorkBuddy use the same OpenGUI 0.4.2 package and version.
 
 ## Download and run the installer
 
@@ -14,18 +14,18 @@ The complete download, authorization and first-task instructions are in the [roo
 **China edition — WorkBuddy.app:**
 
 ```sh
-cd "$HOME" && curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh | bash -s -- --app "/Applications/WorkBuddy.app" --download-source cn
+cd "$HOME" && curl -fsSL https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-v0.4.2/install.sh | bash -s -- --app "/Applications/WorkBuddy.app" --download-source cn
 ```
 
 **International edition — WorkBuddy AI.app:**
 
 ```sh
-cd "$HOME" && curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh | bash -s -- --app "/Applications/WorkBuddy AI.app" --download-source official
+cd "$HOME" && curl -fsSL https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-v0.4.2/install.sh | bash -s -- --app "/Applications/WorkBuddy AI.app" --download-source official
 ```
 
-Install separately if you use both editions. Replace the application path if it has been moved or renamed. Alternatively, [download install.sh](https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh) and run `bash /actual/path/install.sh` with the same `--app` and `--download-source` arguments. Restart the selected WorkBuddy once afterward, then authorize OpenGUI and verify the connection.
+Install separately if you use both editions. Replace the application path if it has been moved or renamed. Alternatively, [download install.sh](https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-v0.4.2/install.sh) and run `bash /actual/path/install.sh` with the same `--app` and `--download-source` arguments. Restart the selected WorkBuddy once afterward, then authorize OpenGUI and verify the connection.
 
-The repository entry and its pinned installer/authorization guide are published together. They install the refreshed public-testing 0.4.1 runtime. This release uses new versioned assets and adjacent SHA-256 sidecars; earlier releases remain unchanged. The [manual installation guide](resources/OpenGUI-安装指南.html) remains available as an alternative.
+The entry, installer and authorization guide are immutable assets of the 0.4.2 release, so the reviewed command and the files users run stay identical. They install the public-testing 0.4.2 runtime with adjacent SHA-256 sidecars; earlier releases remain unchanged. The [manual installation guide](resources/OpenGUI-安装指南.html) remains available as an alternative.
 
 The entry downloads the installer and a self-contained [authorization guide](resources/OpenGUI-授权指南.html), verifies their SHA-256 pins, and runs installation without a Terminal confirmation or Finder step. After successful configuration it opens the guide in the default browser and prints `AUTHORIZATION_GUIDE` and `INSTALLATION_RESULT` paths. WorkBuddy can display that same HTML if browser opening is unavailable. Browser failure does not mean installation failed; do not reinstall just to reopen the instructions.
 
@@ -41,7 +41,7 @@ Choose official Node.js and npm sources for one installation:
 bash /actual/path/install.sh --download-source official
 ```
 
-For the streamed entry, use `curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh | bash -s -- --download-source official`. `--download-source cn` selects the default explicitly. `OPENGUI_DOWNLOAD_SOURCE=cn|official` also sets the default; command-line arguments take priority.
+For the streamed entry, use `curl -fsSL https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-v0.4.2/install.sh | bash -s -- --download-source official`. `--download-source cn` selects the default explicitly. `OPENGUI_DOWNLOAD_SOURCE=cn|official` also sets the default; command-line arguments take priority.
 
 The roughly 13 MB video component is a scrcpy release archive hosted on GitHub. It is separate from Node.js and npm; changing the npm registry does not accelerate it. GitHub bootstrap files and OpenGUI release packages also retain their official URLs.
 
@@ -65,11 +65,11 @@ Automatic discovery recognizes `com.workbuddy.workbuddy`, `com.workbuddy.workbud
 
 ## International WorkBuddy
 
-Custom MCP installation does not require a marketplace listing. Select **WorkBuddy AI.app** with `--app` and use `--download-source official`, as shown above. The OpenGUI 0.4.1 installer supports `--app`.
+Custom MCP installation does not require a marketplace listing. Select **WorkBuddy AI.app** with `--app` and use `--download-source official`, as shown above. The OpenGUI 0.4.2 installer supports `--app`.
 
 The installer reads the selected application’s product metadata. Current international builds use `~/.workbuddy-ai` for MCP, Skill and Hook configuration; China builds use their own configuration root, normally `~/.workbuddy`. OpenGUI keeps shared private runtime/account/device state under `~/.workbuddy/opengui`, with separate installation receipts for each configuration root. Do not operate the same phone through both hosts concurrently.
 
-OpenGUI’s SMS account is separate from WorkBuddy’s Google/GitHub account. OpenGUI currently requires a mainland-China phone number. Chinese/English switching and following WorkBuddy’s display language are being tested and are not yet included in the public source or 0.4.1 package.
+OpenGUI’s SMS account is separate from WorkBuddy’s Google/GitHub account. OpenGUI currently requires a mainland-China phone number. The workbench UI supports Chinese/English and follows WorkBuddy’s display language by default.
 
 In international WorkBuddy AI, authorize and enable OpenGUI under **Experts · Skills · Connectors → Skills**. Then open **Connectors → Custom connectors**, find `opengui`, click **Trust**, and enable it. The user completes both authorizations. An update may trigger another Trust prompt when the runtime path changes. The [official MCP guide](https://www.workbuddy.ai/docs/workbuddy/From-Beginner-to-Expert-Guide/Function-Description/MCP-Guide) also covers custom servers.
 
@@ -102,7 +102,7 @@ If Skill or connector authorization remains incomplete, reopen the authorization
 
 ## MCP missing after installation
 
-The published 0.4.1 installer can write configuration while newer WorkBuddy versions are running, but that does not establish live reload. A local WorkBuddy 5.7.6 comparison found that neither external in-place writing nor atomic replacement updated the custom MCP list. Saving the same configuration through WorkBuddy's built-in MCP editor updated the list without restarting. See the [local verification record](docs/mcp-config-reload-verification.zh-CN.md).
+The published 0.4.2 installer can write configuration while newer WorkBuddy versions are running, but that does not establish live reload. A local WorkBuddy 5.7.6 comparison found that neither external in-place writing nor atomic replacement updated the custom MCP list. Saving the same configuration through WorkBuddy's built-in MCP editor updated the list without restarting. See the [local verification record](docs/mcp-config-reload-verification.zh-CN.md).
 
 The standard installation flow requires one restart: finish other tasks, fully quit WorkBuddy with Command-Q, reopen it, then continue Skill authorization and MCP trust. If OpenGUI is still missing after that, open **Experts · Skills · Connectors → Connectors → Custom connectors → Add MCP** and check for the `opengui` entry in the expected configuration file. If it is absent, inspect the installer receipt and configuration path. The built-in editor's **Save** action is a verified manual refresh option; it is not the default onboarding step. If configuration is already loaded but a connection fails, inspect the actual error before restarting again.
 

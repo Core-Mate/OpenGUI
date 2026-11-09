@@ -3,14 +3,14 @@
 set -euo pipefail
 umask 077
 HOST=workbuddy
-VERSION=0.4.1
+VERSION=0.4.2
 ARCHIVE_NAME=opengui-mcp-$VERSION.tgz
 usage() {
   echo "OpenGUI for $HOST $VERSION (macOS arm64/x64)"
-  echo "Usage: bash $0 [--check] [--repair-legacy] [--download-source cn|official] [--video-mirror https://host/path] [--app /path/WorkBuddy.app] [--config-root /verified/path] [--archive /absolute/path/$ARCHIVE_NAME]"
+  echo "Usage: bash $0 [--check] [--repair-legacy] [--edition auto|cn|international] [--download-source cn|official] [--video-mirror https://host/path] [--app /path/WorkBuddy.app] [--config-root /verified/path] [--archive /absolute/path/$ARCHIVE_NAME]"
   echo 'Downloads a verified prebuilt package and private Node. No sudo or source build.'
-  echo 'Node and npm default to npmmirror (cn), with official fallback. Video uses GitHub unless --video-mirror is supplied.'
-  echo 'Automatic discovery prefers WorkBuddy over WorkBuddy AI. Use --app to select a specific bundle.'
+  echo 'Node and npm default to official sources for WorkBuddy AI, and npmmirror (cn) with official fallback for China WorkBuddy. Video uses GitHub unless --video-mirror is supplied.'
+  echo 'Automatic discovery prefers China WorkBuddy over international WorkBuddy AI. Use --edition international or --app to select the international edition.'
   echo 'Finish existing OpenGUI tasks before upgrading. WorkBuddy may stay open during installation; fully quit and reopen once afterward.'
 }
 archive=
@@ -18,14 +18,15 @@ app=
 config_root=${WORKBUDDY_CONFIG_DIR:-${CODEBUDDY_CONFIG_DIR:-}}
 check_only=false
 repair_legacy=false
-download_source=${OPENGUI_DOWNLOAD_SOURCE:-cn}
+edition=auto
+download_source=${OPENGUI_DOWNLOAD_SOURCE:-}
 video_mirror=${OPENGUI_VIDEO_MIRROR:-}
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --help|-h) usage; exit 0 ;;
-    --archive|--app|--config-root|--download-source|--video-mirror)
+    --archive|--app|--config-root|--edition|--download-source|--video-mirror)
       [ "$#" -ge 2 ] || { usage; exit 1; }
-      case "$1" in --archive) archive=$2 ;; --app) app=$2 ;; --config-root) config_root=$2 ;; --download-source) download_source=$2 ;; --video-mirror) video_mirror=$2 ;; esac
+      case "$1" in --archive) archive=$2 ;; --app) app=$2 ;; --config-root) config_root=$2 ;; --edition) edition=$2 ;; --download-source) download_source=$2 ;; --video-mirror) video_mirror=$2 ;; esac
       shift 2 ;;
     --check) check_only=true; shift ;;
     --repair-legacy) repair_legacy=true; shift ;;
@@ -35,12 +36,11 @@ done
 fail() { echo "[$1] $2" >&2; exit 1; }
 started=$SECONDS
 stage() { echo "[$((SECONDS-started))s] $*"; }
+case "$edition" in auto|cn|international) ;; *) fail HOST_EDITION 'Use --edition auto, cn or international.' ;; esac
 case "$download_source" in
-  cn) node_base=https://npmmirror.com/mirrors/node; npm_registry=https://registry.npmmirror.com ;;
-  official) node_base=https://nodejs.org/dist; npm_registry=https://registry.npmjs.org ;;
+  ''|cn|official) ;;
   *) fail DOWNLOAD_SOURCE 'Use --download-source cn or official.' ;;
 esac
-export OPENGUI_DOWNLOAD_SOURCE="$download_source"
 if [ -n "$video_mirror" ]; then
   case "$video_mirror" in https://?*) ;; *) fail VIDEO_MIRROR 'The video mirror must be an HTTPS archive directory.' ;; esac
   case "$video_mirror" in *[[:space:]]*|*\?*|*\#*|*@*) fail VIDEO_MIRROR 'The video mirror must not contain credentials, whitespace, query or fragment.' ;; esac
@@ -58,6 +58,12 @@ is_workbuddy_bundle() {
     *) return 1 ;;
   esac
 }
+matches_edition() {
+  case "$edition:$1" in
+    auto:*|international:com.workbuddy.workbuddy-ai|cn:com.workbuddy.workbuddy|cn:com.tencent.workbuddy.*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
 if [ -z "$app" ]; then
   # Prefer standard WorkBuddy, including its legacy identity, over WorkBuddy AI.
   # Bundle identities also recognize renamed and mounted applications.
@@ -67,13 +73,14 @@ if [ -z "$app" ]; then
     [ -f "$candidate/Contents/Info.plist" ] || continue
     bundle_id=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$candidate/Contents/Info.plist" 2>/dev/null || true)
     is_workbuddy_bundle "$bundle_id" || continue
+    matches_edition "$bundle_id" || continue
     case "$bundle_id" in
       com.workbuddy.workbuddy-ai) candidates+=("$candidate") ;;
       *) standard_candidates+=("$candidate") ;;
     esac
   done
   if [ "${#standard_candidates[@]}" -gt 0 ]; then candidates=("${standard_candidates[@]}"); fi
-  [ "${#candidates[@]}" -gt 0 ] || fail HOST_NOT_FOUND 'Install WorkBuddy first, or select its bundle with --app /path/WorkBuddy.app.'
+  [ "${#candidates[@]}" -gt 0 ] || fail HOST_NOT_FOUND "No WorkBuddy bundle found for edition $edition. Install that edition, or select its bundle with --app /absolute/path/WorkBuddy.app."
   [ "${#candidates[@]}" = 1 ] || fail HOST_AMBIGUOUS 'Multiple WorkBuddy bundles at the preferred priority found. Select the intended one with --app /path/WorkBuddy.app.'
   app=${candidates[0]}
 fi
@@ -82,6 +89,17 @@ case "$app" in /*.app) ;; *) fail HOST_PATH 'The --app path must be an absolute 
 app=$(cd "$app" && pwd -P)
 bundle_id=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Contents/Info.plist" 2>/dev/null || true)
 is_workbuddy_bundle "$bundle_id" || fail HOST_IDENTITY 'Selected bundle is not a recognized WorkBuddy application.'
+matches_edition "$bundle_id" || fail HOST_EDITION 'Selected application does not match --edition. Select the intended bundle or edition.'
+host_edition=cn
+if [ "$bundle_id" = com.workbuddy.workbuddy-ai ]; then host_edition=international; fi
+if [ -z "$download_source" ]; then
+  if [ "$host_edition" = international ]; then download_source=official; else download_source=cn; fi
+fi
+case "$download_source" in
+  cn) node_base=https://npmmirror.com/mirrors/node; npm_registry=https://registry.npmmirror.com ;;
+  official) node_base=https://nodejs.org/dist; npm_registry=https://registry.npmjs.org ;;
+esac
+export OPENGUI_DOWNLOAD_SOURCE="$download_source"
 host_version=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Contents/Info.plist")
 [[ "$host_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail HOST_VERSION 'Cannot determine a supported WorkBuddy version.'
 IFS=. read -r major minor patch <<< "$host_version"
@@ -110,7 +128,7 @@ for cli_name in codebuddy.js codebuddy-headless.js codebuddy-lite-wb.mjs; do
   if [ "$all_hooks" = true ]; then cli_compatible=true; break; fi
 done
 [ "$cli_compatible" = true ] || fail HOST_HOOKS 'No recognized bundled CLI exposes all required lifecycle Hooks. Upgrade to a compatible WorkBuddy build.'
-stage "Preflight: WorkBuddy $host_version; application: $app; configuration: $config_root"
+stage "Preflight: WorkBuddy $host_version; edition: $host_edition; application: $app; configuration: $config_root"
 stage "Download source: $download_source; npm: $npm_registry; video: ${video_mirror:-official GitHub}"
 if [ "$check_only" = true ]; then
   stage 'PREFLIGHT_OK: no files changed. Restart WorkBuddy once after installation; MCP loading and /hooks review still require host verification.'

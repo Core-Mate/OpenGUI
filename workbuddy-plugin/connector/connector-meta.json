@@ -2,21 +2,19 @@
   "name": "OpenGUI",
   "name_zh": "OpenGUI 手机助手",
   "name_en": "OpenGUI Android Assistant",
-  "description": "Let WorkBuddy operate a locally connected Android phone or emulator for GUI testing and reviewed comment operations, with a live workbench for the screen, task plan and run trace.",
-  "description_zh": "连接手机，在右侧确认任务后开始。支持真实截图操作、App 测试和发布内容审核；执行进度自动更新，结束后生成报告。",
-  "description_en": "Let WorkBuddy operate a locally connected Android phone or emulator for GUI testing and reviewed comment operations, with a live workbench for the screen, task plan and run trace.",
+  "description": "Automate your phone for everyday tasks, app testing, content operations, chat and more. Say what you need, and let it take action. After initial setup and authorization, just plug in your phone and go. Leave repetitive tasks to AI, take back your time, and unleash your imagination.",
+  "description_zh": "自动操作你的手机，处理日常事务、测试 App、运营、聊天……说出你的需求，它来动手。 首次安装并授权后，即插即用。把繁琐操作交给 AI，把时间留给自己，释放你的想象力。",
+  "description_en": "Automate your phone for everyday tasks, app testing, content operations, chat and more. Say what you need, and let it take action. After initial setup and authorization, just plug in your phone and go. Leave repetitive tasks to AI, take back your time, and unleash your imagination.",
   "source": "opengui",
   "type": "mcp",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "minWorkbuddyVersion": "5.5.3",
   "examples_zh": [
-    "@opengui",
-    "@opengui 打开手机设置，再返回桌面，确认回到桌面后结束。",
-    "@opengui 帮我测试【应用／页面】的【功能】，输入【测试数据】，预期【结果】，做到【停止位置】就停。"
+    "/opengui 在小红书App中搜索“美食”，帮我获取前3篇贴子的内容整理给我。",
+    "/opengui 帮我打开微信App，查看有哪些未读的好友或群消息，告诉我好友/群的名字和未读条数。"
   ],
   "examples_en": [
-    "@opengui",
-    "@opengui Open phone Settings, then return to the home screen. Verify the home screen and finish.",
-    "@opengui Test [feature] in [app/page] using [test data], expect [result], and stop at [endpoint]."
+    "/opengui Search for “美食” in Xiaohongshu, retrieve the content of the first 3 posts, and organize it for me.",
+    "/opengui Open WeChat and check which friend or group conversations have unread messages. Tell me each friend/group name and its unread message count."
   ]
 }

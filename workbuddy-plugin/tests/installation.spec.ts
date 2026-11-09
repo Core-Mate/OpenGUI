@@ -26,4 +26,10 @@ describe('scoped WorkBuddy installation', () => {
     } })
     expect(original.mcpServers.opengui.command).toBe('old')
   })
+  it('binds display language to the selected host configuration while retaining other environment values', () => {
+    const original = { mcpServers: { opengui: { env: { KEEP: 'local', OPENGUI_HOST_CONFIG_DIR: '/old-host' } } } }
+    const updated = mergeMcpConfig(original, '/managed/node', '/immutable/lib/mcp.js', '/selected-host')
+    expect(updated).toMatchObject({ mcpServers: { opengui: { env: { KEEP: 'local', OPENGUI_HOST_CONFIG_DIR: '/selected-host' } } } })
+    expect(original.mcpServers.opengui.env.OPENGUI_HOST_CONFIG_DIR).toBe('/old-host')
+  })
 })

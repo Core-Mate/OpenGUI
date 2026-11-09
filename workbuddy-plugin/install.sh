@@ -4,8 +4,9 @@ set -euo pipefail
 
 main() (
   umask 077
-  local source_base='https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin'
-  local installer_sha='6df60779059deedb5a60bb9f5b481637912eddc332bacad04591c05898f2d17a'
+  # Immutable release assets for this exact version; never a branch or latest URL.
+  local release_base='https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-v0.4.2'
+  local installer_sha='451f79a80cd3af7834b143be8281149eaf628baa26902bb67e8a7b79a6c13b5c'
   local guide_sha='9f3e1aa73ca2dd86a67497551d8c5d25565a8b32d9f54f075f104a35950cdedc'
   local run_dir= status=failed check_only=false
   local state_root="$HOME/.workbuddy/opengui/installations"
@@ -42,7 +43,7 @@ main() (
   for arg in "$@"; do
     case "$arg" in
       --help|-h)
-        printf 'OpenGUI WorkBuddy installer (macOS)\nUsage: bash install.sh [--check] [--download-source cn|official] [--video-mirror https://host/path] [--app /path/WorkBuddy.app] [--config-root /path] [--archive /path/package.tgz] [--repair-legacy]\nNode/npm default to npmmirror; choose official to use nodejs.org and npmjs.org. Video mirrors are separate.\n'
+        printf 'OpenGUI WorkBuddy installer (macOS)\nUsage: bash install.sh [--check] [--edition auto|cn|international] [--download-source cn|official] [--video-mirror https://host/path] [--app /path/WorkBuddy.app] [--config-root /path] [--archive /path/package.tgz] [--repair-legacy]\nUse --edition international for WorkBuddy AI. Node/npm default to official sources for WorkBuddy AI and npmmirror for China WorkBuddy. Video mirrors are separate.\n'
         return 0 ;;
       --check) check_only=true ;;
     esac
@@ -54,11 +55,11 @@ main() (
   trap 'exit 130' INT
   trap 'exit 143' TERM
   printf '正在下载并校验 OpenGUI 安装文件…\n'
-  fetch "$source_base/scripts/install-macos.command" "$run_dir/installer.sh"
+  fetch "$release_base/installer.sh" "$run_dir/installer.sh"
   verify "$run_dir/installer.sh" "$installer_sha"
   # Download the complete, self-contained guide before changing host configuration.
   if [ "$check_only" = false ]; then
-    fetch "$source_base/resources/OpenGUI-%E6%8E%88%E6%9D%83%E6%8C%87%E5%8D%97.html" "$run_dir/authorization.html"
+    fetch "$release_base/OpenGUI-Authorization.html" "$run_dir/authorization.html"
     verify "$run_dir/authorization.html" "$guide_sha"
   fi
   if [ "$check_only" = true ]; then

@@ -26,7 +26,7 @@ const packagesRoot = await realpath(join(stateRoot, 'packages'))
 assert(!relative(packagesRoot, packageDir).startsWith('..') && relative(packagesRoot, packageDir), 'Install from an immutable WorkBuddy version directory')
 const pkg = JSON.parse(await readFile(join(packageDir, 'package.json'), 'utf8'))
 assert.equal(pkg.name, 'opengui-mcp')
-assert.equal(pkg.version, '0.4.1')
+assert.equal(pkg.version, '0.4.2')
 assert.match(execFileSync(node, ['--version'], { encoding: 'utf8' }).trim(), /^v(?:22\.(?:19|2\d|[3-9]\d)|2[4-9]\.|[3-9]\d\.)/)
 const quote = value => process.platform === 'win32' ? `'${value.replaceAll("'", "''")}'` : `'${value.replaceAll("'", `'"'"'`)}'`
 const command = `${quote(node)} ${quote(join(packageDir, 'lib', 'host-hook.js'))}`
@@ -64,7 +64,7 @@ if (existingMcp) {
     + 'or explicitly remove only that entry if it is no longer needed. Save, then rerun the installation command.')
 }
 const values = [
-  JSON.stringify(mergeMcpConfig(JSON.parse(original[0] ?? '{}'), node, join(packageDir, 'lib', 'mcp.js')), null, 2) + '\n',
+  JSON.stringify(mergeMcpConfig(JSON.parse(original[0] ?? '{}'), node, join(packageDir, 'lib', 'mcp.js'), root), null, 2) + '\n',
   JSON.stringify(mergeHostHooks(JSON.parse(original[1] ?? '{}'), command, previous.hookCommands ?? []), null, 2) + '\n',
   (await readFile(join(packageDir, 'lib', 'opengui-SKILL.md'), 'utf8')).replaceAll('(references.md)', `(${join(packageDir, 'lib', 'opengui-reference.md')})`)
     .replaceAll('(installation.html)', `(<${join(packageDir, 'lib', 'opengui-installation.html')}>)`)

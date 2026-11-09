@@ -6,6 +6,7 @@ import { brokerPort, brokerToken, BROKER_PROTOCOL, VERSION, workbuddyStateDir } 
 import { readFrames, sendFrame, type Message } from './wire.ts'
 import { OpenGuiError, type ExecutionState, type Recovery } from './errors.ts'
 import type { ToolProgress } from './task-events.ts'
+import { hostUiContext, type HostUiContext } from './host-ui-locale.ts'
 
 export class BrokerClient {
   /** Authenticated process identity for lifecycle diagnostics; never exposed as an MCP tool. */
@@ -32,7 +33,7 @@ export class BrokerClient {
     })
   }
 
-  static async connect(port: number, token: string, version = VERSION, role: 'mcp' | 'hook' = 'mcp'): Promise<BrokerClient> {
+  static async connect(port: number, token: string, version = VERSION, role: 'mcp' | 'hook' = 'mcp', uiContext: HostUiContext = hostUiContext()): Promise<BrokerClient> {
     const socket = createConnection({ host: '127.0.0.1', port })
     socket.on('error', () => undefined)
     await new Promise<void>((resolve, reject) => {
@@ -42,7 +43,7 @@ export class BrokerClient {
     })
     const client = new BrokerClient(socket)
     try {
-      const hello = await client.request({ method: 'hello', token, protocol: BROKER_PROTOCOL, version, role }, AbortSignal.timeout(2000)) as { pid?: unknown }
+      const hello = await client.request({ method: 'hello', token, protocol: BROKER_PROTOCOL, version, role, uiContext }, AbortSignal.timeout(2000)) as { pid?: unknown }
       if (typeof hello.pid === 'number' && Number.isSafeInteger(hello.pid) && hello.pid > 0) client.brokerPid = hello.pid
       return client
     } catch (error) { client.close(); throw error }

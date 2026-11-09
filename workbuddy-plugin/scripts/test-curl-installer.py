@@ -36,7 +36,7 @@ while [ "$#" -gt 0 ]; do
 done
 printf '%s\\n' "$url" >> "$TEST_ROOT/downloads"
 if [ "${TEST_DOWNLOAD_FAIL:-}" = 1 ]; then printf partial > "$target"; exit 28; fi
-case "$url" in */scripts/install-macos.command) cp "$TEST_ROOT/payload.sh" "$target" ;; */resources/OpenGUI-*) cp "$TEST_ROOT/guide.html" "$target" ;; *) exit 22 ;; esac
+case "$url" in */releases/download/opengui-workbuddy-v*/installer.sh) cp "$TEST_ROOT/payload.sh" "$target" ;; */releases/download/opengui-workbuddy-v*/OpenGUI-Authorization.html) cp "$TEST_ROOT/guide.html" "$target" ;; *) exit 22 ;; esac
 if [ "${TEST_TAMPER:-}" = 1 ]; then printf tampered >> "$target"; fi
 ''')
         self.command('open', '''#!/bin/bash
