@@ -42,6 +42,7 @@ import { CombinedPhoneHost } from './phone-host.ts'
 import { AndroidEmulatorManager } from './android-emulator.ts'
 import { connectionHint } from './connection-status.ts'
 import { BASE_EXECUTION_BUDGET, MAX_STORED_EXECUTION_BUDGET, executionBudgetInput, requestedOperationLimit, type ExecutionBudgetInput } from './execution-budget.ts'
+import type { UiLocale } from './ui-i18n.ts'
 
 export const WORKBUDDY_MAX_DEVICES = 4
 export const WORKBUDDY_MAX_OPERATIONS = BASE_EXECUTION_BUDGET
@@ -473,6 +474,7 @@ export interface SessionResult {
   evidenceObservationIds?: readonly string[]
 }
 export interface OpenSessionOptions {
+  hostUiLocale?: () => UiLocale | undefined
   onProgress?: ToolProgress | undefined
   executionBudget?: ExecutionBudgetInput | undefined
   stopBeforeSubmit?: true | undefined
@@ -765,6 +767,7 @@ export class WorkBuddyOpenGuiService {
     return { ...await this.viewers.status(opened.viewerId, owner, 0, signal), workbenchUrl: opened.workbenchUrl }
   }
   private initializeViewer(id: string, task: ControlTask, options: OpenSessionOptions): void {
+    if (options.hostUiLocale) this.viewers.setHostUiLocale(id, options.hostUiLocale)
     const board = this.viewers.board(id)
     if (options.objective && (task.objective || board.objective) && options.objective !== (task.objective || board.objective)) throw new Error('task_goal_frozen')
     if (options.successCriteria && (task.successCriteria || board.successCriteria) && options.successCriteria !== (task.successCriteria || board.successCriteria)) throw new Error('task_goal_frozen')

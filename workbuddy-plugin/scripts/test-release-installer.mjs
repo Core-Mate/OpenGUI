@@ -23,7 +23,7 @@ try {
  const app = join(temporary, 'WorkBuddy AI.app')
  const cli = join(app, 'Contents/Resources/app.asar.unpacked/cli')
  await mkdir(join(cli,'dist'), {recursive:true})
- await writeFile(join(app,'Contents/Info.plist'), '<?xml version="1.0"?><plist version="1.0"><dict><key>CFBundleIdentifier</key><string>com.tencent.workbuddy.mac</string><key>CFBundleExecutable</key><string>Electron</string><key>CFBundleShortVersionString</key><string>5.5.3</string></dict></plist>')
+ await writeFile(join(app,'Contents/Info.plist'), '<?xml version="1.0"?><plist version="1.0"><dict><key>CFBundleIdentifier</key><string>com.workbuddy.workbuddy-ai</string><key>CFBundleExecutable</key><string>Electron</string><key>CFBundleShortVersionString</key><string>5.5.3</string></dict></plist>')
  await writeFile(join(cli,'product.json'), JSON.stringify({dataFolderName:'.workbuddy-ai'}))
  await writeFile(join(cli,'dist/codebuddy.js'), 'UserPromptSubmit PreToolUse Stop SubagentStop FinalStop SessionEnd StopFailure')
  await writeFile(join(bin, 'ps'), '#!/bin/sh\nprintf "%s\\n" "$TEST_APP/Contents/MacOS/Electron"\n', {mode:0o755})
@@ -53,7 +53,7 @@ esac
  const launchDirectory = join(temporary, 'restricted launch directory')
  await mkdir(launchDirectory)
  const sandboxProfile = `(version 1) (allow default) (deny file-read-metadata (subpath ${JSON.stringify(launchDirectory)}))`
- const run = (extra={}) => spawnSync(deniedCwd ? '/usr/bin/sandbox-exec' : 'bash', [...(deniedCwd ? ['-p', sandboxProfile, 'bash'] : []), ...(testCurl ? ['-s', '--'] : [installer]), '--archive', archive, ...(!testCurl && process.argv[2] ? [] : ['--app', app])], {encoding:'utf8',cwd:launchDirectory,input:bootstrapSource,env:{...process.env,HOME:home,WORKBUDDY_CONFIG_DIR:'',CODEBUDDY_CONFIG_DIR:'',WORKBUDDY_INSTANCE_NUMBER:'',TEST_APP:app,TEST_SOURCE:root,TEST_OPEN_LOG:opened,PATH:bin+':'+process.env.PATH,...extra}})
+ const run = (extra={}) => spawnSync(deniedCwd ? '/usr/bin/sandbox-exec' : 'bash', [...(deniedCwd ? ['-p', sandboxProfile, 'bash'] : []), ...(testCurl ? ['-s', '--'] : [installer]), '--archive', archive, '--edition', 'international', ...(!testCurl && process.argv[2] ? [] : ['--app', app])], {encoding:'utf8',cwd:launchDirectory,input:bootstrapSource,env:{...process.env,HOME:home,WORKBUDDY_CONFIG_DIR:'',CODEBUDDY_CONFIG_DIR:'',WORKBUDDY_INSTANCE_NUMBER:'',OPENGUI_DOWNLOAD_SOURCE:'',OPENGUI_VIDEO_MIRROR:'',TEST_APP:app,TEST_SOURCE:root,TEST_OPEN_LOG:opened,PATH:bin+':'+process.env.PATH,...extra}})
  const originalMcp = await readFile(join(config,'mcp.json'),'utf8')
  assert.equal(JSON.parse(originalMcp).mcpServers.opengui, undefined)
  let result
@@ -65,6 +65,9 @@ esac
   }
   const started = Date.now()
   result=run(); assert.equal(result.status,0,result.stderr+'\n'+result.stdout)
+  assert.match(result.stdout, /edition: international/)
+  assert.match(result.stdout, /Download source: official; npm: https:\/\/registry.npmjs.org/)
+  await assert.rejects(readFile(join(home, '.workbuddy/mcp.json')), { code: 'ENOENT' })
   const mcp=JSON.parse(await readFile(join(config,'mcp.json'))), settings=JSON.parse(await readFile(join(config,'settings.json')))
   assert.equal(mcp.mcpServers.other.command,'keep-me'); assert.equal(settings.custom,true)
   assert.equal(settings.hooks.Stop.length,2, JSON.stringify({iteration:i, settings, stdout:result.stdout, stderr:result.stderr}))

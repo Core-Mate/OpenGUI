@@ -56,24 +56,36 @@ OpenGUI は実際の画面を読み取り、自然言語の指示でスマート
 
 ## WorkBuddyへのインストール
 
-**macOS（Apple Silicon / Intel）、WorkBuddy 5.5.3 以降**に対応しています。現在の公開版は [0.4.0 公開テスト版](https://github.com/Core-Mate/OpenGUI/releases/tag/opengui-workbuddy-v0.4.0)です。
+**macOS（Apple Silicon / Intel）、WorkBuddy 5.5.3 以降**に対応しています。現在の公開版は [0.4.1 公開テスト版](https://github.com/Core-Mate/OpenGUI/releases/tag/opengui-workbuddy-v0.4.1)です。中国国内版と国際版は、同じ OpenGUI パッケージとバージョンを使用します。カスタム MCP としてインストールでき、コネクターマーケットへの掲載を待つ必要はありません。
+
+OpenGUI と WorkBuddy のアカウントは別です。OpenGUI の SMS ログインには現在も**中国本土の電話番号**が必要です。国際版 WorkBuddy に Google/GitHub でログインしても、OpenGUI には自動ログインされません。
 
 > [!IMPORTANT]
 > **インストール後は WorkBuddy を一度再起動してください。** 他のタスクを終了し、**⌘Q で完全に終了**してから開き直し、OpenGUI を認証してください。ウィンドウを閉じるだけでは終了しません。
 
 **手順1.Terminalコマンドでインストール**
 
-macOS の Terminal で次を実行します：
+macOS の Terminal で、使用する WorkBuddy のエディションに対応するコマンドを実行してください。両方を使う場合は、それぞれのコマンドで個別にインストールします。以降の手順は、ここで選んだエディションで行ってください。
+
+**中国国内版 — WorkBuddy.app**
 
 ```sh
-cd "$HOME" && curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh | bash
+cd "$HOME" && curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh | bash -s -- --app "/Applications/WorkBuddy.app" --download-source cn
 ```
 
-スクリプトは必要なファイルを検証し、ランタイムと OpenGUI を設定します。
+**国際版 — WorkBuddy AI.app**
 
-Node と npm の依存関係は既定で中国の npmmirror を使い、失敗時は公式ソースへ切り替えます。この設定は今回のインストールにのみ適用されます。公式ソースを使う場合は、末尾の `bash` を `bash -s -- --download-source official` に変更してください。動画コンポーネントは別途 GitHub から取得します。[ダウンロード元の選択](workbuddy-plugin/INSTALL.md#download-sources)も参照してください。
+```sh
+cd "$HOME" && curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh | bash -s -- --app "/Applications/WorkBuddy AI.app" --download-source official
+```
 
-[install.sh を個別にダウンロード](https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh)して `bash /実際のパス/install.sh` で実行することもできます。
+インストール先のアプリを明示するため、両方のエディションがあっても対象を取り違えません。アプリの保存先や名前が異なる場合は、`--app` の後のパスを実際のものに置き換えてください。スクリプトは必要なファイルをダウンロードして検証し、ランタイムと OpenGUI を設定します。
+
+中国国内版のコマンドは Node と npm の依存関係を npmmirror から取得し、失敗時は公式ソースへ切り替えます。国際版のコマンドは公式ソースを使います。中国国内版でも公式ソースを使う場合は、`--download-source cn` を `--download-source official` に変更してください。この設定は今回のインストールにのみ適用されます。動画コンポーネントは別途 GitHub から取得します。[ダウンロード元の選択](workbuddy-plugin/INSTALL.md#download-sources)も参照してください。
+
+[install.sh を個別にダウンロード](https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh)し、`bash /実際のパス/install.sh` に上記と同じ `--app` と `--download-source` の引数を付けて実行することもできます。
+
+国際版のアカウント制限は[国際版のインストール説明](workbuddy-plugin/INSTALL.md#international-workbuddy)、認証と接続確認の詳細は[GitHub からのインストール手順（中国語）](workbuddy-plugin/docs/install-from-github.zh-CN.md)を参照してください。
 
 **手順2.WorkBuddyを一度再起動**
 
@@ -81,7 +93,10 @@ Node と npm の依存関係は既定で中国の npmmirror を使い、失敗�
 
 **手順3.Skillとコネクターを認証**
 
-WorkBuddy の「专家·技能·连接器 → 技能」で OpenGUI を選び、認証します。続いて「连接器」で OpenGUI を認証してください。**Skill とコネクターの両方に認証が必要です。**
+- **中国国内版**：「专家·技能·连接器 → 技能」で OpenGUI を認証して有効化します。続いて「连接器 → 自定义连接器」で `opengui` を選び、信頼を確認して有効化してください。
+- **国際版**：**Experts · Skills · Connectors → Skills** で OpenGUI を認証して有効化します。続いて **Connectors → Custom connectors** で `opengui` の **Trust** をクリックし、有効化してください。
+
+更新後に Trust が再表示された場合も、内容を確認して本人が承認してください。**Skill とコネクターの両方に認証が必要です。**
 
 ![OpenGUI Skill と MCP の認証手順](./workbuddy-plugin/resources/Skill和MCP授权.gif)
 
@@ -89,7 +104,13 @@ OpenGUI が見つからない場合は「自定义连接器」の MCP サービ�
 
 **手順4.接続を確認して使い始める**
 
-Android スマートフォンの USB デバッグを有効にして PC に接続し、端末上で USB デバッグを承認します。WorkBuddy で `/opengui` に続けて実行したい指示を入力してください。
+まず WorkBuddy に「`opengui_list_devices` を一度だけ呼び出して接続を確認し、端末数を報告してください。スマートフォンは操作しないでください」と依頼できます。正常な呼び出しで端末数が 0 台でも、プラグインの接続は確認できます。
+
+スマートフォンのタスクを開始する手順：
+
+1. Android スマートフォンの USB デバッグを有効にして PC に接続し、端末上で承認します。作業画面からローカルの Android エミュレーターを起動することもできます。
+2. WorkBuddy で `/opengui` を入力し、右側のタスク画面を開いて OpenGUI にログインします。
+3. 目標を入力し、使用する端末を確認して **开始执行**（タスク開始）をクリックします。実行モデルは現在の WorkBuddy の会話モデルに従います。
 
 試してみる：小紅書の投稿を準備
 
@@ -102,6 +123,8 @@ Android スマートフォンの USB デバッグを有効にして PC に接続
 ```text
 /opengui 【アプリ／画面】の【機能や操作フロー】をテストし、特に【確認する点】を確認してください。問題があれば手順とスクリーンショットを記録し、【終了条件】に達したら停止してください。
 ```
+
+**表示言語（未公開）**：中国語／英語の切り替え、WorkBuddy の表示言語への追従、エミュレーター選択 UI の改善はテスト中です。公開ソースと 0.4.1 パッケージにはまだ含まれていません。言語切り替えは UI が対象で、タスクの説明、TODO の内容、確認用の下書きは原文を保持します。
 
 ## DeepSeek HarnessでOpenGUIを使う
 

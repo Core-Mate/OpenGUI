@@ -6,6 +6,7 @@ import { BROKER_PROTOCOL, callBudgetMs, VERSION } from './state.ts'
 import { readFrames, sendFrame, type Message } from './wire.ts'
 import { errorInfo, OpenGuiError } from './errors.ts'
 import { AutomationCoordinator, type HostEvent, type AutomationTask } from './automation.ts'
+import { parseHostUiContext, readHostUiLocale, type HostUiContext } from './host-ui-locale.ts'
 
 export interface BrokerOptions {
   token: string
@@ -41,6 +42,7 @@ export async function startBroker(options: BrokerOptions): Promise<{ port: numbe
     socket.on('error', () => undefined)
     let authenticated = false
     let hookConnection = false
+    let uiContext: HostUiContext = {}
     const lifetime = new AbortController()
     const connectionOwner = randomUUID()
     const owned = new Set<string>()
@@ -86,6 +88,7 @@ export async function startBroker(options: BrokerOptions): Promise<{ port: numbe
           }
           authenticated = true
           hookConnection = message.role === 'hook'
+          uiContext = parseHostUiContext(message.uiContext)
           clearTimeout(handshake)
           clients.add(socket)
           resetIdle()
@@ -132,7 +135,7 @@ export async function startBroker(options: BrokerOptions): Promise<{ port: numbe
             ? await service.displayStatus(signal)
             : !sessionId && (message.name === 'opengui_open_mirror' || message.name === 'opengui_close_mirror')
             ? await service.deviceMirror(String(args.deviceId), message.name === 'opengui_close_mirror', signal, automation.closeableSessions(owned, task))
-            : await callOpenGuiTool(service, message.name, args, signal, { ...(task ? { task: task.execution, owner: task.id, skipActivation: task.started } : { owner: connectionOwner }), onProgress })
+            : await callOpenGuiTool(service, message.name, args, signal, { ...(task ? { task: task.execution, owner: task.id, skipActivation: task.started } : { owner: connectionOwner }), ...(uiContext.configDir || uiContext.locale ? { hostUiLocale: () => readHostUiLocale(uiContext) } : {}), onProgress })
           if (message.name === 'opengui_open_session') {
             const created = (result as { sessionId: string }).sessionId
             if (signal.aborted || socket.destroyed || (task && task.outcome !== 'active')) {

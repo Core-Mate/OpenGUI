@@ -31,7 +31,7 @@
     },
     "overseasNativeViewer": {
       "verified": false,
-      "evidence": "Client unavailable; config fixture only."
+      "evidence": "2026-10-17: current-checkout 0.4.0 installed into international WorkBuddy AI 5.8.4. User completed native MCP Trust and Skill authorization; a native chat successfully called opengui_list_devices, reporting 17 shutdown local iOS simulators and no Android phone. No screenshots, viewer or phone-control session were requested. Desktop viewer, full Hook lifecycle and real-device acceptance remain unverified; see docs/workbuddy-editions-compatibility.zh-CN.md."
     },
     "realVideoPerformanceAndSoak": {
       "verified": false,

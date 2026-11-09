@@ -54,7 +54,7 @@ if (existingMcp) {
     'MCP_CONFLICT: an unrecognized opengui server already exists; preserve it and resolve the conflict explicitly')
 }
 const values = [
-  JSON.stringify(mergeMcpConfig(JSON.parse(original[0] ?? '{}'), node, join(packageDir, 'lib', 'mcp.js')), null, 2) + '\n',
+  JSON.stringify(mergeMcpConfig(JSON.parse(original[0] ?? '{}'), node, join(packageDir, 'lib', 'mcp.js'), root), null, 2) + '\n',
   JSON.stringify(mergeHostHooks(JSON.parse(original[1] ?? '{}'), command, previous.hookCommands ?? []), null, 2) + '\n',
   (await readFile(join(packageDir, 'lib', 'opengui-SKILL.md'), 'utf8')).replaceAll('(references.md)', `(${join(packageDir, 'lib', 'opengui-reference.md')})`)
     .replaceAll('(installation.html)', `(<${join(packageDir, 'lib', 'opengui-installation.html')}>)`)

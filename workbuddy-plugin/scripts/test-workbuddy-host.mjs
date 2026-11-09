@@ -13,7 +13,7 @@ const app = process.argv[2] ?? '/Applications/WorkBuddy.app'
 assert(isAbsolute(app), 'The WorkBuddy bundle path must be absolute')
 const plist = join(app, 'Contents/Info.plist')
 const bundle = execFileSync('/usr/libexec/PlistBuddy', ['-c', 'Print :CFBundleIdentifier', plist], { encoding: 'utf8' }).trim()
-assert.match(bundle, /^com\.tencent\.workbuddy\./u, 'Use an actual WorkBuddy bundle')
+assert.match(bundle, /^(?:com\.workbuddy\.workbuddy(?:-ai)?|com\.tencent\.workbuddy\..+)$/u, 'Use an actual WorkBuddy bundle')
 const version = execFileSync('/usr/libexec/PlistBuddy', ['-c', 'Print :CFBundleShortVersionString', plist], { encoding: 'utf8' }).trim()
 const cli = join(app, 'Contents/Resources/app.asar.unpacked/cli/bin/codebuddy')
 const entry = fileURLToPath(new URL('../lib/mcp.js', import.meta.url))
@@ -74,7 +74,7 @@ process.on('SIGTERM', () => child.kill('SIGTERM'));
     const request = pending.get(message.id)
     if (request) {
       clearTimeout(request.timer); pending.delete(message.id)
-      if (message.error) request.reject(new Error(`ACP ${request.method} failed (${message.error.code})`))
+      if (message.error) request.reject(new Error(`ACP ${request.method} failed (${message.error.code}): ${String(message.error.message ?? '').slice(0, 500)}`))
       else request.resolve(message.result)
     } else if (message.id !== undefined && message.method) {
       // No file, terminal, permission or other client capabilities are exposed.
@@ -91,6 +91,7 @@ process.on('SIGTERM', () => child.kill('SIGTERM'));
   console.log(`Checking bundled WorkBuddy ${version} headless ACP with isolated configuration; directory requests only.`)
   const initialized = await request('initialize', { protocolVersion: 1, clientCapabilities: {}, clientInfo: { name: 'opengui-directory-verification', version: '1' } })
   assert.equal(initialized.protocolVersion, 1)
+  console.log(JSON.stringify({ stage: 'initialized', workbuddyVersion: version, bundleIdentifier: bundle, protocolVersion: initialized.protocolVersion, imageContentDeclared: initialized.agentCapabilities?.promptCapabilities?.image === true }))
   const session = await request('session/new', { cwd: workspace, mcpServers: [] })
   assert.equal(typeof session.sessionId, 'string')
   let proof
@@ -102,7 +103,7 @@ process.on('SIGTERM', () => child.kill('SIGTERM'));
   assert.equal(proof.deniedToolCalls, 0, 'Host setup unexpectedly attempted tool execution; every attempt was refused')
   assert.deepEqual(proof.tools.map(tool => tool.name).sort(), OPENGUI_WORKBUDDY_TOOLS.map(tool => tool.name).sort())
   assert(proof.tools.every(tool => tool.hasInputSchema), 'The host must receive each tool input schema')
-  console.log(JSON.stringify({ result: 'PASS', workbuddyVersion: version, bundledHeadlessEngine: true, protocolVersion: initialized.protocolVersion, imageContentDeclared: initialized.agentCapabilities?.promptCapabilities?.image === true, toolCount: proof.tools.length, toolCalls: 0, modelPrompts: 0, desktopWindowVerified: false }))
+  console.log(JSON.stringify({ result: 'PASS', workbuddyVersion: version, bundleIdentifier: bundle, edition: bundle === 'com.workbuddy.workbuddy-ai' ? 'international' : 'cn', bundledHeadlessEngine: true, protocolVersion: initialized.protocolVersion, imageContentDeclared: initialized.agentCapabilities?.promptCapabilities?.image === true, toolCount: proof.tools.length, toolCalls: 0, modelPrompts: 0, desktopWindowVerified: false }))
 } finally {
   for (const request of pending.values()) clearTimeout(request.timer)
   pending.clear()

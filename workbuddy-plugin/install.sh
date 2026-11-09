@@ -5,7 +5,7 @@ set -euo pipefail
 main() (
   umask 077
   local source_base='https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin'
-  local installer_sha='b9958b29226c8bd1631f84cc272833ee49094b4bb95c22bcead06c76903c7d59'
+  local installer_sha='025922e43badc1c70237a5af57460595ed21a57dc98c64909e42290ec1427707'
   local guide_sha='9f3e1aa73ca2dd86a67497551d8c5d25565a8b32d9f54f075f104a35950cdedc'
   local run_dir= status=failed check_only=false
   local state_root="$HOME/.workbuddy/opengui/installations"
@@ -42,7 +42,7 @@ main() (
   for arg in "$@"; do
     case "$arg" in
       --help|-h)
-        printf 'OpenGUI WorkBuddy installer (macOS)\nUsage: bash install.sh [--check] [--download-source cn|official] [--video-mirror https://host/path] [--app /path/WorkBuddy.app] [--config-root /path] [--archive /path/package.tgz] [--repair-legacy]\nNode/npm default to npmmirror; choose official to use nodejs.org and npmjs.org. Video mirrors are separate.\n'
+        printf 'OpenGUI WorkBuddy installer (macOS)\nUsage: bash install.sh [--check] [--edition auto|cn|international] [--download-source cn|official] [--video-mirror https://host/path] [--app /path/WorkBuddy.app] [--config-root /path] [--archive /path/package.tgz] [--repair-legacy]\nUse --edition international for WorkBuddy AI. Node/npm default to official sources for WorkBuddy AI and npmmirror for China WorkBuddy. Video mirrors are separate.\n'
         return 0 ;;
       --check) check_only=true ;;
     esac

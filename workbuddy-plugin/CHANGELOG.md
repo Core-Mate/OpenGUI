@@ -1,3 +1,14 @@
+# Unreleased
+
+- Add Chinese and English workbench UI with an accessible language selector, WorkBuddy display-language defaults, local preference persistence and synchronization across tabs.
+- Follow each host's display-language changes independently even through a shared broker; retain Chinese/English overrides and fall back to the browser language when host metadata is unavailable.
+- Switch UI language in place while preserving task text, review drafts, skip reasons, device streams and control state; clarify mainland-China SMS sign-in in both languages.
+- Replace the native emulator dropdown with a keyboard-accessible picker in both device selection surfaces; wrap long names, bound the menu to the available space and adapt the start button to narrow panels in both languages.
+
+- Select China or international WorkBuddy explicitly with `--edition cn|international`, retaining existing automatic discovery and product-specific configuration paths.
+- Default international WorkBuddy AI downloads to official Node/npm sources while preserving explicit source overrides.
+- Verify both current WorkBuddy bundle identities with the isolated native-host MCP directory check; document the separate mainland-China account and marketplace requirements.
+
 # OpenGUI for WorkBuddy 0.4.0 public testing
 
 - Publish the task home, workbench, account/model selection, takeover, content review, and report runtime as a distinct plugin version.

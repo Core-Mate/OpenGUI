@@ -1,15 +1,17 @@
 import { workbenchShell, workbenchScript } from './workbench-page.ts'
+import type { UiLocale } from './ui-i18n.ts'
 /** Device canvas with a scoped workbench capability; no arbitrary phone input route. */
-export function viewerPage(): string {
-  return String.raw`${workbenchShell()}<script>
-const base=location.pathname, cards=new Map();let ended=false;
+export function viewerPage(hostLocale?: UiLocale): string {
+  return String.raw`${workbenchShell(hostLocale)}<script>
+const base=location.pathname, cards=new Map();let ended=false,viewerNotice='';
+function showViewerNotice(key){viewerNotice=key;document.querySelector('#task').textContent=t(key)}
 const presence=new WebSocket(location.origin.replace('http:','ws:')+base+'presence');
-presence.onclose=()=>{if(!ended)document.querySelector('#task').textContent='画面服务已关闭，请在 WorkBuddy 对话中重新打开工作台'};
+presence.onclose=()=>{if(!ended)showViewerNotice('画面服务已关闭，请在 WorkBuddy 对话中重新打开工作台')};
 presence.onmessage=e=>{try{const m=JSON.parse(e.data);if(m.type==='action')showDeviceAction(m.deviceId,m.action)}catch{}};
 
 function codec(data){for(let i=0;i+7<data.length;i++){const n=data[i]===0&&data[i+1]===0?(data[i+2]===1?i+3:data[i+2]===0&&data[i+3]===1?i+4:-1):-1;if(n>=0&&(data[n]&31)===7)return 'avc1.'+[data[n+1],data[n+2],data[n+3]].map(v=>v.toString(16).padStart(2,'0')).join('')}return 'avc1.42e01e'}
 function reset(c){c.generation=(c.generation||0)+1;c.rendered=false;c.waitKey=true;c.config=[];if(c.decoder){try{c.decoder.close()}catch{}c.decoder=null}c.canvas.classList.add('stale')}
-function note(c,text,retry=false){c.message.textContent=text;c.retry.hidden=!retry}
+function note(c,key,retry=false,values={}){c.note={key,retry,values};c.message.textContent=t(key,values);c.retry.hidden=!retry}
 function stop(c){clearTimeout(c.timer);if(c.ws){c.ws.onclose=null;c.ws.close();c.ws=null}reset(c)}
 function connect(c){
  if(document.hidden||ended)return;stop(c);note(c,c.hadFrame?'正在重新连接画面…':'');
@@ -27,7 +29,7 @@ function connect(c){
    try{if(c.ws!==ws||document.hidden||generation!==c.generation)return;
     if(c.canvas.width!==frame.width)c.canvas.width=frame.width;if(c.canvas.height!==frame.height)c.canvas.height=frame.height;
     c.canvas.getContext('2d',{alpha:false}).drawImage(frame,0,0);c.canvas.classList.remove('stale');c.rendered=true;c.hadFrame=true;c.retries=0;c.frames++;c.lastPTS=capturedAt;c.decodedAt=Date.now();
-    note(c,'间隔截图 · 更新于 '+new Date(capturedAt).toLocaleTimeString());c.onFrame?.();void receipt(c);
+    note(c,'间隔截图 · 更新于 {time}',false,{time:new Date(capturedAt).toLocaleTimeString(i18n.locale)});c.onFrame?.();void receipt(c);
    }finally{frame.close()}
   }finally{c.imagePending=false}return;
  }
@@ -45,7 +47,7 @@ function connect(c){
  }catch{note(c,'画面解码失败，正在重新连接…');ws.close()}};
  ws.onclose=e=>{if(c.ws!==ws)return;c.ws=null;reset(c);if(c.preview){if(e.reason!=='preview_ended')c.onFail?.();return}if(document.hidden||ended)return;if(c.retries++<3){note(c,'画面连接中断，正在重连…');c.timer=setTimeout(()=>connect(c),500*2**c.retries)}else note(c,'画面已断开，点击「重试」重新连接',true)};
 }
-// 接管设备: the person operates the phone with mouse and keyboard on the live picture. Events go in
+// Manual control: the person operates the phone with mouse and keyboard on the live picture. Events go in
 // video-frame coordinates; the server re-checks the takeover state for every event, and input stops
 // when control returns to the agent. Scrcpy sends no frames for a static screen, so input never
 // waits on a new frame.
@@ -57,8 +59,8 @@ async function flushTakeover(){
   const c=takeoverQueue[0].c,events=[];
   while(takeoverQueue.length&&takeoverQueue[0].c===c&&events.length<64)events.push(takeoverQueue.shift().event);
   const r=await fetch(base+'input',{method:'POST',headers:{'Content-Type':'application/json','X-OpenGUI-Board':boardToken||''},body:JSON.stringify({deviceId:c.id,events})});
-  if(!r.ok){takeoverQueue.length=0;const m=(await r.json().catch(()=>({}))).error||'输入没有发送到手机';if(takeoverNotice!==m){takeoverNotice=m;toast(m);setTimeout(()=>{takeoverNotice=''},3000)}}
- }}catch{takeoverQueue.length=0;toast('输入没有发送到手机，请检查连接')}finally{takeoverSending=false}
+  if(!r.ok){takeoverQueue.length=0;const m=(await r.json().catch(()=>({}))).error||t('输入没有发送到手机');if(takeoverNotice!==m){takeoverNotice=m;toast(m);setTimeout(()=>{takeoverNotice=''},3000)}}
+ }}catch{takeoverQueue.length=0;toast(t('输入没有发送到手机，请检查连接'))}finally{takeoverSending=false}
 }
 function framePoint(c,e){const r=c.canvas.getBoundingClientRect();return{x:(e.clientX-r.left)/r.width*c.canvas.width,y:(e.clientY-r.top)/r.height*c.canvas.height,width:c.canvas.width,height:c.canvas.height}}
 function sendTakeoverText(c,text){text.split(/\r?\n/).forEach((line,i)=>{if(i)takeoverInput(c,{type:'key',key:'Enter'});const chars=[...line];for(let k=0;k<chars.length;k+=300)takeoverInput(c,{type:'text',text:chars.slice(k,k+300).join('')})})}
@@ -66,9 +68,9 @@ const takeoverKeys={Enter:'Enter',Backspace:'Backspace',Delete:'Delete',Tab:'Tab
 function attachTakeover(c){
  if(c.keys)return;
  const canvas=c.canvas,keys=document.createElement('textarea'),bar=document.createElement('div');
- keys.className='takeover-keys';keys.setAttribute('aria-label','向手机输入文字');keys.autocomplete='off';keys.spellcheck=false;c.screen.append(keys);c.keys=keys;
- bar.className='takeover-bar';const hint=document.createElement('p');hint.textContent='点击或拖动操作手机 · 右键返回 · 滚轮滑动 · 可直接打字';bar.append(hint);
- for(const[label,key]of[['返回','Back'],['主页','Home'],['多任务','AppSwitch']]){const b=document.createElement('button');b.textContent=label;b.onclick=()=>{takeoverInput(c,{type:'key',key});keys.focus({preventScroll:true})};bar.append(b)}
+ keys.className='takeover-keys';keys.setAttribute('aria-label',t('向手机输入文字'));keys.setAttribute('data-i18n-aria-label','向手机输入文字');keys.autocomplete='off';keys.spellcheck=false;c.screen.append(keys);c.keys=keys;
+ bar.className='takeover-bar';const hint=document.createElement('p');hint.textContent=t('点击或拖动操作手机 · 右键返回 · 滚轮滑动 · 可直接打字');hint.dataset.i18n='点击或拖动操作手机 · 右键返回 · 滚轮滑动 · 可直接打字';bar.append(hint);
+ for(const[label,key]of[['返回','Back'],['主页','Home'],['多任务','AppSwitch']]){const b=document.createElement('button');b.textContent=t(label);b.dataset.i18n=label;b.onclick=()=>{takeoverInput(c,{type:'key',key});keys.focus({preventScroll:true})};bar.append(b)}
  c.screen.after(bar);c.bar=bar;
  canvas.addEventListener('pointerdown',e=>{if(!c.takeover)return;e.preventDefault();keys.focus({preventScroll:true});
   if(e.button===2){takeoverInput(c,{type:'key',key:'Back'});return}if(e.button===1){takeoverInput(c,{type:'key',key:'Home'});return}if(e.button!==0)return;
@@ -110,15 +112,16 @@ function showDeviceAction(deviceId,action){
   setTimeout(()=>{actionPress(p,ms);const m=document.createElement('span');m.className='device-action is-swipe';
    m.innerHTML='<svg class="device-action-trail" width="100%" height="100%" aria-hidden="true"><defs><marker id="'+id+'" markerHeight="5" markerWidth="5" orient="auto" refX="8" refY="5" viewBox="0 0 10 10"><path d="M0,0 L10,5 L0,10 z"/></marker></defs><line marker-end="url(#'+id+')" x1="'+actionPct(action.x1)+'" y1="'+actionPct(action.y1)+'" x2="'+actionPct(action.x2)+'" y2="'+actionPct(action.y2)+'"/></svg>';
    const dot=document.createElement('span');dot.className='device-action-dot';actionPlace(dot,action.x1,action.y1);m.append(dot);actionMarker(layer,m,ms+1600);actionMove(p,action.x2,action.y2,ms)},50)}
- else if(action.type==='key'&&action.label){const m=document.createElement('span');m.className='device-action is-key';m.textContent=action.label;actionMarker(layer,m,1600)}
+ else if(action.type==='key'&&action.label){const m=document.createElement('span');m.className='device-action is-key';m.textContent=formatUiTrace(action.label,action.label.startsWith('启动 ')?'launch':'key',i18n.locale,t);actionMarker(layer,m,1600)}
 }
 // The start page's live view of a candidate device; its frames never count as the task's display.
 let previewCard=null;
 globalThis.openguiPreview={open(id,canvas,onFrame,onFail){this.close();if(!globalThis.VideoDecoder||ended)return false;previewCard={id,route:'preview-stream',preview:true,canvas,onFrame,onFail,message:{textContent:''},retry:{hidden:true},ws:null,decoder:null,config:[],waitKey:true,retries:0,frames:0,lastReceipt:0,pending:false,rendered:false,hadFrame:false};connect(previewCard);return true},close(){if(previewCard){const c=previewCard;previewCard=null;stop(c)}}};
 function lagging(c){return c.receivedAt-c.decodedAt>3000}
 async function receipt(c){if(c.preview||document.hidden||!c.rendered||!c.ws||c.pending||lagging(c)||Date.now()-c.lastReceipt<1000)return;c.pending=true;c.lastReceipt=Date.now();const ws=c.ws;try{const r=await fetch(base+'frame',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({connectionId:c.connectionId,challenge:c.challenge,deviceId:c.id,visible:true})});if(r.ok){const m=await r.json();if(c.ws===ws)c.challenge=m.challenge}else{note(c,'画面校验未通过，正在重新连接…');ws.close()}}catch{}finally{c.pending=false}}
-function card(d){const el=document.createElement('section');el.className='phone';const name=document.createElement('h2');name.textContent=d.name;const canvas=document.createElement('canvas'),message=document.createElement('p'),retry=document.createElement('button');canvas.width=540;canvas.height=1170;message.className='message';retry.className='retry';retry.textContent='重试';retry.hidden=true;const screen=document.createElement('div'),watermark=document.createElement('div');screen.className='screen';watermark.className='watermark';watermark.className='watermark placeholder';watermark.textContent='正在连接设备画面…';screen.append(canvas,watermark);el.append(name,screen,message,retry);document.querySelector('#wall').append(el);const c={id:d.id,os:d.os,el,screen,watermark,canvas,message,retry,ws:null,decoder:null,config:[],waitKey:true,retries:0,frames:0,lastReceipt:0,pending:false,rendered:false,hadFrame:false};retry.onclick=()=>{c.retries=0;connect(c)};cards.set(d.id,c);connect(c)}
-async function status(){try{const r=await fetch(base+'status');if(!r.ok)throw Error('viewer_unavailable');const s=await r.json();renderBoard(s);if(s.state==='closed'){ended=true;presence.close();for(const c of cards.values())stop(c);document.querySelector('#task').textContent='画面已关闭';return}for(const d of s.devices)if(!cards.has(d.id))card(d);for(const c of cards.values()){if(c.ws&&c.rendered&&lagging(c)){c.canvas.classList.add('stale');note(c,'正在刷新画面…')}void receipt(c)}}catch{document.querySelector('#task').textContent='画面服务已退出，请在 WorkBuddy 对话中重新打开工作台'}}
+function card(d){const el=document.createElement('section');el.className='phone';const name=document.createElement('h2');name.textContent=d.name;const canvas=document.createElement('canvas'),message=document.createElement('p'),retry=document.createElement('button');canvas.width=540;canvas.height=1170;message.className='message';retry.className='retry';retry.textContent=t('重试');retry.dataset.i18n='重试';retry.hidden=true;const screen=document.createElement('div'),watermark=document.createElement('div');screen.className='screen';watermark.className='watermark';watermark.className='watermark placeholder';watermark.textContent=t('正在连接设备画面…');screen.append(canvas,watermark);el.append(name,screen,message,retry);document.querySelector('#wall').append(el);const c={id:d.id,os:d.os,el,screen,watermark,canvas,message,retry,ws:null,decoder:null,config:[],waitKey:true,retries:0,frames:0,lastReceipt:0,pending:false,rendered:false,hadFrame:false};retry.onclick=()=>{c.retries=0;connect(c)};cards.set(d.id,c);connect(c)}
+async function status(){try{const r=await fetch(base+'status');if(!r.ok)throw Error('viewer_unavailable');const s=await r.json();viewerNotice='';i18n.setHostLocale(s.uiLocale);renderBoard(s);if(s.state==='closed'){ended=true;presence.close();for(const c of cards.values())stop(c);showViewerNotice('画面已关闭');return}for(const d of s.devices)if(!cards.has(d.id))card(d);for(const c of cards.values()){if(c.ws&&c.rendered&&lagging(c)){c.canvas.classList.add('stale');note(c,'正在刷新画面…')}void receipt(c)}}catch{showViewerNotice('画面服务已退出，请在 WorkBuddy 对话中重新打开工作台')}}
 document.addEventListener('visibilitychange',()=>{for(const c of cards.values()){if(document.hidden){stop(c);note(c,'页面隐藏，播放已暂停')}else{c.retries=0;connect(c)}}});addEventListener('pagehide',()=>{ended=true;presence.close();for(const c of cards.values())stop(c)});addEventListener('DOMContentLoaded',()=>void status());setInterval(()=>{if(!document.hidden&&!ended)void status()},1000);
-</script>${workbenchScript()}</body></html>`
+addEventListener('opengui:languagechange',()=>{for(const c of [...cards.values(),previewCard].filter(Boolean))if(c.note)note(c,c.note.key,c.note.retry,c.note.values)});
+</script>${workbenchScript()}<script>addEventListener('opengui:languagechange',()=>{if(viewerNotice)showViewerNotice(viewerNotice)});</script></body></html>`
 }
