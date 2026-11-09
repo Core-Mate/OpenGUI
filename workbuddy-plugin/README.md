@@ -1,6 +1,6 @@
-# OpenGUI for WorkBuddy 0.4.1
+# OpenGUI for WorkBuddy 0.4.2
 
-[中文说明](README.zh-CN.md). The current public release is [0.4.1, a public-testing prerelease](https://github.com/Core-Mate/OpenGUI/releases/tag/opengui-workbuddy-v0.4.1) for macOS, protocol 8. China and international WorkBuddy use the same OpenGUI package and version. Custom MCP installation does not require marketplace publication; real-device acceptance remains a separate check.
+[中文说明](README.zh-CN.md). The current public release is [0.4.2, a public-testing prerelease](https://github.com/Core-Mate/OpenGUI/releases/tag/opengui-workbuddy-v0.4.2) for macOS, protocol 8. China and international WorkBuddy use the same OpenGUI package and version. Custom MCP installation does not require marketplace publication; real-device acceptance remains a separate check.
 
 See the [root installation steps](../README.md#use-opengui-in-workbuddy) for edition-specific commands, or the [GitHub installation flow (Chinese)](docs/install-from-github.zh-CN.md) to install from a WorkBuddy chat. OpenGUI has a separate SMS account that currently requires a mainland-China phone number.
 
@@ -21,7 +21,7 @@ After first display authorization, video failure or page closure does not cancel
 
 ## Workbench
 
-**UI language update — not yet released:** Chinese/English switching, following WorkBuddy’s display language, and an improved emulator picker are being tested and are not yet in the public source or 0.4.1 package. The planned default is **Follow WorkBuddy**, with manual **中文 / English** overrides and a browser-language fallback when the host setting is unavailable. Interface labels will change; task descriptions, TODO content, phone content, review drafts and recorded results will retain their original text.
+**UI language (0.4.2):** Chinese/English switching, following WorkBuddy’s display language, and an improved emulator picker are included. The default is **Follow WorkBuddy**, with manual **中文 / English** overrides and a browser-language fallback when the host setting is unavailable. Only interface labels change; task descriptions, TODO content, phone content, review drafts and recorded results retain their original text.
 
 An exhausted blocked run can receive a human-confirmed finite continuation budget in its original workbench: 1–100 additional phone operations and plugin inference calls. The grant starts no work, retains the task ID and earlier result, and rejects stale/duplicate revisions. Copy its continuation prompt into the current chat, recover the same resumeTaskId, and establish fresh original-phone display and observation. This does not extend comment quantity/deadline endpoints, change task scope/model, clear unknown sends, or resume completed/cancelled/stopped tasks. Follow-mode host model calls remain unmeasured.
 
@@ -47,7 +47,7 @@ The complete steps and download link are in the [root README](../README.md#use-o
 Use the supplied installer and matching archive with adjacent SHA-256 sidecars:
 
 ```sh
-bash scripts/install-macos.command --app "/Applications/WorkBuddy AI.app" --download-source official --archive /absolute/path/opengui-mcp-0.4.1.tgz
+bash scripts/install-macos.command --app "/Applications/WorkBuddy AI.app" --download-source official --archive /absolute/path/opengui-mcp-0.4.2.tgz
 ```
 
 The installer prepares private Node, verifies the package and scrcpy resources, and only then changes this host's configuration. After installation, restart WorkBuddy once to load the new MCP configuration, review external Hook changes in `/hooks`, and confirm the installed Skill in `/skills`.

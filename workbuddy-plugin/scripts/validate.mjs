@@ -98,4 +98,12 @@ for (const [field, path] of [['installer_sha', 'scripts/install-macos.command'],
   assert.equal(bootstrap.match(new RegExp(`local ${field}='([a-f0-9]{64})'`))?.[1], createHash('sha256').update(await readFile(join(root, path))).digest('hex'), `Stale bootstrap pin: ${field}`)
 }
 for (const path of ['lib/opengui-authorization.html', 'connector/skills/control/authorization.html']) assert((await readFile(join(root, path))).equals(await readFile(join(root, 'resources/OpenGUI-授权指南.html'))), `Stale authorization guide: ${path}`)
+// Review requires every install path to reference immutable, versioned assets.
+const releaseBase = `https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-v${VERSION}`
+assert.equal(bootstrap.match(/local release_base='([^']+)'/)?.[1], releaseBase, 'install.sh must download from this version\'s release assets')
+assert(skill.includes(`curl -fsSL ${releaseBase}/install.sh | bash`), 'SKILL.md must pin the installer to this version')
+for (const path of ['install.sh', 'connector/mcp.json', 'connector/skills/control/SKILL.md', 'connector/skills/control/references.md', 'connector/skills/control/installation.html', 'connector/skills/control/authorization.html']) {
+  const text = await readFile(join(root, path), 'utf8')
+  assert(!/githubusercontent\.com\/Core-Mate\/OpenGUI\/(main|master|HEAD)\/|releases\/latest/.test(text), `Mutable download reference in ${path}`)
+}
 if (process.platform !== 'win32') execFileSync('bash', ['-n', join(root, 'install.sh')])

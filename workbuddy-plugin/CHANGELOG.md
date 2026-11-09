@@ -1,5 +1,6 @@
-# Unreleased
+# OpenGUI for WorkBuddy 0.4.2 public testing
 
+- Pin the curl entry, installer and authorization guide to immutable assets of the versioned release; the connector Skill references the versioned command and validation rejects branch or `latest` URLs.
 - Add Chinese and English workbench UI with an accessible language selector, WorkBuddy display-language defaults, local preference persistence and synchronization across tabs.
 - Follow each host's display-language changes independently even through a shared broker; retain Chinese/English overrides and fall back to the browser language when host metadata is unavailable.
 - Switch UI language in place while preserving task text, review drafts, skip reasons, device streams and control state; clarify mainland-China SMS sign-in in both languages.

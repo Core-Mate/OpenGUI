@@ -56,7 +56,7 @@ OpenGUI は実際の画面を読み取り、自然言語の指示でスマート
 
 ## WorkBuddyへのインストール
 
-**macOS（Apple Silicon / Intel）、WorkBuddy 5.5.3 以降**に対応しています。現在の公開版は [0.4.1 公開テスト版](https://github.com/Core-Mate/OpenGUI/releases/tag/opengui-workbuddy-v0.4.1)です。中国国内版と国際版は、同じ OpenGUI パッケージとバージョンを使用します。カスタム MCP としてインストールでき、コネクターマーケットへの掲載を待つ必要はありません。
+**macOS（Apple Silicon / Intel）、WorkBuddy 5.5.3 以降**に対応しています。現在の公開版は [0.4.2 公開テスト版](https://github.com/Core-Mate/OpenGUI/releases/tag/opengui-workbuddy-v0.4.2)です。中国国内版と国際版は、同じ OpenGUI パッケージとバージョンを使用します。カスタム MCP としてインストールでき、コネクターマーケットへの掲載を待つ必要はありません。
 
 OpenGUI と WorkBuddy のアカウントは別です。OpenGUI の SMS ログインには現在も**中国本土の電話番号**が必要です。国際版 WorkBuddy に Google/GitHub でログインしても、OpenGUI には自動ログインされません。
 
@@ -70,20 +70,20 @@ macOS の Terminal で、使用する WorkBuddy のエディションに対応�
 **中国国内版 — WorkBuddy.app**
 
 ```sh
-cd "$HOME" && curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh | bash -s -- --app "/Applications/WorkBuddy.app" --download-source cn
+cd "$HOME" && curl -fsSL https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-v0.4.2/install.sh | bash -s -- --app "/Applications/WorkBuddy.app" --download-source cn
 ```
 
 **国際版 — WorkBuddy AI.app**
 
 ```sh
-cd "$HOME" && curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh | bash -s -- --app "/Applications/WorkBuddy AI.app" --download-source official
+cd "$HOME" && curl -fsSL https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-v0.4.2/install.sh | bash -s -- --app "/Applications/WorkBuddy AI.app" --download-source official
 ```
 
 インストール先のアプリを明示するため、両方のエディションがあっても対象を取り違えません。アプリの保存先や名前が異なる場合は、`--app` の後のパスを実際のものに置き換えてください。スクリプトは必要なファイルをダウンロードして検証し、ランタイムと OpenGUI を設定します。
 
 中国国内版のコマンドは Node と npm の依存関係を npmmirror から取得し、失敗時は公式ソースへ切り替えます。国際版のコマンドは公式ソースを使います。中国国内版でも公式ソースを使う場合は、`--download-source cn` を `--download-source official` に変更してください。この設定は今回のインストールにのみ適用されます。動画コンポーネントは別途 GitHub から取得します。[ダウンロード元の選択](workbuddy-plugin/INSTALL.md#download-sources)も参照してください。
 
-[install.sh を個別にダウンロード](https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh)し、`bash /実際のパス/install.sh` に上記と同じ `--app` と `--download-source` の引数を付けて実行することもできます。
+[install.sh を個別にダウンロード](https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-v0.4.2/install.sh)し、`bash /実際のパス/install.sh` に上記と同じ `--app` と `--download-source` の引数を付けて実行することもできます。
 
 国際版のアカウント制限は[国際版のインストール説明](workbuddy-plugin/INSTALL.md#international-workbuddy)、認証と接続確認の詳細は[GitHub からのインストール手順（中国語）](workbuddy-plugin/docs/install-from-github.zh-CN.md)を参照してください。
 
@@ -124,7 +124,7 @@ OpenGUI が見つからない場合は「自定义连接器」の MCP サービ�
 /opengui 【アプリ／画面】の【機能や操作フロー】をテストし、特に【確認する点】を確認してください。問題があれば手順とスクリーンショットを記録し、【終了条件】に達したら停止してください。
 ```
 
-**表示言語（未公開）**：中国語／英語の切り替え、WorkBuddy の表示言語への追従、エミュレーター選択 UI の改善はテスト中です。公開ソースと 0.4.1 パッケージにはまだ含まれていません。言語切り替えは UI が対象で、タスクの説明、TODO の内容、確認用の下書きは原文を保持します。
+**表示言語（0.4.2）**：中国語／英語の切り替え、WorkBuddy の表示言語への追従、エミュレーター選択 UI の改善に対応しました。言語切り替えは UI が対象で、タスクの説明、TODO の内容、確認用の下書きは原文を保持します。
 
 ## DeepSeek HarnessでOpenGUIを使う
 

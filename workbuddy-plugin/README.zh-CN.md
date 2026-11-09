@@ -1,6 +1,6 @@
-# OpenGUI for WorkBuddy 0.4.1 公测预发布版
+# OpenGUI for WorkBuddy 0.4.2 公测预发布版
 
-国内版和国际版 WorkBuddy 使用同一个 [OpenGUI 0.4.1 安装包](https://github.com/Core-Mate/OpenGUI/releases/tag/opengui-workbuddy-v0.4.1)和版本号，通过自定义 MCP 安装，无需等待市场上架。两版安装命令见[根 README](../README.zh-CN.md#workbuddy-安装)，WorkBuddy 聊天安装提示词和授权验证见[从 GitHub 安装](docs/install-from-github.zh-CN.md)。
+国内版和国际版 WorkBuddy 使用同一个 [OpenGUI 0.4.2 安装包](https://github.com/Core-Mate/OpenGUI/releases/tag/opengui-workbuddy-v0.4.2)和版本号，通过自定义 MCP 安装，无需等待市场上架。两版安装命令见[根 README](../README.zh-CN.md#workbuddy-安装)，WorkBuddy 聊天安装提示词和授权验证见[从 GitHub 安装](docs/install-from-github.zh-CN.md)。
 
 OpenGUI 账号与 WorkBuddy 账号独立，当前 OpenGUI 短信登录仍需中国大陆手机号；国际版 WorkBuddy 的 Google/GitHub 登录不会自动登录 OpenGUI。
 
@@ -24,7 +24,7 @@ WorkBuddy 使用内置 present_files，传入 URL 与当前工作目录。国内
 
 ## 手机任务工作台
 
-**界面语言更新（尚未发布）**：中英文切换、默认跟随 WorkBuddy 语言和模拟器下拉框改进正在测试，尚未合入公开源码或 0.4.1 安装包。计划默认提供“跟随 WorkBuddy”，支持手动选择“中文 / English”，读取不到宿主设置时回退到浏览器语言。语言选项只翻译界面控件，任务描述、TODO 内容、手机内容、审核草稿和已记录结果保留原文。
+**界面语言（0.4.2）**：已支持中英文切换、默认跟随 WorkBuddy 语言，并改进了模拟器下拉框。默认选项为“跟随 WorkBuddy”，支持手动选择“中文 / English”，读取不到宿主设置时回退到浏览器语言。语言选项只翻译界面控件，任务描述、TODO 内容、手机内容、审核草稿和已记录结果保留原文。
 
 看板按 `docs/preview.html` 原型布局：顶部设备 / 模型选择器（仅提供跟随 WorkBuddy）与接管操作，画面上方环境状态与连接帮助，等比例视频，下方任务步骤、任务报告和「本次运行」双轨时间线（模型 / 设备）及可展开的步骤记录，另有场景示例与连接帮助弹窗。正常 MCP 任务只绑定一台 Android 真机、Android 模拟器或已支持的 macOS iOS 模拟器；旧底层展示接口保留兼容。无设备时保留目标并展示接入指引，不准备视频或摆空手机框；可复用登录账号仍可用的上次选择，否则多台设备或失效偏好通过图形单选确认，无偏好时可选择唯一可用设备。选择器显示厂商型号、系统版本、尾号与连接方式，确认后等待新首帧。等待时保留宿主任务；看板不能自行唤醒结束的宿主回合。裸 mention 使用无目标的 opengui_open_guide。切换设备需先结束原任务。iOS 真机不支持，云手机尚未接入。执行模型固定跟随当前 WorkBuddy 对话，不读取线上模型配置。
 
@@ -50,7 +50,7 @@ WorkBuddy 使用内置 present_files，传入 URL 与当前工作目录。国内
 核对安装器及归档旁的 SHA-256 文件，结束旧任务、关闭旧展示后运行：
 
 ```sh
-bash scripts/install-macos.command --app "/Applications/WorkBuddy.app" --download-source cn --archive /绝对路径/opengui-mcp-0.4.1.tgz
+bash scripts/install-macos.command --app "/Applications/WorkBuddy.app" --download-source cn --archive /绝对路径/opengui-mcp-0.4.2.tgz
 ```
 
 安装器自动准备独立 Node 与 scrcpy 资源，缓存完整时复用；准备失败保留旧配置，并输出恢复步骤。安装完成后重启一次 WorkBuddy，使新 MCP 配置加载生效；外部 Hook 变更在 `/hooks` 中审查应用，并在 `/skills` 中确认 `opengui`。可用 --check 做只读预检，用 --app 指定国内或海外应用。

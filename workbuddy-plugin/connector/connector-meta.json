@@ -7,7 +7,7 @@
   "description_en": "Automate your phone for everyday tasks, app testing, content operations, chat and more. Say what you need, and let it take action. After initial setup and authorization, just plug in your phone and go. Leave repetitive tasks to AI, take back your time, and unleash your imagination.",
   "source": "opengui",
   "type": "mcp",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "minWorkbuddyVersion": "5.5.3",
   "examples_zh": [
     "/opengui 在小红书App中搜索“美食”，帮我获取前3篇贴子的内容整理给我。",

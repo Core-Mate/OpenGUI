@@ -57,7 +57,7 @@ After installation and authorization, enter these instructions in the correspond
 
 ## Use OpenGUI in WorkBuddy
 
-Supported on **macOS (Apple Silicon / Intel) with WorkBuddy 5.5.3 or later**. The current public release is [0.4.1, a public-testing prerelease](https://github.com/Core-Mate/OpenGUI/releases/tag/opengui-workbuddy-v0.4.1). China and international WorkBuddy use the same OpenGUI package and version. Custom MCP installation is available without a connector marketplace listing.
+Supported on **macOS (Apple Silicon / Intel) with WorkBuddy 5.5.3 or later**. The current public release is [0.4.2, a public-testing prerelease](https://github.com/Core-Mate/OpenGUI/releases/tag/opengui-workbuddy-v0.4.2). China and international WorkBuddy use the same OpenGUI package and version. Custom MCP installation is available without a connector marketplace listing.
 
 OpenGUI and WorkBuddy accounts are separate. OpenGUI SMS sign-in currently requires a **mainland-China phone number**; signing into international WorkBuddy with Google/GitHub does not sign you into OpenGUI.
 
@@ -71,20 +71,20 @@ Open macOS Terminal and run the command for your WorkBuddy edition. If you use b
 **China edition — WorkBuddy.app**
 
 ```sh
-cd "$HOME" && curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh | bash -s -- --app "/Applications/WorkBuddy.app" --download-source cn
+cd "$HOME" && curl -fsSL https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-v0.4.2/install.sh | bash -s -- --app "/Applications/WorkBuddy.app" --download-source cn
 ```
 
 **International edition — WorkBuddy AI.app**
 
 ```sh
-cd "$HOME" && curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh | bash -s -- --app "/Applications/WorkBuddy AI.app" --download-source official
+cd "$HOME" && curl -fsSL https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-v0.4.2/install.sh | bash -s -- --app "/Applications/WorkBuddy AI.app" --download-source official
 ```
 
 These commands explicitly select the target application, so having both editions installed will not cause OpenGUI to be installed into the wrong one. If your application is elsewhere or has been renamed, replace the path after `--app` with its actual path. The script downloads and verifies the installation files, prepares the runtime, and configures OpenGUI.
 
 The China command uses npmmirror for Node and npm dependencies with official fallback; the international command uses official sources. To use official sources with China WorkBuddy, change `--download-source cn` to `--download-source official`. This setting applies only to this installation. Video assets use GitHub separately; an npm mirror does not accelerate them. See [download source options](workbuddy-plugin/INSTALL.md#download-sources) for a custom video mirror.
 
-You can also [download install.sh separately](https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh) and run `bash /actual/path/install.sh` with the same `--app` and `--download-source` arguments shown above.
+You can also [download install.sh separately](https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-v0.4.2/install.sh) and run `bash /actual/path/install.sh` with the same `--app` and `--download-source` arguments shown above.
 
 See [international installation and account limitations](workbuddy-plugin/INSTALL.md#international-workbuddy), or the [GitHub installation flow (Chinese)](workbuddy-plugin/docs/install-from-github.zh-CN.md) for a copyable WorkBuddy prompt, native authorization and connection verification.
 
@@ -127,7 +127,7 @@ Try it: Vibe Testing
 /opengui Help me test [feature or workflow] in [app/page], focusing on [issues to check]. If you find any problems, record the steps and screenshots. Stop when [end condition] is reached.
 ```
 
-**UI language (not yet released)**: Chinese/English switching, following WorkBuddy’s display language, and emulator-picker improvements are being tested. They are not yet included in the public source or 0.4.1 package. The language option translates interface labels; task descriptions, TODO content, and review drafts retain their original text.
+**UI language (0.4.2)**: Chinese/English switching, following WorkBuddy’s display language, and emulator-picker improvements are included. The language option translates interface labels; task descriptions, TODO content, and review drafts retain their original text.
 
 ## Use OpenGUI in DeepSeek Harness
 

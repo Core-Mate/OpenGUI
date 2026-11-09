@@ -6,7 +6,7 @@ description: Complete authorized Android tasks and supported macOS iOS simulator
 description_zh: 根据真实截图完成用户指定的 Android 手机任务和已支持的 macOS iOS 模拟器测试，自动恢复、核验结果并释放控制锁。
 description_en: Complete authorized Android tasks and supported iOS simulator tests through a screenshot-action loop, local displays, bounded recovery and automatic task cleanup.
 category: productivity
-version: 0.4.1
+version: 0.4.2
 author: OpenGUI
 ---
 
@@ -18,7 +18,7 @@ For a pre-submit endpoint pass `stopBeforeSubmit: true` to `opengui_open_session
 
 ### Installation help and connection checks
 
-For a user-requested installation or reinstallation, direct the user to run `curl -fsSL https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/install.sh | bash` in macOS Terminal to download and execute the official installer. They may instead save that script and run it with bash using its actual local path. Do not execute installation from the WorkBuddy chat. The script verifies its inputs, configures the plugin, saves this attempt's receipt, and opens the authorization guide. The [OpenGUI installation guide](installation.html) is available for users who prefer manual installation. Do not invent an alternative download URL or bypass host/system security prompts.
+For a user-requested installation or reinstallation, direct the user to run `curl -fsSL https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-v0.4.2/install.sh | bash` in macOS Terminal to download and execute the official installer pinned to this OpenGUI version. They may instead save that script and run it with bash using its actual local path. Do not execute installation from the WorkBuddy chat. The script verifies its inputs, configures the plugin, saves this attempt's receipt, and opens the authorization guide. The [OpenGUI installation guide](installation.html) is available for users who prefer manual installation. Do not invent an alternative download URL or bypass host/system security prompts.
 
 After `status=configuration_written`, display the returned `AUTHORIZATION_GUIDE` file in the host if the automatic browser open is unavailable. The bundled [OpenGUI authorization guide](authorization.html) has the same Skill and connector instructions. Do not start another installation because authorization or browser opening is pending. `opengui_open_guide` opens the task workbench, not installation instructions.
 

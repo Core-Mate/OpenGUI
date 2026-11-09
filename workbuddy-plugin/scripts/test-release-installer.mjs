@@ -31,7 +31,7 @@ try {
  await mkdir(config, {recursive:true})
  await writeFile(join(config, 'mcp.json'), JSON.stringify({mcpServers:{other:{command:'keep-me'}}}))
  await writeFile(join(config, 'settings.json'), JSON.stringify({custom:true,hooks:{Stop:[{hooks:[{type:'command',command:'other-hook'}]}]}}))
- const archive = join(root, 'dist/opengui-mcp-0.4.1.tgz')
+ const archive = join(root, 'dist/opengui-mcp-0.4.2.tgz')
  const installer = testCurl ? join(root, 'install.sh') : process.argv[2] ?? join(root, 'scripts/install-macos.command')
  const bootstrapSource = testCurl ? await readFile(installer, 'utf8') : undefined
  const opened = join(temporary, 'opened-guides.txt')
@@ -43,8 +43,8 @@ for ((i=1; i<=$#; i++)); do
  case "$arg" in https://*) url=$arg ;; -o) ((i+=1)); target=\${!i} ;; esac
 done
 case "$url" in
- https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/scripts/install-macos.command) cp "$TEST_SOURCE/scripts/install-macos.command" "$target" ;;
- https://raw.githubusercontent.com/Core-Mate/OpenGUI/main/workbuddy-plugin/resources/OpenGUI-*) cp "$TEST_SOURCE/resources/OpenGUI-授权指南.html" "$target" ;;
+ https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-v0.4.2/installer.sh) cp "$TEST_SOURCE/scripts/install-macos.command" "$target" ;;
+ https://github.com/Core-Mate/OpenGUI/releases/download/opengui-workbuddy-v0.4.2/OpenGUI-Authorization.html) cp "$TEST_SOURCE/resources/OpenGUI-授权指南.html" "$target" ;;
  *) exec /usr/bin/curl "$@" ;;
 esac
 `, {mode:0o755})
@@ -78,7 +78,7 @@ esac
   if (i === 0) assert.match(result.stdout, /CONFIG_WRITTEN/)
   else assert.match(result.stdout, /ALREADY_CONFIGURED/)
   const state=JSON.parse(await readFile(join(stateRoot,`local-install-${createHash('sha256').update(config).digest('hex').slice(0,16)}.json`)))
-  assert.equal(state.version,'0.4.1'); assert.equal(state.configRoot, config); assert(state.backups.every(b=>b.backup===null || b.backup.includes('before-opengui')))
+  assert.equal(state.version,'0.4.2'); assert.equal(state.configRoot, config); assert(state.backups.every(b=>b.backup===null || b.backup.includes('before-opengui')))
   if (testCurl) {
    const receiptPath = result.stdout.match(/INSTALLATION_RESULT: (.+)/)?.[1]
    assert(receiptPath, result.stdout)
