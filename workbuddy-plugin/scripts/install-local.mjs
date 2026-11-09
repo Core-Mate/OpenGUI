@@ -26,7 +26,7 @@ const packagesRoot = await realpath(join(stateRoot, 'packages'))
 assert(!relative(packagesRoot, packageDir).startsWith('..') && relative(packagesRoot, packageDir), 'Install from an immutable WorkBuddy version directory')
 const pkg = JSON.parse(await readFile(join(packageDir, 'package.json'), 'utf8'))
 assert.equal(pkg.name, 'opengui-mcp')
-assert.equal(pkg.version, '0.4.0')
+assert.equal(pkg.version, '0.4.1')
 assert.match(execFileSync(node, ['--version'], { encoding: 'utf8' }).trim(), /^v(?:22\.(?:19|2\d|[3-9]\d)|2[4-9]\.|[3-9]\d\.)/)
 const quote = value => process.platform === 'win32' ? `'${value.replaceAll("'", "''")}'` : `'${value.replaceAll("'", `'"'"'`)}'`
 const command = `${quote(node)} ${quote(join(packageDir, 'lib', 'host-hook.js'))}`
@@ -50,8 +50,18 @@ for (const path of targets) await assertOwnedPath(path)
 const existingMcp = JSON.parse(original[0] ?? '{}').mcpServers?.opengui
 if (existingMcp) {
   const knownEntrypoints = [packageDir, previous.packageDir].filter(Boolean).map(path => join(path, 'lib', 'mcp.js'))
-  assert(Array.isArray(existingMcp.args) && existingMcp.args.length === 1 && knownEntrypoints.includes(existingMcp.args[0]),
-    'MCP_CONFLICT: an unrecognized opengui server already exists; preserve it and resolve the conflict explicitly')
+  const ownedStdio = (!existingMcp.type || existingMcp.type === 'stdio') && Array.isArray(existingMcp.args)
+    && existingMcp.args.length === 1 && knownEntrypoints.includes(existingMcp.args[0])
+  // Native installations record the exact server, including its authorization.
+  // A matching URL alone cannot establish ownership of a third-party entry.
+  const ownedHttp = previous.configRoot === root && previous.transport === 'http' && existingMcp.type === 'http'
+    && previous.nativeServerSha256 === createHash('sha256').update(JSON.stringify(existingMcp)).digest('hex')
+  assert(ownedStdio || ownedHttp,
+    `MCP_CONFLICT: unrecognized or edited opengui server in ${targets[0]}. No configuration files changed.\n`
+    + `Back up and inspect the configuration before retrying:\ncp ${quote(targets[0])} ${quote(`${targets[0]}.before-opengui-conflict-${Date.now()}`)}\n`
+    + `\${EDITOR:-vi} ${quote(targets[0])}\n`
+    + 'To keep the existing server, rename its mcpServers key from opengui to an unused name (for example opengui-existing); '
+    + 'or explicitly remove only that entry if it is no longer needed. Save, then rerun the installation command.')
 }
 const values = [
   JSON.stringify(mergeMcpConfig(JSON.parse(original[0] ?? '{}'), node, join(packageDir, 'lib', 'mcp.js'), root), null, 2) + '\n',

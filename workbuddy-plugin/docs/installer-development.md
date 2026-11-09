@@ -2,7 +2,7 @@
 
 This is a maintainer workflow for an explicitly selected, reviewed local checkout. It is not the published installation path and is not applicable to an empty WorkBuddy workspace. The preferred user-facing flow is the curl entry described in [INSTALL.md](../INSTALL.md). Run only a deliberately selected local candidate when testing unpublished changes.
 
-The current local candidate allows WorkBuddy to stay open during installation without assuming that MCP configuration reloads live. It requires fully quitting with Command-Q and reopening WorkBuddy once afterward, and retains the separate active OpenGUI service upgrade guard. It still installs the official 0.4.0 runtime. This maintainer-requested refresh replaces the public-testing 0.4.0 assets and their checksums together.
+The current local candidate allows WorkBuddy to stay open during installation without assuming that MCP configuration reloads live. It requires fully quitting with Command-Q and reopening WorkBuddy once afterward, and retains the separate active OpenGUI service upgrade guard. It still installs the official 0.4.1 runtime. This release publishes new versioned assets and checksums without replacing earlier releases.
 
 For a deliberate local test, set `OPENGUI_INSTALLER_SOURCE` to the absolute `workbuddy-plugin` directory of this checkout, after reviewing its scripts. The following preparation copies only the reviewed scripts, verifies both source digests, and prepares a separate folder with the existing HTML guide. It does not execute or preview either script, open Finder, or change host permissions.
 
@@ -18,8 +18,8 @@ For a deliberate local test, set `OPENGUI_INSTALLER_SOURCE` to the absolute `wor
   cp "$OPENGUI_INSTALLER_SOURCE/scripts/install-macos.command" installer.sh
   cp "$OPENGUI_INSTALLER_SOURCE/resources/OpenGUI-安装指南.html" OpenGUI-安装指南.html
   printf '%s  %s\n' \
-    '84d7cbf4b7426f2c5882291764d3b524fae18cbaa427d3182f80319c446f0dea' OpenGUI-安装.command \
-    '025922e43badc1c70237a5af57460595ed21a57dc98c64909e42290ec1427707' installer.sh \
+    'ca354f3ad9c7a9fd0dab1450a4ddf59fdacb112f08ff118923e9af3d2e9b4f8d' OpenGUI-安装.command \
+    '76d88081d035b44e6872c1e7547b2d3da7274c51411c0a7d5631a4864673803c' installer.sh \
     | shasum -a 256 -c -
   chmod 700 OpenGUI-安装.command
   printf 'INSTALLER_FILES_READY: %s/\n' "$handoff_dir"
@@ -34,7 +34,7 @@ A future release needs its own version, checksums, and download URLs. Existing r
 
 ## Curl entry validation
 
-`install.sh` downloads the source installer and standalone authorization guide from the public repository, verifies the embedded hashes, runs installation and opens the guide only after `CONFIG_WRITTEN`. The source installer still downloads the official 0.4.0 runtime. The 0.4.0 public-testing assets are replaced only for this explicit maintainer-requested refresh. Keep the entry and its pinned files in the same commit when updating the public command.
+`install.sh` downloads the source installer and standalone authorization guide from the public repository, verifies the embedded hashes, runs installation and opens the guide only after `CONFIG_WRITTEN`. The source installer still downloads the official 0.4.1 runtime. The 0.4.1 public-testing assets are published under a new immutable version tag. Keep the entry and its pinned files in the same commit when updating the public command.
 
 Run `python3 scripts/build-authorization-guide.py` after reviewing changes to the core installer or the authorization copy/GIF. It rebuilds the existing static authorization page and refreshes the entry's two pins. `node scripts/validate.mjs` rejects stale pins or stale packaged guides. Build and package normally before integration testing.
 

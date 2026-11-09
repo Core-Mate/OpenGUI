@@ -13,6 +13,12 @@ describe('scoped WorkBuddy installation', () => {
     expect(Object.keys(updated.hooks as object).sort()).toEqual([...HOST_HOOK_EVENTS].sort())
     expect(JSON.stringify(updated)).not.toContain('permissionDecision')
   })
+  it('removes HTTP transport fields when migrating an owned server to stdio', () => {
+    const original = { mcpServers: { opengui: { type: 'http', url: 'http://127.0.0.1:61785/mcp', headers: { Authorization: 'Bearer fixture' }, extra: true } } }
+    const updated = mergeMcpConfig(original, '/managed/node', '/immutable/lib/mcp.js')
+    expect(updated.mcpServers).toEqual({ opengui: { extra: true, type: 'stdio', command: '/managed/node', args: ['/immutable/lib/mcp.js'], timeout: 120000, disabled: false } })
+    expect(original.mcpServers.opengui.headers.Authorization).toBe('Bearer fixture')
+  })
   it('changes only the OpenGUI MCP entry and preserves its unrelated settings', () => {
     const original = { extra: true, mcpServers: { other: { command: 'production' }, opengui: { command: 'old', env: { KEEP: 'local' } } } }
     expect(mergeMcpConfig(original, '/managed/node', '/immutable/lib/mcp.js')).toEqual({ extra: true, mcpServers: { other: original.mcpServers.other,

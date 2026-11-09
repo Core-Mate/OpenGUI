@@ -6,7 +6,7 @@ description: Complete authorized Android tasks and supported macOS iOS simulator
 description_zh: 根据真实截图完成用户指定的 Android 手机任务和已支持的 macOS iOS 模拟器测试，自动恢复、核验结果并释放控制锁。
 description_en: Complete authorized Android tasks and supported iOS simulator tests through a screenshot-action loop, local displays, bounded recovery and automatic task cleanup.
 category: productivity
-version: 0.4.0
+version: 0.4.1
 author: OpenGUI
 ---
 

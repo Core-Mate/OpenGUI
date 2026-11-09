@@ -32,7 +32,7 @@ class InstallerCwdTests(unittest.TestCase):
         self.state = self.home / 'opengui'
         self.state.mkdir()
         self.archive = self.base / 'fixture.tgz'
-        metadata = json.dumps({'name': 'opengui-mcp', 'version': '0.4.0'}).encode()
+        metadata = json.dumps({'name': 'opengui-mcp', 'version': '0.4.1'}).encode()
         with tarfile.open(self.archive, 'w:gz') as archive:
             member = tarfile.TarInfo('package/package.json')
             member.size = len(metadata)
@@ -43,7 +43,7 @@ class InstallerCwdTests(unittest.TestCase):
         self.temporary.cleanup()
 
     def install(self, denied=False, deleted=False):
-        command = [NODE, '-', str(self.state), str(self.archive), '0.4.0', str(self.home / 'config'), hashlib.sha256(self.archive.read_bytes()).hexdigest(), str(ROOT / 'scripts/install-macos.command'), '/unused/WorkBuddy.app', 'false', 'https://registry.npmmirror.com']
+        command = [NODE, '-', str(self.state), str(self.archive), '0.4.1', str(self.home / 'config'), hashlib.sha256(self.archive.read_bytes()).hexdigest(), str(ROOT / 'scripts/install-macos.command'), '/unused/WorkBuddy.app', 'false', 'https://registry.npmmirror.com']
         if denied:
             profile = '(version 1) (allow default) (deny file-read-metadata (subpath ' + json.dumps(str(self.launch)) + '))'
             command = ['/usr/bin/sandbox-exec', '-p', profile, *command]
@@ -52,7 +52,7 @@ class InstallerCwdTests(unittest.TestCase):
         self.assertNotIn('uv_cwd', result.stderr)
         installed = list((self.state / 'packages').glob('*/node_modules/opengui-mcp/package.json'))
         self.assertEqual(len(installed), 1)
-        self.assertEqual(json.loads(installed[0].read_text())['version'], '0.4.0')
+        self.assertEqual(json.loads(installed[0].read_text())['version'], '0.4.1')
 
     def test_install_from_readable_directory(self):
         self.install()

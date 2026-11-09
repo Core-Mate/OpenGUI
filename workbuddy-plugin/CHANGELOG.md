@@ -9,6 +9,11 @@
 - Default international WorkBuddy AI downloads to official Node/npm sources while preserving explicit source overrides.
 - Verify both current WorkBuddy bundle identities with the isolated native-host MCP directory check; document the separate mainland-China account and marketplace requirements.
 
+# OpenGUI for WorkBuddy 0.4.1 public testing
+
+- Recognize receipt-owned HTTP MCP installations during upgrades to the public stdio runtime.
+- Preserve unknown or edited MCP entries and provide explicit backup/edit/retry instructions.
+
 # OpenGUI for WorkBuddy 0.4.0 public testing
 
 - Publish the task home, workbench, account/model selection, takeover, content review, and report runtime as a distinct plugin version.

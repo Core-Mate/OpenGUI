@@ -71,11 +71,11 @@ printf 'invalid-node' > "$destination"
       assert(!fs.existsSync(join(install, 'package-lock.json')))
       const pkg = join(install, 'node_modules/opengui-mcp')
       fs.mkdirSync(pkg, { recursive: true })
-      fs.writeFileSync(join(pkg, 'package.json'), JSON.stringify({ name: 'opengui-mcp', version: '0.4.0' }))
+      fs.writeFileSync(join(pkg, 'package.json'), JSON.stringify({ name: 'opengui-mcp', version: '0.4.1' }))
     }
     const context = {
       require: name => name === 'node:child_process' ? { execFileSync } : realRequire(name),
-      process: { execPath: process.execPath, env: {}, argv: ['node', '-', root, archive, '0.4.0', join(root, 'config'), 'fixture-digest', source, app, 'false', registry] },
+      process: { execPath: process.execPath, env: {}, argv: ['node', '-', root, archive, '0.4.1', join(root, 'config'), 'fixture-digest', source, app, 'false', registry] },
       console: { log() {}, error() {} },
     }
     runInNewContext(payload, { ...context })
