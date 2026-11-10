@@ -32,6 +32,24 @@ async function controller(maxOperations = 100, landscape = false) {
 }
 
 describe('standalone OpenGUI phone controller', () => {
+  it('invalidates the previous frame when a new observation fails', async () => {
+    const { value, actor, runAdb } = await controller()
+    const signal = new AbortController().signal
+    const frame = await value.observe(actor, signal)
+    const original = runAdb.getMockImplementation()!
+    runAdb.mockRejectedValueOnce(new Error('device disconnected'))
+    await expect(value.observe(actor, signal)).rejects.toThrow('disconnected')
+    runAdb.mockImplementation(original)
+    await expect(value.execute(actor, { action: 'tap', observationId: frame.observationId,
+      targetBBox: { left: 10, top: 10, right: 20, bottom: 20 } }, signal)).rejects.toThrow('observe the phone')
+  })
+  it('supports Android long press using a stationary swipe', async () => {
+    const { value, actor, commands } = await controller()
+    const frame = await value.observe(actor, new AbortController().signal)
+    await value.execute(actor, { action: 'long_press', observationId: frame.observationId,
+      targetBBox: { left: 10, top: 20, right: 30, bottom: 40 } }, new AbortController().signal)
+    expect(commands).toContainEqual(['-s', 'serial-a', 'shell', 'input', 'swipe', '20', '30', '20', '30', '800'])
+  })
   it('consumes the observation even when post-action capture fails', async () => {
     const { value, actor, commands, runAdb } = await controller()
     const signal = new AbortController().signal

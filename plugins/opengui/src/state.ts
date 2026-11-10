@@ -1,3 +1,4 @@
+import { devicePlatform } from './platform.ts'
 import { createHash } from 'node:crypto'
 import { chmod, lstat, mkdir, readdir, rm, writeFile } from 'node:fs/promises'
 import { homedir, tmpdir } from 'node:os'
@@ -33,7 +34,7 @@ export async function privateDirectory(path: string): Promise<string> {
 }
 
 export function daemonEndpoint(root = dataDirectory()): string {
-  const identity = createHash('sha256').update(resolve(root)).digest('hex').slice(0, 16)
+  const identity = createHash('sha256').update(resolve(root) + (devicePlatform() === 'harmonyos' ? '\0harmonyos' : '')).digest('hex').slice(0, 16)
   return join(tmpdir(), `opengui-codex-standalone-${process.getuid?.() ?? 'user'}-${identity}.sock`)
 }
 

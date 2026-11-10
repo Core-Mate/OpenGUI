@@ -20,10 +20,14 @@ import { OwnedForwardRegistry } from '../forward-registry.ts'
 import { PhoneController } from '../phone-controller.ts'
 import type { RawPhoneObservation } from '../phone-controller.ts'
 import { resolveScrcpyAsset, ScrcpyInstaller, ScrcpyTextInput } from '../scrcpy.ts'
+import { LocalHarmonyPhoneHost } from '../harmony-host.ts'
+import { devicePlatform } from '../platform.ts'
+import type { ActionAssessment, UiLayout } from '../device-driver.ts'
+import { MAX_DEVICES, MAX_OPERATIONS } from '../phone-limits.ts'
 import { encodeCodexPhoneScreenshot } from './screenshot.ts'
 
-export const CODEX_MAX_DEVICES = 4
-export const CODEX_MAX_OPERATIONS = 100
+export const CODEX_MAX_DEVICES = MAX_DEVICES
+export const CODEX_MAX_OPERATIONS = MAX_OPERATIONS
 const COMMAND_TIMEOUT_MS = 15_000
 
 export interface CodexDeviceInfo {
@@ -254,6 +258,8 @@ export interface CodexObservation {
   readonly width: number
   readonly height: number
   readonly foregroundPackage: string
+  readonly layout?: UiLayout
+  readonly actionAssessment?: ActionAssessment
   readonly screenshot: {
     readonly data: string
     readonly mimeType: 'image/jpeg'
@@ -275,6 +281,7 @@ export interface CodexOpenGuiServiceOptions {
 /** Stateful session adapter consumed by both Codex transports. */
 export class CodexOpenGuiService {
   private readonly host: CodexPhoneHost
+  private readonly requiresVideoViewer: boolean
   private readonly createSessionId: () => string
   private readonly sessions = new Map<string, SessionRecord>()
   private readonly locks = new Map<string, string>()
@@ -284,7 +291,8 @@ export class CodexOpenGuiService {
   private readonly onSessionClosed: (sessionId: string) => Promise<void>
 
   constructor(options: CodexOpenGuiServiceOptions = {}) {
-    this.host = options.host ?? new LocalAdbPhoneHost()
+    this.requiresVideoViewer = devicePlatform() !== 'harmonyos'
+    this.host = options.host ?? (devicePlatform() === 'harmonyos' ? new LocalHarmonyPhoneHost() : new LocalAdbPhoneHost())
     this.viewers = options.viewers ?? new ViewerServer(this.host.videoStreams ?? {
       async prepare() { throw new Error('video_unavailable') },
       async subscribe() { throw new Error('video_unavailable') }, async dispose() {},
@@ -299,6 +307,7 @@ export class CodexOpenGuiService {
   }
 
   async openViewer(deviceIds: readonly string[] | undefined, signal: AbortSignal, owner = 'local') {
+    if (!this.requiresVideoViewer) throw new Error('video_unavailable_for_harmonyos: use screenshot sessions and their read-only device wall')
     return this.viewers.open(owner, await this.host.resolveDevices(deviceIds, signal), signal)
   }
 
@@ -309,6 +318,7 @@ export class CodexOpenGuiService {
   async openSession(deviceIds: readonly string[] | undefined, signal: AbortSignal, mode: SessionMode = 'control', owner = 'local', viewerId?: string): Promise<CodexSessionStatus> {
     signal.throwIfAborted()
     if (mode !== 'control' && mode !== 'observe') throw new Error('opengui: invalid session mode')
+    if (!this.requiresVideoViewer && viewerId !== undefined) throw new Error('opengui: HarmonyOS screenshot sessions do not accept a video viewerId')
     if (this.activeSessionCount >= 16) throw new Error('opengui: close an active session before opening another')
     const devices = await this.host.resolveDevices(deviceIds, signal)
     signal.throwIfAborted()
@@ -323,10 +333,10 @@ export class CodexOpenGuiService {
     if (conflicts.length > 0) {
       throw new Error(`opengui: ${conflicts.map(device => device.name).join(', ')} is already locked by another session`)
     }
-    const selectedViewer = this.viewers.find(owner, devices, viewerId)
+    const selectedViewer = this.requiresVideoViewer ? this.viewers.find(owner, devices, viewerId) : undefined
     const id = this.createSessionId()
     const record: SessionRecord = {
-      viewerId: selectedViewer,
+      ...(selectedViewer === undefined ? {} : { viewerId: selectedViewer }),
       id,
       createdAt: new Date(this.now()).toISOString(),
       controller: new AbortController(),
@@ -464,7 +474,7 @@ export class CodexOpenGuiService {
     operation: (item: SessionDevice, combined: AbortSignal) => Promise<RawPhoneObservation>,
   ): Promise<CodexObservation> {
     const record = this.requireActiveSession(sessionId)
-    this.viewers.assertReady(record.viewerId!)
+    if (this.requiresVideoViewer) this.viewers.assertReady(record.viewerId!)
     record.lastRequestAt = this.now()
     const item = this.resolveDevice(record, deviceId)
     const combined = AbortSignal.any([record.controller.signal, signal])
@@ -491,6 +501,8 @@ export class CodexOpenGuiService {
       width: value.width,
       height: value.height,
       foregroundPackage: value.foregroundPackage,
+      ...(value.layout === undefined ? {} : { layout: value.layout }),
+      ...(value.actionAssessment === undefined ? {} : { actionAssessment: value.actionAssessment }),
       screenshot: {
         data: value.image.data.toString('base64'),
         mimeType: 'image/jpeg',

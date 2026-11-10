@@ -27,3 +27,7 @@ bash scripts/install-macos.command --archive /绝对路径/opengui-codex-0.2.0.t
 回退前结束当前控制任务、关闭展示；使用保留的旧版安装器和旧归档重新安装。安装目录保留旧包及配置恢复记录。不要强杀其他宿主进程，不要整体覆盖配置或删除无关插件。
 
 两端分别独立构建和打包，不依赖 DSH。当前验证结果及尚未通过的项目见候选验收报告。浏览器支持解码、模拟视频通过、真机播放、宿主自动操作、发布上线是不同证据。
+
+## 鸿蒙截图控制
+
+源码插件提供实验性的 HDC + UiTest 原生鸿蒙驱动。Android 仍为默认平台并保留视频首帧门槛；鸿蒙使用截图会话和只读截图预览，不准备 scrcpy。见[使用与限制](docs/harmonyos.zh-CN.md)及[验证说明](docs/harmonyos-testing.md)。范围仅为独立 Codex 插件，不包含 WorkBuddy、DSH 或完整客户端/服务端移植。

@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import { devicePlatform } from './platform.ts'
+import { createHdcRunner, hdcPath, parseHdcDevices } from './hdc.ts'
 import { execFile } from 'node:child_process'
 import { realpathSync } from 'node:fs'
 import { access } from 'node:fs/promises'
@@ -17,9 +19,9 @@ export async function runCli(argv: readonly string[], signal = new AbortControll
   const [name, raw] = argv
   if (!name || name === '--help' || name === '-h') {
     return {
-      name: 'OpenGUI for Codex', version: VERSION,
+      name: 'OpenGUI for Codex', version: VERSION, devicePlatform: devicePlatform(),
       usage: 'opengui <interface> [json] (JSON can also be read from stdin)',
-      commands: ['--help', '--version', '--interfaces', '--doctor', '--prepare-video', '--setup-adb-server', '--shutdown-daemon'],
+      commands: ['--help', '--version', '--interfaces', '--doctor', '--prepare-video', '--check-upgrade', '--setup-adb-server', '--shutdown-daemon'],
       interfaces: OPENGUI_CODEX_TOOLS.map(tool => tool.name),
       platform: 'Local macOS arm64/x64 only. Use a dedicated non-production device environment.',
     }
@@ -27,7 +29,17 @@ export async function runCli(argv: readonly string[], signal = new AbortControll
   if (name === '--version') return { version: VERSION }
   if (name === '--interfaces') return { interfaces: OPENGUI_CODEX_TOOLS }
   if (process.platform !== 'darwin' || !['arm64', 'x64'].includes(process.arch)) {
-    throw new Error('opengui: local Android control is supported only on macOS arm64/x64')
+    throw new Error('opengui: local phone control is supported only on macOS arm64/x64')
+  }
+  const platform = devicePlatform()
+  if (name === '--doctor' && platform === 'harmonyos') {
+    const path = await hdcPath()
+    const run = createHdcRunner(path)
+    return { version: VERSION, devicePlatform: platform, hdcPath: path,
+      hdcVersion: (await run(['-v'], signal)).trim(),
+      hdcServer: (await run(['checkserver'], signal)).trim(),
+      connectedDevices: parseHdcDevices(await run(['list', 'targets', '-v'], signal)).filter(device => device.state === 'device').length,
+      setup: 'Enable USB debugging on the phone and authorize this Mac. HDC is provided by your local SDK; no ADB or scrcpy is used.' }
   }
   if (name === '--check-upgrade') {
     const hello = await ping(daemonEndpoint())
@@ -39,6 +51,7 @@ export async function runCli(argv: readonly string[], signal = new AbortControll
     return { upgrade: 'ready', forcedTermination: false }
   }
   if (name === '--prepare-video') {
+    if (platform === 'harmonyos') throw new Error('video_unavailable_for_harmonyos: scrcpy preparation is Android-only')
     const asset = resolveScrcpyAsset()
     if (!asset) throw new Error('video_unsupported_platform')
     const installer = new ScrcpyInstaller({ cacheDir: join(dataDirectory(), 'scrcpy') })
@@ -62,6 +75,7 @@ export async function runCli(argv: readonly string[], signal = new AbortControll
     }
   }
   if (name === '--setup-adb-server') {
+    if (platform === 'harmonyos') throw new Error('opengui: HarmonyOS uses HDC; ADB setup does not apply')
     // A running but incompatible server must never be replaced.
     try { await assertCompatibleAdbServer(signal); return { adbServer: 'already compatible' } }
     catch (error) {

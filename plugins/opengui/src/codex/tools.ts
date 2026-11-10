@@ -59,6 +59,26 @@ const observationSchema = {
     sessionId: { type: 'string' }, deviceId: { type: 'string' }, observationId: { type: 'string' },
     unchangedFromObservationId: { type: 'string' }, width: { type: 'integer' }, height: { type: 'integer' },
     foregroundPackage: { type: 'string' },
+    layout: {
+      type: 'object', additionalProperties: false,
+      properties: {
+        stable: { type: 'boolean' }, truncated: { type: 'boolean' }, warnings: { type: 'array', items: { type: 'string' } },
+        nodes: { type: 'array', maxItems: 250, items: {
+          type: 'object', additionalProperties: false,
+          properties: {
+            text: { type: 'string' }, hint: { type: 'string' }, type: { type: 'string' },
+            bundleName: { type: 'string' }, windowId: { type: 'string' },
+            clickable: { type: 'boolean' }, focused: { type: 'boolean' },
+            bounds: { type: 'object', properties: { left: { type: 'number' }, top: { type: 'number' }, right: { type: 'number' }, bottom: { type: 'number' } }, required: ['left', 'top', 'right', 'bottom'] },
+          }, required: ['text', 'hint', 'type', 'bundleName', 'windowId', 'clickable', 'focused', 'bounds'],
+        } },
+      }, required: ['stable', 'truncated', 'warnings', 'nodes'],
+    },
+    actionAssessment: {
+      type: 'object', additionalProperties: false,
+      properties: { status: { type: 'string', enum: ['performed', 'text_present', 'permission_required', 'text_unconfirmed'] }, detail: { type: 'string' } },
+      required: ['status', 'detail'],
+    },
     screenshot: {
       type: 'object', additionalProperties: false,
       properties: {
@@ -95,7 +115,7 @@ export const OPENGUI_CODEX_TOOLS: readonly CodexToolDefinition[] = [
   {
     name: 'opengui_list_devices',
     title: 'List OpenGUI Devices',
-    description: 'List locally attached Android devices with opaque ids, display names, connection state, and USB authorization state.',
+    description: 'List locally attached Android or HarmonyOS devices with opaque ids, display names, connection state, and USB authorization state.',
     inputSchema: { type: 'object', additionalProperties: false, properties: {} },
     outputSchema: { type: 'object', additionalProperties: false, properties: { devices: { type: 'array', items: deviceSchema } }, required: ['devices'] },
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
@@ -103,7 +123,7 @@ export const OPENGUI_CODEX_TOOLS: readonly CodexToolDefinition[] = [
   {
     name: 'opengui_open_session',
     title: 'Open OpenGUI Session',
-    description: 'Freeze and exclusively lock one to four authorized Android phones for an OpenGUI task. Omit deviceIds only when exactly one authorized phone is attached.',
+    description: 'Freeze and exclusively lock one to four authorized phones for an OpenGUI task. Omit deviceIds only when exactly one authorized phone is attached.',
     inputSchema: {
       type: 'object', additionalProperties: false,
       properties: {
@@ -118,7 +138,7 @@ export const OPENGUI_CODEX_TOOLS: readonly CodexToolDefinition[] = [
   {
     name: 'opengui_observe',
     title: 'Observe OpenGUI Phone',
-    description: 'Capture the current bounded phone screenshot, logical dimensions, foreground app, and a new observationId. Use the returned image as the only coordinate space for the next action.',
+    description: 'Capture the current bounded phone screenshot, logical dimensions, foreground app, and a new observationId. Use the returned image as the only coordinate space for the next action. HarmonyOS layout bounds use the same space; nodes are advisory and may be hidden. Check layout.stable and actionAssessment, especially clipboard permission_required.',
     inputSchema: { type: 'object', additionalProperties: false, properties: { sessionId, deviceId }, required: ['sessionId'] },
     outputSchema: observationSchema,
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: false, openWorldHint: false },
@@ -126,12 +146,12 @@ export const OPENGUI_CODEX_TOOLS: readonly CodexToolDefinition[] = [
   {
     name: 'opengui_act',
     title: 'Act on OpenGUI Phone',
-    description: 'Perform one allowlisted Android action against the latest observation. Actions can change external state. Classify send, publish, purchase, or delete actions so OpenGUI can obtain immediate user confirmation before execution.',
+    description: 'Perform one allowlisted phone action against the latest observation. Actions can change external state. Classify send, publish, purchase, or delete actions so OpenGUI can obtain immediate user confirmation before execution.',
     inputSchema: {
       type: 'object', additionalProperties: false,
       properties: {
         sessionId, deviceId,
-        action: { type: 'string', enum: ['tap', 'swipe', 'text', 'key', 'launch', 'wait'] },
+        action: { type: 'string', enum: ['tap', 'long_press', 'swipe', 'text', 'key', 'launch', 'wait'] },
         observationId: { type: 'string', minLength: 1 },
         targetBBox: {
           type: 'object', additionalProperties: false,
@@ -142,7 +162,7 @@ export const OPENGUI_CODEX_TOOLS: readonly CodexToolDefinition[] = [
         durationMs: { type: 'integer', minimum: 50, maximum: 2000 },
         text: { type: 'string', minLength: 1, maxLength: 500 },
         key: { type: 'string', enum: ['Back', 'Home', 'Enter', 'AppSwitch'] },
-        packageName: { type: 'string' }, waitMs: { type: 'integer', minimum: 100, maximum: 10000 },
+        packageName: { type: 'string' }, abilityName: { type: 'string', description: 'Required for HarmonyOS launch; use the target application UIAbility name.' }, waitMs: { type: 'integer', minimum: 100, maximum: 10000 },
         externalSideEffect: {
           type: 'string', enum: ['none', 'send', 'publish', 'purchase', 'delete'], default: 'none',
           description: 'Classify the immediate effect. Non-none values trigger a user confirmation before execution.',
