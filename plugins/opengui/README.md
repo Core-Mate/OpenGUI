@@ -41,3 +41,7 @@ pnpm package
 ```
 
 The browser test additionally needs development-only `agent-browser` and `ffmpeg`. It validates actual H.264 decode and canvas changes, first-frame receipts, continued playback after completion, and subscriber cleanup. End users do not need those tools. See the [candidate acceptance report](../../docs/plans/2026-09-13-viewer-candidate-acceptance.md) for separate host, device, performance, installation and release evidence. Candidate packaging alone does not pass those gates.
+
+## HarmonyOS screenshot control
+
+The source plugin also provides an experimental HDC + UiTest driver for native HarmonyOS. Android remains the default and retains its video-readiness gate. HarmonyOS uses screenshot sessions and a read-only screenshot wall, without scrcpy. See [setup and limits](docs/harmonyos.md) and [verification](docs/harmonyos-testing.md). This applies only to the standalone Codex plugin, not WorkBuddy, DSH, or the full stack.

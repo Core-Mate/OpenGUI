@@ -1,3 +1,4 @@
+import { devicePlatform } from './platform.ts'
 import { randomUUID } from 'node:crypto'
 import { spawn } from 'node:child_process'
 import { chmod, lstat, open, readFile, rm } from 'node:fs/promises'
@@ -73,7 +74,7 @@ export function assertVersion(hello: Hello): void {
 export async function ensureDaemon(entry: string, root = dataDirectory(), signal = AbortSignal.timeout(15_000)): Promise<string> {
   await privateDirectory(root)
   const endpoint = daemonEndpoint(root)
-  const lockPath = join(root, 'daemon-start.lock')
+  const lockPath = join(root, devicePlatform() === 'harmonyos' ? 'daemon-start-harmonyos.lock' : 'daemon-start.lock')
   while (true) {
     signal.throwIfAborted()
     const hello = await ping(endpoint)

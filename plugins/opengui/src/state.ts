@@ -1,3 +1,4 @@
+import { devicePlatform } from './platform.ts'
 import { createHash } from 'node:crypto'
 import { chmod, lstat, mkdir, readdir, rm, writeFile } from 'node:fs/promises'
 import { homedir, tmpdir } from 'node:os'
@@ -33,11 +34,16 @@ export async function privateDirectory(path: string): Promise<string> {
 }
 
 export function daemonEndpoint(root = dataDirectory()): string {
-  const identity = createHash('sha256').update(resolve(root)).digest('hex').slice(0, 16)
+  const identity = createHash('sha256').update(resolve(root) + (devicePlatform() === 'harmonyos' ? '\0harmonyos' : '')).digest('hex').slice(0, 16)
   return join(tmpdir(), `opengui-codex-standalone-${process.getuid?.() ?? 'user'}-${identity}.sock`)
 }
 
-/** Only session-owned images are removed. Runtime files are outside this tree. */
+export type MaterializedObservation = Omit<CodexObservation, 'screenshot'> & {
+  readonly observationPath: string
+  readonly screenshot: Omit<CodexObservation['screenshot'], 'data'> & { readonly path: string }
+}
+
+/** Only session-owned evidence is removed. Runtime files are outside this tree. */
 export class ObservationStore {
   constructor(readonly root: string) {}
 
@@ -45,14 +51,22 @@ export class ObservationStore {
     return join(this.root, createHash('sha256').update(sessionId).digest('hex'))
   }
 
-  async save(value: CodexObservation): Promise<unknown> {
+  async save(value: CodexObservation): Promise<MaterializedObservation> {
     await privateDirectory(this.root)
     const directory = await privateDirectory(this.directory(value.sessionId))
     const digest = createHash('sha256').update(value.deviceId + '\0' + value.observationId).digest('hex')
     const path = join(directory, digest + '.jpg')
+    const observationPath = join(directory, digest + '.json')
     await writeFile(path, Buffer.from(value.screenshot.data, 'base64'), { mode: 0o600, flag: 'wx' })
     const { data: _data, ...screenshot } = value.screenshot
-    return { ...value, screenshot: { ...screenshot, path } }
+    const materialized = { ...value, observationPath, screenshot: { ...screenshot, path } }
+    try {
+      await writeFile(observationPath, JSON.stringify(materialized), { mode: 0o600, flag: 'wx' })
+    } catch (error) {
+      await rm(path, { force: true })
+      throw error
+    }
+    return materialized
   }
 
   async remove(sessionId: string): Promise<void> {
